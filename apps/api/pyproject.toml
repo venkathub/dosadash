@@ -12,10 +12,12 @@ dependencies = [
     "alembic>=1.14",
     "pgvector>=0.3.6",
     "dosadash-shared",
+    "dosadash-ml",
 ]
 
 [tool.uv.sources]
 dosadash-shared = { workspace = true }
+dosadash-ml = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]
