@@ -172,8 +172,31 @@ def main() -> None:
     parser.add_argument("--users", type=int, default=500)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument(
+        "--make-staff",
+        metavar="PHONE",
+        help="Promote (or create) this phone as kitchen_staff and exit",
+    )
     args = parser.parse_args()
+    if args.make_staff:
+        asyncio.run(make_staff(args.make_staff))
+        return
     asyncio.run(seed(days=args.days, users=args.users, seed_val=args.seed, force=args.force))
+
+
+async def make_staff(phone: str) -> None:
+    from dosadash_api.auth.security import normalize_phone
+
+    normalized = normalize_phone(phone)
+    async with get_sessionmaker()() as session:
+        user = await session.scalar(select(User).where(User.phone == normalized))
+        if user is None:
+            user = User(phone=normalized, name="Kitchen Staff", role=Role.KITCHEN_STAFF)
+            session.add(user)
+        else:
+            user.role = Role.KITCHEN_STAFF
+        await session.commit()
+        print(f"staff: user id={user.id} role={user.role.value}")
 
 
 if __name__ == "__main__":
