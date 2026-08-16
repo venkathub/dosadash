@@ -87,6 +87,19 @@ services:
         limits:
           memory: 256M
 
+  bot:
+    build:
+      context: ..
+      dockerfile: apps/bot/Dockerfile
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?set in .env}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://dosadash.venkateshs.dev}
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -102,6 +115,7 @@ services:
       - api
       - ai
       - web
+      - bot
     deploy:
       resources:
         limits:

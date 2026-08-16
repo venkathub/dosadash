@@ -19,6 +19,11 @@
 		reverse_proxy ai:8001
 	}
 
+	# Telegram webhook (aiogram bot adapter)
+	handle /tg/* {
+		reverse_proxy bot:8081
+	}
+
 	# Next.js: customer /, KDS /kds, admin /admin
 	handle {
 		reverse_proxy web:3000
