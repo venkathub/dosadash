@@ -72,8 +72,8 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
   - [x] Docker Compose (pgvector, Redis, Caddy) + Dockerfiles + .env.example
   - [x] GitHub Actions CI (ruff/pytest/web build) + SSH deploy on main
   - [x] First production deploy — live at https://dosadash.venkateshs.dev (AIC proxy → Caddy :8080)
-  - [ ] Schema v2 (auth/CRM/promos/brand_id) + Alembic
-  - [ ] OtpChannel + PaymentProvider interfaces stubbed
+  - [x] Schema v2 (auth/CRM/promos/brand_id) + Alembic — 18 tables, round-trip verified, auto-migrate on container start
+  - [x] OtpChannel + PaymentProvider interfaces stubbed (demo OTP, mock HMAC payments)
   - [ ] Synthetic data generator + ~40-item menu seed
   - [ ] Telegram bot registered, webhook echo in prod
 - Update this checklist as phases complete.

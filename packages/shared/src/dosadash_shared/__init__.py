@@ -1,5 +1,23 @@
 """Shared Pydantic schemas for DosaDash services."""
 
-from dosadash_shared.schemas import HealthStatus, OrderState, Role
+from dosadash_shared.schemas import (
+    ChannelType,
+    CouponType,
+    Diet,
+    HealthStatus,
+    OrderState,
+    OtpChannelType,
+    PaymentStatus,
+    Role,
+)
 
-__all__ = ["HealthStatus", "OrderState", "Role"]
+__all__ = [
+    "ChannelType",
+    "CouponType",
+    "Diet",
+    "HealthStatus",
+    "OrderState",
+    "OtpChannelType",
+    "PaymentStatus",
+    "Role",
+]

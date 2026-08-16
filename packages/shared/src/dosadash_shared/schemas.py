@@ -31,6 +31,47 @@ class Role(StrEnum):
     OWNER = "owner"
 
 
+class Diet(StrEnum):
+    """Dietary preference (docs/06 user_preferences)."""
+
+    VEG = "VEG"
+    VEGAN = "VEGAN"
+    JAIN = "JAIN"
+    NONVEG = "NONVEG"
+
+
+class ChannelType(StrEnum):
+    """Order/chat channel (docs/06 channels)."""
+
+    WEB = "WEB"
+    TELEGRAM = "TELEGRAM"
+    MOCK_AGGREGATOR = "MOCK_AGGREGATOR"
+
+
+class OtpChannelType(StrEnum):
+    """OTP delivery channel (docs/06 otp_requests)."""
+
+    DEMO = "DEMO"
+    TELEGRAM = "TELEGRAM"
+
+
+class CouponType(StrEnum):
+    """Coupon discount type (docs/06 coupons)."""
+
+    PCT = "PCT"
+    FLAT = "FLAT"
+
+
+class PaymentStatus(StrEnum):
+    """Payment lifecycle at the provider."""
+
+    CREATED = "CREATED"
+    AUTHORIZED = "AUTHORIZED"
+    CAPTURED = "CAPTURED"
+    FAILED = "FAILED"
+    REFUNDED = "REFUNDED"
+
+
 class HealthStatus(BaseModel):
     """Response body for /healthz endpoints across all services."""
 

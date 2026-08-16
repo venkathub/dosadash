@@ -13,6 +13,8 @@ COPY apps/bot/pyproject.toml apps/bot/pyproject.toml
 COPY apps/bot/src/ apps/bot/src/
 COPY apps/ai/src/ apps/ai/src/
 COPY apps/api/src/ apps/api/src/
+COPY apps/api/alembic.ini apps/api/alembic.ini
+COPY apps/api/migrations/ apps/api/migrations/
 RUN uv sync --frozen --no-dev --package dosadash-api
 
 FROM python:3.12-slim-bookworm
@@ -24,4 +26,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"
-CMD ["uvicorn", "dosadash_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run pending migrations, then serve.
+CMD ["sh", "-c", "cd apps/api && alembic upgrade head && exec uvicorn dosadash_api.main:app --host 0.0.0.0 --port 8000"]
