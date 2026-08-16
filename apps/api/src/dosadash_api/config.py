@@ -14,6 +14,14 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://dosadash:dosadash@localhost:5432/dosadash"
     redis_url: str = "redis://localhost:6379/0"
 
+    # Auth (Phase 1) — override jwt_secret in every real deployment
+    jwt_secret: str = "dev-secret-do-not-use-in-prod"
+    access_ttl_minutes: int = 30
+    refresh_ttl_days: int = 30
+    otp_ttl_seconds: int = 300
+    otp_max_attempts: int = 5
+    otp_resend_cooldown_seconds: int = 45
+
 
 @lru_cache
 def get_settings() -> Settings:
