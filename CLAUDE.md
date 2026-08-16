@@ -75,5 +75,5 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
   - [x] Schema v2 (auth/CRM/promos/brand_id) + Alembic — 18 tables, round-trip verified, auto-migrate on container start
   - [x] OtpChannel + PaymentProvider interfaces stubbed (demo OTP, mock HMAC payments)
   - [x] Synthetic data generator + 44-item menu seed — seeded in prod (500 users, 40,620 orders/12 mo, festival + weekend seasonality verified)
-  - [ ] Telegram bot registered, webhook echo in prod
+  - [x] Telegram bot registered (@dosadash_bot), aiogram webhook echo live in prod (/tg/webhook, secret-protected)
 - Update this checklist as phases complete.

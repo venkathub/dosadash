@@ -30,6 +30,7 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build --remove-orphans
+            docker compose -f infra/docker-compose.yml exec -T caddy caddy reload --config /etc/caddy/Caddyfile
             docker image prune -f
             sleep 5
             curl -fsS http://localhost:8080/healthz && echo "✓ healthz OK"
