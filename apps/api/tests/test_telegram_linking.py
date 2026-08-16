@@ -199,6 +199,30 @@ async def test_bot_link_account_failure_detail():
     assert "expired" in (result.detail or "")
 
 
+async def test_me_reports_link_status_and_unlink(client, db_session, fake_redis, internal_token):
+    headers = await _login(client, "9800000007")
+    me = (await client.get("/api/v1/auth/me", headers=headers)).json()
+    assert me["tg_linked"] is False
+
+    code = (await client.post("/api/v1/auth/telegram/link-code", headers=headers)).json()["code"]
+    await client.post(
+        "/api/v1/auth/telegram/link",
+        json={"code": code, "tg_user_id": 31337},
+        headers={"X-Internal-Token": internal_token},
+    )
+    me = (await client.get("/api/v1/auth/me", headers=headers)).json()
+    assert me["tg_linked"] is True
+
+    resp = await client.delete("/api/v1/auth/telegram/link", headers=headers)
+    assert resp.status_code == 204
+    me = (await client.get("/api/v1/auth/me", headers=headers)).json()
+    assert me["tg_linked"] is False
+
+    user = await db_session.scalar(select(User).where(User.phone == "+919800000007"))
+    await db_session.refresh(user)
+    assert user.tg_user_id is None
+
+
 def test_link_render_texts():
     assert "Priya" in link_success_text("Priya")
     assert "invalid or expired" in link_failed_text(None).lower()
