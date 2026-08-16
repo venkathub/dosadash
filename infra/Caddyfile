@@ -1,0 +1,25 @@
+# DOMAIN=example.com → automatic HTTPS; DOMAIN=:80 (default) → plain HTTP for first boot
+{$DOMAIN} {
+	encode gzip
+
+	# Core API (REST + WebSockets)
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+	handle /ws/* {
+		reverse_proxy api:8000
+	}
+	handle /healthz {
+		reverse_proxy api:8000
+	}
+
+	# AI service (agents, RAG, SSE streaming)
+	handle_path /ai/* {
+		reverse_proxy ai:8001
+	}
+
+	# Next.js: customer /, KDS /kds, admin /admin
+	handle {
+		reverse_proxy web:3000
+	}
+}
