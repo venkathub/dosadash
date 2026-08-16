@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from dosadash_api.routers.admin_menu import router as admin_menu_router
 from dosadash_api.routers.admin_ops import router as admin_ops_router
+from dosadash_api.routers.admin_orders import router as admin_orders_router
 from dosadash_api.routers.auth import router as auth_router
 from dosadash_api.routers.menu import router as menu_router
 from dosadash_api.routers.orders import router as orders_router
@@ -16,6 +17,7 @@ app = FastAPI(title="DosaDash API", version="0.1.0")
 app.include_router(auth_router)
 app.include_router(admin_menu_router)
 app.include_router(admin_ops_router)
+app.include_router(admin_orders_router)
 app.include_router(menu_router)
 app.include_router(orders_router)
 app.include_router(payments_router)
