@@ -1,5 +1,14 @@
 """Shared Pydantic schemas for DosaDash services."""
 
+from dosadash_shared.admin import (
+    AvailabilityIn,
+    CustomizationIn,
+    MenuItemAdminOut,
+    MenuItemCreateIn,
+    MenuItemUpdateIn,
+    ScheduleIn,
+    ScheduleWindow,
+)
 from dosadash_shared.menu import (
     CategoryOut,
     CustomizationOut,
@@ -27,14 +36,19 @@ from dosadash_shared.schemas import (
 )
 
 __all__ = [
+    "AvailabilityIn",
     "CategoryOut",
     "ChannelType",
     "CouponType",
+    "CustomizationIn",
     "CustomizationOut",
     "Diet",
     "HealthStatus",
+    "MenuItemAdminOut",
+    "MenuItemCreateIn",
     "MenuItemDetail",
     "MenuItemSummary",
+    "MenuItemUpdateIn",
     "OrderCreateIn",
     "OrderItemIn",
     "OrderItemOut",
@@ -45,5 +59,7 @@ __all__ = [
     "PaymentOut",
     "PaymentStatus",
     "Role",
+    "ScheduleIn",
+    "ScheduleWindow",
     "StatusUpdateIn",
 ]
