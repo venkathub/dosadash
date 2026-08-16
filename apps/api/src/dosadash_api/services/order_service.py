@@ -16,6 +16,7 @@ from dosadash_api.db.models import (
     Order,
     OrderItem,
     Payment,
+    Settings,
     StaffAction,
     User,
 )
@@ -52,6 +53,11 @@ class ItemsUnavailable(OrderError):
         super().__init__(f"items unavailable: {names}")
 
 
+class KitchenPaused(OrderError):
+    def __init__(self) -> None:
+        super().__init__("kitchen is paused — not accepting orders right now")
+
+
 class InvalidTransition(OrderError):
     def __init__(self, current: OrderState, target: OrderState) -> None:
         super().__init__(f"cannot transition {current} -> {target}")
@@ -76,6 +82,10 @@ async def create_order(
 ) -> Order:
     """Checkout: every item_id validated against the DB, totals computed
     server-side, provider order created. Order starts in PLACED."""
+    settings_row = await session.get(Settings, 1)
+    if settings_row is not None and settings_row.kitchen_paused:
+        raise KitchenPaused
+
     wanted: dict[int, int] = {}
     customizations: dict[int, dict[str, Any] | None] = {}
     for line in items_in:

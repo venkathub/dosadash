@@ -4,7 +4,8 @@ Channels (docs/06):
     pubsub:orders   — order.created / order.status  → KDS + tracking WS fan-out
     pubsub:menu     — menu.* (create/update/delete/availability/schedule/
                       customization) → Phase 3 re-embeds RAG, busts caches
-    pubsub:settings — (Phase 2, settings PR) kitchen pause etc.
+    pubsub:settings — settings.updated / settings.kitchen_pause → agent
+                      behavior (stop taking orders while paused), cache bust
 
 Publishing is best-effort: a Redis outage must never fail a checkout.
 """
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 ORDERS_CHANNEL = "pubsub:orders"
 MENU_CHANNEL = "pubsub:menu"
+SETTINGS_CHANNEL = "pubsub:settings"
 
 
 @lru_cache
@@ -72,3 +74,19 @@ async def publish_menu_event(
         await get_redis().publish(MENU_CHANNEL, json.dumps(payload))
     except Exception:  # noqa: BLE001 — best-effort by design
         logger.warning("menu event publish failed (item %s)", item_id, exc_info=True)
+
+
+def settings_event_payload(
+    event_type: str, *, detail: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Serializable settings-mutation event (single-row settings — no entity id)."""
+    return {"type": event_type, "detail": detail or {}}
+
+
+async def publish_settings_event(event_type: str, *, detail: dict[str, Any] | None = None) -> None:
+    """Fire-and-forget publish; logs (never raises) on Redis failure."""
+    payload = settings_event_payload(event_type, detail=detail)
+    try:
+        await get_redis().publish(SETTINGS_CHANNEL, json.dumps(payload))
+    except Exception:  # noqa: BLE001 — best-effort by design
+        logger.warning("settings event publish failed (%s)", event_type, exc_info=True)
