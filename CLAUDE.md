@@ -57,6 +57,13 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
 - Eval languages: English, Hinglish, Tanglish conversations in golden sets.
 - Currency INR, GST on bills (5% food), prices realistic (dosa ₹80–180).
 
+## Git Workflow (docs/08 — mandatory)
+
+- `main` = production, protected. **Never commit directly to main.**
+- Each schedule phase = its own `phase/N-*` branch; small `feat/*`/`fix/*` PRs merge into the phase branch; completed phase squash-merges into `main` via a Phase PR using the checklist in docs/08.
+- Merge to `main` = production deploy. Rollback = revert PR.
+- Conventional commits. PRs touching `apps/ai/**`, prompts, or `evals/**` must update eval cases.
+
 ## Current Status
 
 - [x] Planning complete (docs/)
