@@ -33,6 +33,53 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
     }
   };
 
+  const payRazorpay = async () => {
+    setError(null);
+    try {
+      const cfg = await api<{ provider: string; key_id: string | null }>("/payments/config");
+      await new Promise<void>((resolve, reject) => {
+        if (document.getElementById("rzp-js")) return resolve();
+        const s = document.createElement("script");
+        s.id = "rzp-js";
+        s.src = "https://checkout.razorpay.com/v1/checkout.js";
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Failed to load Razorpay"));
+        document.body.appendChild(s);
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const Razorpay = (window as any).Razorpay;
+      const rzp = new Razorpay({
+        key: cfg.key_id,
+        order_id: order.payment?.provider_order_id,
+        name: "DosaDash",
+        description: `Order #${order.id}`,
+        theme: { color: "#f59e0b" },
+        handler: async (resp: { razorpay_payment_id: string; razorpay_signature: string }) => {
+          try {
+            await api<Order>(`/orders/${order.id}/pay`, {
+              method: "POST",
+              auth: true,
+              body: { payment_id: resp.razorpay_payment_id, signature: resp.razorpay_signature },
+            });
+            setPaid(true);
+          } catch (e) {
+            setError(e instanceof Error ? e.message : "verification failed");
+          }
+        },
+      });
+      rzp.on("payment.failed", (r: { error: { description: string } }) =>
+        setError(r.error.description)
+      );
+      rzp.open();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "payment failed");
+    }
+  };
+
+  const pay = order.payment?.provider === "razorpay" ? payRazorpay : payDemo;
+  const payLabel =
+    order.payment?.provider === "razorpay" ? `💳 Pay ₹${order.total} (Razorpay test)` : `💳 Pay ₹${order.total} (demo)`;
+
   const stepIdx = STEPS.indexOf(status);
   const cancelled = status === "CANCELLED" || status === "REFUNDED";
 
@@ -54,8 +101,8 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
           ₹{order.subtotal} + GST ₹{order.gst} = <b>₹{order.total}</b>
         </p>
         {!paid ? (
-          <button className="w-full rounded bg-green-600 py-2 font-semibold text-white" onClick={payDemo}>
-            💳 Pay ₹{order.total} (demo)
+          <button className="w-full rounded bg-green-600 py-2 font-semibold text-white" onClick={pay}>
+            {payLabel}
           </button>
         ) : (
           <p className="rounded bg-green-100 px-3 py-1 text-sm text-green-800">✓ Payment captured</p>

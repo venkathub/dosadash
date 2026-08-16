@@ -16,9 +16,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from dosadash_api.auth.deps import CurrentUser
+from dosadash_api.config import get_settings
 from dosadash_api.db.models import Order, OrderItem, Payment
 from dosadash_api.db.session import get_session
-from dosadash_api.providers import MockPaymentProvider, PaymentProvider
+from dosadash_api.providers import (
+    MockPaymentProvider,
+    PaymentProvider,
+    select_payment_provider,
+)
 from dosadash_api.services import order_service
 from dosadash_api.services.order_service import STAFF_ROLES
 from dosadash_shared import (
@@ -38,8 +43,13 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def get_payment_provider() -> PaymentProvider:
-    """Phase 1: mock provider; Razorpay TEST joins via the same interface."""
-    return MockPaymentProvider()
+    """Selected via settings (Hard Rule 1): Razorpay TEST when keys exist."""
+    s = get_settings()
+    return select_payment_provider(
+        provider=s.payment_provider,
+        razorpay_key_id=s.razorpay_key_id,
+        razorpay_key_secret=s.razorpay_key_secret,
+    )
 
 
 ProviderDep = Annotated[PaymentProvider, Depends(get_payment_provider)]

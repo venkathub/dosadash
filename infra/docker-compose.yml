@@ -49,6 +49,9 @@ services:
       API_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-dosadash}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dosadash}
       API_REDIS_URL: redis://redis:6379/0
       API_JWT_SECRET: ${JWT_SECRET:?set in .env}
+      API_RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      API_RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      API_RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
