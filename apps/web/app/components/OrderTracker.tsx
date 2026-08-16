@@ -61,6 +61,7 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
               auth: true,
               body: { payment_id: resp.razorpay_payment_id, signature: resp.razorpay_signature },
             });
+            setError(null); // clear any error from earlier failed attempts
             setPaid(true);
           } catch (e) {
             setError(e instanceof Error ? e.message : "verification failed");
