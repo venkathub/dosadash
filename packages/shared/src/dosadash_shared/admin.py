@@ -7,7 +7,7 @@ and future agents all share these shapes.
 import re
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -152,6 +152,106 @@ class AdminUserOut(BaseModel):
     name: str | None = None
     role: Role
     loyalty_points: int = 0
+
+
+# -------------------------------------------------------------------- combos
+
+
+class ComboCreateIn(BaseModel):
+    """Combo builder input. Phase 7 AI suggestions land as source=AI_SUGGESTED
+    drafts in the same approval flow."""
+
+    name: str = Field(min_length=2, max_length=120)
+    item_ids: list[int] = Field(min_length=2, max_length=6)
+    price: Decimal = Field(gt=0, le=Decimal("10000"))
+
+
+class ComboUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    item_ids: list[int] | None = Field(default=None, min_length=2, max_length=6)
+    price: Decimal | None = Field(default=None, gt=0, le=Decimal("10000"))
+
+
+class ComboStatusIn(BaseModel):
+    status: Literal["APPROVED", "REJECTED"]
+
+
+class ComboOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    item_ids: list[int]
+    price: Decimal
+    source: str
+    status: str
+
+
+# --------------------------------------------------------------- ingredients
+
+
+class IngredientIn(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    unit: str = Field(min_length=1, max_length=20)
+    is_allergen: bool = False
+    supplier: str | None = Field(default=None, max_length=120)
+    cost: Decimal | None = Field(default=None, ge=0)
+    stock_qty: Decimal = Field(default=Decimal("0"), ge=0)
+    reorder_point: Decimal = Field(default=Decimal("0"), ge=0)
+
+
+class IngredientUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=80)
+    unit: str | None = Field(default=None, min_length=1, max_length=20)
+    is_allergen: bool | None = None
+    supplier: str | None = Field(default=None, max_length=120)
+    cost: Decimal | None = Field(default=None, ge=0)
+    stock_qty: Decimal | None = Field(default=None, ge=0)
+    reorder_point: Decimal | None = Field(default=None, ge=0)
+
+
+class IngredientOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    unit: str
+    is_allergen: bool
+    supplier: str | None = None
+    cost: Decimal | None = None
+    stock_qty: Decimal
+    reorder_point: Decimal
+
+
+# ------------------------------------------------------------- recipe mapping
+
+
+class RecipeLineIn(BaseModel):
+    ingredient_id: int
+    qty: Decimal = Field(gt=0)
+
+
+class RecipeIn(BaseModel):
+    """Full-replace recipe mapping. Drives inventory depletion AND the RAG
+    allergen knowledge base — single source of truth (docs/06)."""
+
+    lines: list[RecipeLineIn] = Field(min_length=1, max_length=40)
+
+    @field_validator("lines")
+    @classmethod
+    def _unique_ingredients(cls, v: list[RecipeLineIn]) -> list[RecipeLineIn]:
+        ids = [line.ingredient_id for line in v]
+        if len(ids) != len(set(ids)):
+            raise ValueError("duplicate ingredient_id in recipe lines")
+        return v
+
+
+class RecipeLineOut(BaseModel):
+    ingredient_id: int
+    name: str
+    unit: str
+    qty: Decimal
+    is_allergen: bool
 
 
 # ------------------------------------------------------------------ audit log

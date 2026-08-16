@@ -76,6 +76,23 @@ async def publish_menu_event(
         logger.warning("menu event publish failed (item %s)", item_id, exc_info=True)
 
 
+def catalog_event_payload(
+    event_type: str, *, detail: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Combo/ingredient mutations — ride the menu channel (same consumers:
+    re-embed RAG, bust caches); entity ids live in `detail`."""
+    return {"type": event_type, "detail": detail or {}}
+
+
+async def publish_catalog_event(event_type: str, *, detail: dict[str, Any] | None = None) -> None:
+    """Fire-and-forget publish; logs (never raises) on Redis failure."""
+    payload = catalog_event_payload(event_type, detail=detail)
+    try:
+        await get_redis().publish(MENU_CHANNEL, json.dumps(payload))
+    except Exception:  # noqa: BLE001 — best-effort by design
+        logger.warning("catalog event publish failed (%s)", event_type, exc_info=True)
+
+
 def settings_event_payload(
     event_type: str, *, detail: dict[str, Any] | None = None
 ) -> dict[str, Any]:
