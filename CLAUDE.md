@@ -1,0 +1,64 @@
+# CLAUDE.md — DosaDash Project Instructions
+
+## Project
+
+DosaDash: AI-native South Indian cloud kitchen platform. Portfolio project for AI Engineer role, production-deployed on AIC Cloud VPS (4 GB RAM). Read `docs/` for the full plan before making architectural decisions. `docs/05-schedule-12-weeks.md` defines the current phase — always work within the current phase's scope.
+
+## Tech Stack (fixed — do not substitute without asking)
+
+- **Backend**: Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0 async, Alembic, Celery + Redis
+- **DB**: PostgreSQL 16 + pgvector (vectors + FTS in same DB — deliberate; no separate vector DB)
+- **AI**: LangGraph (agents), litellm (routing: gpt-4o-mini primary → Groq Llama 3.3 70B → Gemini Flash fallback), OpenAI text-embedding-3-small, Groq whisper-large-v3 (STT)
+- **Bot**: aiogram (Telegram), webhook mode (not polling) in production
+- **Frontend**: Next.js (App Router) + Tailwind — one app, three surfaces: customer `/`, KDS `/kds`, admin `/admin`
+- **ML**: XGBoost (forecasting, ETA), implicit ALS (recommender), LoRA fine-tune (sentiment), MLflow registry
+- **Ops**: Docker Compose (single VPS), Caddy, GitHub Actions CI/CD via SSH, Langfuse Cloud, promptfoo/pytest evals
+
+## Repository Layout
+
+```
+apps/api    → Core FastAPI (auth, menu, orders, payments, admin)
+apps/ai     → AI service (agents, RAG, guardrails, MCP server, ML inference)
+apps/bot    → aiogram Telegram adapter (thin — NO business logic here)
+apps/web    → Next.js (customer + KDS + admin)
+packages/ml → datagen, forecasting, recsys, fine-tuning
+packages/shared → Pydantic schemas shared across services
+evals/      → golden datasets, suites, LLM-as-judge rubrics
+knowledge/  → RAG source markdown (recipes, allergens, FAQs, policies)
+infra/      → docker-compose.yml, Caddyfile, deploy scripts
+```
+
+## Hard Rules
+
+1. **Provider interfaces**: payments (`PaymentProvider`), OTP delivery (`OtpChannel`), LLM calls (litellm only — never call OpenAI SDK directly). Swappability is a core story of this project.
+2. **No hallucinated menu items**: every `item_id` the order agent emits MUST be validated against the DB before order placement. This guardrail is non-negotiable.
+3. **Structured outputs everywhere**: agent outputs are Pydantic models (`OrderDraft` etc.), never free-text parsing.
+4. **Event cascade**: mutations to business state (menu edit, kitchen pause, 86'd item) publish to Redis pub/sub; AI layer subscribes (re-embed RAG, bust caches, agent behavior). Never let the AI layer drift from business state.
+5. **Evals are merge gates**: changes to prompts/agents/RAG must pass `evals/` suites in CI. Add eval cases for every new agent capability.
+6. **Trace everything**: every LLM call goes through litellm with Langfuse callback (session_id, user_id, prompt version tag).
+7. **4 GB RAM budget**: no local LLMs/Whisper on the VPS. All inference via APIs. Check the memory budget in `docs/02-architecture.md` before adding services.
+8. **PII**: redact phone numbers before LLM calls and logs.
+9. **Secrets**: env vars only (`pydantic-settings`), never committed. Razorpay = TEST keys only.
+10. **Telegram bot is an adapter**: it normalizes I/O and renders inline keyboards; all reasoning lives in `apps/ai`.
+
+## Conventions
+
+- Python: ruff (lint+format), pytest, type hints mandatory, async-first
+- API: REST under `/api/v1`, WebSockets at `/ws/*`, health at `/healthz`
+- Order states: `PLACED → CONFIRMED → COOKING → READY → OUT_FOR_DELIVERY → DELIVERED` (+ `CANCELLED`, `REFUNDED`) — transitions only via `order_service` state machine
+- Roles: `customer | kitchen_staff | admin | owner` (JWT claims, RBAC per route)
+- Commits: conventional commits (`feat:`, `fix:`, `chore:`, `evals:`)
+- Prompts: versioned files in repo (`apps/ai/prompts/`), tagged in Langfuse
+
+## Domain Notes
+
+- Menu: South Indian — dosa varieties, idli/vada, pongal, biryani, Chettinad curries, filter coffee. Veg/vegan/Jain flags, spice levels, allergens matter.
+- Synthetic data: festival multipliers (Pongal ×3 idli/pongal, Diwali sweets), weekend biryani spikes — see `packages/ml/datagen`.
+- Eval languages: English, Hinglish, Tanglish conversations in golden sets.
+- Currency INR, GST on bills (5% food), prices realistic (dosa ₹80–180).
+
+## Current Status
+
+- [x] Planning complete (docs/)
+- [ ] Phase 0: Foundation — NOT STARTED
+- Update this checklist as phases complete.

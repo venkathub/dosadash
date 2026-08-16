@@ -1,0 +1,43 @@
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.turbo/
+
+# ML artifacts
+mlruns/
+mlartifacts/
+models/*.bin
+models/*.safetensors
+*.parquet
+data/generated/
+
+# Docker & infra
+*.local.yml
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+logs/
