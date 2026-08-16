@@ -71,7 +71,7 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
   - [x] Monorepo scaffold (apps/api·ai·bot·web, packages, evals, knowledge, infra) + /healthz + tests
   - [x] Docker Compose (pgvector, Redis, Caddy) + Dockerfiles + .env.example
   - [x] GitHub Actions CI (ruff/pytest/web build) + SSH deploy on main
-  - [ ] First production deploy (VPS bootstrap + secrets — see infra/README.md)
+  - [x] First production deploy — live at https://dosadash.venkateshs.dev (AIC proxy → Caddy :8080)
   - [ ] Schema v2 (auth/CRM/promos/brand_id) + Alembic
   - [ ] OtpChannel + PaymentProvider interfaces stubbed
   - [ ] Synthetic data generator + ~40-item menu seed
