@@ -6,6 +6,15 @@ from dosadash_shared.menu import (
     MenuItemDetail,
     MenuItemSummary,
 )
+from dosadash_shared.orders import (
+    OrderCreateIn,
+    OrderItemIn,
+    OrderItemOut,
+    OrderOut,
+    PayIn,
+    PaymentOut,
+    StatusUpdateIn,
+)
 from dosadash_shared.schemas import (
     ChannelType,
     CouponType,
@@ -26,8 +35,15 @@ __all__ = [
     "HealthStatus",
     "MenuItemDetail",
     "MenuItemSummary",
+    "OrderCreateIn",
+    "OrderItemIn",
+    "OrderItemOut",
+    "OrderOut",
     "OrderState",
     "OtpChannelType",
+    "PayIn",
+    "PaymentOut",
     "PaymentStatus",
     "Role",
+    "StatusUpdateIn",
 ]
