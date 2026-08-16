@@ -11,6 +11,9 @@ dependencies = [
     "asyncpg>=0.30",
     "alembic>=1.14",
     "pgvector>=0.3.6",
+    "pyjwt>=2.10",
+    "redis>=5.2",
+    "httpx>=0.27",
     "dosadash-shared",
     "dosadash-ml",
 ]

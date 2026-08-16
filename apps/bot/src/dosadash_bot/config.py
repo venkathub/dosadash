@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     public_base_url: str = "https://dosadash.venkateshs.dev"
     webhook_path: str = "/tg/webhook"
     port: int = 8081
+    # bot → api internal calls (docker network)
+    api_base_url: str = "http://api:8000"
+    internal_api_token: str = ""
     # Optional explicit secret; defaults to a token-derived value so the
     # webhook endpoint always rejects posts that aren't from Telegram.
     telegram_webhook_secret: str = ""
