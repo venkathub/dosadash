@@ -14,6 +14,7 @@ export default function LoginModal({
 }) {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [requested, setRequested] = useState(false);
   const [demoOtp, setDemoOtp] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -22,11 +23,12 @@ export default function LoginModal({
     setBusy(true);
     setError(null);
     try {
-      const r = await api<{ demo_otp: string | null }>("/auth/otp/request", {
+      const r = await api<{ demo_otp: string | null; channel: string }>("/auth/otp/request", {
         method: "POST",
         body: { phone },
       });
       setDemoOtp(r.demo_otp);
+      setRequested(true);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "OTP request failed");
     } finally {
@@ -61,7 +63,7 @@ export default function LoginModal({
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
         />
-        {demoOtp === null ? (
+        {!requested ? (
           <button
             className="w-full rounded bg-amber-500 py-2 font-semibold disabled:opacity-50"
             disabled={busy || phone.length < 10}
@@ -71,9 +73,15 @@ export default function LoginModal({
           </button>
         ) : (
           <>
-            <p className="rounded bg-amber-100 px-3 py-2 text-sm">
-              📟 Demo mode — your OTP is <b>{demoOtp}</b>
-            </p>
+            {demoOtp !== null ? (
+              <p className="rounded bg-amber-100 px-3 py-2 text-sm">
+                📟 Demo mode — your OTP is <b>{demoOtp}</b>
+              </p>
+            ) : (
+              <p className="rounded bg-sky-100 px-3 py-2 text-sm">
+                ✈️ OTP sent to your linked <b>Telegram</b> — check your DMs
+              </p>
+            )}
             <input
               className="w-full rounded border border-stone-300 px-3 py-2"
               placeholder="Enter OTP"

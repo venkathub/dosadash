@@ -7,17 +7,40 @@ PUBLIC_BASE_URL + /tg/webhook, protected by a secret token header.
 import logging
 
 from aiogram import Bot, Dispatcher, Router
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandObject, CommandStart
 from aiogram.types import Message
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
+from dosadash_bot.api_client import link_account
 from dosadash_bot.config import Settings, get_settings
-from dosadash_bot.render import echo_text, welcome_text
+from dosadash_bot.render import echo_text, link_failed_text, link_success_text, welcome_text
 
 logger = logging.getLogger("dosadash_bot")
 
 router = Router()
+
+
+@router.message(CommandStart(deep_link=True))
+async def on_start_deep_link(message: Message, command: CommandObject) -> None:
+    """/start <code> — account-linking deep link from the website."""
+    user = message.from_user
+    code = (command.args or "").strip()
+    if not code or user is None:
+        await message.answer(welcome_text(user.first_name if user else None))
+        return
+    settings = get_settings()
+    result = await link_account(
+        api_base_url=settings.api_base_url,
+        internal_token=settings.internal_api_token,
+        code=code,
+        tg_user_id=user.id,
+        tg_name=user.first_name,
+    )
+    if result.ok:
+        await message.answer(link_success_text(result.name or user.first_name))
+    else:
+        await message.answer(link_failed_text(result.detail))
 
 
 @router.message(CommandStart())

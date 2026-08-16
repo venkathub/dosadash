@@ -1,14 +1,18 @@
-"""OTP delivery channel interface + Phase 0 demo implementation.
+"""OTP delivery channel interface + implementations.
 
 PII note (Hard Rule 8): implementations must never log the full phone number;
 use `mask_phone` for any diagnostics.
 """
 
+import logging
 from abc import ABC, abstractmethod
 
+import httpx
 from pydantic import BaseModel
 
 from dosadash_shared import OtpChannelType
+
+logger = logging.getLogger(__name__)
 
 
 def mask_phone(phone: str) -> str:
@@ -45,4 +49,33 @@ class DemoOtpChannel(OtpChannel):
         return OtpSendResult(delivered=True, channel=self.channel_type, demo_otp=otp)
 
 
-# Phase 1: TelegramOtpChannel — DMs the OTP via the linked Telegram account.
+class TelegramOtpChannel(OtpChannel):
+    """DMs the OTP via the linked Telegram account (users.tg_user_id)."""
+
+    channel_type = OtpChannelType.TELEGRAM
+
+    def __init__(
+        self, bot_token: str, tg_user_id: int, client: httpx.AsyncClient | None = None
+    ) -> None:
+        self._bot_token = bot_token
+        self._tg_user_id = tg_user_id
+        self._client = client  # injectable for tests
+
+    async def send_otp(self, phone: str, otp: str) -> OtpSendResult:
+        url = f"https://api.telegram.org/bot{self._bot_token}/sendMessage"
+        payload = {
+            "chat_id": self._tg_user_id,
+            "text": f"🥞 Your DosaDash login OTP is: {otp}\nValid for 5 minutes.",
+        }
+        try:
+            if self._client is not None:
+                resp = await self._client.post(url, json=payload)
+            else:
+                async with httpx.AsyncClient(timeout=10) as client:
+                    resp = await client.post(url, json=payload)
+            delivered = resp.status_code == 200 and resp.json().get("ok", False)
+        except httpx.HTTPError:
+            delivered = False
+        if not delivered:
+            logger.warning("telegram OTP delivery failed for %s", mask_phone(phone))
+        return OtpSendResult(delivered=delivered, channel=self.channel_type)
