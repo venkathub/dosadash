@@ -69,5 +69,5 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
 - [x] Planning complete (docs/)
 - [x] Phase 0: Foundation — COMPLETE (merged to main #2, deployed via CI)
 - [x] Phase 1: Core platform + Auth — COMPLETE (PRs #3–#11: menu APIs, OTP/JWT/RBAC, order state machine + checkout, KDS + WS + event bus, customer web UI, Razorpay TEST, addresses/preferences, Telegram linking + DM OTP + unlink)
-- [ ] Phase 2: Admin Backend I — IN PROGRESS (`phase/2-admin-backoffice`): admin menu ops done (CRUD, 86 toggle, scheduling, customizations, audit, `pubsub:menu` events); remaining: settings/staff-RBAC/audit-list, admin order mgmt + refunds, combo builder, recipe mapping, nutrition enrichment
+- [ ] Phase 2: Admin Backend I — IN PROGRESS (`phase/2-admin-backoffice`): DONE — menu ops (#13: CRUD, 86 toggle, scheduling, customizations), settings + kitchen pause + staff RBAC + audit list (#14), admin order mgmt + refunds + migration c41f7a2d9b03 (#15); event cascade complete (all 3 pubsub channels). REMAINING: combo builder, recipe/ingredient mapping API, nutrition auto-enrichment (LLM batch + evals), admin web UI, business-hours/schedule enforcement
 - Update this checklist as phases complete.
