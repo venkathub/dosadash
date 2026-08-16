@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api import events
 from dosadash_api.db.models import (
+    Address,
     Brand,
     MenuItem,
     Order,
@@ -89,6 +90,11 @@ async def create_order(
     sold_out = [m.name for m in found.values() if not m.is_available]
     if sold_out:
         raise ItemsUnavailable(sorted(sold_out))
+
+    if address_id is not None:
+        address = await session.get(Address, address_id)
+        if address is None or address.user_id != user.id:
+            raise NotPermitted("address does not belong to this user")
 
     subtotal = Decimal("0")
     gst = Decimal("0")
