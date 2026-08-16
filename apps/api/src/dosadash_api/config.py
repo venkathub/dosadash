@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     otp_max_attempts: int = 5
     otp_resend_cooldown_seconds: int = 45
 
+    # Payments (Hard Rule 9: Razorpay TEST keys only)
+    # "auto" → razorpay when TEST keys are present, else mock
+    payment_provider: str = "auto"  # auto | mock | razorpay
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+    razorpay_webhook_secret: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

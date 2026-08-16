@@ -21,7 +21,12 @@ export type Order = {
   total: string;
   placed_at: string;
   items: OrderItem[];
-  payment: { provider: string; status: string; signature_verified: boolean } | null;
+  payment: {
+    provider: string;
+    provider_order_id: string | null;
+    status: string;
+    signature_verified: boolean;
+  } | null;
 };
 
 export type User = { id: number; phone: string; name: string | null; role: string };
