@@ -58,6 +58,15 @@ class KitchenPaused(OrderError):
         super().__init__("kitchen is paused — not accepting orders right now")
 
 
+class NotModifiable(OrderError):
+    def __init__(self, status: OrderState) -> None:
+        super().__init__(f"order in {status} can no longer be modified (pre-COOKING only)")
+
+
+class RefundNotPossible(OrderError):
+    pass
+
+
 class InvalidTransition(OrderError):
     def __init__(self, current: OrderState, target: OrderState) -> None:
         super().__init__(f"cannot transition {current} -> {target}")
@@ -69,6 +78,43 @@ class NotPermitted(OrderError):
 
 def can_transition(current: OrderState, target: OrderState) -> bool:
     return target in ALLOWED_TRANSITIONS[current]
+
+
+MODIFIABLE_STATES = frozenset({OrderState.PLACED, OrderState.CONFIRMED})
+ADMIN_ROLES = {Role.ADMIN, Role.OWNER}
+
+
+async def _validate_items(
+    session: AsyncSession, items_in: list[OrderItemIn]
+) -> tuple[dict[int, int], dict[int, dict[str, Any] | None], dict[int, MenuItem]]:
+    """DB-validate every item_id (Hard Rule 2 precursor) and return
+    (qty by item, customizations by item, MenuItem by id)."""
+    wanted: dict[int, int] = {}
+    customizations: dict[int, dict[str, Any] | None] = {}
+    for line in items_in:
+        wanted[line.item_id] = wanted.get(line.item_id, 0) + line.qty
+        customizations[line.item_id] = line.customizations
+
+    rows = (await session.scalars(select(MenuItem).where(MenuItem.id.in_(wanted)))).all()
+    found = {m.id: m for m in rows}
+    missing = set(wanted) - set(found)
+    if missing:
+        raise ItemsNotFound(missing)
+    sold_out = [m.name for m in found.values() if not m.is_available]
+    if sold_out:
+        raise ItemsUnavailable(sorted(sold_out))
+    return wanted, customizations, found
+
+
+def _totals(wanted: dict[int, int], found: dict[int, MenuItem]) -> tuple[Decimal, Decimal, Decimal]:
+    subtotal = Decimal("0")
+    gst = Decimal("0")
+    for item_id, qty in wanted.items():
+        line_total = found[item_id].price * qty
+        subtotal += line_total
+        gst += line_total * found[item_id].gst_rate / 100
+    gst = gst.quantize(Decimal("0.01"))
+    return subtotal, gst, subtotal + gst
 
 
 async def create_order(
@@ -86,35 +132,14 @@ async def create_order(
     if settings_row is not None and settings_row.kitchen_paused:
         raise KitchenPaused
 
-    wanted: dict[int, int] = {}
-    customizations: dict[int, dict[str, Any] | None] = {}
-    for line in items_in:
-        wanted[line.item_id] = wanted.get(line.item_id, 0) + line.qty
-        customizations[line.item_id] = line.customizations
-
-    rows = (await session.scalars(select(MenuItem).where(MenuItem.id.in_(wanted)))).all()
-    found = {m.id: m for m in rows}
-    missing = set(wanted) - set(found)
-    if missing:
-        raise ItemsNotFound(missing)
-    sold_out = [m.name for m in found.values() if not m.is_available]
-    if sold_out:
-        raise ItemsUnavailable(sorted(sold_out))
+    wanted, customizations, found = await _validate_items(session, items_in)
 
     if address_id is not None:
         address = await session.get(Address, address_id)
         if address is None or address.user_id != user.id:
             raise NotPermitted("address does not belong to this user")
 
-    subtotal = Decimal("0")
-    gst = Decimal("0")
-    for item_id, qty in wanted.items():
-        m = found[item_id]
-        line_total = m.price * qty
-        subtotal += line_total
-        gst += line_total * m.gst_rate / 100
-    gst = gst.quantize(Decimal("0.01"))
-    total = subtotal + gst
+    subtotal, gst, total = _totals(wanted, found)
 
     brand_id = found[next(iter(wanted))].brand_id or (
         await session.scalar(select(Brand.id).limit(1))
@@ -157,7 +182,12 @@ async def create_order(
 
 
 async def transition(
-    session: AsyncSession, *, order: Order, target: OrderState, actor: User
+    session: AsyncSession,
+    *,
+    order: Order,
+    target: OrderState,
+    actor: User,
+    note: str | None = None,
 ) -> Order:
     """Enforced transition with per-role rules + audit trail for staff."""
     if actor.role == Role.CUSTOMER:
@@ -174,17 +204,107 @@ async def transition(
     previous = order.status
     order.status = target
     if actor.role in STAFF_ROLES:
+        detail: dict[str, Any] = {"from": previous.value, "to": target.value}
+        if note:
+            detail["note"] = note
         session.add(
             StaffAction(
                 user_id=actor.id,
                 action="order.status",
                 entity=f"order:{order.id}",
-                detail={"from": previous.value, "to": target.value},
+                detail=detail,
             )
         )
     await session.commit()
     await events.publish_order_event("order.status", order)
     return order
+
+
+async def modify_items(
+    session: AsyncSession, *, order: Order, items_in: list[OrderItemIn], actor: User
+) -> Order:
+    """Admin replaces the item list of a pre-COOKING order; totals recomputed
+    server-side, every item_id DB-validated. Any captured-payment difference
+    is recorded in the audit detail for the owner to settle via refund."""
+    if actor.role not in ADMIN_ROLES:
+        raise NotPermitted("admin/owner only")
+    if order.status not in MODIFIABLE_STATES:
+        raise NotModifiable(order.status)
+
+    wanted, customizations, found = await _validate_items(session, items_in)
+    old_total = order.total
+    subtotal, gst, total = _totals(wanted, found)
+
+    for old_item in list(order.items):
+        await session.delete(old_item)
+    await session.flush()  # DELETEs first, so the FK is never blanked out
+    order.items = [
+        OrderItem(
+            item=found[item_id],
+            qty=qty,
+            unit_price=found[item_id].price,
+            customizations=customizations[item_id],
+        )
+        for item_id, qty in wanted.items()
+    ]
+    order.subtotal, order.gst, order.total = subtotal, gst, total
+    session.add(
+        StaffAction(
+            user_id=actor.id,
+            action="order.modify",
+            entity=f"order:{order.id}",
+            detail={
+                "old_total": str(old_total),
+                "new_total": str(total),
+                "items": [{"item_id": i, "qty": q} for i, q in wanted.items()],
+            },
+        )
+    )
+    await session.commit()
+    await events.publish_order_event("order.updated", order)
+    return order
+
+
+async def refund(
+    session: AsyncSession,
+    *,
+    order: Order,
+    actor: User,
+    provider: PaymentProvider,
+    amount: Decimal | None = None,
+    reason: str,
+) -> Order:
+    """Refund the captured payment via the provider, then move the order to
+    REFUNDED through the state machine (only DELIVERED/CANCELLED qualify)."""
+    if actor.role not in ADMIN_ROLES:
+        raise NotPermitted("admin/owner only")
+    if not can_transition(order.status, OrderState.REFUNDED):
+        raise InvalidTransition(order.status, OrderState.REFUNDED)
+
+    payment = await session.scalar(select(Payment).where(Payment.order_id == order.id))
+    if payment is None or payment.status != PaymentStatus.CAPTURED:
+        raise RefundNotPossible("no captured payment to refund")
+    if not payment.provider_payment_id:
+        raise RefundNotPossible("captured payment id unknown — cannot call provider refund")
+
+    amt = amount if amount is not None else order.total
+    if amt <= 0 or amt > order.total:
+        raise RefundNotPossible(f"refund amount must be within (0, {order.total}]")
+
+    result = await provider.refund(payment_id=payment.provider_payment_id, amount=amt)
+    payment.status = PaymentStatus.REFUNDED
+    payment.refund_id = result.refund_id
+    session.add(
+        StaffAction(
+            user_id=actor.id,
+            action="order.refund",
+            entity=f"order:{order.id}",
+            detail={"amount": str(amt), "reason": reason, "refund_id": result.refund_id},
+        )
+    )
+    return await transition(
+        session, order=order, target=OrderState.REFUNDED, actor=actor, note=reason
+    )
 
 
 async def verify_payment(
@@ -203,6 +323,7 @@ async def verify_payment(
     ):
         raise NotPermitted("payment signature verification failed")
     payment.status = PaymentStatus.CAPTURED
+    payment.provider_payment_id = payment_id  # needed for the admin refund flow
     payment.signature_verified = True
     await session.commit()
     return payment

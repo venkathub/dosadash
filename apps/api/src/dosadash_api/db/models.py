@@ -250,6 +250,8 @@ class Payment(TimestampMixin, Base):
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     provider: Mapped[str] = mapped_column(String(40))
     provider_order_id: Mapped[str | None] = mapped_column(String(120), index=True)
+    provider_payment_id: Mapped[str | None] = mapped_column(String(120), index=True)
+    refund_id: Mapped[str | None] = mapped_column(String(120))
     status: Mapped[PaymentStatus] = mapped_column(
         pg_enum(PaymentStatus, "payment_status"), default=PaymentStatus.CREATED
     )
