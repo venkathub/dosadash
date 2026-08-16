@@ -40,7 +40,7 @@ def create_app(settings: Settings) -> web.Application:
     dispatcher = Dispatcher()
     dispatcher.include_router(router)
 
-    async def on_startup(_dispatcher: Dispatcher) -> None:
+    async def on_startup() -> None:
         await bot.set_webhook(
             settings.webhook_url,
             secret_token=settings.webhook_secret,
