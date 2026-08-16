@@ -5,15 +5,18 @@ and future agents all share these shapes.
 """
 
 import re
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from dosadash_shared.menu import MenuItemDetail
+from dosadash_shared.schemas import Role
 
 WEEKDAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 _HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+_PINCODE = re.compile(r"^\d{6}$")
 
 
 class MenuItemCreateIn(BaseModel):
@@ -86,3 +89,80 @@ class MenuItemAdminOut(MenuItemDetail):
     """Admin view: includes 86 state (inherited) plus the schedule JSON."""
 
     schedule: dict[str, Any] | None = None
+
+
+# ------------------------------------------------------------------- settings
+
+
+def _validate_weekdays(v: dict[str, ScheduleWindow] | None) -> dict[str, ScheduleWindow] | None:
+    if v is not None:
+        unknown = set(v) - set(WEEKDAYS)
+        if unknown:
+            raise ValueError(f"unknown day keys: {sorted(unknown)} (use {WEEKDAYS})")
+    return v
+
+
+class SettingsOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    business_hours: dict[str, Any] | None = None
+    delivery_pincodes: list[str] = []
+    kitchen_paused: bool = False
+
+
+class SettingsUpdateIn(BaseModel):
+    """Partial update — only fields explicitly set are applied.
+
+    `business_hours=None` clears the hours (always open).
+    """
+
+    business_hours: dict[str, ScheduleWindow] | None = None
+    delivery_pincodes: list[str] | None = Field(default=None, max_length=200)
+
+    _days = field_validator("business_hours")(_validate_weekdays)
+
+    @field_validator("delivery_pincodes")
+    @classmethod
+    def _pincodes(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return v
+        bad = [p for p in v if not _PINCODE.match(p)]
+        if bad:
+            raise ValueError(f"invalid pincodes (need 6 digits): {bad}")
+        return sorted(set(v))
+
+
+class KitchenPauseIn(BaseModel):
+    paused: bool
+    reason: str | None = Field(default=None, max_length=200)
+
+
+# ---------------------------------------------------------------- staff RBAC
+
+
+class RoleUpdateIn(BaseModel):
+    role: Role
+
+
+class AdminUserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    phone: str
+    name: str | None = None
+    role: Role
+    loyalty_points: int = 0
+
+
+# ------------------------------------------------------------------ audit log
+
+
+class StaffActionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    action: str
+    entity: str
+    detail: dict[str, Any] | None = None
+    at: datetime
