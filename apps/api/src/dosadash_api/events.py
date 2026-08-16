@@ -2,8 +2,9 @@
 
 Channels (docs/06):
     pubsub:orders   — order.created / order.status  → KDS + tracking WS fan-out
-    pubsub:menu     — (Phase 2) menu edits          → re-embed RAG, cache bust
-    pubsub:settings — (Phase 2) kitchen pause etc.
+    pubsub:menu     — menu.* (create/update/delete/availability/schedule/
+                      customization) → Phase 3 re-embeds RAG, busts caches
+    pubsub:settings — (Phase 2, settings PR) kitchen pause etc.
 
 Publishing is best-effort: a Redis outage must never fail a checkout.
 """
@@ -21,6 +22,7 @@ from dosadash_api.db.models import Order
 logger = logging.getLogger(__name__)
 
 ORDERS_CHANNEL = "pubsub:orders"
+MENU_CHANNEL = "pubsub:menu"
 
 
 @lru_cache
@@ -52,3 +54,21 @@ async def publish_order_event(event_type: str, order: Order) -> None:
         await get_redis().publish(ORDERS_CHANNEL, json.dumps(payload))
     except Exception:  # noqa: BLE001 — best-effort by design
         logger.warning("order event publish failed (order %s)", order.id, exc_info=True)
+
+
+def menu_event_payload(
+    event_type: str, *, item_id: int, detail: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Serializable menu-mutation event (consumed by the AI layer in Phase 3)."""
+    return {"type": event_type, "item_id": item_id, "detail": detail or {}}
+
+
+async def publish_menu_event(
+    event_type: str, *, item_id: int, detail: dict[str, Any] | None = None
+) -> None:
+    """Fire-and-forget publish; logs (never raises) on Redis failure."""
+    payload = menu_event_payload(event_type, item_id=item_id, detail=detail)
+    try:
+        await get_redis().publish(MENU_CHANNEL, json.dumps(payload))
+    except Exception:  # noqa: BLE001 — best-effort by design
+        logger.warning("menu event publish failed (item %s)", item_id, exc_info=True)
