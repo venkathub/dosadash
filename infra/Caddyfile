@@ -1,5 +1,6 @@
-# DOMAIN=example.com → automatic HTTPS; DOMAIN=:80 (default) → plain HTTP for first boot
-{$DOMAIN} {
+# TLS is terminated by the AIC Cloud front proxy (ports 80/443 are provider-
+# reserved). Caddy serves plain HTTP internally and only does path routing.
+:80 {
 	encode gzip
 
 	# Core API (REST + WebSockets)

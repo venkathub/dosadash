@@ -91,10 +91,9 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      DOMAIN: ${DOMAIN:-:80}
+      # AIC Cloud reserves 80/443; its front proxy forwards the domain to this
+      # high port. TLS terminates at the AIC proxy, Caddy routes plain HTTP.
+      - "${HTTP_PORT:-8080}:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddydata:/data

@@ -32,4 +32,4 @@ jobs:
             docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build --remove-orphans
             docker image prune -f
             sleep 5
-            curl -fsS http://localhost/healthz && echo "✓ healthz OK"
+            curl -fsS http://localhost:8080/healthz && echo "✓ healthz OK"
