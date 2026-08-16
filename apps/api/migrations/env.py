@@ -1,6 +1,7 @@
 """Alembic environment (async engine, models-as-source-of-truth)."""
 
 import asyncio
+import logging.config
 import os
 
 from alembic import context
@@ -14,6 +15,10 @@ from dosadash_api.db import (
 )
 
 config = context.config
+
+# Wire alembic.ini logging so "Running upgrade ..." lines reach container logs.
+if config.config_file_name is not None:
+    logging.config.fileConfig(config.config_file_name)
 
 # Env var wins over alembic.ini (containers set API_DATABASE_URL).
 database_url = os.environ.get("API_DATABASE_URL")
