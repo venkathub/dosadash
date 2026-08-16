@@ -8,6 +8,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from dosadash_api import events
 from dosadash_api.db.models import (
     Brand,
     MenuItem,
@@ -114,7 +115,7 @@ async def create_order(
     )
     order.items = [
         OrderItem(
-            item_id=item_id,
+            item=found[item_id],
             qty=qty,
             unit_price=found[item_id].price,
             customizations=customizations[item_id],
@@ -134,6 +135,8 @@ async def create_order(
         )
     )
     await session.commit()
+    await session.refresh(order, ["placed_at"])
+    await events.publish_order_event("order.created", order)
     return order
 
 
@@ -164,8 +167,7 @@ async def transition(
             )
         )
     await session.commit()
-    # NOTE: pubsub:orders event fan-out (Hard Rule 4) lands with the KDS
-    # WebSocket PR, where the first consumer exists.
+    await events.publish_order_event("order.status", order)
     return order
 
 
