@@ -68,5 +68,6 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
 
 - [x] Planning complete (docs/)
 - [x] Phase 0: Foundation — COMPLETE (merged to main #2, deployed via CI)
-- [ ] Phase 1: Core platform + Auth — IN PROGRESS (`phase/1-core-auth`)
+- [x] Phase 1: Core platform + Auth — COMPLETE (PRs #3–#11: menu APIs, OTP/JWT/RBAC, order state machine + checkout, KDS + WS + event bus, customer web UI, Razorpay TEST, addresses/preferences, Telegram linking + DM OTP + unlink)
+- [ ] Phase 2: Admin Backend I — NOT STARTED (`phase/2-admin-backoffice`)
 - Update this checklist as phases complete.
