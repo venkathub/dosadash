@@ -144,6 +144,9 @@ class MenuItem(TimestampMixin, Base):
     image_url: Mapped[str | None] = mapped_column(String(500))
     embedding: Mapped[Any | None] = mapped_column(Vector(1536))
 
+    recipe: Mapped[list["RecipeIngredient"]] = relationship()
+    customizations: Mapped[list["Customization"]] = relationship()
+
     __table_args__ = (UniqueConstraint("brand_id", "name"),)
 
 
@@ -198,6 +201,8 @@ class RecipeIngredient(Base):
         ForeignKey("ingredients.id", ondelete="CASCADE"), primary_key=True
     )
     qty: Mapped[Decimal] = mapped_column(Numeric(12, 3))
+
+    ingredient: Mapped[Ingredient] = relationship()
 
 
 # --------------------------------------------------------------------------- orders
