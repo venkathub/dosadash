@@ -74,6 +74,6 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
   - [x] First production deploy — live at https://dosadash.venkateshs.dev (AIC proxy → Caddy :8080)
   - [x] Schema v2 (auth/CRM/promos/brand_id) + Alembic — 18 tables, round-trip verified, auto-migrate on container start
   - [x] OtpChannel + PaymentProvider interfaces stubbed (demo OTP, mock HMAC payments)
-  - [ ] Synthetic data generator + ~40-item menu seed
+  - [x] Synthetic data generator + 44-item menu seed — seeded in prod (500 users, 40,620 orders/12 mo, festival + weekend seasonality verified)
   - [ ] Telegram bot registered, webhook echo in prod
 - Update this checklist as phases complete.
