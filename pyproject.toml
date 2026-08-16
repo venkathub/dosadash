@@ -1,0 +1,64 @@
+[project]
+name = "dosadash"
+version = "0.1.0"
+description = "DosaDash — AI-native South Indian cloud kitchen platform (workspace root)"
+requires-python = ">=3.12"
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+    "apps/api",
+    "apps/ai",
+    "apps/bot",
+    "packages/shared",
+    "packages/ml",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+    "ruff>=0.8",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = [
+    "apps/api/src",
+    "apps/ai/src",
+    "apps/bot/src",
+    "packages/shared/src",
+    "packages/ml/src",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "ASYNC", # flake8-async
+    "ANN", # type annotations (mandatory per CLAUDE.md)
+]
+ignore = [
+    "ANN401", # allow typing.Any in **kwargs
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["ANN"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = [
+    "apps/api/tests",
+    "apps/ai/tests",
+    "apps/bot/tests",
+    "packages/shared/tests",
+    "packages/ml/tests",
+]

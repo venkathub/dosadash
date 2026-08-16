@@ -1,0 +1,36 @@
+name: Deploy
+
+# main = production (docs/08). Merge to main → deploy to the AIC Cloud VPS.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/dosadash
+            git fetch origin main
+            git reset --hard origin/main
+            docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build --remove-orphans
+            docker compose -f infra/docker-compose.yml exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+            docker image prune -f
+            sleep 5
+            curl -fsS http://localhost:8080/healthz && echo "✓ healthz OK"

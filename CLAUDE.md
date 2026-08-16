@@ -67,5 +67,13 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
 ## Current Status
 
 - [x] Planning complete (docs/)
-- [ ] Phase 0: Foundation — NOT STARTED
+- [ ] Phase 0: Foundation — IN PROGRESS (`phase/0-foundation`)
+  - [x] Monorepo scaffold (apps/api·ai·bot·web, packages, evals, knowledge, infra) + /healthz + tests
+  - [x] Docker Compose (pgvector, Redis, Caddy) + Dockerfiles + .env.example
+  - [x] GitHub Actions CI (ruff/pytest/web build) + SSH deploy on main
+  - [x] First production deploy — live at https://dosadash.venkateshs.dev (AIC proxy → Caddy :8080)
+  - [x] Schema v2 (auth/CRM/promos/brand_id) + Alembic — 18 tables, round-trip verified, auto-migrate on container start
+  - [x] OtpChannel + PaymentProvider interfaces stubbed (demo OTP, mock HMAC payments)
+  - [x] Synthetic data generator + 44-item menu seed — seeded in prod (500 users, 40,620 orders/12 mo, festival + weekend seasonality verified)
+  - [x] Telegram bot registered (@dosadash_bot), aiogram webhook echo live in prod (/tg/webhook, secret-protected)
 - Update this checklist as phases complete.
