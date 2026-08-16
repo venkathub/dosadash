@@ -89,6 +89,13 @@ class UserOut(BaseModel):
     name: str | None
     role: Role
     loyalty_points: int
+    tg_linked: bool = False
+
+
+def _user_out(user: User) -> UserOut:
+    out = UserOut.model_validate(user)
+    out.tg_linked = user.tg_user_id is not None
+    return out
 
 
 class TokenPair(BaseModel):
@@ -122,7 +129,7 @@ async def _issue_tokens(session: AsyncSession, user: User, settings: Settings) -
     refresh, refresh_hash = new_refresh_token()
     session.add(RefreshToken(user_id=user.id, token_hash=refresh_hash))
     await session.commit()
-    return TokenPair(access_token=access, refresh_token=refresh, user=UserOut.model_validate(user))
+    return TokenPair(access_token=access, refresh_token=refresh, user=_user_out(user))
 
 
 # ----------------------------------------------------------------- endpoints
@@ -237,7 +244,7 @@ async def logout(body: RefreshIn, session: SessionDep) -> None:
 
 @router.get("/me", response_model=UserOut)
 async def me(user: CurrentUser) -> UserOut:
-    return UserOut.model_validate(user)
+    return _user_out(user)
 
 
 # ------------------------------------------------------- telegram linking
@@ -308,3 +315,10 @@ async def telegram_link(
         user.name = body.tg_name
     await session.commit()
     return TelegramLinkOut(linked=True, name=user.name)
+
+
+@router.delete("/telegram/link", status_code=204)
+async def telegram_unlink(user: CurrentUser, session: SessionDep) -> None:
+    """Unlink the current user's Telegram account (OTPs revert to demo banner)."""
+    user.tg_user_id = None
+    await session.commit()

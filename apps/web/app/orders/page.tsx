@@ -8,7 +8,13 @@ import { ApiError, api, getUser, type Order } from "../../lib/api";
 export default function Orders() {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tgLinked, setTgLinked] = useState<boolean | null>(null);
   const router = useRouter();
+
+  const refreshMe = () =>
+    api<{ tg_linked: boolean }>("/auth/me", { auth: true })
+      .then((me) => setTgLinked(me.tg_linked))
+      .catch(() => setTgLinked(null));
 
   useEffect(() => {
     if (!getUser()) {
@@ -19,7 +25,35 @@ export default function Orders() {
     api<Order[]>("/orders", { auth: true })
       .then(setOrders)
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"));
+    refreshMe();
   }, []);
+
+  const linkTelegram = async () => {
+    try {
+      const r = await api<{ deep_link: string }>("/auth/telegram/link-code", {
+        method: "POST",
+        auth: true,
+      });
+      window.open(r.deep_link, "_blank");
+      // poll a few times so the badge flips once the user taps START
+      let tries = 0;
+      const poll = setInterval(async () => {
+        await refreshMe();
+        if (++tries >= 12) clearInterval(poll);
+      }, 5000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not create link");
+    }
+  };
+
+  const unlinkTelegram = async () => {
+    try {
+      await api("/auth/telegram/link", { method: "DELETE", auth: true });
+      setTgLinked(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unlink failed");
+    }
+  };
 
   const reorder = async (id: number) => {
     setError(null);
@@ -37,22 +71,23 @@ export default function Orders() {
       <header className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-extrabold">🥞 Your orders</h1>
         <div className="flex items-center gap-3">
-          <button
-            className="rounded bg-sky-500 px-3 py-1 text-xs font-bold text-white"
-            onClick={async () => {
-              try {
-                const r = await api<{ deep_link: string }>("/auth/telegram/link-code", {
-                  method: "POST",
-                  auth: true,
-                });
-                window.open(r.deep_link, "_blank");
-              } catch (e) {
-                setError(e instanceof Error ? e.message : "Could not create link");
-              }
-            }}
-          >
-            ✈️ Link Telegram
-          </button>
+          {tgLinked ? (
+            <span className="flex items-center gap-2 text-xs">
+              <span className="rounded bg-sky-100 px-2 py-1 font-semibold text-sky-700">
+                ✈️ Telegram linked ✓
+              </span>
+              <button className="text-stone-500 underline" onClick={unlinkTelegram}>
+                Unlink
+              </button>
+            </span>
+          ) : (
+            <button
+              className="rounded bg-sky-500 px-3 py-1 text-xs font-bold text-white"
+              onClick={linkTelegram}
+            >
+              ✈️ Link Telegram
+            </button>
+          )}
           <Link href="/" className="text-sm underline">
             ← Menu
           </Link>
