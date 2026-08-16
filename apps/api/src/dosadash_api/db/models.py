@@ -240,6 +240,7 @@ class OrderItem(Base):
     unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
 
     order: Mapped[Order] = relationship(back_populates="items")
+    item: Mapped[MenuItem] = relationship()
 
 
 class Payment(TimestampMixin, Base):
