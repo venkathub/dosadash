@@ -9,10 +9,11 @@ GET  /api/v1/auth/me           — current user (bearer)
 PII (Hard Rule 8): phone numbers are never logged; OTPs stored only as HMAC.
 """
 
+import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,7 +32,8 @@ from dosadash_api.auth.security import (
 from dosadash_api.config import Settings, get_settings
 from dosadash_api.db.models import OtpRequest, RefreshToken, User
 from dosadash_api.db.session import get_session
-from dosadash_api.providers import DemoOtpChannel, OtpChannel
+from dosadash_api.events import get_redis
+from dosadash_api.providers import DemoOtpChannel, OtpChannel, TelegramOtpChannel
 from dosadash_shared import OtpChannelType, Role
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -41,11 +43,23 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 
 def get_otp_channel() -> OtpChannel:
-    """Phase 1: DEMO channel; Telegram DM channel joins after account linking."""
+    """Default channel (kept as a dependency for test overrides)."""
     return DemoOtpChannel()
 
 
 OtpChannelDep = Annotated[OtpChannel, Depends(get_otp_channel)]
+
+
+async def _select_channel(
+    session: AsyncSession, phone: str, settings: Settings, default: OtpChannel
+) -> OtpChannel:
+    """Telegram DM when the phone belongs to a linked account, else default."""
+    if not settings.telegram_bot_token:
+        return default
+    user = await session.scalar(select(User).where(User.phone == phone))
+    if user is None or user.tg_user_id is None:
+        return default
+    return TelegramOtpChannel(settings.telegram_bot_token, user.tg_user_id)
 
 
 # ------------------------------------------------------------------- schemas
@@ -119,7 +133,7 @@ async def request_otp(
     body: OtpRequestIn,
     session: SessionDep,
     settings: SettingsDep,
-    channel: OtpChannelDep,
+    default_channel: OtpChannelDep,
 ) -> OtpRequestOut:
     phone = _normalize_or_400(body.phone)
     now = datetime.now(UTC)
@@ -135,20 +149,25 @@ async def request_otp(
         if elapsed < settings.otp_resend_cooldown_seconds:
             raise HTTPException(status_code=429, detail="OTP recently sent — wait before retrying")
 
+    channel = await _select_channel(session, phone, settings, default_channel)
     otp = generate_otp()
+    result = await channel.send_otp(phone, otp)
+    if not result.delivered and channel.channel_type != OtpChannelType.DEMO:
+        # Telegram DM failed → fall back to the demo banner
+        channel = default_channel
+        result = await channel.send_otp(phone, otp)
+    if not result.delivered:
+        raise HTTPException(status_code=502, detail="OTP delivery failed")
+
     session.add(
         OtpRequest(
             phone=phone,
             otp_hash=hash_otp(phone, otp, settings.jwt_secret),
-            channel=channel.channel_type,
+            channel=result.channel,
             expires_at=now + timedelta(seconds=settings.otp_ttl_seconds),
         )
     )
     await session.commit()
-
-    result = await channel.send_otp(phone, otp)
-    if not result.delivered:
-        raise HTTPException(status_code=502, detail="OTP delivery failed")
     return OtpRequestOut(
         channel=result.channel,
         expires_in=settings.otp_ttl_seconds,
@@ -219,3 +238,73 @@ async def logout(body: RefreshIn, session: SessionDep) -> None:
 @router.get("/me", response_model=UserOut)
 async def me(user: CurrentUser) -> UserOut:
     return UserOut.model_validate(user)
+
+
+# ------------------------------------------------------- telegram linking
+
+
+LINK_CODE_TTL_SECONDS = 600
+
+
+class LinkCodeOut(BaseModel):
+    code: str
+    deep_link: str
+    expires_in: int = LINK_CODE_TTL_SECONDS
+
+
+class TelegramLinkIn(BaseModel):
+    code: str
+    tg_user_id: int
+    tg_name: str | None = None
+
+
+class TelegramLinkOut(BaseModel):
+    linked: bool
+    name: str | None
+
+
+@router.post("/telegram/link-code", response_model=LinkCodeOut)
+async def telegram_link_code(user: CurrentUser, settings: SettingsDep) -> LinkCodeOut:
+    """Generate a short-lived deep-link code for t.me/<bot>?start=<code>."""
+    code = secrets.token_urlsafe(12)
+    await get_redis().setex(f"tg_link:{code}", LINK_CODE_TTL_SECONDS, user.id)
+    return LinkCodeOut(
+        code=code,
+        deep_link=f"https://t.me/{settings.telegram_bot_username}?start={code}",
+    )
+
+
+@router.post("/telegram/link", response_model=TelegramLinkOut)
+async def telegram_link(
+    body: TelegramLinkIn,
+    request: Request,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> TelegramLinkOut:
+    """Internal endpoint (bot → api): consume a link code, attach tg_user_id."""
+    if not settings.internal_api_token:
+        raise HTTPException(status_code=503, detail="Linking not configured")
+    provided = request.headers.get("X-Internal-Token", "")
+    if not secrets.compare_digest(provided, settings.internal_api_token):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    key = f"tg_link:{body.code}"
+    redis = get_redis()
+    user_id = await redis.get(key)
+    if user_id is None:
+        raise HTTPException(status_code=400, detail="Invalid or expired link code")
+    await redis.delete(key)  # single-use
+
+    existing = await session.scalar(select(User).where(User.tg_user_id == body.tg_user_id))
+    if existing is not None and existing.id != int(user_id):
+        raise HTTPException(
+            status_code=409, detail="This Telegram account is linked to another user"
+        )
+    user = await session.get(User, int(user_id))
+    if user is None:
+        raise HTTPException(status_code=400, detail="User not found")
+    user.tg_user_id = body.tg_user_id
+    if body.tg_name and not user.name:
+        user.name = body.tg_name
+    await session.commit()
+    return TelegramLinkOut(linked=True, name=user.name)

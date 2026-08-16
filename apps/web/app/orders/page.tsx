@@ -36,9 +36,27 @@ export default function Orders() {
     <main className="mx-auto min-h-screen max-w-2xl px-4 py-6">
       <header className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-extrabold">🥞 Your orders</h1>
-        <Link href="/" className="text-sm underline">
-          ← Menu
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            className="rounded bg-sky-500 px-3 py-1 text-xs font-bold text-white"
+            onClick={async () => {
+              try {
+                const r = await api<{ deep_link: string }>("/auth/telegram/link-code", {
+                  method: "POST",
+                  auth: true,
+                });
+                window.open(r.deep_link, "_blank");
+              } catch (e) {
+                setError(e instanceof Error ? e.message : "Could not create link");
+              }
+            }}
+          >
+            ✈️ Link Telegram
+          </button>
+          <Link href="/" className="text-sm underline">
+            ← Menu
+          </Link>
+        </div>
       </header>
       {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
       {orders === null && <p className="text-stone-500">Loading…</p>}

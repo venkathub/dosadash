@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     razorpay_key_secret: str = ""
     razorpay_webhook_secret: str = ""
 
+    # Telegram linking + DM OTP channel
+    telegram_bot_token: str = ""
+    telegram_bot_username: str = "dosadash_bot"
+    # Shared secret for bot→api internal calls (both services get the same value)
+    internal_api_token: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
