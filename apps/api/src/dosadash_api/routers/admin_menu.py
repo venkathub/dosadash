@@ -20,6 +20,7 @@ from dosadash_api.auth.deps import require_role
 from dosadash_api.db.models import (
     Brand,
     Customization,
+    Ingredient,
     MenuItem,
     OrderItem,
     RecipeIngredient,
@@ -34,6 +35,8 @@ from dosadash_shared import (
     MenuItemAdminOut,
     MenuItemCreateIn,
     MenuItemUpdateIn,
+    RecipeIn,
+    RecipeLineOut,
     Role,
     ScheduleIn,
 )
@@ -219,6 +222,86 @@ async def set_schedule(
         "menu.schedule", item_id=item.id, detail={"schedule": item.schedule}
     )
     return _admin_out(item)
+
+
+# ------------------------------------------------------------- recipe mapping
+
+
+def _recipe_out(item: MenuItem) -> list[RecipeLineOut]:
+    return sorted(
+        (
+            RecipeLineOut(
+                ingredient_id=ri.ingredient_id,
+                name=ri.ingredient.name,
+                unit=ri.ingredient.unit,
+                qty=ri.qty,
+                is_allergen=ri.ingredient.is_allergen,
+            )
+            for ri in item.recipe
+        ),
+        key=lambda line: line.name,
+    )
+
+
+@router.get("/items/{item_id}/recipe", response_model=list[RecipeLineOut])
+async def get_recipe(
+    item_id: int, session: SessionDep, admin: User = AdminUser
+) -> list[RecipeLineOut]:
+    return _recipe_out(await _get_item(session, item_id))
+
+
+@router.put("/items/{item_id}/recipe", response_model=list[RecipeLineOut])
+async def set_recipe(
+    item_id: int,
+    body: RecipeIn,
+    session: SessionDep,
+    admin: User = AdminUser,
+) -> list[RecipeLineOut]:
+    """Full-replace the recipe mapping. This is the single source of truth for
+    allergen badges AND inventory depletion — hence the menu.recipe event so
+    the AI layer re-embeds this dish's allergen facts."""
+    item = await _get_item(session, item_id)
+    ingredient_ids = [line.ingredient_id for line in body.lines]
+    rows = (
+        await session.scalars(select(Ingredient).where(Ingredient.id.in_(ingredient_ids)))
+    ).all()
+    by_id = {i.id: i for i in rows}
+    missing = set(ingredient_ids) - set(by_id)
+    if missing:
+        raise HTTPException(status_code=404, detail=f"unknown ingredient ids: {sorted(missing)}")
+
+    for old_line in list(item.recipe):
+        await session.delete(old_line)
+    await session.flush()
+    session.add_all(
+        RecipeIngredient(item_id=item.id, ingredient_id=line.ingredient_id, qty=line.qty)
+        for line in body.lines
+    )
+    audit.record(
+        session,
+        actor=admin,
+        action="menu.recipe",
+        entity=f"menu_item:{item.id}",
+        detail={"ingredient_ids": sorted(ingredient_ids)},
+    )
+    await session.commit()
+    await session.refresh(item, ["recipe"])
+    await events.publish_menu_event(
+        "menu.recipe", item_id=item.id, detail={"ingredient_ids": sorted(ingredient_ids)}
+    )
+    return sorted(
+        (
+            RecipeLineOut(
+                ingredient_id=line.ingredient_id,
+                name=by_id[line.ingredient_id].name,
+                unit=by_id[line.ingredient_id].unit,
+                qty=line.qty,
+                is_allergen=by_id[line.ingredient_id].is_allergen,
+            )
+            for line in body.lines
+        ),
+        key=lambda out: out.name,
+    )
 
 
 # ------------------------------------------------------------- customizations

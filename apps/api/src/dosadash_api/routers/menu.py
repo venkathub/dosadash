@@ -2,6 +2,7 @@
 
 GET /api/v1/menu             — available items, filterable
 GET /api/v1/menu/categories  — categories with item counts
+GET /api/v1/menu/combos      — APPROVED combos only
 GET /api/v1/menu/items/{id}  — full detail incl. ingredients/allergens
 """
 
@@ -12,9 +13,9 @@ from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from dosadash_api.db.models import Ingredient, MenuItem, RecipeIngredient
+from dosadash_api.db.models import Combo, Ingredient, MenuItem, RecipeIngredient
 from dosadash_api.db.session import get_session
-from dosadash_shared import CategoryOut, MenuItemDetail, MenuItemSummary
+from dosadash_shared import CategoryOut, ComboOut, MenuItemDetail, MenuItemSummary
 
 router = APIRouter(prefix="/api/v1/menu", tags=["menu"])
 
@@ -78,6 +79,15 @@ async def list_categories(session: SessionDep) -> list[CategoryOut]:
         .order_by(MenuItem.category)
     )
     return [CategoryOut(name=name, item_count=count) for name, count in rows.all()]
+
+
+@router.get("/combos", response_model=list[ComboOut])
+async def list_combos(session: SessionDep) -> list[ComboOut]:
+    """Owner-approved combos only (drafts/rejected stay in the backoffice)."""
+    rows = await session.scalars(
+        select(Combo).where(Combo.status == "APPROVED").order_by(Combo.id.desc())
+    )
+    return [ComboOut.model_validate(c) for c in rows]
 
 
 @router.get("/items/{item_id}", response_model=MenuItemDetail)
