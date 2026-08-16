@@ -31,6 +31,7 @@ LLM apps · Structured outputs · Production RAG · Agentic AI (LangGraph) · MC
 | [docs/05-schedule-12-weeks.md](docs/05-schedule-12-weeks.md) | Phase-by-phase build schedule with deliverables |
 | [docs/06-schema.md](docs/06-schema.md) | Database schema (Postgres + pgvector + Redis keyspaces) |
 | [docs/07-resume-bullets.md](docs/07-resume-bullets.md) | Target resume bullets (replace numbers with real metrics) |
+| [docs/08-git-workflow.md](docs/08-git-workflow.md) | Branching strategy: phase branches → protected `main` (prod), PR gates |
 | [CLAUDE.md](CLAUDE.md) | Claude Code project instructions for building this |
 
 ## Golden Rules
@@ -38,4 +39,5 @@ LLM apps · Structured outputs · Production RAG · Agentic AI (LangGraph) · MC
 1. **Deploy from day 1** — live URL before any features.
 2. **Evals before more AI** — Phase 3 (eval gates in CI) comes before voice/vision/recsys.
 3. **End of Week 6 = resume-worthy milestone** — deployed, eval-gated conversational ordering with RAG. Everything after compounds.
-4. **Cut line if slipping**: mock-aggregator → multi-brand UI → vision QC (in that order). Never cut evals.
+4. **Cut line if slipping**: mock-aggregator → multi-brand UI → vision QC → image gen → extra localization. Never cut evals.
+5. **Never commit to `main`** — phase branches → PR with CI+eval gates → squash-merge to prod (docs/08).

@@ -50,6 +50,12 @@ POST /auth/otp/verify → JWT access (15m) + rotating refresh (30d, httpOnly)
 | O12 | Aggregator channels (Zomato/Swiggy) | Channel manager | — | 🔶 **Simulated**: mock-aggregator webhook injects orders → proves multi-channel routing |
 | O13 | Multi-brand virtual kitchens | Multi-brand | — | 🔶 Stretch (schema has `brand_id` day 1; UI later) |
 | O14 | Accounting integration (Tally) | — | — | ❌ Out — CSV export covers it |
+| O15 | Supplier invoice processing: photo/PDF upload → line items → PO matching → stock update | Inventory | **Document AI/OCR** (VLM extraction, confidence gating, human review queue) | ✅ Core (validated by FoodyGent restaurant case study) |
+| O16 | Analytics copilot: owner asks "top 5 dishes by margin last weekend?" in chat → answer + chart | Dashboard | **Text-to-SQL agent** (read-only DB role, SQL validation, self-correction) | ✅ Core |
+| O17 | Menu photo generation for new dishes (approve before publish) | Menu ops | **Image generation**, labeled as AI-generated | ✅ Core |
+| O18 | Nutrition/calorie info per dish (auto-computed from recipe mapping, owner-verified) | Menu ops | **LLM batch enrichment** | ✅ Core |
+| O19 | Menu localization: Tamil/Telugu/Kannada/Hindi menus + bot replies | Menu ops | **Multilingual generation** (per-language eval sets) | ✅ Core |
+| O20 | Returning-customer "my usual" recognition across sessions | CRM/Agent | **Long-term agent memory** (episodic store) | ✅ Core |
 
 ## C. Admin Menu Management (O2 detail)
 
