@@ -21,8 +21,7 @@ from dosadash_api.db.models import (
     User,
 )
 from dosadash_api.providers import PaymentProvider
-from dosadash_shared import availability
-from dosadash_shared import ChannelType, OrderItemIn, OrderState, PaymentStatus, Role
+from dosadash_shared import ChannelType, OrderItemIn, OrderState, PaymentStatus, Role, availability
 
 STAFF_ROLES = {Role.KITCHEN_STAFF, Role.ADMIN, Role.OWNER}
 

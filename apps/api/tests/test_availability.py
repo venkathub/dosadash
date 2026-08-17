@@ -8,8 +8,7 @@ import pytest
 from dosadash_api.auth.security import create_access_token
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import User
-from dosadash_shared import availability
-from dosadash_shared import Role
+from dosadash_shared import Role, availability
 
 IST = ZoneInfo("Asia/Kolkata")
 SAT_LUNCH = datetime(2026, 8, 22, 13, 0, tzinfo=IST)  # saturday 13:00
