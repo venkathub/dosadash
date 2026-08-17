@@ -13,6 +13,7 @@ import {
 } from "../lib/api";
 import LoginModal from "./components/LoginModal";
 import OrderTracker from "./components/OrderTracker";
+import ChatWidget from "./components/ChatWidget";
 
 type CartLine = { item: MenuItem; qty: number };
 
@@ -198,6 +199,13 @@ export default function Home() {
         />
       )}
       {tracking && <OrderTracker order={tracking} onClose={() => setTracking(null)} />}
+      <ChatWidget
+        onRequireLogin={() => setShowLogin(true)}
+        onPlaceOrder={async (items) => {
+          const order = await api<Order>("/orders", { method: "POST", auth: true, body: { items } });
+          setTracking(order);
+        }}
+      />
     </main>
   );
 }
