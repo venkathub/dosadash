@@ -1,0 +1,88 @@
+# Live eval merge gate (Hard Rule 5). Runs the full agent (real LLM chain +
+# real DB) over all 80 golden conversations and fails the check if
+# order_accuracy < 0.95, tool_correctness < 1.0, or any guardrail bypass
+# occurs. Triggered only for PRs touching agents, prompts, shared schemas,
+# or evals — key-free asset gates in ci.yml cover everything else.
+
+name: Live evals
+
+on:
+  pull_request:
+    paths:
+      - "apps/ai/**"
+      - "packages/shared/**"
+      - "evals/**"
+      - ".github/workflows/live-evals.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: live-evals-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+  LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+  LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST }}
+  API_DATABASE_URL: postgresql+asyncpg://dosadash:dosadash@localhost:5433/dosadash
+  AI_DATABASE_URL: postgresql+asyncpg://dosadash:dosadash@localhost:5433/dosadash
+
+jobs:
+  live-evals:
+    name: Live eval gate (order_accuracy >= 0.95)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: dosadash
+          POSTGRES_PASSWORD: dosadash
+          POSTGRES_DB: dosadash
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U dosadash"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Require LLM keys
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::error::OPENAI_API_KEY secret is not configured — the live eval gate cannot run (Hard Rule 5: evals are merge gates)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync workspace
+        run: uv sync --all-packages --group dev
+
+      - name: Migrate database
+        working-directory: apps/api
+        run: uv run alembic upgrade head
+
+      - name: Seed menu + settings
+        run: uv run python -m dosadash_api.seed
+
+      - name: Ingest knowledge base (RAG)
+        run: uv run python -m dosadash_ai.rag.ingest --knowledge-dir knowledge
+
+      - name: Run live eval suites (one pass, all metrics)
+        run: uv run python evals/suites/run_live_evals.py --json live_eval_results.json
+
+      - name: Upload results JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-eval-results
+          path: live_eval_results.json
+          if-no-files-found: ignore
