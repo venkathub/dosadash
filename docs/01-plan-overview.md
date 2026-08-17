@@ -22,7 +22,7 @@ Build and production-deploy one cohesive AI-native product (South Indian cloud k
 | Payments | Razorpay Test Mode | Full sandbox without KYC/business account. Test cards on demo page. `PaymentProvider` interface → Stripe/Cashfree swappable |
 | Auth | OTP (demo-UI or Telegram DM) | No SMS cost/DLT registration. `OtpChannel` interface → MSG91 later is one class |
 | Hosting | AIC Cloud VPS 4 GB (~₹400–600/mo) | Cheapest plan that fits full stack with API-based LLMs; UPI billing |
-| LLM budget | ~$10–20/mo | gpt-4o-mini primary, Groq free tier (Llama 3.3 70B + Whisper) as fast/fallback layer via litellm |
+| LLM budget | ~$10–20/mo | gpt-4o-mini primary, Groq free tier (gpt-oss-120b + Whisper; Llama 3.3 retired 2026-08-16) as fast/fallback layer via litellm |
 | Observability | Langfuse Cloud free tier | Saves ~1.5 GB RAM vs self-hosting |
 | Timeline | 12 weeks @ 10–15 hrs/week | Milestone: Week 6 = deployed, eval-gated ordering agent (already resume-worthy) |
 

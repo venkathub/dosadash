@@ -8,7 +8,7 @@ DosaDash: AI-native South Indian cloud kitchen platform. Portfolio project for A
 
 - **Backend**: Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2.0 async, Alembic, Celery + Redis
 - **DB**: PostgreSQL 16 + pgvector (vectors + FTS in same DB — deliberate; no separate vector DB)
-- **AI**: LangGraph (agents), litellm (routing: gpt-4o-mini primary → Groq Llama 3.3 70B → Gemini Flash fallback), OpenAI text-embedding-3-small, Groq whisper-large-v3 (STT)
+- **AI**: LangGraph (agents), litellm (routing: gpt-4o-mini primary → Groq gpt-oss-120b → Gemini Flash fallback; Groq retired Llama 3.3 on 2026-08-16), OpenAI text-embedding-3-small, Groq whisper-large-v3 (STT)
 - **Bot**: aiogram (Telegram), webhook mode (not polling) in production
 - **Frontend**: Next.js (App Router) + Tailwind — one app, three surfaces: customer `/`, KDS `/kds`, admin `/admin`
 - **ML**: XGBoost (forecasting, ETA), implicit ALS (recommender), LoRA fine-tune (sentiment), MLflow registry
