@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from dosadash_ml.datagen import (
+    MEAL_PERIODS,
     MENU_ITEMS,
     PERSONAS,
     demand_multiplier,
@@ -15,12 +16,21 @@ from dosadash_shared import Diet
 # ------------------------------------------------------------------ menu seed
 
 
-def test_menu_has_about_40_items():
-    assert 40 <= len(MENU_ITEMS) <= 45
+def test_menu_has_about_50_items():
+    assert 48 <= len(MENU_ITEMS) <= 56
+    assert len(MENU_ITEMS) == 52
 
 
 def test_menu_ingredients_all_defined():
     validate_menu()  # raises on unknown ingredient
+
+
+def test_every_item_has_valid_meal_periods():
+    for item in MENU_ITEMS:
+        assert item.meal_periods, f"{item.name}: no meal periods"
+        assert set(item.meal_periods) <= set(MEAL_PERIODS), (
+            f"{item.name}: invalid meal periods {item.meal_periods}"
+        )
 
 
 def test_dosa_prices_realistic():

@@ -139,6 +139,7 @@ class MenuItem(TimestampMixin, Base):
     contains_onion_garlic: Mapped[bool] = mapped_column(Boolean, default=True)  # False → Jain-ok
     spice_level: Mapped[int] = mapped_column(default=1)
     prep_minutes: Mapped[int] = mapped_column(default=15)
+    meal_periods: Mapped[list[str]] = mapped_column(JSONB, default=list)
     gst_rate: Mapped[Decimal] = mapped_column(Numeric(4, 2), default=Decimal("5.00"))
     is_available: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     schedule: Mapped[dict[str, Any] | None] = mapped_column(JSONB)

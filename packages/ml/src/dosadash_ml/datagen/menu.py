@@ -1,4 +1,4 @@
-"""Canonical ~40-item South Indian menu seed with ingredient/allergen mapping.
+"""Canonical ~50-item South Indian menu seed with ingredient/allergen mapping.
 
 Single source of truth for the DB seed (`dosadash_api.seed`) and datagen.
 Prices are realistic INR (dosa ₹80–180, docs/CLAUDE.md domain notes).
@@ -6,6 +6,15 @@ Prices are realistic INR (dosa ₹80–180, docs/CLAUDE.md domain notes).
 
 from dataclasses import dataclass, field
 from decimal import Decimal
+from typing import Any
+
+MEAL_PERIODS: tuple[str, ...] = ("breakfast", "lunch", "snacks", "dinner")
+
+# Hard serving window for pongal dishes: breakfast counters only (06:00–12:00 IST).
+_MORNING_ONLY: dict[str, dict[str, str]] = {
+    day: {"start": "06:00", "end": "12:00"}
+    for day in ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+}
 
 
 @dataclass(frozen=True)
@@ -26,6 +35,10 @@ class SeedMenuItem:
     spice_level: int = 1  # 0–3
     prep_minutes: int = 15
     ingredients: tuple[str, ...] = field(default_factory=tuple)
+    # Every item MUST declare ≥1 period from MEAL_PERIODS (validate_menu enforces).
+    meal_periods: tuple[str, ...] = field(default_factory=tuple)
+    # Optional hard serving window ({day: {start, end}}); None = always served.
+    schedule: dict[str, Any] | None = None
 
 
 INGREDIENTS: tuple[SeedIngredient, ...] = (
@@ -71,9 +84,20 @@ INGREDIENTS: tuple[SeedIngredient, ...] = (
     SeedIngredient("okra", "kg"),
     SeedIngredient("moong dal", "kg"),
     SeedIngredient("vegetable oil", "l"),
+    SeedIngredient("rice flour", "kg"),
 )
 
 _D = Decimal
+
+# meal_periods shorthands (subsets of MEAL_PERIODS)
+_BF_DIN = ("breakfast", "dinner")
+_LUN_DIN = ("lunch", "dinner")
+_BF_ONLY = ("breakfast",)
+_LUN_ONLY = ("lunch",)
+_SNACKS_ONLY = ("snacks",)
+_SN_DIN = ("snacks", "dinner")
+_BF_SN = ("breakfast", "snacks")
+_ALL_DAY = MEAL_PERIODS
 
 MENU_ITEMS: tuple[SeedMenuItem, ...] = (
     # ------------------------------------------------------------- Dosas (10)
@@ -84,6 +108,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Crisp golden classic from fermented rice-lentil batter",
         contains_onion_garlic=False,
         ingredients=("idli rice", "urad dal", "vegetable oil"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Masala Dosa",
@@ -93,6 +118,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=1,
         prep_minutes=18,
         ingredients=("idli rice", "urad dal", "potato", "onion", "mustard seeds", "curry leaves"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Mysore Masala Dosa",
@@ -102,6 +128,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=2,
         prep_minutes=18,
         ingredients=("idli rice", "urad dal", "potato", "onion", "dried red chilli", "chana dal"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Ghee Roast Dosa",
@@ -111,6 +138,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         contains_onion_garlic=False,
         prep_minutes=20,
         ingredients=("idli rice", "urad dal", "ghee"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Podi Dosa",
@@ -119,6 +147,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Dosa dusted with gunpowder podi and gingelly oil",
         spice_level=2,
         ingredients=("idli rice", "urad dal", "idli podi", "vegetable oil"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Onion Dosa",
@@ -127,6 +156,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Dosa layered with caramelised onions and chillies",
         spice_level=1,
         ingredients=("idli rice", "urad dal", "onion", "green chilli"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Rava Dosa",
@@ -136,6 +166,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         contains_onion_garlic=False,
         prep_minutes=20,
         ingredients=("semolina (rava)", "black pepper", "curry leaves", "green chilli"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Set Dosa",
@@ -144,6 +175,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Soft spongy dosas, set of three, with chutney",
         contains_onion_garlic=False,
         ingredients=("idli rice", "urad dal", "coconut"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Cheese Dosa",
@@ -152,6 +184,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Molten cheese folded into a crisp dosa",
         contains_onion_garlic=False,
         ingredients=("idli rice", "urad dal", "cheese", "butter"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Kal Dosa",
@@ -160,6 +193,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Thick soft griddle dosa, street-style",
         contains_onion_garlic=False,
         ingredients=("idli rice", "urad dal", "vegetable oil"),
+        meal_periods=_BF_DIN,
     ),
     # ------------------------------------------------------- Idli & Vada (6)
     SeedMenuItem(
@@ -170,6 +204,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         contains_onion_garlic=False,
         prep_minutes=10,
         ingredients=("idli rice", "urad dal", "sambar powder", "toor dal"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Mini Idli Sambar",
@@ -178,6 +213,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Button idlis soaked in ghee-tempered sambar",
         prep_minutes=12,
         ingredients=("idli rice", "urad dal", "toor dal", "sambar powder", "ghee"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Podi Idli",
@@ -187,6 +223,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=2,
         prep_minutes=12,
         ingredients=("idli rice", "urad dal", "idli podi", "vegetable oil"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Medu Vada (2 pcs)",
@@ -195,6 +232,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Golden crisp lentil doughnuts",
         prep_minutes=12,
         ingredients=("urad dal", "black pepper", "curry leaves", "onion", "vegetable oil"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Curd Vada",
@@ -204,6 +242,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         contains_onion_garlic=False,
         prep_minutes=10,
         ingredients=("urad dal", "curd", "mustard seeds", "coriander leaves"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Rava Idli",
@@ -213,6 +252,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         contains_onion_garlic=False,
         prep_minutes=14,
         ingredients=("semolina (rava)", "curd", "cashew", "mustard seeds"),
+        meal_periods=_BF_DIN,
     ),
     # ------------------------------------------------------------ Uttapam (3)
     SeedMenuItem(
@@ -222,6 +262,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Thick griddle cake topped with onions",
         prep_minutes=18,
         ingredients=("idli rice", "urad dal", "onion", "green chilli"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Tomato Onion Uttapam",
@@ -230,6 +271,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Uttapam with tangy tomato-onion topping",
         prep_minutes=18,
         ingredients=("idli rice", "urad dal", "tomato", "onion"),
+        meal_periods=_BF_DIN,
     ),
     SeedMenuItem(
         "Podi Uttapam",
@@ -239,6 +281,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=2,
         prep_minutes=18,
         ingredients=("idli rice", "urad dal", "idli podi"),
+        meal_periods=_BF_DIN,
     ),
     # ------------------------------------------------------ Rice & Pongal (6)
     SeedMenuItem(
@@ -249,6 +292,8 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         contains_onion_garlic=False,
         prep_minutes=15,
         ingredients=("idli rice", "moong dal", "black pepper", "ghee", "cashew"),
+        meal_periods=_BF_DIN,
+        schedule=_MORNING_ONLY,
     ),
     SeedMenuItem(
         "Sweet Pongal",
@@ -259,6 +304,8 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=0,
         prep_minutes=15,
         ingredients=("idli rice", "moong dal", "jaggery", "ghee", "cashew"),
+        meal_periods=_BF_DIN,
+        schedule=_MORNING_ONLY,
     ),
     SeedMenuItem(
         "Curd Rice",
@@ -269,6 +316,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=0,
         prep_minutes=10,
         ingredients=("idli rice", "curd", "mustard seeds", "curry leaves"),
+        meal_periods=_LUN_DIN,
     ),
     SeedMenuItem(
         "Lemon Rice",
@@ -278,6 +326,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         contains_onion_garlic=False,
         prep_minutes=12,
         ingredients=("idli rice", "lemon", "peanut", "mustard seeds", "curry leaves"),
+        meal_periods=_LUN_DIN,
     ),
     SeedMenuItem(
         "Tamarind Rice",
@@ -288,6 +337,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=2,
         prep_minutes=12,
         ingredients=("idli rice", "tamarind", "peanut", "dried red chilli"),
+        meal_periods=_LUN_DIN,
     ),
     SeedMenuItem(
         "Sambar Rice",
@@ -296,6 +346,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Hearty one-pot sambar sadam with ghee",
         prep_minutes=15,
         ingredients=("idli rice", "toor dal", "sambar powder", "ghee", "okra"),
+        meal_periods=_LUN_DIN,
     ),
     # ------------------------------------------------------------ Biryani (4)
     SeedMenuItem(
@@ -307,6 +358,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=2,
         prep_minutes=30,
         ingredients=("seeraga samba rice", "chicken", "onion", "curd", "chettinad masala"),
+        meal_periods=_LUN_DIN,
     ),
     SeedMenuItem(
         "Mutton Biryani",
@@ -317,6 +369,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=2,
         prep_minutes=35,
         ingredients=("seeraga samba rice", "mutton", "onion", "curd", "chettinad masala"),
+        meal_periods=_LUN_DIN,
     ),
     SeedMenuItem(
         "Egg Biryani",
@@ -327,6 +380,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=2,
         prep_minutes=25,
         ingredients=("seeraga samba rice", "egg", "onion", "chettinad masala"),
+        meal_periods=_LUN_DIN,
     ),
     SeedMenuItem(
         "Veg Biryani",
@@ -336,6 +390,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=2,
         prep_minutes=25,
         ingredients=("basmati rice", "onion", "tomato", "curd", "chettinad masala"),
+        meal_periods=_LUN_DIN,
     ),
     # -------------------------------------------------- Chettinad Curries (4)
     SeedMenuItem(
@@ -347,6 +402,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=3,
         prep_minutes=25,
         ingredients=("chicken", "chettinad masala", "black pepper", "onion", "coconut"),
+        meal_periods=_LUN_DIN,
     ),
     SeedMenuItem(
         "Pepper Mutton",
@@ -357,6 +413,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=3,
         prep_minutes=30,
         ingredients=("mutton", "black pepper", "onion", "curry leaves"),
+        meal_periods=_LUN_DIN,
     ),
     SeedMenuItem(
         "Kara Kuzhambu",
@@ -366,6 +423,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=3,
         prep_minutes=20,
         ingredients=("tamarind", "okra", "sambar powder", "onion", "vegetable oil"),
+        meal_periods=_LUN_DIN,
     ),
     SeedMenuItem(
         "Paneer Chettinad",
@@ -375,6 +433,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=2,
         prep_minutes=20,
         ingredients=("paneer", "chettinad masala", "coconut", "onion"),
+        meal_periods=_LUN_DIN,
     ),
     # ------------------------------------------------------------- Snacks (4)
     SeedMenuItem(
@@ -384,6 +443,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Spiced potato fritters in gram batter",
         prep_minutes=12,
         ingredients=("potato", "onion", "green chilli", "vegetable oil"),
+        meal_periods=_SNACKS_ONLY,
     ),
     SeedMenuItem(
         "Onion Bajji (4 pcs)",
@@ -392,6 +452,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Crisp onion fritters for rainy evenings",
         prep_minutes=12,
         ingredients=("onion", "green chilli", "vegetable oil"),
+        meal_periods=_SNACKS_ONLY,
     ),
     SeedMenuItem(
         "Parotta (2 pcs)",
@@ -400,6 +461,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         "Flaky layered parottas with salna",
         prep_minutes=15,
         ingredients=("maida (wheat flour)", "vegetable oil", "onion"),
+        meal_periods=_SN_DIN,
     ),
     SeedMenuItem(
         "Kothu Parotta",
@@ -410,6 +472,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=2,
         prep_minutes=18,
         ingredients=("maida (wheat flour)", "egg", "onion", "tomato", "chettinad masala"),
+        meal_periods=_SN_DIN,
     ),
     # ------------------------------------------------------------- Sweets (3)
     SeedMenuItem(
@@ -421,6 +484,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=0,
         prep_minutes=10,
         ingredients=("semolina (rava)", "sugar", "ghee", "cashew"),
+        meal_periods=_SNACKS_ONLY,
     ),
     SeedMenuItem(
         "Mysore Pak",
@@ -431,6 +495,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=0,
         prep_minutes=8,
         ingredients=("chana dal", "sugar", "ghee"),
+        meal_periods=_SNACKS_ONLY,
     ),
     SeedMenuItem(
         "Semiya Payasam",
@@ -441,6 +506,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=0,
         prep_minutes=12,
         ingredients=("maida (wheat flour)", "milk", "sugar", "cashew", "ghee"),
+        meal_periods=_SNACKS_ONLY,
     ),
     # ---------------------------------------------------------- Beverages (4)
     SeedMenuItem(
@@ -452,6 +518,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=0,
         prep_minutes=5,
         ingredients=("coffee powder", "milk", "sugar"),
+        meal_periods=_ALL_DAY,
     ),
     SeedMenuItem(
         "Masala Chai",
@@ -462,6 +529,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=0,
         prep_minutes=5,
         ingredients=("tea powder", "milk", "sugar"),
+        meal_periods=_ALL_DAY,
     ),
     SeedMenuItem(
         "Neer Mor",
@@ -472,6 +540,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=0,
         prep_minutes=5,
         ingredients=("curd", "green chilli", "curry leaves"),
+        meal_periods=_ALL_DAY,
     ),
     SeedMenuItem(
         "Rose Milk",
@@ -482,6 +551,92 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
         spice_level=0,
         prep_minutes=5,
         ingredients=("milk", "rose syrup", "sugar"),
+        meal_periods=_ALL_DAY,
+    ),
+    # ------------------------------------------------------------- Tiffin (6)
+    SeedMenuItem(
+        "Idiyappam (3 pcs)",
+        "Tiffin",
+        _D("100"),
+        "Steamed string hoppers with sweet coconut milk",
+        contains_onion_garlic=False,
+        spice_level=0,
+        prep_minutes=15,
+        ingredients=("rice flour", "coconut"),
+        meal_periods=_BF_DIN,
+    ),
+    SeedMenuItem(
+        "Appam",
+        "Tiffin",
+        _D("110"),
+        "Lacy-edged fermented rice hopper, soft centre",
+        contains_onion_garlic=False,
+        spice_level=0,
+        prep_minutes=15,
+        ingredients=("idli rice", "coconut"),
+        meal_periods=_BF_DIN,
+    ),
+    SeedMenuItem(
+        "Poori Masala (2 pcs)",
+        "Tiffin",
+        _D("110"),
+        "Puffed golden pooris with potato-onion masala",
+        spice_level=1,
+        prep_minutes=15,
+        ingredients=("maida (wheat flour)", "potato", "onion"),
+        meal_periods=_BF_ONLY,
+    ),
+    SeedMenuItem(
+        "Adai Avial",
+        "Tiffin",
+        _D("130"),
+        "Protein-rich mixed-dal adai with coconut avial",
+        spice_level=2,
+        prep_minutes=20,
+        ingredients=("toor dal", "chana dal", "urad dal", "coconut", "curd"),
+        meal_periods=_BF_DIN,
+    ),
+    SeedMenuItem(
+        "Lemon Sevai",
+        "Tiffin",
+        _D("90"),
+        "Tangy rice-noodle sevai with peanuts and lemon",
+        contains_onion_garlic=False,
+        spice_level=1,
+        prep_minutes=12,
+        ingredients=("rice flour", "lemon", "peanut", "mustard seeds"),
+        meal_periods=_BF_SN,
+    ),
+    SeedMenuItem(
+        "Rava Kitchadi",
+        "Tiffin",
+        _D("100"),
+        "Soft ghee-laced semolina kitchadi with vegetables",
+        spice_level=1,
+        prep_minutes=15,
+        ingredients=("semolina (rava)", "ghee", "onion"),
+        meal_periods=_BF_ONLY,
+    ),
+    # -------------------------------------------------------------- Meals (2)
+    SeedMenuItem(
+        "South Indian Veg Meals",
+        "Meals",
+        _D("180"),
+        "Full banana-leaf style meals: rice, sambar, poriyal, curd",
+        spice_level=1,
+        prep_minutes=20,
+        ingredients=("idli rice", "toor dal", "sambar powder", "curd", "okra"),
+        meal_periods=_LUN_ONLY,
+    ),
+    SeedMenuItem(
+        "Vatha Kuzhambu Rice",
+        "Meals",
+        _D("120"),
+        "Fiery tamarind vatha kuzhambu over steamed rice",
+        spice_level=2,
+        prep_minutes=15,
+        ingredients=("idli rice", "tamarind", "sambar powder"),
+        meal_periods=_LUN_DIN,
     ),
 )
 
@@ -495,8 +650,14 @@ def item_allergens(item: SeedMenuItem) -> set[str]:
 
 
 def validate_menu() -> None:
-    """Raise if any item references an undefined ingredient (used by tests/seed)."""
+    """Raise if any item references an undefined ingredient or lacks a valid
+    meal-period assignment (used by tests/seed)."""
     for item in MENU_ITEMS:
         unknown = set(item.ingredients) - _INGREDIENT_NAMES
         if unknown:
             raise ValueError(f"{item.name}: unknown ingredients {unknown}")
+        if not item.meal_periods:
+            raise ValueError(f"{item.name}: must declare at least one meal period")
+        invalid = set(item.meal_periods) - set(MEAL_PERIODS)
+        if invalid:
+            raise ValueError(f"{item.name}: invalid meal periods {invalid}")
