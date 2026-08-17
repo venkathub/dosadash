@@ -51,6 +51,11 @@ from dosadash_shared.ai import (
     NutritionStatusIn,
     RecipeContextLine,
 )
+from dosadash_shared.costs import (
+    CostSummaryResponse,
+    DailyCost,
+    ModelDailyCost,
+)
 from dosadash_shared.menu import (
     CategoryOut,
     CustomizationOut,
@@ -110,7 +115,9 @@ __all__ = [
     "ComboStatusIn",
     "ComboUpdateIn",
     "CouponType",
+    "CostSummaryResponse",
     "CustomizationIn",
+    "DailyCost",
     "EvalCaseReport",
     "EvalRunDetailOut",
     "EvalRunIn",
@@ -128,6 +135,7 @@ __all__ = [
     "MenuItemDetail",
     "MenuItemSummary",
     "MenuItemUpdateIn",
+    "ModelDailyCost",
     "ModifyItemsIn",
     "NutritionEnrichFailure",
     "NutritionEnrichIn",

@@ -7,6 +7,7 @@ import {
   AdminOrder,
   AuditRow,
   Combo,
+  CostSummary,
   EvalRun,
   EvalRunDetail,
   Nutrition,
@@ -590,6 +591,76 @@ export function EvalsTab() {
             </ul>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------- Costs tab */
+
+const usd = (v: number) => `$${v.toFixed(4)}`;
+const compact = (v: number) =>
+  v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(1)}k` : `${v}`;
+
+export function CostsTab() {
+  const loadCosts = useCallback(() => adminApi<CostSummary>("/admin/costs/daily?days=14"), []);
+  const { data: summary, error, refresh } = useLoad(loadCosts);
+
+  if (summary && !summary.configured) {
+    return (
+      <p className="rounded bg-stone-800/60 p-4 text-sm text-stone-300">
+        Langfuse keys are not configured on the AI service — cost tracking is off.
+        Set LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY to enable the dashboard.
+      </p>
+    );
+  }
+
+  const days = summary?.days ?? [];
+  const last7 = days.slice(0, 7).reduce((acc, d) => acc + d.cost_usd, 0);
+
+  return (
+    <div>
+      <ErrorBar msg={error} />
+      <div className="mb-4 flex items-center gap-6">
+        <div>
+          <p className="text-xs uppercase text-stone-400">Last 7 days</p>
+          <p className="text-xl font-semibold text-amber-300">{usd(last7)}</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase text-stone-400">Last 14 days</p>
+          <p className="text-xl font-semibold text-stone-200">{usd(summary?.total_cost_usd ?? 0)}</p>
+        </div>
+        <button className={ghostBtnCls} onClick={refresh}>↻</button>
+      </div>
+      <table className="w-full text-left text-xs">
+        <thead className="uppercase text-stone-400">
+          <tr>
+            <th className="p-2">Date</th><th>Traces</th><th>LLM calls</th><th>Cost</th><th>Per-model breakdown</th>
+          </tr>
+        </thead>
+        <tbody>
+          {days.map((d) => (
+            <tr key={d.date} className="border-t border-stone-800 align-top">
+              <td className="p-2 whitespace-nowrap text-stone-400">{d.date}</td>
+              <td>{d.traces}</td>
+              <td>{d.observations}</td>
+              <td className="text-amber-300">{usd(d.cost_usd)}</td>
+              <td className="text-stone-400">
+                {d.models.length === 0
+                  ? "—"
+                  : d.models.map((m) => (
+                      <span key={m.model} className="mr-3 inline-block">
+                        <span className="text-stone-300">{m.model}</span> {usd(m.cost_usd)}{" "}
+                        ({compact(m.input_tokens)}→{compact(m.output_tokens)} tok, {m.calls} calls)
+                      </span>
+                    ))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {days.length === 0 && (
+        <p className="p-3 text-sm text-stone-400">No cost data yet — traces appear after the first LLM calls.</p>
       )}
     </div>
   );

@@ -126,3 +126,25 @@ export type EvalCaseReport = {
 };
 
 export type EvalRunDetail = EvalRun & { case_reports: EvalCaseReport[] };
+
+export type ModelDailyCost = {
+  model: string;
+  cost_usd: number;
+  input_tokens: number;
+  output_tokens: number;
+  calls: number;
+};
+
+export type DailyCost = {
+  date: string;
+  traces: number;
+  observations: number;
+  cost_usd: number;
+  models: ModelDailyCost[];
+};
+
+export type CostSummary = {
+  configured: boolean;
+  days: DailyCost[];
+  total_cost_usd: number;
+};
