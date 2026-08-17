@@ -96,3 +96,26 @@ async def structured_completion[T: BaseModel](
                 ]
 
     raise LLMError(f"all models failed for {trace_name}: {last_error}") from last_error
+
+
+async def embed_texts(
+    texts: list[str],
+    *,
+    trace_name: str = "rag.embed",
+) -> list[list[float]]:
+    """Embed texts via litellm (Hard Rule 1) in input order.
+
+    Callers must redact PII first (Hard Rule 8) — embeddings are provider
+    calls like any other.
+    """
+    if not texts:
+        return []
+    response = await litellm.aembedding(
+        model=get_settings().embedding_model,
+        input=texts,
+        metadata={"generation_name": trace_name},
+    )
+    data = sorted(response.data, key=lambda d: d["index"])
+    if len(data) != len(texts):
+        raise LLMError(f"embedding count mismatch: {len(data)} != {len(texts)}")
+    return [d["embedding"] for d in data]

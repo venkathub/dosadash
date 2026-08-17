@@ -55,6 +55,12 @@ from dosadash_shared.orders import (
     RefundIn,
     StatusUpdateIn,
 )
+from dosadash_shared.rag import (
+    EMBEDDING_DIM,
+    RagChunkOut,
+    RagSearchRequest,
+    RagSearchResponse,
+)
 from dosadash_shared.schemas import (
     ChannelType,
     CouponType,
@@ -67,6 +73,7 @@ from dosadash_shared.schemas import (
 )
 
 __all__ = [
+    "EMBEDDING_DIM",
     "NUTRITION_PROMPT_VERSION",
     "AdminCancelIn",
     "AdminUserOut",
@@ -109,6 +116,9 @@ __all__ = [
     "PayIn",
     "PaymentOut",
     "PaymentStatus",
+    "RagChunkOut",
+    "RagSearchRequest",
+    "RagSearchResponse",
     "RecipeContextLine",
     "RecipeIn",
     "RecipeLineIn",
