@@ -13,7 +13,13 @@ from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from dosadash_api.db.models import Combo, Ingredient, MenuItem, RecipeIngredient
+from dosadash_api.db.models import (
+    Combo,
+    Ingredient,
+    MenuItem,
+    NutritionEstimateRecord,
+    RecipeIngredient,
+)
 from dosadash_api.db.session import get_session
 from dosadash_shared import CategoryOut, ComboOut, MenuItemDetail, MenuItemSummary
 
@@ -103,4 +109,7 @@ async def get_item(item_id: int, session: SessionDep) -> MenuItemDetail:
     out = MenuItemDetail.model_validate(item)
     out.allergens = _allergens(item)
     out.ingredients = sorted(ri.ingredient.name for ri in item.recipe)
+    nutrition = await session.get(NutritionEstimateRecord, item_id)
+    if nutrition is not None and nutrition.status == "APPROVED":
+        out.nutrition = nutrition.estimate  # owner-verified only (never drafts)
     return out

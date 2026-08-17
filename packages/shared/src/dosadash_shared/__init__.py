@@ -25,6 +25,18 @@ from dosadash_shared.admin import (
     SettingsUpdateIn,
     StaffActionOut,
 )
+from dosadash_shared.ai import (
+    NUTRITION_PROMPT_VERSION,
+    NutritionEnrichFailure,
+    NutritionEnrichIn,
+    NutritionEnrichOut,
+    NutritionEstimate,
+    NutritionEstimateRequest,
+    NutritionEstimateResponse,
+    NutritionOut,
+    NutritionStatusIn,
+    RecipeContextLine,
+)
 from dosadash_shared.menu import (
     CategoryOut,
     CustomizationOut,
@@ -55,6 +67,7 @@ from dosadash_shared.schemas import (
 )
 
 __all__ = [
+    "NUTRITION_PROMPT_VERSION",
     "AdminCancelIn",
     "AdminUserOut",
     "AvailabilityIn",
@@ -79,6 +92,14 @@ __all__ = [
     "MenuItemSummary",
     "MenuItemUpdateIn",
     "ModifyItemsIn",
+    "NutritionEnrichFailure",
+    "NutritionEnrichIn",
+    "NutritionEnrichOut",
+    "NutritionEstimate",
+    "NutritionEstimateRequest",
+    "NutritionEstimateResponse",
+    "NutritionOut",
+    "NutritionStatusIn",
     "OrderCreateIn",
     "OrderItemIn",
     "OrderItemOut",
@@ -88,6 +109,7 @@ __all__ = [
     "PayIn",
     "PaymentOut",
     "PaymentStatus",
+    "RecipeContextLine",
     "RecipeIn",
     "RecipeLineIn",
     "RecipeLineOut",

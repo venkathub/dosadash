@@ -37,6 +37,7 @@ class MenuItemDetail(MenuItemSummary):
     is_available: bool
     ingredients: list[str] = []
     customizations: list[CustomizationOut] = []
+    nutrition: dict | None = None  # owner-APPROVED LLM estimate only (Phase 2)
 
 
 class CategoryOut(BaseModel):
