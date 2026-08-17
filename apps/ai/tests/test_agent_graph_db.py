@@ -103,6 +103,8 @@ async def test_context_carries_menu_prefs_and_draft(agent_session, fake_llm):
     assert {"Masala Dosa", "Mysore Pak", "Filter Coffee"} <= names
     sold_out = next(m for m in payload["menu"] if m["name"] == "Mysore Pak")
     assert sold_out["available"] is False  # flagged, not hidden
+    assert next(m for m in payload["menu"] if m["name"] == "Cheese Dosa")["jain_friendly"] is True
+    assert next(m for m in payload["menu"] if m["name"] == "Masala Dosa")["jain_friendly"] is False
     assert payload["preferences"]["allergens"] == ["milk"]
     assert payload["current_draft"]["items"][0]["name"] == "Masala Dosa"
 

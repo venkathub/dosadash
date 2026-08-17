@@ -13,6 +13,6 @@
 {"id": "ret-013", "language": "hinglish", "query": "veg biryani me pyaz hai kya? jain ke liye chalega?", "expect_docs": ["allergens.md", "menu-guide/rice-pongal-biryani.md"]}
 {"id": "ret-014", "language": "hinglish", "query": "spicy nahi chahiye, konsa dosa mild hai?", "expect_docs": ["menu-guide/dosas.md", "allergens.md"]}
 {"id": "ret-015", "language": "tanglish", "query": "filter coffee la milk irukka?", "expect_docs": ["allergens.md", "menu-guide/curries-snacks-sweets-beverages.md"]}
-{"id": "ret-016", "language": "tanglish", "query": "onion garlic illama enna order pannalam?", "expect_docs": ["allergens.md", "faq.md"]}
+{"id": "ret-016", "language": "tanglish", "query": "onion garlic illama enna order pannalam?", "expect_docs": ["allergens.md", "faq.md", "menu-guide/dosas.md", "menu-guide/idli-vada-uttapam.md", "menu-guide/rice-pongal-biryani.md"], "note": "menu guides carry Jain-friendliness notes — any of these docs answers the question"}
 {"id": "ret-017", "language": "tanglish", "query": "sweet pongal la cashew iruka? nut allergy irukku", "expect_docs": ["allergens.md", "menu-guide/rice-pongal-biryani.md"]}
 {"id": "ret-018", "language": "tanglish", "query": "mutton biryani evlo neram aagum?", "expect_docs": ["menu-guide/rice-pongal-biryani.md", "faq.md"]}

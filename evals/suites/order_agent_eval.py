@@ -54,7 +54,8 @@ async def _resolve_draft(session: AsyncSession, lines: list[dict]) -> OrderDraft
 async def _ensure_eval_user(session: AsyncSession, prefs: dict) -> int:
     user_id = await session.scalar(
         text(
-            "INSERT INTO users (phone, name, role) VALUES (:p, 'Eval User', 'CUSTOMER') "
+            "INSERT INTO users (phone, name, role, loyalty_points) "
+            "VALUES (:p, 'Eval User', 'customer', 0) "
             "ON CONFLICT (phone) DO UPDATE SET name = 'Eval User' RETURNING id"
         ),
         {"p": EVAL_USER_PHONE},
@@ -67,7 +68,7 @@ async def _ensure_eval_user(session: AsyncSession, prefs: dict) -> int:
         ),
         {
             "u": user_id,
-            "d": prefs.get("diet"),
+            "d": prefs["diet"].upper() if prefs.get("diet") else None,  # Diet enum is UPPERCASE
             "a": prefs.get("allergens", []),
             "lang": prefs.get("language", "en"),
         },

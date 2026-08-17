@@ -136,6 +136,7 @@ class MenuItem(TimestampMixin, Base):
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     category: Mapped[str] = mapped_column(String(60), index=True)
     is_veg: Mapped[bool] = mapped_column(Boolean, default=True)
+    contains_onion_garlic: Mapped[bool] = mapped_column(Boolean, default=True)  # False → Jain-ok
     spice_level: Mapped[int] = mapped_column(default=1)
     prep_minutes: Mapped[int] = mapped_column(default=15)
     gst_rate: Mapped[Decimal] = mapped_column(Numeric(4, 2), default=Decimal("5.00"))

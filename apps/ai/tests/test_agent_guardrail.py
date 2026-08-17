@@ -16,6 +16,7 @@ def _item(
         category="Dosa",
         price=Decimal(price),
         is_veg=True,
+        contains_onion_garlic=True,
         spice_level=1,
         is_available=available,
         schedule=None,
