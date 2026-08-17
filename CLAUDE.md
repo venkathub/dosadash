@@ -78,5 +78,6 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
   - [x] SSE token streaming + provider prompt caching (stable [prompt, MENU] prefix) (PR #25)
   - [x] Web chat adapter: `/api/v1/chat[/stream]` proxy + streaming ChatWidget → existing checkout (PR #26)
   - [x] Telegram adapter: draft-edit streaming, inline place/clear, `channel=TELEGRAM` orders (PR #27)
-  - [ ] Before Phase PR: run live evals with keys (`retrieval_eval`, `rag_answer_eval`, `order_agent_eval`), verify Langfuse traces, deploy
+  - [x] Live evals passed locally (retrieval 18/18, rag_answer 12/12, order_agent 15/15 @ 0.95 gate) — PR #28 hardening
+  - [ ] Before Phase PR: verify Langfuse traces from the live run, then open Phase PR → deploy
 - Update this checklist as phases complete.
