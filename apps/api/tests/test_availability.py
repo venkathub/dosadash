@@ -8,7 +8,7 @@ import pytest
 from dosadash_api.auth.security import create_access_token
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import User
-from dosadash_api.services import availability
+from dosadash_shared import availability
 from dosadash_shared import Role
 
 IST = ZoneInfo("Asia/Kolkata")

@@ -67,3 +67,58 @@ async def rag_session() -> AsyncIterator[AsyncSession]:
     async with engine.begin() as conn:
         await conn.run_sync(RagBase.metadata.drop_all)
     await engine.dispose()
+
+
+_AGENT_TABLES = ("recipe_ingredients", "user_preferences", "ingredients", "settings", "menu_items")
+
+_AGENT_DDL = (
+    """CREATE TABLE menu_items (
+        id bigint PRIMARY KEY, name text NOT NULL, category text NOT NULL,
+        price numeric(10,2) NOT NULL, is_veg boolean NOT NULL DEFAULT true,
+        spice_level int NOT NULL DEFAULT 1, is_available boolean NOT NULL DEFAULT true,
+        schedule jsonb, description text, embedding vector(1536))""",
+    """CREATE TABLE settings (
+        id int PRIMARY KEY, kitchen_paused boolean NOT NULL DEFAULT false,
+        business_hours jsonb)""",
+    """CREATE TABLE ingredients (
+        id bigint PRIMARY KEY, name text NOT NULL, is_allergen boolean NOT NULL DEFAULT false)""",
+    """CREATE TABLE recipe_ingredients (
+        item_id bigint NOT NULL, ingredient_id bigint NOT NULL)""",
+    """CREATE TABLE user_preferences (
+        user_id bigint PRIMARY KEY, diet text, allergens text[] DEFAULT '{}',
+        spice_level int, language text DEFAULT 'en')""",
+)
+
+_AGENT_SEED = (
+    """INSERT INTO menu_items (id, name, category, price, is_veg, spice_level, is_available)
+       VALUES
+        (1, 'Masala Dosa', 'Dosa', 120.00, true, 1, true),
+        (2, 'Cheese Dosa', 'Dosa', 150.00, true, 0, true),
+        (3, 'Filter Coffee', 'Beverages', 60.00, true, 0, true),
+        (4, 'Mysore Pak', 'Sweets', 100.00, true, 0, false),
+        (5, 'Chicken Biryani', 'Biryani', 220.00, false, 2, true)""",
+    "INSERT INTO settings (id, kitchen_paused) VALUES (1, false)",
+    """INSERT INTO ingredients (id, name, is_allergen) VALUES
+        (1, 'mustard seeds', true), (2, 'milk', true), (3, 'potato', false)""",
+    """INSERT INTO recipe_ingredients (item_id, ingredient_id) VALUES
+        (1, 1), (1, 3), (2, 2), (3, 2)""",
+    """INSERT INTO user_preferences (user_id, diet, allergens, spice_level, language)
+       VALUES (7, 'veg', '{milk}', 1, 'en')""",
+)
+
+
+@pytest.fixture
+async def agent_session(rag_session) -> AsyncSession:
+    """rag tables + minimal business tables (columns the agent reads) with a
+    small seeded menu. Dropped afterwards so apps/api tests start clean."""
+    for table in _AGENT_TABLES:
+        await rag_session.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+    for ddl in _AGENT_DDL:
+        await rag_session.execute(text(ddl))
+    for insert in _AGENT_SEED:
+        await rag_session.execute(text(insert))
+    await rag_session.commit()
+    yield rag_session
+    for table in _AGENT_TABLES:
+        await rag_session.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+    await rag_session.commit()
