@@ -107,6 +107,19 @@ def test_referenced_items_exist_in_seed_menu():
             assert item in names, f"{case['id']}: {item} not in seed menu"
 
 
+def test_no_time_dependent_expectations():
+    """Dishes with a serving schedule (e.g. pongal 06:00-12:00) may never be
+    REQUIRED in a draft — the live gate runs at arbitrary wall-clock times
+    and the agent correctly refuses off-schedule dishes."""
+    from dosadash_ml.datagen import MENU_ITEMS
+
+    scheduled = {m.name for m in MENU_ITEMS if m.schedule}
+    for case in load_cases():
+        required = {line["name"] for line in [*case["draft"], *(case["expect"].get("draft") or [])]}
+        clash = required & scheduled
+        assert not clash, f"{case['id']}: {clash} are schedule-gated — eval would be time-dependent"
+
+
 def test_coverage_of_required_scenarios():
     cases = load_cases()
     assert {c["language"] for c in cases} == LANGUAGES
