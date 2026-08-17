@@ -75,11 +75,18 @@ async def _retrieve_knowledge(state: AgentState) -> dict[str, Any]:
 
 
 def build_messages(state: AgentState) -> list[dict[str, str]]:
-    """Static system prompt + per-turn CONTEXT message + redacted history."""
+    """Prompt-caching-friendly layout (docs/05: provider prompt caching).
+
+    The prefix [static system prompt, MENU context] is byte-stable across
+    turns and users (deterministic serialization; menu changes only on
+    admin edits), so OpenAI-style automatic prefix caching hits on every
+    turn. Volatile per-turn state (kitchen, prefs, knowledge, draft) comes
+    after the stable prefix, followed by redacted history + message.
+    """
     request = state["request"]
     ctx = state["ctx"]
-    context_payload = {
-        "menu": menu_payload(ctx),
+    menu_json = json.dumps({"menu": menu_payload(ctx)}, ensure_ascii=False, sort_keys=True)
+    state_payload = {
         "kitchen": {"open": ctx.kitchen_open, "paused": ctx.kitchen_paused},
         "preferences": prefs_payload(ctx),
         "knowledge": state.get("knowledge", []),
@@ -87,9 +94,10 @@ def build_messages(state: AgentState) -> list[dict[str, str]]:
     }
     return [
         {"role": "system", "content": load_prompt(ORDER_AGENT_PROMPT_VERSION)},
+        {"role": "system", "content": "MENU: " + menu_json},
         {
             "role": "system",
-            "content": "CONTEXT: " + json.dumps(context_payload, ensure_ascii=False),
+            "content": "STATE: " + json.dumps(state_payload, ensure_ascii=False, sort_keys=True),
         },
         *[{"role": m.role, "content": redact_phones(m.content)} for m in request.history],
         {"role": "user", "content": redact_phones(request.message)},
@@ -110,21 +118,23 @@ async def _llm_turn(state: AgentState) -> dict[str, Any]:
     return {"turn": turn, "model": model}
 
 
-async def _validate_draft(state: AgentState) -> dict[str, Any]:
-    ctx = state["ctx"]
-    turn = state["turn"]
+def build_response(ctx: AgentContext, turn: AgentTurn, model: str) -> AgentChatResponse:
+    """Guardrail + response assembly — shared by the graph and the SSE path."""
     draft, warnings = validate_draft(ctx, turn.draft_items)
     if not ctx.kitchen_open:
         warnings.append("The kitchen is currently closed — orders cannot be placed.")
-    response = AgentChatResponse(
+    return AgentChatResponse(
         reply=turn.reply,
         draft=draft,
         ready_to_place=gate_ready(ctx, draft, turn.ready_to_place),
         warnings=warnings,
         kitchen_open=ctx.kitchen_open,
-        model=state["model"],
+        model=model,
     )
-    return {"response": response}
+
+
+async def _validate_draft(state: AgentState) -> dict[str, Any]:
+    return {"response": build_response(state["ctx"], state["turn"], state["model"])}
 
 
 @lru_cache
