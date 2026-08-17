@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # the container image). Used by the ingestion CLI and re-embed cascade.
     knowledge_dir: str = "knowledge"
 
+    # Semantic cache (Phase 4, docs/02+06): Redis `semcache:*`, Q&A only.
+    semcache_enabled: bool = True
+    semcache_threshold: float = 0.95  # cosine — docs/06
+    semcache_ttl_seconds: int = 86400
+    semcache_max_candidates: int = 128  # bounded in-process scoring
+
 
 @lru_cache
 def get_settings() -> Settings:

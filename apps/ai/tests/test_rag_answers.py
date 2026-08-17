@@ -70,8 +70,21 @@ def test_map_citations_empty_when_not_found():
 
 @pytest.fixture
 def patched(monkeypatch):
-    """Patch retrieval + embedding; LLM behavior set per-test via `draft`."""
+    """Patch retrieval + embedding + semcache; LLM behavior set per-test via `draft`."""
     state = {"draft": RagAnswerDraft(answer="Yes, while PLACED.", used_chunks=[1]), "calls": 0}
+
+    class FakeSemcache:
+        def __init__(self):
+            self.store: dict[str, dict] = {}
+
+        async def get(self, question, embedding):
+            return self.store.get(question)
+
+        async def put(self, question, embedding, response):
+            self.store[question] = response
+
+    fake_semcache = FakeSemcache()
+    state["semcache"] = fake_semcache
 
     async def fake_embed(texts, **_):
         return [[0.0] * 3 for _ in texts]
@@ -87,6 +100,7 @@ def patched(monkeypatch):
     monkeypatch.setattr(answers_mod, "embed_texts", fake_embed)
     monkeypatch.setattr(answers_mod, "hybrid_search", fake_search)
     monkeypatch.setattr(answers_mod, "structured_completion", fake_completion)
+    monkeypatch.setattr(answers_mod, "get_semcache", lambda: fake_semcache)
     return state
 
 
@@ -130,3 +144,30 @@ async def test_ungrounded_answer_degrades_to_not_found(patched):
     assert resp.not_found is True
     assert "biryani" not in resp.answer.lower()
     assert resp.citations == []
+
+
+# ------------------------------------------------------------- semantic cache
+
+
+async def test_repeat_question_served_from_cache_without_llm_call(patched):
+    first = await answer_question(None, "can I cancel my order?")
+    assert first.cached is False
+    assert patched["calls"] == 1
+
+    second = await answer_question(None, "can I cancel my order?")
+    assert second.cached is True
+    assert second.answer == first.answer
+    assert [c.doc_path for c in second.citations] == [c.doc_path for c in first.citations]
+    assert patched["calls"] == 1  # no second LLM call — that's the point
+
+
+async def test_not_found_answers_are_not_cached(patched):
+    patched["draft"] = RagAnswerDraft(answer="No idea.", not_found=True)
+    await answer_question(None, "do you sell sushi?")
+    assert patched["semcache"].store == {}  # refusals may become answerable post-ingest
+
+
+async def test_cached_payload_never_stores_cached_flag(patched):
+    await answer_question(None, "can I cancel my order?")
+    stored = next(iter(patched["semcache"].store.values()))
+    assert "cached" not in stored  # flag is set at serve time, not stored

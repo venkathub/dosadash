@@ -27,6 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dosadash_ai.config import get_settings
 from dosadash_ai.db import get_sessionmaker
 from dosadash_ai.llm.client import embed_texts
+from dosadash_ai.llm.semcache import get_semcache
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,12 @@ async def reembed_menu_item(session: AsyncSession, item_id: int) -> bool:
 
 
 async def handle_menu_event(session: AsyncSession, payload: dict[str, Any]) -> None:
-    """Route one pubsub:menu event. Unknown/irrelevant events are logged only."""
+    """Route one pubsub:menu event. Unknown/irrelevant events are logged only.
+
+    EVERY menu event flushes the semantic cache: cached Q&A may cite menu
+    facts (allergen guide is generated from the menu), so any mutation —
+    availability, price, delete — must invalidate (Hard Rule 4)."""
+    await get_semcache().flush()
     event_type = payload.get("type", "")
     item_id = payload.get("item_id")
     if event_type in _REEMBED_EVENTS and isinstance(item_id, int):
