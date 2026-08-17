@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # Shared secret for bot→api internal calls (both services get the same value)
     internal_api_token: str = ""
 
+    # AI service base URL (docker network name in prod, localhost in dev).
+    ai_base_url: str = "http://ai:8001"
+
 
 @lru_cache
 def get_settings() -> Settings:

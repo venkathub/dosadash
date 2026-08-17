@@ -68,12 +68,16 @@ jobs:
       - name: Build
         run: npm run build
 
-  # Placeholder — becomes a real merge gate in Phase 4 (Hard Rule 5).
-  # Will fail the build if order_accuracy < 0.95 once suites exist.
+  # Key-free asset gates (golden datasets, prompt/schema coherence, scoring
+  # logic). Live LLM scoring joins as a merge gate in Phase 4 (Hard Rule 5:
+  # fail if order_accuracy < 0.95 once the order-agent suites exist).
   evals:
     name: Eval suites
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: No eval suites yet (Phase 3+)
-        run: echo "Eval suites land in Phase 3/4 and become merge gates."
+      - uses: astral-sh/setup-uv@v5
+      - name: Install workspace
+        run: uv sync --all-packages --group dev
+      - name: Eval asset gates
+        run: uv run pytest evals -q
