@@ -18,6 +18,18 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://dosadash:dosadash@localhost:5432/dosadash"
     redis_url: str = "redis://localhost:6379/0"
 
+    # Shared secret for api→ai internal calls (same pattern as bot→api).
+    internal_api_token: str = ""
+
+    # litellm routing chain (docs/02): primary → fast tier → fallback.
+    # Provider keys (OPENAI_API_KEY, GROQ_API_KEY, GEMINI_API_KEY) are read by
+    # litellm straight from the environment — never call provider SDKs directly.
+    llm_models: list[str] = [
+        "gpt-4o-mini",
+        "groq/llama-3.3-70b-versatile",
+        "gemini/gemini-1.5-flash",
+    ]
+
 
 @lru_cache
 def get_settings() -> Settings:

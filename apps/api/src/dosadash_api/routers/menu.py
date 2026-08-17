@@ -2,6 +2,7 @@
 
 GET /api/v1/menu             — available items, filterable
 GET /api/v1/menu/categories  — categories with item counts
+GET /api/v1/menu/combos      — APPROVED combos only
 GET /api/v1/menu/items/{id}  — full detail incl. ingredients/allergens
 """
 
@@ -12,9 +13,16 @@ from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from dosadash_api.db.models import Ingredient, MenuItem, RecipeIngredient
+from dosadash_api.db.models import (
+    Combo,
+    Ingredient,
+    MenuItem,
+    NutritionEstimateRecord,
+    RecipeIngredient,
+)
 from dosadash_api.db.session import get_session
-from dosadash_shared import CategoryOut, MenuItemDetail, MenuItemSummary
+from dosadash_api.services import availability
+from dosadash_shared import CategoryOut, ComboOut, MenuItemDetail, MenuItemSummary
 
 router = APIRouter(prefix="/api/v1/menu", tags=["menu"])
 
@@ -66,7 +74,8 @@ async def list_menu(
         stmt = stmt.where(~exists(contains_allergen))
     stmt = stmt.order_by(MenuItem.category, MenuItem.name)
     items = (await session.scalars(stmt)).all()
-    return [_summary(i) for i in items]
+    # schedule windows are time-of-day dependent → filtered here, not in SQL
+    return [_summary(i) for i in items if availability.item_on_schedule(i.schedule)]
 
 
 @router.get("/categories", response_model=list[CategoryOut])
@@ -78,6 +87,15 @@ async def list_categories(session: SessionDep) -> list[CategoryOut]:
         .order_by(MenuItem.category)
     )
     return [CategoryOut(name=name, item_count=count) for name, count in rows.all()]
+
+
+@router.get("/combos", response_model=list[ComboOut])
+async def list_combos(session: SessionDep) -> list[ComboOut]:
+    """Owner-approved combos only (drafts/rejected stay in the backoffice)."""
+    rows = await session.scalars(
+        select(Combo).where(Combo.status == "APPROVED").order_by(Combo.id.desc())
+    )
+    return [ComboOut.model_validate(c) for c in rows]
 
 
 @router.get("/items/{item_id}", response_model=MenuItemDetail)
@@ -93,4 +111,7 @@ async def get_item(item_id: int, session: SessionDep) -> MenuItemDetail:
     out = MenuItemDetail.model_validate(item)
     out.allergens = _allergens(item)
     out.ingredients = sorted(ri.ingredient.name for ri in item.recipe)
+    nutrition = await session.get(NutritionEstimateRecord, item_id)
+    if nutrition is not None and nutrition.status == "APPROVED":
+        out.nutrition = nutrition.estimate  # owner-verified only (never drafts)
     return out

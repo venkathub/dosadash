@@ -250,6 +250,8 @@ class Payment(TimestampMixin, Base):
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
     provider: Mapped[str] = mapped_column(String(40))
     provider_order_id: Mapped[str | None] = mapped_column(String(120), index=True)
+    provider_payment_id: Mapped[str | None] = mapped_column(String(120), index=True)
+    refund_id: Mapped[str | None] = mapped_column(String(120))
     status: Mapped[PaymentStatus] = mapped_column(
         pg_enum(PaymentStatus, "payment_status"), default=PaymentStatus.CREATED
     )
@@ -296,6 +298,27 @@ class Settings(TimestampMixin, Base):
     business_hours: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     delivery_pincodes: Mapped[list[str]] = mapped_column(ARRAY(String(10)), default=list)
     kitchen_paused: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class NutritionEstimateRecord(TimestampMixin, Base):
+    """LLM-drafted nutrition facts per dish (Phase 2) — owner-verified.
+
+    DRAFT rows are backoffice-only; only APPROVED rows surface on the public
+    menu. `model`/`prompt_version` give provenance for the audit trail.
+    """
+
+    __tablename__ = "nutrition_estimates"
+
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("menu_items.id", ondelete="CASCADE"), primary_key=True
+    )
+    estimate: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(
+        Enum("DRAFT", "APPROVED", "REJECTED", name="nutrition_status"), default="DRAFT"
+    )
+    model: Mapped[str] = mapped_column(String(80))
+    prompt_version: Mapped[str] = mapped_column(String(40))
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
 
 class StaffAction(Base):

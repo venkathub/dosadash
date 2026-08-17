@@ -41,7 +41,12 @@ async def payment_config(settings: SettingsDep) -> PaymentConfig:
 
 
 async def _mark_payment(
-    session: AsyncSession, provider_order_id: str, status: PaymentStatus, *, verified: bool
+    session: AsyncSession,
+    provider_order_id: str,
+    status: PaymentStatus,
+    *,
+    verified: bool,
+    provider_payment_id: str | None = None,
 ) -> bool:
     payment = await session.scalar(
         select(Payment).where(Payment.provider_order_id == provider_order_id)
@@ -49,8 +54,23 @@ async def _mark_payment(
     if payment is None:
         return False
     payment.status = status
+    if provider_payment_id:
+        payment.provider_payment_id = provider_payment_id  # enables admin refunds
     if verified:
         payment.signature_verified = True
+    await session.commit()
+    return True
+
+
+async def _mark_refunded(session: AsyncSession, provider_payment_id: str, refund_id: str) -> bool:
+    """Reconcile refunds initiated outside the app (Razorpay dashboard)."""
+    payment = await session.scalar(
+        select(Payment).where(Payment.provider_payment_id == provider_payment_id)
+    )
+    if payment is None:
+        return False
+    payment.status = PaymentStatus.REFUNDED
+    payment.refund_id = refund_id
     await session.commit()
     return True
 
@@ -73,15 +93,20 @@ async def razorpay_webhook(
     handled = False
     if kind in ("payment.captured", "payment.failed"):
         entity = event["payload"]["payment"]["entity"]
-        status = PaymentStatus.CAPTURED if kind == "payment.captured" else PaymentStatus.FAILED
+        captured = kind == "payment.captured"
+        status = PaymentStatus.CAPTURED if captured else PaymentStatus.FAILED
         handled = await _mark_payment(
-            session, entity.get("order_id", ""), status, verified=kind == "payment.captured"
+            session,
+            entity.get("order_id", ""),
+            status,
+            verified=captured,
+            provider_payment_id=entity.get("id") if captured else None,
         )
     elif kind == "refund.processed":
-        # Full refund reconciliation (provider_payment_id mapping) lands with
-        # the Phase 2 admin refund flow; acknowledge so Razorpay stops retrying.
-        logger.info("refund.processed received — deferred to admin refund flow")
-        handled = True
+        entity = event["payload"]["refund"]["entity"]
+        handled = await _mark_refunded(session, entity.get("payment_id", ""), entity.get("id", ""))
+        if not handled:
+            logger.warning("refund.processed for unknown payment %s", entity.get("payment_id"))
 
     if not handled:
         logger.info("razorpay webhook ignored: event=%s", kind)

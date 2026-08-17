@@ -97,6 +97,10 @@ async def checkout(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except order_service.ItemsUnavailable as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except order_service.KitchenPaused as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except order_service.OutsideBusinessHours as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     except order_service.NotPermitted as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     return await _order_out(session, await _load_order(session, order.id))

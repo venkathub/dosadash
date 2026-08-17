@@ -36,6 +36,8 @@ class PaymentOut(BaseModel):
 
     provider: str
     provider_order_id: str | None
+    provider_payment_id: str | None = None
+    refund_id: str | None = None
     status: PaymentStatus
     signature_verified: bool
 
@@ -61,3 +63,23 @@ class StatusUpdateIn(BaseModel):
 class PayIn(BaseModel):
     payment_id: str
     signature: str
+
+
+# ------------------------------------------------- Phase 2 admin order mgmt
+
+
+class ModifyItemsIn(BaseModel):
+    """Replacement item list for an order still in PLACED/CONFIRMED."""
+
+    items: list[OrderItemIn] = Field(min_length=1, max_length=30)
+
+
+class AdminCancelIn(BaseModel):
+    reason: str = Field(min_length=3, max_length=200)
+
+
+class RefundIn(BaseModel):
+    """Refund a captured payment; amount defaults to the full order total."""
+
+    amount: Decimal | None = Field(default=None, gt=0)
+    reason: str = Field(min_length=3, max_length=200)

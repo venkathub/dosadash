@@ -69,5 +69,6 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
 - [x] Planning complete (docs/)
 - [x] Phase 0: Foundation — COMPLETE (merged to main #2, deployed via CI)
 - [x] Phase 1: Core platform + Auth — COMPLETE (PRs #3–#11: menu APIs, OTP/JWT/RBAC, order state machine + checkout, KDS + WS + event bus, customer web UI, Razorpay TEST, addresses/preferences, Telegram linking + DM OTP + unlink)
-- [ ] Phase 2: Admin Backend I — NOT STARTED (`phase/2-admin-backoffice`)
+- [x] Phase 2: Admin Backend I — COMPLETE (PRs #13–#19 into phase branch: menu ops, settings/pause/staff-RBAC/audit, order mgmt + refunds, combos/ingredients/recipes, nutrition LLM enrichment [first litellm + Langfuse + eval-gate code], hours/schedule enforcement, admin web UI; migrations c41f7a2d9b03 + e7b9c4d15a22; squash-merged to main, deployed via CI)
+- [ ] Phase 3: RAG + Order Agent — NOT STARTED (`phase/3-rag-order-agent`)
 - Update this checklist as phases complete.
