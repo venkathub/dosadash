@@ -6,22 +6,36 @@ chat is allowed (browse/ask); placing an order still requires login via the
 normal checkout flow, which re-validates everything server-side.
 """
 
+import secrets
 from collections.abc import AsyncIterator
 from typing import Annotated
 
 import httpx
 import jwt as pyjwt
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.auth.security import decode_access_token
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import User
 from dosadash_api.db.session import get_session
-from dosadash_shared import AgentChatRequest, AgentChatResponse, AgentMessage, OrderDraft
+from dosadash_api.providers import PaymentProvider
+from dosadash_api.routers import orders as orders_router
+from dosadash_api.routers.orders import get_payment_provider
+from dosadash_api.services import order_service
+from dosadash_shared import (
+    AgentChatRequest,
+    AgentChatResponse,
+    AgentMessage,
+    ChannelType,
+    OrderDraft,
+    OrderItemIn,
+    OrderOut,
+)
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
@@ -124,3 +138,82 @@ async def chat_stream(body: ChatIn, user: OptionalUser, gateway: GatewayDep) -> 
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# --------------------------------------------------- telegram (bot → api)
+# The bot is an adapter (Hard Rule 10): it authenticates with the shared
+# internal token and identifies the human by tg_user_id; the api resolves
+# the linked account. Chat works unlinked (no prefs); placing requires a
+# linked account and goes through order_service like any checkout.
+
+
+def _check_internal_token(provided: str) -> None:
+    expected = get_settings().internal_api_token
+    if not expected:
+        raise HTTPException(status_code=503, detail="Internal API not configured")
+    if not secrets.compare_digest(provided, expected):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
+async def _tg_user(session: AsyncSession, tg_user_id: int) -> User | None:
+    return await session.scalar(select(User).where(User.tg_user_id == tg_user_id))
+
+
+class TelegramChatIn(ChatIn):
+    tg_user_id: int
+
+
+class TelegramPlaceIn(BaseModel):
+    tg_user_id: int
+    items: list[OrderItemIn] = Field(min_length=1, max_length=20)
+
+
+@router.post("/telegram/stream")
+async def telegram_chat_stream(
+    body: TelegramChatIn,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    gateway: GatewayDep,
+    x_internal_token: Annotated[str, Header()] = "",
+) -> StreamingResponse:
+    _check_internal_token(x_internal_token)
+    user = await _tg_user(session, body.tg_user_id)
+    request = AgentChatRequest(
+        message=body.message,
+        history=body.history,
+        draft=body.draft,
+        user_id=user.id if user else None,
+        session_id=f"tg:{body.tg_user_id}",
+    )
+    return StreamingResponse(
+        gateway.stream(request),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post("/telegram/place", response_model=OrderOut, status_code=201)
+async def telegram_place(
+    body: TelegramPlaceIn,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    provider: Annotated[PaymentProvider, Depends(get_payment_provider)],
+    x_internal_token: Annotated[str, Header()] = "",
+) -> OrderOut:
+    """Place the agent's confirmed draft as a real order — same
+    order_service path as web checkout (state machine, availability,
+    hours all re-validated)."""
+    _check_internal_token(x_internal_token)
+    user = await _tg_user(session, body.tg_user_id)
+    if user is None:
+        raise HTTPException(status_code=403, detail="Telegram account not linked")
+    try:
+        order = await order_service.create_order(
+            session, user=user, items_in=body.items, provider=provider, channel=ChannelType.TELEGRAM
+        )
+    except order_service.ItemsNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except order_service.ItemsUnavailable as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except (order_service.KitchenPaused, order_service.OutsideBusinessHours) as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    loaded = await orders_router._load_order(session, order.id)
+    return await orders_router._order_out(session, loaded)
