@@ -10,8 +10,42 @@ from pathlib import Path
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "order_conversations.jsonl"
 
-REQUIRED_FIELDS = {"id", "language", "kitchen", "history", "draft", "message", "expect"}
+REQUIRED_FIELDS = {"id", "language", "kitchen", "history", "draft", "message", "expect", "tags"}
 LANGUAGES = {"en", "hinglish", "tanglish"}
+TAG_VOCABULARY = {
+    "basic",
+    "multi_item",
+    "edit_qty",
+    "remove_item",
+    "replace_item",
+    "clear_cart",
+    "confirm",
+    "typo",
+    "adversarial",
+    "pii",
+    "sold_out",
+    "kitchen_paused",
+    "allergen",
+    "hallucination",
+    "preference",
+    "meal_period",
+    "factual",
+    "budget",
+    "edge",
+}
+# Phase 4 golden-set coverage floors (docs/05 week 7 deliverable).
+MIN_CASES = 80
+MIN_PER_TAG = {
+    "typo": 6,
+    "adversarial": 6,
+    "sold_out": 4,
+    "kitchen_paused": 3,
+    "allergen": 5,
+    "hallucination": 3,
+    "confirm": 4,
+    "meal_period": 4,
+}
+MIN_PER_LANGUAGE = {"en": 30, "hinglish": 10, "tanglish": 10}
 
 
 def load_cases() -> list[dict]:
@@ -34,8 +68,32 @@ def test_cases_have_required_fields():
 
 def test_ids_unique_and_substantial():
     ids = [c["id"] for c in load_cases()]
-    assert len(ids) >= 12
+    assert len(ids) >= MIN_CASES, f"golden set has {len(ids)} cases, need >= {MIN_CASES}"
     assert len(ids) == len(set(ids))
+
+
+def test_tags_are_valid():
+    for case in load_cases():
+        tags = case["tags"]
+        assert tags, f"{case['id']}: tags must be non-empty"
+        unknown = set(tags) - TAG_VOCABULARY
+        assert not unknown, f"{case['id']}: unknown tags {unknown}"
+
+
+def test_tag_coverage_floors():
+    """Phase 4 deliverable: adversarial, typo, sold-out, paused, allergen etc.
+    coverage may only grow — floors, not exact counts."""
+    cases = load_cases()
+    for tag, minimum in MIN_PER_TAG.items():
+        count = sum(tag in c["tags"] for c in cases)
+        assert count >= minimum, f"tag {tag!r}: {count} cases, need >= {minimum}"
+
+
+def test_language_coverage_floors():
+    cases = load_cases()
+    for lang, minimum in MIN_PER_LANGUAGE.items():
+        count = sum(c["language"] == lang for c in cases)
+        assert count >= minimum, f"language {lang!r}: {count} cases, need >= {minimum}"
 
 
 def test_referenced_items_exist_in_seed_menu():
