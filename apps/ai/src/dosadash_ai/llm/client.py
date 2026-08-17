@@ -10,6 +10,7 @@ Hard Rule 6: every call is traced to Langfuse (when keys are configured)
 attempt per model; provider errors fall through to the next model.
 """
 
+import asyncio
 import logging
 import os
 from collections.abc import AsyncIterator
@@ -22,6 +23,8 @@ from dosadash_ai.config import get_settings
 logger = logging.getLogger(__name__)
 
 _REPAIR_ATTEMPTS_PER_MODEL = 2  # initial try + one validation-repair retry
+_RATE_LIMIT_RETRIES_PER_MODEL = 2  # brief same-model retries on 429 before falling through
+_RATE_LIMIT_BACKOFF_SECONDS = 2.0
 
 
 class LLMError(Exception):
@@ -61,7 +64,9 @@ async def structured_completion[T: BaseModel](
 
     for model in chain:
         convo = list(messages)
-        for attempt in range(_REPAIR_ATTEMPTS_PER_MODEL):
+        rate_limit_budget = _RATE_LIMIT_RETRIES_PER_MODEL
+        attempt = 0
+        while attempt < _REPAIR_ATTEMPTS_PER_MODEL:
             try:
                 response = await litellm.acompletion(
                     model=model,
@@ -71,6 +76,18 @@ async def structured_completion[T: BaseModel](
                     response_format={"type": "json_object"},
                     metadata=metadata,
                 )
+            except litellm.RateLimitError as exc:
+                # 429s are usually seconds-long (TPM windows) — a brief same-model
+                # retry beats falling through the chain (caught by the live eval
+                # gate: a 150-case run brushed OpenAI's TPM ceiling mid-run).
+                if rate_limit_budget > 0:
+                    rate_limit_budget -= 1
+                    logger.info("rate limited on %s, retrying same model shortly", model)
+                    await asyncio.sleep(_RATE_LIMIT_BACKOFF_SECONDS)
+                    continue  # same attempt, same model
+                logger.warning("rate limit persists on %s, falling through", model)
+                last_error = exc
+                break
             except Exception as exc:  # noqa: BLE001 — provider error → next model
                 logger.warning("llm call failed on %s: %s", model, exc)
                 last_error = exc
@@ -83,6 +100,7 @@ async def structured_completion[T: BaseModel](
                     "structured output invalid on %s (attempt %d): %s", model, attempt + 1, exc
                 )
                 last_error = exc
+                attempt += 1
                 convo = [
                     *convo,
                     {"role": "assistant", "content": raw},

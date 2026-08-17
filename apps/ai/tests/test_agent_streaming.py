@@ -76,7 +76,7 @@ def agent_stream_env(monkeypatch):
         state["fallback_calls"] += 1
         if state["fallback_raises"]:
             raise LLMError("chain down")
-        return state["fallback_turn"], "groq/llama-3.3-70b-versatile"
+        return state["fallback_turn"], "groq/openai/gpt-oss-120b"
 
     monkeypatch.setattr(graph_mod, "embed_texts", fake_embed)
     monkeypatch.setattr(streaming_mod, "stream_text_completion", fake_stream_gen)
@@ -128,7 +128,7 @@ async def test_stream_failure_falls_back_to_chain(agent_session, agent_stream_en
     events = await _collect(agent_session, AgentChatRequest(message="a coffee"))
     assert [e["type"] for e in events] == ["final"]  # no deltas, still a full answer
     assert events[0]["data"]["reply"] == "fallback reply"
-    assert events[0]["data"]["model"] == "groq/llama-3.3-70b-versatile"
+    assert events[0]["data"]["model"] == "groq/openai/gpt-oss-120b"
     assert agent_stream_env["fallback_calls"] == 1
 
 

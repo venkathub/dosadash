@@ -22,7 +22,7 @@ LANGFUSE_PAYLOAD = {
                     "countObservations": 230,
                 },
                 {
-                    "model": "groq/llama-3.3-70b-versatile",
+                    "model": "groq/openai/gpt-oss-120b",
                     "inputUsage": 12_000,
                     "outputUsage": 2_000,
                     "totalCost": 0.02,

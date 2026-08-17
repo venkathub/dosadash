@@ -24,9 +24,11 @@ class Settings(BaseSettings):
     # litellm routing chain (docs/02): primary → fast tier → fallback.
     # Provider keys (OPENAI_API_KEY, GROQ_API_KEY, GEMINI_API_KEY) are read by
     # litellm straight from the environment — never call provider SDKs directly.
+    # Groq decommissioned openai/gpt-oss-120b on 2026-08-16 (caught live
+    # by the eval gate); openai/gpt-oss-120b is Groq's recommended successor.
     llm_models: list[str] = [
         "gpt-4o-mini",
-        "groq/llama-3.3-70b-versatile",
+        "groq/openai/gpt-oss-120b",
         "gemini/gemini-1.5-flash",
     ]
 
