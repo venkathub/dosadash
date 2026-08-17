@@ -34,11 +34,11 @@ class EditThrottle:
 
     def __init__(self, interval: float = _EDIT_INTERVAL_SECONDS) -> None:
         self._interval = interval
-        self._last = 0.0
+        self._last: float | None = None  # None → first call always passes
 
     def ready(self) -> bool:
         now = time.monotonic()
-        if now - self._last >= self._interval:
+        if self._last is None or now - self._last >= self._interval:
             self._last = now
             return True
         return False
