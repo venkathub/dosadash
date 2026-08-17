@@ -21,6 +21,7 @@ from dosadash_api.db.models import (
     RecipeIngredient,
 )
 from dosadash_api.db.session import get_session
+from dosadash_api.services import availability
 from dosadash_shared import CategoryOut, ComboOut, MenuItemDetail, MenuItemSummary
 
 router = APIRouter(prefix="/api/v1/menu", tags=["menu"])
@@ -73,7 +74,8 @@ async def list_menu(
         stmt = stmt.where(~exists(contains_allergen))
     stmt = stmt.order_by(MenuItem.category, MenuItem.name)
     items = (await session.scalars(stmt)).all()
-    return [_summary(i) for i in items]
+    # schedule windows are time-of-day dependent → filtered here, not in SQL
+    return [_summary(i) for i in items if availability.item_on_schedule(i.schedule)]
 
 
 @router.get("/categories", response_model=list[CategoryOut])
