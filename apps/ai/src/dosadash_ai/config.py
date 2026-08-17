@@ -30,6 +30,13 @@ class Settings(BaseSettings):
         "gemini/gemini-1.5-flash",
     ]
 
+    # RAG (Phase 3): embeddings via litellm; dimension pinned by the
+    # vector(1536) columns (dosadash_shared.EMBEDDING_DIM).
+    embedding_model: str = "text-embedding-3-small"
+    # Path to the knowledge/ markdown sources (repo checkout or baked into
+    # the container image). Used by the ingestion CLI and re-embed cascade.
+    knowledge_dir: str = "knowledge"
+
 
 @lru_cache
 def get_settings() -> Settings:
