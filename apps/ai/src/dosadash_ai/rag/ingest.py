@@ -101,7 +101,14 @@ async def ingest_knowledge_dir(
 ) -> IngestReport:
     directory = knowledge_dir or Path(get_settings().knowledge_dir)
     chunks = load_knowledge_dir(directory)
-    return await ingest_chunks(session, chunks, dry_run=dry_run)
+    report = await ingest_chunks(session, chunks, dry_run=dry_run)
+    if not dry_run and (report.embedded or report.deleted):
+        # Knowledge changed → cached answers may cite stale content
+        # (Hard Rule 4: the AI layer never drifts from source state).
+        from dosadash_ai.llm.semcache import get_semcache
+
+        await get_semcache().flush()
+    return report
 
 
 async def _main() -> None:

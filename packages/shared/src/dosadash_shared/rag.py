@@ -69,3 +69,4 @@ class RagAnswerResponse(BaseModel):
     not_found: bool
     model: str  # "" when answered without an LLM call (empty retrieval)
     prompt_version: str = RAG_ANSWER_PROMPT_VERSION
+    cached: bool = False  # served from the semantic cache (Phase 4)
