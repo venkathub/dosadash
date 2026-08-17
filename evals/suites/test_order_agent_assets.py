@@ -33,19 +33,19 @@ TAG_VOCABULARY = {
     "budget",
     "edge",
 }
-# Phase 4 golden-set coverage floors (docs/05 week 7 deliverable).
-MIN_CASES = 80
+# Phase 4 golden-set coverage floors (docs/05 week 7 deliverable: 150+).
+MIN_CASES = 150
 MIN_PER_TAG = {
-    "typo": 6,
-    "adversarial": 6,
-    "sold_out": 4,
-    "kitchen_paused": 3,
-    "allergen": 5,
-    "hallucination": 3,
-    "confirm": 4,
-    "meal_period": 4,
+    "typo": 12,
+    "adversarial": 12,
+    "sold_out": 8,
+    "kitchen_paused": 6,
+    "allergen": 10,
+    "hallucination": 4,
+    "confirm": 8,
+    "meal_period": 6,
 }
-MIN_PER_LANGUAGE = {"en": 30, "hinglish": 10, "tanglish": 10}
+MIN_PER_LANGUAGE = {"en": 60, "hinglish": 20, "tanglish": 20}
 
 
 def load_cases() -> list[dict]:
