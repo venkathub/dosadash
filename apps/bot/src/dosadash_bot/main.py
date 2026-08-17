@@ -1,24 +1,67 @@
-"""aiogram webhook entrypoint (Phase 0: /start + echo).
+"""aiogram webhook entrypoint — Telegram adapter for the apps/ai order agent.
 
 Webhook mode (not polling) per CLAUDE.md; Telegram posts updates to
 PUBLIC_BASE_URL + /tg/webhook, protected by a secret token header.
+
+Hard Rule 10: no reasoning here. The bot streams the agent's reply into a
+progressively edited message (draft-edit streaming), renders the validated
+draft, and forwards button taps to the api.
 """
 
 import logging
+import time
 
-from aiogram import Bot, Dispatcher, Router
+from aiogram import Bot, Dispatcher, F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import CommandObject, CommandStart
-from aiogram.types import Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
-from dosadash_bot.api_client import link_account
+from dosadash_bot import render, state
+from dosadash_bot.api_client import link_account, place_order, stream_chat
 from dosadash_bot.config import Settings, get_settings
-from dosadash_bot.render import echo_text, link_failed_text, link_success_text, welcome_text
 
 logger = logging.getLogger("dosadash_bot")
 
 router = Router()
+
+_EDIT_INTERVAL_SECONDS = 0.9  # Telegram edit rate — stay well under limits
+
+
+class EditThrottle:
+    """At most one message edit per interval (final edit is never throttled)."""
+
+    def __init__(self, interval: float = _EDIT_INTERVAL_SECONDS) -> None:
+        self._interval = interval
+        self._last: float | None = None  # None → first call always passes
+
+    def ready(self) -> bool:
+        now = time.monotonic()
+        if self._last is None or now - self._last >= self._interval:
+            self._last = now
+            return True
+        return False
+
+
+def draft_keyboard(has_draft: bool) -> InlineKeyboardMarkup | None:
+    if not has_draft:
+        return None
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Place order", callback_data="chat:place"),
+                InlineKeyboardButton(text="🧹 Clear", callback_data="chat:clear"),
+            ]
+        ]
+    )
+
+
+async def _safe_edit(message: Message, text: str, **kwargs: object) -> None:
+    try:
+        await message.edit_text(text, **kwargs)
+    except TelegramBadRequest:  # "message is not modified" and friends
+        pass
 
 
 @router.message(CommandStart(deep_link=True))
@@ -27,7 +70,7 @@ async def on_start_deep_link(message: Message, command: CommandObject) -> None:
     user = message.from_user
     code = (command.args or "").strip()
     if not code or user is None:
-        await message.answer(welcome_text(user.first_name if user else None))
+        await message.answer(render.welcome_text(user.first_name if user else None))
         return
     settings = get_settings()
     result = await link_account(
@@ -38,20 +81,92 @@ async def on_start_deep_link(message: Message, command: CommandObject) -> None:
         tg_name=user.first_name,
     )
     if result.ok:
-        await message.answer(link_success_text(result.name or user.first_name))
+        await message.answer(render.link_success_text(result.name or user.first_name))
     else:
-        await message.answer(link_failed_text(result.detail))
+        await message.answer(render.link_failed_text(result.detail))
 
 
 @router.message(CommandStart())
 async def on_start(message: Message) -> None:
     user = message.from_user
-    await message.answer(welcome_text(user.first_name if user else None))
+    state.reset(message.chat.id)
+    await message.answer(render.welcome_text(user.first_name if user else None))
+
+
+@router.message(F.text)
+async def on_message(message: Message) -> None:
+    """One agent turn with draft-edit streaming: send a placeholder, edit it
+    with reply text as tokens arrive, finish with draft + buttons."""
+    settings = get_settings()
+    chat_state = state.get_state(message.chat.id)
+    sent = await message.answer(render.typing_text())
+    throttle = EditThrottle()
+    partial = ""
+    final = None
+
+    async for event in stream_chat(
+        api_base_url=settings.api_base_url,
+        internal_token=settings.internal_api_token,
+        tg_user_id=message.from_user.id if message.from_user else message.chat.id,
+        message=message.text or "",
+        history=chat_state.history,
+        draft=chat_state.draft,
+    ):
+        if event["type"] == "delta":
+            partial += event["text"]
+            if throttle.ready():
+                await _safe_edit(sent, render.stream_progress_text(partial))
+        elif event["type"] == "final":
+            final = event["data"]
+        elif event["type"] == "error":
+            logger.warning("agent stream error: %s", event.get("detail"))
+
+    if final is None:
+        await _safe_edit(sent, render.error_text())
+        return
+    state.record_turn(chat_state, message.text or "", final)
+    await _safe_edit(
+        sent,
+        render.final_text(final),
+        reply_markup=draft_keyboard(chat_state.draft is not None),
+    )
+
+
+@router.callback_query(F.data == "chat:place")
+async def on_place(callback: CallbackQuery) -> None:
+    settings = get_settings()
+    chat_state = state.get_state(callback.message.chat.id) if callback.message else None
+    items = state.draft_order_items(chat_state) if chat_state else []
+    if not items or callback.message is None:
+        await callback.answer("Nothing in your order yet!")
+        return
+    result = await place_order(
+        api_base_url=settings.api_base_url,
+        internal_token=settings.internal_api_token,
+        tg_user_id=callback.from_user.id,
+        items=items,
+    )
+    if result.ok:
+        state.clear_draft(chat_state)
+        await callback.message.answer(
+            render.order_placed_text(result.order_id, result.total, settings.public_base_url)
+        )
+    else:
+        await callback.message.answer(render.place_failed_text(result.detail))
+    await callback.answer()
+
+
+@router.callback_query(F.data == "chat:clear")
+async def on_clear(callback: CallbackQuery) -> None:
+    if callback.message is not None:
+        state.clear_draft(state.get_state(callback.message.chat.id))
+        await callback.message.answer(render.draft_cleared_text())
+    await callback.answer()
 
 
 @router.message()
-async def on_message(message: Message) -> None:
-    await message.answer(echo_text(message.text))
+async def on_unsupported(message: Message) -> None:
+    await message.answer(render.unsupported_text())
 
 
 async def healthz(_request: web.Request) -> web.Response:

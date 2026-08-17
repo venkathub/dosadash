@@ -12,6 +12,7 @@ attempt per model; provider errors fall through to the next model.
 
 import logging
 import os
+from collections.abc import AsyncIterator
 
 import litellm
 from pydantic import BaseModel, ValidationError
@@ -96,3 +97,67 @@ async def structured_completion[T: BaseModel](
                 ]
 
     raise LLMError(f"all models failed for {trace_name}: {last_error}") from last_error
+
+
+async def stream_text_completion(
+    *,
+    messages: list[dict[str, str]],
+    trace_name: str,
+    prompt_version: str,
+    session_id: str | None = None,
+    user_id: str | None = None,
+    model: str | None = None,
+    temperature: float = 0.0,
+    max_tokens: int = 900,
+) -> AsyncIterator[str]:
+    """Stream raw JSON-mode content pieces from ONE model (the chain's
+    primary by default). No fallback here: streaming callers catch failures
+    and fall back to `structured_completion` (which walks the whole chain).
+    Any provider error surfaces as LLMError.
+    """
+    chosen = model or get_settings().llm_models[0]
+    metadata = {
+        "generation_name": trace_name,
+        "session_id": session_id,
+        "trace_user_id": user_id,
+        "tags": [prompt_version],
+    }
+    try:
+        response = await litellm.acompletion(
+            model=chosen,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            response_format={"type": "json_object"},
+            stream=True,
+            metadata=metadata,
+        )
+        async for chunk in response:
+            piece = chunk.choices[0].delta.content
+            if piece:
+                yield piece
+    except Exception as exc:  # noqa: BLE001 — normalized for callers
+        raise LLMError(f"stream failed on {chosen}: {exc}") from exc
+
+
+async def embed_texts(
+    texts: list[str],
+    *,
+    trace_name: str = "rag.embed",
+) -> list[list[float]]:
+    """Embed texts via litellm (Hard Rule 1) in input order.
+
+    Callers must redact PII first (Hard Rule 8) — embeddings are provider
+    calls like any other.
+    """
+    if not texts:
+        return []
+    response = await litellm.aembedding(
+        model=get_settings().embedding_model,
+        input=texts,
+        metadata={"generation_name": trace_name},
+    )
+    data = sorted(response.data, key=lambda d: d["index"])
+    if len(data) != len(texts):
+        raise LLMError(f"embedding count mismatch: {len(data)} != {len(texts)}")
+    return [d["embedding"] for d in data]

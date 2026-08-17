@@ -61,6 +61,7 @@ async def _seed_menu(session: AsyncSession) -> tuple[Brand, dict[str, MenuItem]]
             price=m.price,
             category=m.category,
             is_veg=m.is_veg,
+            contains_onion_garlic=m.contains_onion_garlic,
             spice_level=m.spice_level,
             prep_minutes=m.prep_minutes,
         )

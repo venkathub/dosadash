@@ -1,0 +1,18 @@
+{"id": "ret-001", "language": "en", "query": "Which dosas are vegan?", "expect_docs": ["menu-guide/dosas.md", "allergens.md"]}
+{"id": "ret-002", "language": "en", "query": "Can I cancel my order after it's confirmed?", "expect_docs": ["policies.md"]}
+{"id": "ret-003", "language": "en", "query": "Do you give cash refunds or only back to my card?", "expect_docs": ["policies.md"]}
+{"id": "ret-004", "language": "en", "query": "Which pincodes do you deliver to?", "expect_docs": ["faq.md", "policies.md"]}
+{"id": "ret-005", "language": "en", "query": "How much GST is added to the bill?", "expect_docs": ["faq.md", "policies.md"]}
+{"id": "ret-006", "language": "en", "query": "Is rava dosa gluten free?", "expect_docs": ["allergens.md", "menu-guide/dosas.md"]}
+{"id": "ret-007", "language": "en", "query": "What should I order with chicken chettinad?", "expect_docs": ["menu-guide/curries-snacks-sweets-beverages.md"]}
+{"id": "ret-008", "language": "en", "query": "How do I link my Telegram account?", "expect_docs": ["faq.md"]}
+{"id": "ret-009", "language": "en", "query": "I have a peanut allergy, is lemon rice safe for me?", "expect_docs": ["allergens.md", "menu-guide/rice-pongal-biryani.md"]}
+{"id": "ret-010", "language": "en", "query": "cn i cancal my ordr aftr payment", "expect_docs": ["policies.md"], "note": "typo robustness — vector signal must carry it"}
+{"id": "ret-011", "language": "hinglish", "query": "kya aap cash refund dete ho?", "expect_docs": ["policies.md"]}
+{"id": "ret-012", "language": "hinglish", "query": "mera order cancel kaise karu bhai", "expect_docs": ["policies.md", "faq.md"]}
+{"id": "ret-013", "language": "hinglish", "query": "veg biryani me pyaz hai kya? jain ke liye chalega?", "expect_docs": ["allergens.md", "menu-guide/rice-pongal-biryani.md"]}
+{"id": "ret-014", "language": "hinglish", "query": "spicy nahi chahiye, konsa dosa mild hai?", "expect_docs": ["menu-guide/dosas.md", "allergens.md"]}
+{"id": "ret-015", "language": "tanglish", "query": "filter coffee la milk irukka?", "expect_docs": ["allergens.md", "menu-guide/curries-snacks-sweets-beverages.md"]}
+{"id": "ret-016", "language": "tanglish", "query": "onion garlic illama enna order pannalam?", "expect_docs": ["allergens.md", "faq.md", "menu-guide/dosas.md", "menu-guide/idli-vada-uttapam.md", "menu-guide/rice-pongal-biryani.md"], "note": "menu guides carry Jain-friendliness notes — any of these docs answers the question"}
+{"id": "ret-017", "language": "tanglish", "query": "sweet pongal la cashew iruka? nut allergy irukku", "expect_docs": ["allergens.md", "menu-guide/rice-pongal-biryani.md"]}
+{"id": "ret-018", "language": "tanglish", "query": "mutton biryani evlo neram aagum?", "expect_docs": ["menu-guide/rice-pongal-biryani.md", "faq.md"]}

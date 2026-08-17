@@ -14,6 +14,7 @@ COPY apps/bot/src/ apps/bot/src/
 COPY apps/ai/pyproject.toml apps/ai/pyproject.toml
 COPY apps/ai/src/ apps/ai/src/
 COPY apps/ai/prompts/ apps/ai/prompts/
+COPY knowledge/ knowledge/
 RUN uv sync --frozen --no-dev --package dosadash-ai
 
 FROM python:3.12-slim-bookworm
