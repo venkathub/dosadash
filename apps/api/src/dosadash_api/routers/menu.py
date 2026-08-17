@@ -21,8 +21,7 @@ from dosadash_api.db.models import (
     RecipeIngredient,
 )
 from dosadash_api.db.session import get_session
-from dosadash_shared import availability
-from dosadash_shared import CategoryOut, ComboOut, MenuItemDetail, MenuItemSummary
+from dosadash_shared import CategoryOut, ComboOut, MenuItemDetail, MenuItemSummary, availability
 
 router = APIRouter(prefix="/api/v1/menu", tags=["menu"])
 
