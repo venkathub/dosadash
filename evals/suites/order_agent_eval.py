@@ -5,76 +5,25 @@ conversations, scoring draft correctness, guardrail behavior, refusals,
 and readiness gating. Requires keys and a seeded database:
 
     uv run python -m dosadash_api.seed          # menu must exist
-    uv run python evals/suites/order_agent_eval.py
-
-Mutates settings/menu rows for paused/86'd cases and ALWAYS restores them.
-NOT run in CI yet (key-free gates: test_order_agent_assets.py).
-
     PASS_THRESHOLD=0.95 uv run python evals/suites/order_agent_eval.py
+
+Execution lives in _harness.py (shared, one pass per case); for the
+combined multi-metric run used by the CI gate see run_live_evals.py.
+Key-free CI asset gates: test_order_agent_assets.py.
 """
 
 import asyncio
-import json
 import os
 import sys
 from pathlib import Path
 
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from dosadash_ai.agent.graph import run_turn
-from dosadash_ai.db import get_sessionmaker
-from dosadash_shared import AgentChatRequest, AgentMessage, OrderDraft, OrderDraftItem
+from _harness import CaseResult, load_cases, run_all  # noqa: E402
 
-GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "order_conversations.jsonl"
+from dosadash_ai.db import get_sessionmaker  # noqa: E402
+
 PASS_THRESHOLD = float(os.environ.get("PASS_THRESHOLD", "0.8"))
-EVAL_USER_PHONE = "+919999900042"  # dedicated eval user, upserted per run
-
-
-def load_cases() -> list[dict]:
-    return [json.loads(line) for line in GOLDEN.read_text().splitlines() if line.strip()]
-
-
-async def _resolve_draft(session: AsyncSession, lines: list[dict]) -> OrderDraft:
-    items = []
-    for line in lines:
-        row = (
-            await session.execute(
-                text("SELECT id, name, price FROM menu_items WHERE name = :n"), {"n": line["name"]}
-            )
-        ).one()
-        items.append(
-            OrderDraftItem(
-                item_id=row.id, name=row.name, qty=line["qty"] or 1, unit_price=row.price
-            )
-        )
-    return OrderDraft(items=items, subtotal=sum((i.unit_price * i.qty for i in items), 0))
-
-
-async def _ensure_eval_user(session: AsyncSession, prefs: dict) -> int:
-    user_id = await session.scalar(
-        text(
-            "INSERT INTO users (phone, name, role, loyalty_points) "
-            "VALUES (:p, 'Eval User', 'customer', 0) "
-            "ON CONFLICT (phone) DO UPDATE SET name = 'Eval User' RETURNING id"
-        ),
-        {"p": EVAL_USER_PHONE},
-    )
-    await session.execute(
-        text(
-            "INSERT INTO user_preferences (user_id, diet, allergens, spice_level, language) "
-            "VALUES (:u, :d, :a, 2, :lang) ON CONFLICT (user_id) DO UPDATE SET "
-            "diet = :d, allergens = :a, language = :lang"
-        ),
-        {
-            "u": user_id,
-            "d": prefs["diet"].upper() if prefs.get("diet") else None,  # Diet enum is UPPERCASE
-            "a": prefs.get("allergens", []),
-            "lang": prefs.get("language", "en"),
-        },
-    )
-    await session.commit()
-    return user_id
 
 
 def score_case(case: dict, resp) -> list[str]:
@@ -117,55 +66,26 @@ def score_case(case: dict, resp) -> list[str]:
     return problems
 
 
-async def _apply_setup(session: AsyncSession, case: dict) -> None:
-    if case["kitchen"] == "paused":
-        await session.execute(text("UPDATE settings SET kitchen_paused = true WHERE id = 1"))
-    for name in case.get("setup", {}).get("make_unavailable", []):
-        await session.execute(
-            text("UPDATE menu_items SET is_available = false WHERE name = :n"), {"n": name}
-        )
-    await session.commit()
-
-
-async def _restore(session: AsyncSession, case: dict) -> None:
-    await session.execute(text("UPDATE settings SET kitchen_paused = false WHERE id = 1"))
-    for name in case.get("setup", {}).get("make_unavailable", []):
-        await session.execute(
-            text("UPDATE menu_items SET is_available = true WHERE name = :n"), {"n": name}
-        )
-    await session.commit()
+def report(results: list[CaseResult]) -> float:
+    passed = 0
+    for result in results:
+        problems = score_case(result.case, result.response)
+        status = "PASS" if not problems else "FAIL"
+        print(f"[{status}] {result.case['id']} ({result.case['language']}): {problems or 'ok'}")
+        if problems:
+            print(f"         reply: {result.response.reply[:110]!r}")
+            print(f"         draft: {[(i.name, i.qty) for i in result.response.draft.items]}")
+        passed += not problems
+    rate = passed / len(results)
+    print(f"\norder_agent eval (order_accuracy): {passed}/{len(results)} passed ({rate:.0%})")
+    print(f"threshold: {PASS_THRESHOLD:.0%} (Phase 4 merge gate: 0.95)")
+    return rate
 
 
 async def run() -> int:
-    cases = load_cases()
-    passed = 0
     async with get_sessionmaker()() as session:
-        for case in cases:
-            user_id = await _ensure_eval_user(session, case["user"]) if case.get("user") else None
-            try:
-                await _apply_setup(session, case)
-                request = AgentChatRequest(
-                    message=case["message"],
-                    history=[AgentMessage(**m) for m in case["history"]],
-                    draft=await _resolve_draft(session, case["draft"]) if case["draft"] else None,
-                    user_id=user_id,
-                    session_id=f"eval:{case['id']}",
-                )
-                resp = await run_turn(session, request)
-                problems = score_case(case, resp)
-            finally:
-                await _restore(session, case)
-            status = "PASS" if not problems else "FAIL"
-            print(f"[{status}] {case['id']} ({case['language']}): {problems or 'ok'}")
-            if problems:
-                print(f"         reply: {resp.reply[:110]!r}")
-                print(f"         draft: {[(i.name, i.qty) for i in resp.draft.items]}")
-            passed += not problems
-
-    rate = passed / len(cases)
-    print(f"\norder_agent eval (order_accuracy): {passed}/{len(cases)} passed ({rate:.0%})")
-    print(f"threshold: {PASS_THRESHOLD:.0%} (Phase 4 merge gate: 0.95)")
-    return 0 if rate >= PASS_THRESHOLD else 1
+        results = await run_all(session, load_cases())
+    return 0 if report(results) >= PASS_THRESHOLD else 1
 
 
 if __name__ == "__main__":
