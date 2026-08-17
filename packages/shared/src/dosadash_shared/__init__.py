@@ -25,6 +25,16 @@ from dosadash_shared.admin import (
     SettingsUpdateIn,
     StaffActionOut,
 )
+from dosadash_shared.agent import (
+    ORDER_AGENT_PROMPT_VERSION,
+    AgentChatRequest,
+    AgentChatResponse,
+    AgentMessage,
+    AgentTurn,
+    DraftItemIn,
+    OrderDraft,
+    OrderDraftItem,
+)
 from dosadash_shared.ai import (
     NUTRITION_PROMPT_VERSION,
     NutritionEnrichFailure,
@@ -80,9 +90,14 @@ from dosadash_shared.schemas import (
 __all__ = [
     "EMBEDDING_DIM",
     "NUTRITION_PROMPT_VERSION",
+    "ORDER_AGENT_PROMPT_VERSION",
     "RAG_ANSWER_PROMPT_VERSION",
     "AdminCancelIn",
     "AdminUserOut",
+    "AgentChatRequest",
+    "AgentChatResponse",
+    "AgentMessage",
+    "AgentTurn",
     "AvailabilityIn",
     "CategoryOut",
     "ChannelType",
@@ -94,6 +109,7 @@ __all__ = [
     "CustomizationIn",
     "CustomizationOut",
     "Diet",
+    "DraftItemIn",
     "HealthStatus",
     "IngredientIn",
     "IngredientOut",
@@ -114,6 +130,8 @@ __all__ = [
     "NutritionOut",
     "NutritionStatusIn",
     "OrderCreateIn",
+    "OrderDraft",
+    "OrderDraftItem",
     "OrderItemIn",
     "OrderItemOut",
     "OrderOut",
