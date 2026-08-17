@@ -22,6 +22,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Numeric,
     String,
@@ -334,3 +335,29 @@ class StaffAction(Base):
     entity: Mapped[str] = mapped_column(String(80))
     detail: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)
+
+
+class EvalRun(TimestampMixin, Base):
+    """One live eval run over the golden sets (Phase 4 LLMOps scoreboard).
+
+    Rows are ingested from `evals/suites/run_live_evals.py --json` output
+    (CI posts after every gate run — including failing ones: regressions
+    belong on the scoreboard too). Headline metrics are promoted to real
+    columns for trends; per-case drill-down stays in JSONB.
+    """
+
+    __tablename__ = "eval_runs"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    ran_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    git_sha: Mapped[str | None] = mapped_column(String(40))
+    trigger: Mapped[str] = mapped_column(String(20), default="ci")  # ci | manual
+    cases: Mapped[int]
+    order_accuracy: Mapped[float] = mapped_column(Float)
+    tool_correctness: Mapped[float] = mapped_column(Float)
+    guardrail_bypasses: Mapped[int] = mapped_column(default=0)
+    guardrail_cases: Mapped[int] = mapped_column(default=0)
+    tone: Mapped[float | None] = mapped_column(Float)
+    gates_passed: Mapped[bool] = mapped_column(Boolean, index=True)
+    failures: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    case_reports: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
