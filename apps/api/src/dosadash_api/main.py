@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 
 from dosadash_api.routers.admin_combos import router as admin_combos_router
+from dosadash_api.routers.admin_costs import router as admin_costs_router
 from dosadash_api.routers.admin_evals import router as admin_evals_router
 from dosadash_api.routers.admin_ingredients import router as admin_ingredients_router
 from dosadash_api.routers.admin_menu import router as admin_menu_router
@@ -21,6 +22,7 @@ from dosadash_shared import HealthStatus
 app = FastAPI(title="DosaDash API", version="0.1.0")
 app.include_router(auth_router)
 app.include_router(admin_combos_router)
+app.include_router(admin_costs_router)
 app.include_router(admin_evals_router)
 app.include_router(admin_ingredients_router)
 app.include_router(admin_menu_router)
