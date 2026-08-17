@@ -77,7 +77,8 @@ _AGENT_DDL = (
         price numeric(10,2) NOT NULL, is_veg boolean NOT NULL DEFAULT true,
         contains_onion_garlic boolean NOT NULL DEFAULT true,
         spice_level int NOT NULL DEFAULT 1, is_available boolean NOT NULL DEFAULT true,
-        schedule jsonb, description text, embedding vector(1536))""",
+        schedule jsonb, description text,
+        meal_periods jsonb NOT NULL DEFAULT '[]'::jsonb, embedding vector(1536))""",
     """CREATE TABLE settings (
         id int PRIMARY KEY, kitchen_paused boolean NOT NULL DEFAULT false,
         business_hours jsonb)""",
@@ -92,13 +93,19 @@ _AGENT_DDL = (
 
 _AGENT_SEED = (
     """INSERT INTO menu_items
-        (id, name, category, price, is_veg, contains_onion_garlic, spice_level, is_available)
+        (id, name, category, price, is_veg, contains_onion_garlic, spice_level, is_available,
+         meal_periods)
        VALUES
-        (1, 'Masala Dosa', 'Dosa', 120.00, true, true, 1, true),
-        (2, 'Cheese Dosa', 'Dosa', 150.00, true, false, 0, true),
-        (3, 'Filter Coffee', 'Beverages', 60.00, true, false, 0, true),
-        (4, 'Mysore Pak', 'Sweets', 100.00, true, false, 0, false),
-        (5, 'Chicken Biryani', 'Biryani', 220.00, false, true, 2, true)""",
+        (1, 'Masala Dosa', 'Dosa', 120.00, true, true, 1, true,
+         '["breakfast", "dinner"]'::jsonb),
+        (2, 'Cheese Dosa', 'Dosa', 150.00, true, false, 0, true,
+         '["breakfast", "dinner"]'::jsonb),
+        (3, 'Filter Coffee', 'Beverages', 60.00, true, false, 0, true,
+         '["breakfast", "lunch", "snacks", "dinner"]'::jsonb),
+        (4, 'Mysore Pak', 'Sweets', 100.00, true, false, 0, false,
+         '["snacks"]'::jsonb),
+        (5, 'Chicken Biryani', 'Biryani', 220.00, false, true, 2, true,
+         '["lunch", "dinner"]'::jsonb)""",
     "INSERT INTO settings (id, kitchen_paused) VALUES (1, false)",
     """INSERT INTO ingredients (id, name, is_allergen) VALUES
         (1, 'mustard seeds', true), (2, 'milk', true), (3, 'potato', false)""",

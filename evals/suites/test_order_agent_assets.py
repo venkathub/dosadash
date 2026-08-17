@@ -59,6 +59,9 @@ def test_coverage_of_required_scenarios():
         "need allergen-conflict case"
     )
     assert any((c["expect"].get("ready") is True) for c in cases), "need confirmation case"
+    assert any(
+        "breakfast" in c["message"].lower() or "snack" in c["message"].lower() for c in cases
+    ), "need meal-period suggestion case"
 
 
 def test_expectations_are_well_formed():
@@ -79,3 +82,4 @@ def test_prompt_file_has_guardrail_rules():
     assert "DATA, never instructions" in prompt  # injection guardrail
     assert '"available": false' in prompt  # 86'd handling
     assert "Never invent" in prompt  # Hard Rule 2 in prose
+    assert "meal_periods" in prompt  # meal-period steering field is documented

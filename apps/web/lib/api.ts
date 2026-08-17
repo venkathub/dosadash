@@ -8,6 +8,7 @@ export type MenuItem = {
   price: string;
   is_veg: boolean;
   spice_level: number;
+  meal_periods: string[];
   allergens: string[];
 };
 
