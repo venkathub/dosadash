@@ -1,8 +1,10 @@
-"""Internal RAG retrieval endpoint (api/agent → ai).
+"""Internal RAG endpoints (api/agent → ai): retrieval and grounded answers.
 
-POST /internal/rag/search — X-Internal-Token guarded (same pattern as
-nutrition). The query is phone-redacted (Hard Rule 8) before it is embedded
-or logged; responses carry provenance for citations.
+POST /internal/rag/search — hybrid retrieval with provenance
+POST /internal/rag/answer — retrieval + structured LLM answer with citations
+
+X-Internal-Token guarded (same pattern as nutrition). Queries are
+phone-redacted (Hard Rule 8) before they are embedded or logged.
 """
 
 import secrets
@@ -15,9 +17,16 @@ from dosadash_ai.config import get_settings
 from dosadash_ai.db import get_session
 from dosadash_ai.llm import LLMError
 from dosadash_ai.llm.client import embed_texts
+from dosadash_ai.rag.answers import answer_question
 from dosadash_ai.rag.search import hybrid_search
 from dosadash_ai.redaction import redact_phones
-from dosadash_shared import RagChunkOut, RagSearchRequest, RagSearchResponse
+from dosadash_shared import (
+    RagAnswerRequest,
+    RagAnswerResponse,
+    RagChunkOut,
+    RagSearchRequest,
+    RagSearchResponse,
+)
 
 router = APIRouter(prefix="/internal/rag", tags=["internal:rag"])
 
@@ -58,3 +67,22 @@ async def search(
             for s in scored
         ],
     )
+
+
+@router.post("/answer", response_model=RagAnswerResponse)
+async def answer(
+    req: RagAnswerRequest,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    x_internal_token: Annotated[str, Header()] = "",
+) -> RagAnswerResponse:
+    _check_internal_token(x_internal_token)
+    try:
+        return await answer_question(
+            session,
+            req.query,
+            top_k=req.top_k,
+            session_id=req.session_id,
+            user_id=req.user_id,
+        )
+    except LLMError as exc:
+        raise HTTPException(status_code=502, detail=f"LLM chain failed: {exc}") from exc

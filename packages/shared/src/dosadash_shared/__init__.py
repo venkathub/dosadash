@@ -57,7 +57,12 @@ from dosadash_shared.orders import (
 )
 from dosadash_shared.rag import (
     EMBEDDING_DIM,
+    RAG_ANSWER_PROMPT_VERSION,
+    RagAnswerDraft,
+    RagAnswerRequest,
+    RagAnswerResponse,
     RagChunkOut,
+    RagCitation,
     RagSearchRequest,
     RagSearchResponse,
 )
@@ -75,6 +80,7 @@ from dosadash_shared.schemas import (
 __all__ = [
     "EMBEDDING_DIM",
     "NUTRITION_PROMPT_VERSION",
+    "RAG_ANSWER_PROMPT_VERSION",
     "AdminCancelIn",
     "AdminUserOut",
     "AvailabilityIn",
@@ -116,7 +122,11 @@ __all__ = [
     "PayIn",
     "PaymentOut",
     "PaymentStatus",
+    "RagAnswerDraft",
+    "RagAnswerRequest",
+    "RagAnswerResponse",
     "RagChunkOut",
+    "RagCitation",
     "RagSearchRequest",
     "RagSearchResponse",
     "RecipeContextLine",

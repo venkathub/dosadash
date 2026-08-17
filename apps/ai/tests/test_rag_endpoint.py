@@ -113,3 +113,54 @@ async def test_search_validates_input(ai_client):
         headers={"X-Internal-Token": "test-internal-token"},
     )
     assert resp.status_code == 422
+
+
+# ------------------------------------------------------- /internal/rag/answer
+
+
+async def test_answer_requires_internal_token(ai_client):
+    resp = await ai_client.post("/internal/rag/answer", json={"query": "can I cancel?"})
+    assert resp.status_code == 403
+
+
+async def test_answer_happy_path(ai_client, monkeypatch):
+    from dosadash_shared import RagAnswerResponse, RagCitation
+
+    async def fake_answer(session, query, *, top_k, session_id, user_id):
+        assert session_id == "chat-1"
+        return RagAnswerResponse(
+            answer="You can cancel while the order is still PLACED.",
+            citations=[
+                RagCitation(
+                    doc_path="policies.md",
+                    title="Ordering, Cancellation & Refund Policies",
+                    heading="Policies › Cancellation policy",
+                )
+            ],
+            not_found=False,
+            model="gpt-4o-mini",
+        )
+
+    monkeypatch.setattr(rag_router, "answer_question", fake_answer)
+    resp = await ai_client.post(
+        "/internal/rag/answer",
+        json={"query": "can I cancel my order?", "session_id": "chat-1"},
+        headers={"X-Internal-Token": "test-internal-token"},
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["citations"][0]["doc_path"] == "policies.md"
+    assert body["prompt_version"] == "rag_answer_v1"
+
+
+async def test_answer_502_when_chain_fails(ai_client, monkeypatch):
+    async def fake_answer(session, query, *, top_k, session_id, user_id):
+        raise LLMError("all models down")
+
+    monkeypatch.setattr(rag_router, "answer_question", fake_answer)
+    resp = await ai_client.post(
+        "/internal/rag/answer",
+        json={"query": "can I cancel?"},
+        headers={"X-Internal-Token": "test-internal-token"},
+    )
+    assert resp.status_code == 502
