@@ -36,9 +36,12 @@ def fake_llm(monkeypatch):
 
 
 def _context_payload(state) -> dict:
-    content = state["kwargs"]["messages"][1]["content"]
-    assert content.startswith("CONTEXT: ")
-    return json.loads(content.removeprefix("CONTEXT: "))
+    messages = state["kwargs"]["messages"]
+    assert messages[1]["content"].startswith("MENU: ")  # stable, cacheable prefix
+    assert messages[2]["content"].startswith("STATE: ")  # volatile per-turn state
+    menu = json.loads(messages[1]["content"].removeprefix("MENU: "))
+    volatile = json.loads(messages[2]["content"].removeprefix("STATE: "))
+    return {**menu, **volatile}
 
 
 async def test_turn_validates_items_against_db(agent_session, fake_llm):
