@@ -1,7 +1,100 @@
 """Thin API client for bot→api internal calls (Hard Rule 10: no business
 logic here — the bot just forwards and renders)."""
 
+import json
+from collections.abc import AsyncIterator
+from typing import Any
+
 import httpx
+
+
+def parse_sse(buffer: str, chunk: str) -> tuple[list[dict[str, Any]], str]:
+    """Feed a text chunk into an SSE buffer → (complete events, remainder)."""
+    buffer += chunk
+    frames = buffer.split("\n\n")
+    remainder = frames.pop()
+    events = []
+    for frame in frames:
+        if frame.startswith("data: "):
+            try:
+                events.append(json.loads(frame[6:]))
+            except ValueError:
+                continue  # malformed frame — skip, the final event is the contract
+    return events, remainder
+
+
+async def stream_chat(
+    *,
+    api_base_url: str,
+    internal_token: str,
+    tg_user_id: int,
+    message: str,
+    history: list[dict[str, str]],
+    draft: dict[str, Any] | None,
+) -> AsyncIterator[dict[str, Any]]:
+    """Yield agent events (delta/final/error) from the api's telegram SSE proxy."""
+    payload = {"tg_user_id": tg_user_id, "message": message, "history": history, "draft": draft}
+    try:
+        async with (
+            httpx.AsyncClient(timeout=120) as client,
+            client.stream(
+                "POST",
+                f"{api_base_url}/api/v1/chat/telegram/stream",
+                json=payload,
+                headers={"X-Internal-Token": internal_token},
+            ) as resp,
+        ):
+            if resp.status_code != 200:
+                yield {"type": "error", "detail": f"HTTP {resp.status_code}"}
+                return
+            buffer = ""
+            async for chunk in resp.aiter_text():
+                events, buffer = parse_sse(buffer, chunk)
+                for event in events:
+                    yield event
+    except httpx.HTTPError:
+        yield {"type": "error", "detail": "API unreachable"}
+
+
+class PlaceResult:
+    def __init__(
+        self,
+        ok: bool,
+        order_id: int | None = None,
+        total: str | None = None,
+        detail: str | None = None,
+    ) -> None:
+        self.ok = ok
+        self.order_id = order_id
+        self.total = total
+        self.detail = detail
+
+
+async def place_order(
+    *,
+    api_base_url: str,
+    internal_token: str,
+    tg_user_id: int,
+    items: list[dict[str, int]],
+) -> PlaceResult:
+    """Place a confirmed draft via the api (order_service re-validates)."""
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{api_base_url}/api/v1/chat/telegram/place",
+                json={"tg_user_id": tg_user_id, "items": items},
+                headers={"X-Internal-Token": internal_token},
+            )
+    except httpx.HTTPError:
+        return PlaceResult(ok=False, detail="API unreachable")
+    if resp.status_code == 201:
+        data = resp.json()
+        return PlaceResult(ok=True, order_id=data["id"], total=data["total"])
+    try:
+        detail = resp.json().get("detail")
+    except ValueError:
+        detail = None
+    return PlaceResult(ok=False, detail=detail)
 
 
 class LinkResult:

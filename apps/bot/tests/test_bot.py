@@ -1,5 +1,5 @@
 from dosadash_bot.config import Settings
-from dosadash_bot.render import echo_text, welcome_text
+from dosadash_bot.render import welcome_text
 
 
 def make_settings(**overrides) -> Settings:
@@ -9,11 +9,6 @@ def make_settings(**overrides) -> Settings:
 def test_welcome_text_personalized():
     assert "Vanakkam Priya" in welcome_text("Priya")
     assert "Vanakkam there" in welcome_text(None)
-
-
-def test_echo_text():
-    assert echo_text("2 masala dosa") == "🥞 Echo: 2 masala dosa"
-    assert "only handle text" in echo_text(None)
 
 
 def test_webhook_url_composed():
