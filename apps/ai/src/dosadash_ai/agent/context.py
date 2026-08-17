@@ -24,6 +24,7 @@ class MenuItemCtx:
     category: str
     price: Decimal
     is_veg: bool
+    contains_onion_garlic: bool
     spice_level: int
     is_available: bool
     schedule: dict[str, Any] | None
@@ -69,8 +70,8 @@ async def load_context(session: AsyncSession, user_id: int | None) -> AgentConte
 
     menu_rows = await session.execute(
         text(
-            "SELECT id, name, category, price, is_veg, spice_level, is_available, "
-            "schedule, description FROM menu_items ORDER BY category, name"
+            "SELECT id, name, category, price, is_veg, contains_onion_garlic, spice_level, "
+            "is_available, schedule, description FROM menu_items ORDER BY category, name"
         )
     )
     items = {
@@ -80,6 +81,7 @@ async def load_context(session: AsyncSession, user_id: int | None) -> AgentConte
             category=row.category,
             price=Decimal(row.price),
             is_veg=row.is_veg,
+            contains_onion_garlic=row.contains_onion_garlic,
             spice_level=row.spice_level,
             is_available=row.is_available,
             schedule=row.schedule,
@@ -133,6 +135,7 @@ def menu_payload(ctx: AgentContext) -> list[dict[str, Any]]:
             "category": item.category,
             "price_inr": str(item.price),
             "veg": item.is_veg,
+            "jain_friendly": item.is_veg and not item.contains_onion_garlic,
             "spice": item.spice_level,
             "allergens": list(item.allergens),
             "available": item.orderable,
