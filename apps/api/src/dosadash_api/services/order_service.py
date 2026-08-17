@@ -21,6 +21,7 @@ from dosadash_api.db.models import (
     User,
 )
 from dosadash_api.providers import PaymentProvider
+from dosadash_api.services import availability
 from dosadash_shared import ChannelType, OrderItemIn, OrderState, PaymentStatus, Role
 
 STAFF_ROLES = {Role.KITCHEN_STAFF, Role.ADMIN, Role.OWNER}
@@ -56,6 +57,11 @@ class ItemsUnavailable(OrderError):
 class KitchenPaused(OrderError):
     def __init__(self) -> None:
         super().__init__("kitchen is paused — not accepting orders right now")
+
+
+class OutsideBusinessHours(OrderError):
+    def __init__(self) -> None:
+        super().__init__("kitchen is closed — outside business hours")
 
 
 class NotModifiable(OrderError):
@@ -131,8 +137,13 @@ async def create_order(
     settings_row = await session.get(Settings, 1)
     if settings_row is not None and settings_row.kitchen_paused:
         raise KitchenPaused
+    if settings_row is not None and not availability.is_open(settings_row.business_hours):
+        raise OutsideBusinessHours
 
     wanted, customizations, found = await _validate_items(session, items_in)
+    off_schedule = [m.name for m in found.values() if not availability.item_on_schedule(m.schedule)]
+    if off_schedule:
+        raise ItemsUnavailable(sorted(off_schedule))
 
     if address_id is not None:
         address = await session.get(Address, address_id)
