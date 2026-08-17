@@ -70,5 +70,11 @@ infra/      → docker-compose.yml, Caddyfile, deploy scripts
 - [x] Phase 0: Foundation — COMPLETE (merged to main #2, deployed via CI)
 - [x] Phase 1: Core platform + Auth — COMPLETE (PRs #3–#11: menu APIs, OTP/JWT/RBAC, order state machine + checkout, KDS + WS + event bus, customer web UI, Razorpay TEST, addresses/preferences, Telegram linking + DM OTP + unlink)
 - [x] Phase 2: Admin Backend I — COMPLETE (PRs #13–#19 into phase branch: menu ops, settings/pause/staff-RBAC/audit, order mgmt + refunds, combos/ingredients/recipes, nutrition LLM enrichment [first litellm + Langfuse + eval-gate code], hours/schedule enforcement, admin web UI; migrations c41f7a2d9b03 + e7b9c4d15a22; squash-merged to main, deployed via CI)
-- [ ] Phase 3: RAG + Order Agent — NOT STARTED (`phase/3-rag-order-agent`)
+- [ ] Phase 3: RAG + Order Agent — IN PROGRESS (`phase/3-rag-order-agent`)
+  - [x] Knowledge base: generated allergen guide (no-drift test), menu guides, FAQ, policies (PR #21)
+  - [x] RAG ingestion + pgvector hybrid search (FTS+vector RRF) + `/internal/rag/search` + retrieval evals; migration a3f8d21c7b90 (PR #22)
+  - [x] Grounded cited answers `/internal/rag/answer` + menu re-embed cascade + startup knowledge ingest + answer evals (PR #23)
+  - [ ] LangGraph order agent (`OrderDraft`, DB-validated item guardrail)
+  - [ ] SSE token streaming (web) + Telegram draft-edit streaming; provider prompt caching
+  - [ ] Web chat + Telegram adapters on the same graph; preferences; 86/pause awareness
 - Update this checklist as phases complete.
