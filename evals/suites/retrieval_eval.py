@@ -58,4 +58,7 @@ async def run() -> int:
 
 
 if __name__ == "__main__":
+    from dosadash_ai.llm import configure_tracing
+
+    configure_tracing()  # trace live eval runs in Langfuse (Hard Rule 6)
     sys.exit(asyncio.run(run()))
