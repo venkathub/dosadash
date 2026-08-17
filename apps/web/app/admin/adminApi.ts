@@ -100,3 +100,29 @@ export type AuditRow = {
   detail: Record<string, unknown> | null;
   at: string;
 };
+
+export type EvalRun = {
+  id: number;
+  ran_at: string;
+  git_sha: string | null;
+  trigger: string;
+  cases: number;
+  order_accuracy: number;
+  tool_correctness: number;
+  guardrail_bypasses: number;
+  guardrail_cases: number;
+  tone: number | null;
+  gates_passed: boolean;
+  failures: string[];
+};
+
+export type EvalCaseReport = {
+  id: string;
+  tags: string[];
+  language: string;
+  accuracy_problems: string[];
+  tool_violations: string[];
+  bypasses: string[];
+};
+
+export type EvalRunDetail = EvalRun & { case_reports: EvalCaseReport[] };

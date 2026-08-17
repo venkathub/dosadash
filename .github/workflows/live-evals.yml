@@ -79,6 +79,31 @@ jobs:
       - name: Run live eval suites (one pass, all metrics)
         run: uv run python evals/suites/run_live_evals.py --json live_eval_results.json
 
+      # Scoreboard ingest (Phase 4): POST the results to the production API —
+      # pass or fail, regressions belong on the scoreboard too. Non-fatal:
+      # the gate verdict above stays authoritative even if prod is down.
+      - name: Post results to eval scoreboard
+        if: always()
+        continue-on-error: true
+        env:
+          EVAL_INGEST_URL: ${{ secrets.EVAL_INGEST_URL }}
+          INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+        run: |
+          if [ ! -f live_eval_results.json ]; then
+            echo "no results file — nothing to ingest"; exit 0
+          fi
+          if [ -z "$EVAL_INGEST_URL" ] || [ -z "$INTERNAL_API_TOKEN" ]; then
+            echo "::notice::EVAL_INGEST_URL / INTERNAL_API_TOKEN not configured — skipping scoreboard ingest"
+            exit 0
+          fi
+          jq --arg sha "$GITHUB_SHA" '. + {git_sha: $sha, trigger: "ci"}' \
+            live_eval_results.json > ingest_payload.json
+          curl --fail-with-body -sS -X POST "$EVAL_INGEST_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Internal-Token: $INTERNAL_API_TOKEN" \
+            --data @ingest_payload.json
+          echo "run recorded on the eval scoreboard"
+
       - name: Upload results JSON
         if: always()
         uses: actions/upload-artifact@v4

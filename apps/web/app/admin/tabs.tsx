@@ -7,6 +7,8 @@ import {
   AdminOrder,
   AuditRow,
   Combo,
+  EvalRun,
+  EvalRunDetail,
   Nutrition,
   SettingsRow,
   adminApi,
@@ -490,6 +492,105 @@ export function AuditTab() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------- Evals tab */
+
+const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+
+function GateBadge({ passed }: { passed: boolean }) {
+  return passed ? (
+    <span className="rounded bg-emerald-900/70 px-2 py-0.5 text-emerald-300">PASS</span>
+  ) : (
+    <span className="rounded bg-red-900/70 px-2 py-0.5 text-red-300">FAIL</span>
+  );
+}
+
+export function EvalsTab() {
+  const loadRuns = useCallback(() => adminApi<EvalRun[]>("/admin/eval-runs?limit=50"), []);
+  const { data: runs, error, refresh } = useLoad(loadRuns);
+  const [detail, setDetail] = useState<EvalRunDetail | null>(null);
+
+  const openDetail = (id: number) =>
+    adminApi<EvalRunDetail>(`/admin/eval-runs/${id}`).then(setDetail).catch(() => setDetail(null));
+
+  const problemCases = (detail?.case_reports ?? []).filter(
+    (c) => c.accuracy_problems.length || c.tool_violations.length || c.bypasses.length,
+  );
+
+  return (
+    <div>
+      <ErrorBar msg={error} />
+      <div className="mb-3 flex items-center gap-3">
+        <h2 className="text-sm font-semibold text-stone-300">
+          Live eval scoreboard — merge gate: order_accuracy ≥ 95%, zero bypasses
+        </h2>
+        <button className={ghostBtnCls} onClick={refresh}>↻</button>
+      </div>
+      <table className="w-full text-left text-xs">
+        <thead className="uppercase text-stone-400">
+          <tr>
+            <th className="p-2">Ran (UTC)</th><th>Commit</th><th>Trigger</th><th>Cases</th>
+            <th>Order acc.</th><th>Tool</th><th>Bypasses</th><th>Tone</th><th>Gates</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(runs ?? []).map((r) => (
+            <tr
+              key={r.id}
+              className="cursor-pointer border-t border-stone-800 hover:bg-stone-800/50"
+              onClick={() => openDetail(r.id)}
+            >
+              <td className="p-2 whitespace-nowrap text-stone-400">{r.ran_at.replace("T", " ").slice(0, 19)}</td>
+              <td className="font-mono text-stone-400">{r.git_sha?.slice(0, 7) ?? "—"}</td>
+              <td>{r.trigger}</td>
+              <td>{r.cases}</td>
+              <td className={r.order_accuracy >= 0.95 ? "text-emerald-300" : "text-red-300"}>{pct(r.order_accuracy)}</td>
+              <td className={r.tool_correctness >= 1 ? "text-emerald-300" : "text-red-300"}>{pct(r.tool_correctness)}</td>
+              <td className={r.guardrail_bypasses === 0 ? "text-emerald-300" : "text-red-300"}>
+                {r.guardrail_bypasses}/{r.guardrail_cases}
+              </td>
+              <td>{r.tone === null ? "—" : pct(r.tone)}</td>
+              <td><GateBadge passed={r.gates_passed} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {runs && runs.length === 0 && (
+        <p className="p-3 text-sm text-stone-400">
+          No runs recorded yet — CI posts here after every live eval gate run.
+        </p>
+      )}
+      {detail && (
+        <div className="mt-4 rounded border border-stone-700 bg-stone-800/40 p-3 text-xs">
+          <div className="mb-2 flex items-center gap-3">
+            <span className="font-semibold text-stone-200">
+              Run #{detail.id} · {detail.git_sha?.slice(0, 7) ?? "local"} · <GateBadge passed={detail.gates_passed} />
+            </span>
+            <button className={ghostBtnCls} onClick={() => setDetail(null)}>close</button>
+          </div>
+          {detail.failures.length > 0 && (
+            <p className="mb-2 text-red-300">gate failures: {detail.failures.join("; ")}</p>
+          )}
+          {problemCases.length === 0 ? (
+            <p className="text-emerald-300">All {detail.cases} cases clean.</p>
+          ) : (
+            <ul className="space-y-1">
+              {problemCases.map((c) => (
+                <li key={c.id} className="border-t border-stone-800 pt-1">
+                  <span className="text-amber-300">{c.id}</span>{" "}
+                  <span className="text-stone-500">({c.language} · {c.tags.join(", ")})</span>
+                  {c.bypasses.length > 0 && <span className="text-red-300"> BYPASS: {c.bypasses.join("; ")}</span>}
+                  {c.tool_violations.length > 0 && <span className="text-red-300"> tool: {c.tool_violations.join("; ")}</span>}
+                  {c.accuracy_problems.length > 0 && <span className="text-stone-300"> {c.accuracy_problems.join("; ")}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

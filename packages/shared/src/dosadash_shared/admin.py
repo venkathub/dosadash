@@ -266,3 +266,53 @@ class StaffActionOut(BaseModel):
     entity: str
     detail: dict[str, Any] | None = None
     at: datetime
+
+
+# ------------------------------------------------------------- eval scoreboard
+
+
+class EvalCaseReport(BaseModel):
+    """Per-case drill-down from a live eval run (run_live_evals.py)."""
+
+    id: str
+    tags: list[str] = []
+    language: str
+    accuracy_problems: list[str] = []
+    tool_violations: list[str] = []
+    bypasses: list[str] = []
+
+
+class EvalRunIn(BaseModel):
+    """One live eval run, as produced by evals/suites/run_live_evals.py
+    --json (plus CI-supplied provenance). Metrics are promoted to columns
+    for the scoreboard; the full payload is kept for drill-down."""
+
+    ran_at: datetime
+    git_sha: str | None = Field(default=None, max_length=40)
+    trigger: Literal["ci", "manual"] = "ci"
+    cases: int = Field(ge=1)
+    metrics: dict[str, float]
+    gates_passed: bool
+    failures: list[str] = []
+    case_reports: list[EvalCaseReport] = []
+
+
+class EvalRunOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    ran_at: datetime
+    git_sha: str | None = None
+    trigger: str
+    cases: int
+    order_accuracy: float
+    tool_correctness: float
+    guardrail_bypasses: int
+    guardrail_cases: int
+    tone: float | None = None
+    gates_passed: bool
+    failures: list[str] = []
+
+
+class EvalRunDetailOut(EvalRunOut):
+    case_reports: list[EvalCaseReport] = []
