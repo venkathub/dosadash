@@ -69,8 +69,8 @@ jobs:
         run: npm run build
 
   # Key-free asset gates (golden datasets, prompt/schema coherence, scoring
-  # logic). Live LLM scoring joins as a merge gate in Phase 4 (Hard Rule 5:
-  # fail if order_accuracy < 0.95 once the order-agent suites exist).
+  # logic). The live LLM merge gate (order_accuracy >= 0.95, Hard Rule 5)
+  # lives in live-evals.yml and runs on PRs touching agents/prompts/evals.
   evals:
     name: Eval suites
     runs-on: ubuntu-latest

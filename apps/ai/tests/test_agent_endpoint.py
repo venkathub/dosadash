@@ -57,7 +57,7 @@ async def test_chat_happy_path(ai_client, monkeypatch):
     )
     assert resp.status_code == 200, resp.text
     body = resp.json()
-    assert body["prompt_version"] == "order_agent_v1"
+    assert body["prompt_version"] == "order_agent_v2"
     assert body["kitchen_open"] is True
 
 
