@@ -111,8 +111,8 @@ async def test_provider_error_falls_through_chain(monkeypatch):
         trace_name="t",
         prompt_version="nutrition_v1",
     )
-    assert model == "groq/llama-3.3-70b-versatile"
-    assert attempted == ["gpt-4o-mini", "groq/llama-3.3-70b-versatile"]
+    assert model == "groq/openai/gpt-oss-120b"
+    assert attempted == ["gpt-4o-mini", "groq/openai/gpt-oss-120b"]
 
 
 async def test_all_models_fail_raises_llm_error(monkeypatch):
@@ -191,3 +191,55 @@ def test_build_messages_uses_versioned_prompt():
     assert "nutrition analyst" in messages[0]["content"]
     assert '"calories_kcal"' in messages[0]["content"]  # schema in prompt
     assert "Masala Dosa" in messages[1]["content"]
+
+
+async def test_rate_limit_retries_same_model_before_falling_through(monkeypatch):
+    """429s get brief same-model retries (TPM windows clear in seconds) —
+    added after a 150-case live gate run brushed OpenAI's TPM ceiling."""
+    import litellm
+
+    attempts = []
+
+    async def fake_acompletion(**kwargs):
+        attempts.append(kwargs["model"])
+        if len(attempts) == 1:
+            raise litellm.RateLimitError(
+                "tokens per min", llm_provider="openai", model="gpt-4o-mini"
+            )
+        return FakeResponse(GOOD_JSON)
+
+    monkeypatch.setattr(llm_client.litellm, "acompletion", fake_acompletion)
+    monkeypatch.setattr(llm_client, "_RATE_LIMIT_BACKOFF_SECONDS", 0.0)
+    _, model = await structured_completion(
+        messages=[{"role": "user", "content": "hi"}],
+        response_model=NutritionEstimate,
+        trace_name="t",
+        prompt_version="nutrition_v1",
+    )
+    assert model == "gpt-4o-mini"  # recovered on the SAME model
+    assert attempts == ["gpt-4o-mini", "gpt-4o-mini"]
+
+
+async def test_rate_limit_exhaustion_falls_through_chain(monkeypatch):
+    import litellm
+
+    attempts = []
+
+    async def fake_acompletion(**kwargs):
+        attempts.append(kwargs["model"])
+        if kwargs["model"] == "gpt-4o-mini":
+            raise litellm.RateLimitError(
+                "tokens per min", llm_provider="openai", model="gpt-4o-mini"
+            )
+        return FakeResponse(GOOD_JSON)
+
+    monkeypatch.setattr(llm_client.litellm, "acompletion", fake_acompletion)
+    monkeypatch.setattr(llm_client, "_RATE_LIMIT_BACKOFF_SECONDS", 0.0)
+    _, model = await structured_completion(
+        messages=[{"role": "user", "content": "hi"}],
+        response_model=NutritionEstimate,
+        trace_name="t",
+        prompt_version="nutrition_v1",
+    )
+    assert model == "groq/openai/gpt-oss-120b"
+    assert attempts.count("gpt-4o-mini") == 3  # initial + 2 rate-limit retries

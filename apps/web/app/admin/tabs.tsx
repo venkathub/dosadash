@@ -7,6 +7,9 @@ import {
   AdminOrder,
   AuditRow,
   Combo,
+  CostSummary,
+  EvalRun,
+  EvalRunDetail,
   Nutrition,
   SettingsRow,
   adminApi,
@@ -490,6 +493,175 @@ export function AuditTab() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------- Evals tab */
+
+const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+
+function GateBadge({ passed }: { passed: boolean }) {
+  return passed ? (
+    <span className="rounded bg-emerald-900/70 px-2 py-0.5 text-emerald-300">PASS</span>
+  ) : (
+    <span className="rounded bg-red-900/70 px-2 py-0.5 text-red-300">FAIL</span>
+  );
+}
+
+export function EvalsTab() {
+  const loadRuns = useCallback(() => adminApi<EvalRun[]>("/admin/eval-runs?limit=50"), []);
+  const { data: runs, error, refresh } = useLoad(loadRuns);
+  const [detail, setDetail] = useState<EvalRunDetail | null>(null);
+
+  const openDetail = (id: number) =>
+    adminApi<EvalRunDetail>(`/admin/eval-runs/${id}`).then(setDetail).catch(() => setDetail(null));
+
+  const problemCases = (detail?.case_reports ?? []).filter(
+    (c) => c.accuracy_problems.length || c.tool_violations.length || c.bypasses.length,
+  );
+
+  return (
+    <div>
+      <ErrorBar msg={error} />
+      <div className="mb-3 flex items-center gap-3">
+        <h2 className="text-sm font-semibold text-stone-300">
+          Live eval scoreboard — merge gate: order_accuracy ≥ 95%, zero bypasses
+        </h2>
+        <button className={ghostBtnCls} onClick={refresh}>↻</button>
+      </div>
+      <table className="w-full text-left text-xs">
+        <thead className="uppercase text-stone-400">
+          <tr>
+            <th className="p-2">Ran (UTC)</th><th>Commit</th><th>Trigger</th><th>Cases</th>
+            <th>Order acc.</th><th>Tool</th><th>Bypasses</th><th>Tone</th><th>Gates</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(runs ?? []).map((r) => (
+            <tr
+              key={r.id}
+              className="cursor-pointer border-t border-stone-800 hover:bg-stone-800/50"
+              onClick={() => openDetail(r.id)}
+            >
+              <td className="p-2 whitespace-nowrap text-stone-400">{r.ran_at.replace("T", " ").slice(0, 19)}</td>
+              <td className="font-mono text-stone-400">{r.git_sha?.slice(0, 7) ?? "—"}</td>
+              <td>{r.trigger}</td>
+              <td>{r.cases}</td>
+              <td className={r.order_accuracy >= 0.95 ? "text-emerald-300" : "text-red-300"}>{pct(r.order_accuracy)}</td>
+              <td className={r.tool_correctness >= 1 ? "text-emerald-300" : "text-red-300"}>{pct(r.tool_correctness)}</td>
+              <td className={r.guardrail_bypasses === 0 ? "text-emerald-300" : "text-red-300"}>
+                {r.guardrail_bypasses}/{r.guardrail_cases}
+              </td>
+              <td>{r.tone === null ? "—" : pct(r.tone)}</td>
+              <td><GateBadge passed={r.gates_passed} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {runs && runs.length === 0 && (
+        <p className="p-3 text-sm text-stone-400">
+          No runs recorded yet — CI posts here after every live eval gate run.
+        </p>
+      )}
+      {detail && (
+        <div className="mt-4 rounded border border-stone-700 bg-stone-800/40 p-3 text-xs">
+          <div className="mb-2 flex items-center gap-3">
+            <span className="font-semibold text-stone-200">
+              Run #{detail.id} · {detail.git_sha?.slice(0, 7) ?? "local"} · <GateBadge passed={detail.gates_passed} />
+            </span>
+            <button className={ghostBtnCls} onClick={() => setDetail(null)}>close</button>
+          </div>
+          {detail.failures.length > 0 && (
+            <p className="mb-2 text-red-300">gate failures: {detail.failures.join("; ")}</p>
+          )}
+          {problemCases.length === 0 ? (
+            <p className="text-emerald-300">All {detail.cases} cases clean.</p>
+          ) : (
+            <ul className="space-y-1">
+              {problemCases.map((c) => (
+                <li key={c.id} className="border-t border-stone-800 pt-1">
+                  <span className="text-amber-300">{c.id}</span>{" "}
+                  <span className="text-stone-500">({c.language} · {c.tags.join(", ")})</span>
+                  {c.bypasses.length > 0 && <span className="text-red-300"> BYPASS: {c.bypasses.join("; ")}</span>}
+                  {c.tool_violations.length > 0 && <span className="text-red-300"> tool: {c.tool_violations.join("; ")}</span>}
+                  {c.accuracy_problems.length > 0 && <span className="text-stone-300"> {c.accuracy_problems.join("; ")}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------- Costs tab */
+
+const usd = (v: number) => `$${v.toFixed(4)}`;
+const compact = (v: number) =>
+  v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(1)}k` : `${v}`;
+
+export function CostsTab() {
+  const loadCosts = useCallback(() => adminApi<CostSummary>("/admin/costs/daily?days=14"), []);
+  const { data: summary, error, refresh } = useLoad(loadCosts);
+
+  if (summary && !summary.configured) {
+    return (
+      <p className="rounded bg-stone-800/60 p-4 text-sm text-stone-300">
+        Langfuse keys are not configured on the AI service — cost tracking is off.
+        Set LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY to enable the dashboard.
+      </p>
+    );
+  }
+
+  const days = summary?.days ?? [];
+  const last7 = days.slice(0, 7).reduce((acc, d) => acc + d.cost_usd, 0);
+
+  return (
+    <div>
+      <ErrorBar msg={error} />
+      <div className="mb-4 flex items-center gap-6">
+        <div>
+          <p className="text-xs uppercase text-stone-400">Last 7 days</p>
+          <p className="text-xl font-semibold text-amber-300">{usd(last7)}</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase text-stone-400">Last 14 days</p>
+          <p className="text-xl font-semibold text-stone-200">{usd(summary?.total_cost_usd ?? 0)}</p>
+        </div>
+        <button className={ghostBtnCls} onClick={refresh}>↻</button>
+      </div>
+      <table className="w-full text-left text-xs">
+        <thead className="uppercase text-stone-400">
+          <tr>
+            <th className="p-2">Date</th><th>Traces</th><th>LLM calls</th><th>Cost</th><th>Per-model breakdown</th>
+          </tr>
+        </thead>
+        <tbody>
+          {days.map((d) => (
+            <tr key={d.date} className="border-t border-stone-800 align-top">
+              <td className="p-2 whitespace-nowrap text-stone-400">{d.date}</td>
+              <td>{d.traces}</td>
+              <td>{d.observations}</td>
+              <td className="text-amber-300">{usd(d.cost_usd)}</td>
+              <td className="text-stone-400">
+                {d.models.length === 0
+                  ? "—"
+                  : d.models.map((m) => (
+                      <span key={m.model} className="mr-3 inline-block">
+                        <span className="text-stone-300">{m.model}</span> {usd(m.cost_usd)}{" "}
+                        ({compact(m.input_tokens)}→{compact(m.output_tokens)} tok, {m.calls} calls)
+                      </span>
+                    ))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {days.length === 0 && (
+        <p className="p-3 text-sm text-stone-400">No cost data yet — traces appear after the first LLM calls.</p>
+      )}
     </div>
   );
 }

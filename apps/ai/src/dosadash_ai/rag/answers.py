@@ -12,6 +12,7 @@ import json
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_ai.llm.client import embed_texts, structured_completion
+from dosadash_ai.llm.semcache import get_semcache
 from dosadash_ai.prompts import load_prompt
 from dosadash_ai.rag.search import ScoredChunk, hybrid_search
 from dosadash_ai.redaction import redact_phones
@@ -70,9 +71,19 @@ async def answer_question(
     session_id: str | None = None,
     user_id: str | None = None,
 ) -> RagAnswerResponse:
-    """Answer a knowledge question with citations. May raise LLMError."""
+    """Answer a knowledge question with citations. May raise LLMError.
+
+    Semantic cache (Phase 4): the query embedding is computed for retrieval
+    anyway, so a cache lookup costs zero extra provider calls. Only this
+    stateless Q&A path is cached — never agent turns. The cache is flushed
+    on menu events and knowledge re-ingest (Hard Rule 4)."""
     question = redact_phones(query)
     [query_embedding] = await embed_texts([question], trace_name="rag.answer.embed")
+
+    cached = await get_semcache().get(question, query_embedding)
+    if cached is not None:
+        return RagAnswerResponse.model_validate({**cached, "cached": True})
+
     scored = await hybrid_search(session, question, query_embedding, top_k=top_k)
     if not scored:  # empty corpus / nothing indexed — don't waste an LLM call
         return RagAnswerResponse(
@@ -95,6 +106,11 @@ async def answer_question(
         return RagAnswerResponse(
             answer=_EMPTY_CORPUS_ANSWER, citations=[], not_found=True, model=model
         )
-    return RagAnswerResponse(
+    response = RagAnswerResponse(
         answer=draft.answer, citations=citations, not_found=draft.not_found, model=model
     )
+    # Cache only grounded, affirmative answers: refusals are cheap to
+    # recompute and may become answerable after the next ingest.
+    if not response.not_found:
+        await get_semcache().put(question, query_embedding, response.model_dump(exclude={"cached"}))
+    return response

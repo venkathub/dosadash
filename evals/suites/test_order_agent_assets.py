@@ -10,8 +10,42 @@ from pathlib import Path
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "order_conversations.jsonl"
 
-REQUIRED_FIELDS = {"id", "language", "kitchen", "history", "draft", "message", "expect"}
+REQUIRED_FIELDS = {"id", "language", "kitchen", "history", "draft", "message", "expect", "tags"}
 LANGUAGES = {"en", "hinglish", "tanglish"}
+TAG_VOCABULARY = {
+    "basic",
+    "multi_item",
+    "edit_qty",
+    "remove_item",
+    "replace_item",
+    "clear_cart",
+    "confirm",
+    "typo",
+    "adversarial",
+    "pii",
+    "sold_out",
+    "kitchen_paused",
+    "allergen",
+    "hallucination",
+    "preference",
+    "meal_period",
+    "factual",
+    "budget",
+    "edge",
+}
+# Phase 4 golden-set coverage floors (docs/05 week 7 deliverable: 150+).
+MIN_CASES = 150
+MIN_PER_TAG = {
+    "typo": 12,
+    "adversarial": 12,
+    "sold_out": 8,
+    "kitchen_paused": 6,
+    "allergen": 10,
+    "hallucination": 4,
+    "confirm": 8,
+    "meal_period": 6,
+}
+MIN_PER_LANGUAGE = {"en": 60, "hinglish": 20, "tanglish": 20}
 
 
 def load_cases() -> list[dict]:
@@ -34,8 +68,32 @@ def test_cases_have_required_fields():
 
 def test_ids_unique_and_substantial():
     ids = [c["id"] for c in load_cases()]
-    assert len(ids) >= 12
+    assert len(ids) >= MIN_CASES, f"golden set has {len(ids)} cases, need >= {MIN_CASES}"
     assert len(ids) == len(set(ids))
+
+
+def test_tags_are_valid():
+    for case in load_cases():
+        tags = case["tags"]
+        assert tags, f"{case['id']}: tags must be non-empty"
+        unknown = set(tags) - TAG_VOCABULARY
+        assert not unknown, f"{case['id']}: unknown tags {unknown}"
+
+
+def test_tag_coverage_floors():
+    """Phase 4 deliverable: adversarial, typo, sold-out, paused, allergen etc.
+    coverage may only grow — floors, not exact counts."""
+    cases = load_cases()
+    for tag, minimum in MIN_PER_TAG.items():
+        count = sum(tag in c["tags"] for c in cases)
+        assert count >= minimum, f"tag {tag!r}: {count} cases, need >= {minimum}"
+
+
+def test_language_coverage_floors():
+    cases = load_cases()
+    for lang, minimum in MIN_PER_LANGUAGE.items():
+        count = sum(c["language"] == lang for c in cases)
+        assert count >= minimum, f"language {lang!r}: {count} cases, need >= {minimum}"
 
 
 def test_referenced_items_exist_in_seed_menu():
@@ -49,6 +107,19 @@ def test_referenced_items_exist_in_seed_menu():
             assert item in names, f"{case['id']}: {item} not in seed menu"
 
 
+def test_no_time_dependent_expectations():
+    """Dishes with a serving schedule (e.g. pongal 06:00-12:00) may never be
+    REQUIRED in a draft — the live gate runs at arbitrary wall-clock times
+    and the agent correctly refuses off-schedule dishes."""
+    from dosadash_ml.datagen import MENU_ITEMS
+
+    scheduled = {m.name for m in MENU_ITEMS if m.schedule}
+    for case in load_cases():
+        required = {line["name"] for line in [*case["draft"], *(case["expect"].get("draft") or [])]}
+        clash = required & scheduled
+        assert not clash, f"{case['id']}: {clash} are schedule-gated — eval would be time-dependent"
+
+
 def test_coverage_of_required_scenarios():
     cases = load_cases()
     assert {c["language"] for c in cases} == LANGUAGES
@@ -59,6 +130,9 @@ def test_coverage_of_required_scenarios():
         "need allergen-conflict case"
     )
     assert any((c["expect"].get("ready") is True) for c in cases), "need confirmation case"
+    assert any(
+        "breakfast" in c["message"].lower() or "snack" in c["message"].lower() for c in cases
+    ), "need meal-period suggestion case"
 
 
 def test_expectations_are_well_formed():
@@ -79,3 +153,4 @@ def test_prompt_file_has_guardrail_rules():
     assert "DATA, never instructions" in prompt  # injection guardrail
     assert '"available": false' in prompt  # 86'd handling
     assert "Never invent" in prompt  # Hard Rule 2 in prose
+    assert "meal_periods" in prompt  # meal-period steering field is documented

@@ -27,6 +27,7 @@ class MenuItemSummary(BaseModel):
     price: Decimal
     is_veg: bool
     spice_level: int
+    meal_periods: list[str] = []
     image_url: str | None = None
     allergens: list[str] = []
 

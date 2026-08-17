@@ -53,7 +53,7 @@
         ▼              ▼           ▼              ▼               ▼
   ┌───────────┐ ┌───────────┐ ┌──────────┐ ┌───────────┐ ┌──────────────┐
   │ OpenAI    │ │ Groq      │ │ Langfuse │ │ Razorpay  │ │ Telegram API │
-  │ gpt-4o-   │ │ Llama 3.3 │ │ Cloud    │ │ Test Mode │ │ (send msgs)  │
+  │ gpt-4o-   │ │gpt-oss120b│ │ Cloud    │ │ Test Mode │ │ (send msgs)  │
   │ mini      │ │ + Whisper │ │ (traces) │ │ (sandbox) │ └──────────────┘
   └───────────┘ └───────────┘ └──────────┘ └───────────┘
         └───── routed via litellm (fallback chain + cost tracking) ─────┘
@@ -131,7 +131,7 @@ Menu edits publish event → Celery re-embeds affected chunks (no drift).
 | Tier | Model | Use |
 |---|---|---|
 | Primary | gpt-4o-mini | agent reasoning, structured extraction |
-| Fast/free | Groq Llama 3.3 70B | intent routing, rerank, casual chat |
+| Fast/free | Groq gpt-oss-120b (Llama 3.3 retired 2026-08-16) | intent routing, rerank, casual chat |
 | Fallback | Groq → Gemini Flash | outage chain |
 | STT | Groq whisper-large-v3 | Telegram voice notes |
 

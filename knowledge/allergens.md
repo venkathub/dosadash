@@ -110,3 +110,21 @@ generated_by: python -m dosadash_ml.datagen.knowledge
 | Neer Mor | veg | yes | no spice | dairy |
 | Rose Milk | veg | yes | no spice | dairy |
 
+## Tiffin
+
+| Item | Diet | Jain-friendly | Spice | Allergens |
+|---|---|---|---|---|
+| Idiyappam (3 pcs) | vegan | yes | no spice | none |
+| Appam | vegan | yes | no spice | none |
+| Poori Masala (2 pcs) | vegan | no | mild | gluten |
+| Adai Avial | veg | no | medium | dairy |
+| Lemon Sevai | vegan | yes | mild | mustard, peanut |
+| Rava Kitchadi | veg | no | mild | dairy, gluten |
+
+## Meals
+
+| Item | Diet | Jain-friendly | Spice | Allergens |
+|---|---|---|---|---|
+| South Indian Veg Meals | veg | no | mild | dairy |
+| Vatha Kuzhambu Rice | vegan | no | medium | none |
+

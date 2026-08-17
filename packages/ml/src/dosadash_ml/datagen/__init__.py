@@ -2,13 +2,14 @@
 
 Deterministic seed → reproducible: 12 months of orders with Pongal/Diwali/Onam
 multipliers and weekend biryani spikes, ~500 users with taste personas, and the
-~40-item South Indian menu seed with ingredient/allergen mapping.
+~50-item South Indian menu seed with ingredient/allergen/meal-period mapping.
 
 Loaded into the DB by `dosadash_api.seed` (apps/api).
 """
 
 from dosadash_ml.datagen.menu import (
     INGREDIENTS,
+    MEAL_PERIODS,
     MENU_ITEMS,
     SeedIngredient,
     SeedMenuItem,
@@ -25,6 +26,7 @@ from dosadash_ml.datagen.users import PERSONAS, SyntheticUser, generate_users
 
 __all__ = [
     "INGREDIENTS",
+    "MEAL_PERIODS",
     "MENU_ITEMS",
     "PERSONAS",
     "SeedIngredient",

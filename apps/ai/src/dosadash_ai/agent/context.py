@@ -30,6 +30,7 @@ class MenuItemCtx:
     schedule: dict[str, Any] | None
     description: str | None
     allergens: tuple[str, ...] = ()
+    meal_periods: tuple[str, ...] = ()
 
     @property
     def orderable(self) -> bool:
@@ -71,7 +72,8 @@ async def load_context(session: AsyncSession, user_id: int | None) -> AgentConte
     menu_rows = await session.execute(
         text(
             "SELECT id, name, category, price, is_veg, contains_onion_garlic, spice_level, "
-            "is_available, schedule, description FROM menu_items ORDER BY category, name"
+            "is_available, schedule, description, meal_periods "
+            "FROM menu_items ORDER BY category, name"
         )
     )
     items = {
@@ -87,6 +89,7 @@ async def load_context(session: AsyncSession, user_id: int | None) -> AgentConte
             schedule=row.schedule,
             description=row.description,
             allergens=tuple(sorted(allergens_by_item.get(row.id, []))),
+            meal_periods=tuple(row.meal_periods or ()),
         )
         for row in menu_rows
     }
@@ -138,6 +141,7 @@ def menu_payload(ctx: AgentContext) -> list[dict[str, Any]]:
             "jain_friendly": item.is_veg and not item.contains_onion_garlic,
             "spice": item.spice_level,
             "allergens": list(item.allergens),
+            "meal_periods": list(item.meal_periods),
             "available": item.orderable,
         }
         for item in ctx.items.values()

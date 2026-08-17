@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from dosadash_ai.config import get_settings
 from dosadash_ai.llm import configure_tracing
 from dosadash_ai.routers.agent import router as agent_router
+from dosadash_ai.routers.costs import router as costs_router
 from dosadash_ai.routers.nutrition import router as nutrition_router
 from dosadash_ai.routers.rag import router as rag_router
 from dosadash_shared import HealthStatus
@@ -58,6 +59,7 @@ app = FastAPI(title="DosaDash AI", version="0.1.0", lifespan=lifespan)
 app.include_router(nutrition_router)
 app.include_router(rag_router)
 app.include_router(agent_router)
+app.include_router(costs_router)
 
 
 @app.get("/healthz", response_model=HealthStatus)

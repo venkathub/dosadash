@@ -54,7 +54,7 @@ async def _seed_menu(session: AsyncSession) -> tuple[Brand, dict[str, MenuItem]]
 
     item_rows: dict[str, MenuItem] = {}
     for m in MENU_ITEMS:
-        item_rows[m.name] = MenuItem(
+        item = MenuItem(
             brand_id=brand.id,
             name=m.name,
             description=m.description,
@@ -64,7 +64,11 @@ async def _seed_menu(session: AsyncSession) -> tuple[Brand, dict[str, MenuItem]]
             contains_onion_garlic=m.contains_onion_garlic,
             spice_level=m.spice_level,
             prep_minutes=m.prep_minutes,
+            meal_periods=list(m.meal_periods),
         )
+        if m.schedule is not None:  # unset → SQL NULL (JSONB stores explicit None as JSON null)
+            item.schedule = m.schedule
+        item_rows[m.name] = item
     session.add_all(item_rows.values())
     await session.flush()
 
