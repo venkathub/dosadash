@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api import events
 from dosadash_api.auth.deps import require_role
-from dosadash_api.db.models import Ingredient, RecipeIngredient, User
+from dosadash_api.db.models import Ingredient, RecipeIngredient, Supplier, User
 from dosadash_api.db.session import get_session
 from dosadash_api.services import audit
 from dosadash_shared import IngredientIn, IngredientOut, IngredientUpdateIn, Role
@@ -36,6 +36,12 @@ async def _get_ingredient(session: AsyncSession, ingredient_id: int) -> Ingredie
     return ingredient
 
 
+async def _check_supplier(session: AsyncSession, supplier_id: int | None) -> None:
+    """Phase 6: reject links to nonexistent suppliers before the FK does."""
+    if supplier_id is not None and await session.get(Supplier, supplier_id) is None:
+        raise HTTPException(status_code=422, detail="supplier_id does not exist")
+
+
 @router.get("", response_model=list[IngredientOut])
 async def list_ingredients(session: SessionDep, admin: User = AdminUser) -> list[IngredientOut]:
     rows = (await session.scalars(select(Ingredient).order_by(Ingredient.name))).all()
@@ -46,6 +52,7 @@ async def list_ingredients(session: SessionDep, admin: User = AdminUser) -> list
 async def create_ingredient(
     body: IngredientIn, session: SessionDep, admin: User = AdminUser
 ) -> IngredientOut:
+    await _check_supplier(session, body.supplier_id)
     ingredient = Ingredient(**body.model_dump())
     session.add(ingredient)
     audit.record(
@@ -74,6 +81,8 @@ async def update_ingredient(
     changes = body.model_dump(exclude_unset=True)
     if not changes:
         raise HTTPException(status_code=422, detail="No fields to update")
+    if "supplier_id" in changes:
+        await _check_supplier(session, changes["supplier_id"])
     for field, value in changes.items():
         setattr(ingredient, field, value)
     audit.record(

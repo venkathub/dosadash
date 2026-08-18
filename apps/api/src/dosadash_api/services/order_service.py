@@ -23,6 +23,7 @@ from dosadash_api.db.models import (
     User,
 )
 from dosadash_api.providers import PaymentProvider
+from dosadash_api.services import memory_service
 from dosadash_api.services.ai_client import AIClient, AIServiceError, get_ai_client
 from dosadash_ml.eta.features import heuristic_eta_minutes
 from dosadash_shared import (
@@ -222,6 +223,7 @@ async def create_order(
             status=PaymentStatus.CREATED,
         )
     )
+    memory_service.record_order_episode(session, order=order, found=found)  # Phase 6
     await session.commit()
     await session.refresh(order, ["placed_at"])
     await events.publish_order_event("order.created", order)

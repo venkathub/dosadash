@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 ORDERS_CHANNEL = "pubsub:orders"
 MENU_CHANNEL = "pubsub:menu"
 SETTINGS_CHANNEL = "pubsub:settings"
+INVENTORY_CHANNEL = "pubsub:inventory"
 
 
 @lru_cache
@@ -91,6 +92,24 @@ async def publish_catalog_event(event_type: str, *, detail: dict[str, Any] | Non
         await get_redis().publish(MENU_CHANNEL, json.dumps(payload))
     except Exception:  # noqa: BLE001 — best-effort by design
         logger.warning("catalog event publish failed (%s)", event_type, exc_info=True)
+
+
+def inventory_event_payload(
+    event_type: str, *, detail: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Stock/supplier/PO mutations (Phase 6). Separate channel from menu:
+    stock levels are NOT embedding-relevant, so these must never trigger the
+    RAG re-embed cascade — but the inventory agent and dashboards care."""
+    return {"type": event_type, "detail": detail or {}}
+
+
+async def publish_inventory_event(event_type: str, *, detail: dict[str, Any] | None = None) -> None:
+    """Fire-and-forget publish; logs (never raises) on Redis failure."""
+    payload = inventory_event_payload(event_type, detail=detail)
+    try:
+        await get_redis().publish(INVENTORY_CHANNEL, json.dumps(payload))
+    except Exception:  # noqa: BLE001 — best-effort by design
+        logger.warning("inventory event publish failed (%s)", event_type, exc_info=True)
 
 
 def settings_event_payload(

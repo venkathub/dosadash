@@ -1,7 +1,8 @@
 """Admin reports: RBAC, sales rollups, dish P&L, GST CSV, forecast-vs-actual."""
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import select
@@ -132,7 +133,9 @@ async def test_gst_csv_download(client, admin, seeded_orders):
 
 async def test_forecast_vs_actual_flags_anomaly(client, admin, seeded_orders, db_session):
     masala = seeded_orders["masala"]
-    yesterday = date.today() - timedelta(days=1)
+    # Anchor on the fixture's seeded IST day: deriving "yesterday" from the
+    # wall clock flaked between 18:30 and 00:00 UTC (IST is already tomorrow).
+    yesterday = seeded_orders["day"].astimezone(ZoneInfo("Asia/Kolkata")).date()
     # Forecast said 40 masala dosas; actual was 2 → day + dish anomaly.
     db_session.add(
         Forecast(item_id=masala.id, date=yesterday, predicted_qty=40.0, model_version="test/v1")

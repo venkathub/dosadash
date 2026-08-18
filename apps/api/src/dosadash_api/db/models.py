@@ -40,9 +40,13 @@ from dosadash_shared import (
     ChannelType,
     CouponType,
     Diet,
+    EscalationStatus,
+    InvoiceStatus,
     OrderState,
     OtpChannelType,
     PaymentStatus,
+    POSource,
+    POState,
     Role,
 )
 
@@ -189,7 +193,10 @@ class Ingredient(TimestampMixin, Base):
     unit: Mapped[str] = mapped_column(String(20))
     stock_qty: Mapped[Decimal] = mapped_column(Numeric(12, 3), default=Decimal("0"))
     reorder_point: Mapped[Decimal] = mapped_column(Numeric(12, 3), default=Decimal("0"))
-    supplier: Mapped[str | None] = mapped_column(String(120))
+    supplier: Mapped[str | None] = mapped_column(String(120))  # legacy free-text (display only)
+    supplier_id: Mapped[int | None] = mapped_column(
+        ForeignKey("suppliers.id", ondelete="SET NULL"), index=True
+    )  # Phase 6: canonical supplier link (backfilled from the free-text column)
     cost: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     is_allergen: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -366,7 +373,45 @@ class EvalRun(TimestampMixin, Base):
     case_reports: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
 
 
+class UserMemory(Base):
+    """Long-term agent memory (Phase 6): episodic store beyond session
+    checkpoints. `EPISODE` rows are order summaries written by order_service
+    on every placed order; the ai context loader reads the latest few (and
+    derives "my usual" from order history) for logged-in customers."""
+
+    __tablename__ = "user_memories"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=False)
+    kind: Mapped[str] = mapped_column(String(20), default="EPISODE")
+    content: Mapped[str] = mapped_column(Text)
+    meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 # --------------------------------------------------------------------------- ML (Phase 5)
+
+
+class Escalation(TimestampMixin, Base):
+    """Support-agent inbox (Phase 6): refund requests and anything the agent
+    must not resolve itself. A human closes it; resolution may run the real
+    provider refund (order_service.refund, admin/owner only)."""
+
+    __tablename__ = "escalations"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    order_id: Mapped[int | None] = mapped_column(
+        ForeignKey("orders.id", ondelete="SET NULL"), index=False
+    )
+    kind: Mapped[str] = mapped_column(String(20))  # refund | support
+    status: Mapped[EscalationStatus] = mapped_column(
+        pg_enum(EscalationStatus, "escalation_status"), default=EscalationStatus.OPEN, index=True
+    )
+    customer_message: Mapped[str] = mapped_column(Text)
+    agent_summary: Mapped[str | None] = mapped_column(Text)
+    resolved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    resolution_note: Mapped[str | None] = mapped_column(String(300))
 
 
 class Forecast(Base):
@@ -408,3 +453,128 @@ class CustomerSegment(Base):
     churn_risk: Mapped[float] = mapped_column(Float)
     ltv: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+# --------------------------------------------------------------------------- inventory (Phase 6)
+
+
+class Supplier(TimestampMixin, Base):
+    """Supplier master (Phase 6): promoted from the free-text
+    `ingredients.supplier` column (backfilled by migration c9d4e82f7a13).
+    Purchase orders reference this table; the legacy text column remains
+    for display back-compat."""
+
+    __tablename__ = "suppliers"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True)
+    phone: Mapped[str | None] = mapped_column(String(16))
+    email: Mapped[str | None] = mapped_column(String(120))
+    lead_time_days: Mapped[int] = mapped_column(default=1)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class PurchaseOrder(TimestampMixin, Base):
+    """Inventory-agent draft PO (or manual PO) — owner-approved before
+    execution. State transitions only via `po_service` (mirrors the order
+    state machine convention):
+
+        DRAFT → PENDING_APPROVAL → APPROVED → RECEIVED
+                        ↓              ↓
+                    REJECTED       CANCELLED
+
+    `model`/`prompt_version`/`rationale` give agent provenance for the audit
+    trail (same pattern as nutrition_estimates). RECEIVED increments
+    `ingredients.stock_qty`.
+    """
+
+    __tablename__ = "purchase_orders"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    supplier_id: Mapped[int | None] = mapped_column(
+        ForeignKey("suppliers.id", ondelete="SET NULL"), index=True
+    )
+    status: Mapped[POState] = mapped_column(
+        pg_enum(POState, "po_state"), default=POState.DRAFT, index=True
+    )
+    source: Mapped[POSource] = mapped_column(pg_enum(POSource, "po_source"), default=POSource.AGENT)
+    rationale: Mapped[str | None] = mapped_column(Text)
+    coverage_days: Mapped[int] = mapped_column(default=7)
+    expected_cost: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    model: Mapped[str | None] = mapped_column(String(80))
+    prompt_version: Mapped[str | None] = mapped_column(String(40))
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    supplier: Mapped[Supplier | None] = relationship()
+    items: Mapped[list["PurchaseOrderItem"]] = relationship(
+        back_populates="po", cascade="all, delete-orphan"
+    )
+
+
+class PurchaseOrderItem(Base):
+    __tablename__ = "purchase_order_items"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    po_id: Mapped[int] = mapped_column(
+        ForeignKey("purchase_orders.id", ondelete="CASCADE"), index=True
+    )
+    ingredient_id: Mapped[int] = mapped_column(ForeignKey("ingredients.id"), index=True)
+    qty: Mapped[Decimal] = mapped_column(Numeric(12, 3))
+    unit: Mapped[str] = mapped_column(String(20))  # snapshot at draft time
+    unit_cost: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    reason: Mapped[str | None] = mapped_column(String(200))  # agent's per-line why
+
+    po: Mapped[PurchaseOrder] = relationship(back_populates="items")
+    ingredient: Mapped[Ingredient] = relationship()
+
+    __table_args__ = (UniqueConstraint("po_id", "ingredient_id"),)
+
+
+class Invoice(TimestampMixin, Base):
+    """Supplier invoice (Phase 6): VLM extraction + PO match, held in a
+    confidence-gated review queue. APPROVED → the linked PO is RECEIVED and
+    stock moves; the extraction/match JSONB keeps full provenance."""
+
+    __tablename__ = "invoices"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    status: Mapped[InvoiceStatus] = mapped_column(
+        pg_enum(InvoiceStatus, "invoice_status"), default=InvoiceStatus.PENDING_REVIEW, index=True
+    )
+    po_id: Mapped[int | None] = mapped_column(
+        ForeignKey("purchase_orders.id", ondelete="SET NULL"), index=True
+    )
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    extraction: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    match: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    model: Mapped[str | None] = mapped_column(String(80))
+    prompt_version: Mapped[str | None] = mapped_column(String(40))
+    uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    review_note: Mapped[str | None] = mapped_column(String(300))
+
+
+class WastageEntry(Base):
+    """Wastage log (Phase 6): each entry decrements `ingredients.stock_qty`
+    atomically (clamped at 0 — kitchens discover wastage they never counted
+    in). `stock_after` snapshots the resulting level for the admin trail."""
+
+    __tablename__ = "wastage_log"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    ingredient_id: Mapped[int] = mapped_column(ForeignKey("ingredients.id"), index=True)
+    qty: Mapped[Decimal] = mapped_column(Numeric(12, 3))
+    reason: Mapped[str] = mapped_column(
+        Enum("SPOILAGE", "PREP_LOSS", "SPILLAGE", "EXPIRED", "OTHER", name="wastage_reason")
+    )
+    note: Mapped[str | None] = mapped_column(String(300))
+    recorded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    stock_after: Mapped[Decimal] = mapped_column(Numeric(12, 3))
+    at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+    ingredient: Mapped[Ingredient] = relationship()
