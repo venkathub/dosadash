@@ -75,6 +75,8 @@ services:
       API_TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       API_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-}
       API_AI_BASE_URL: http://ai:8001
+      # Read-only copilot role — created by migration b3f9c82d4e61 when set
+      READONLY_DB_PASSWORD: ${READONLY_DB_PASSWORD:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -140,6 +142,9 @@ services:
       AI_KNOWLEDGE_DIR: /app/knowledge
       AI_MODEL_DIR: /app/models
       AI_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-}
+      # Copilot runs as the read-only role when set (else main role +
+      # READ ONLY transaction + SQL guardrail still apply)
+      AI_READONLY_DB_PASSWORD: ${READONLY_DB_PASSWORD:-}
       # LLM provider keys — read directly by litellm (Hard Rule 1)
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
