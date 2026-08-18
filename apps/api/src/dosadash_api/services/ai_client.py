@@ -8,6 +8,8 @@ import httpx
 
 from dosadash_api.config import get_settings
 from dosadash_shared import (
+    CopilotAnswer,
+    CopilotAskIn,
     CostSummaryResponse,
     EtaRequest,
     EtaResponse,
@@ -53,6 +55,23 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return EtaResponse.model_validate(resp.json())
+
+    async def copilot_ask(self, request: CopilotAskIn, *, admin_user_id: int) -> CopilotAnswer:
+        """Analytics copilot: LLM SQL draft + self-correction can take a while."""
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/copilot/ask",
+                    json=request.model_dump(mode="json"),
+                    headers={
+                        "X-Internal-Token": self._token,
+                        "X-Admin-User-Id": str(admin_user_id),
+                    },
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return CopilotAnswer.model_validate(resp.json())
 
     async def daily_costs(self, days: int = 30) -> CostSummaryResponse:
         """LLM spend rollup (ai → Langfuse). Raises AIServiceError on failure."""

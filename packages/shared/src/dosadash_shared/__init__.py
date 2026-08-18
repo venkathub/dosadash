@@ -53,6 +53,14 @@ from dosadash_shared.ai import (
     NutritionStatusIn,
     RecipeContextLine,
 )
+from dosadash_shared.copilot import (
+    COPILOT_PROMPT_VERSION,
+    CellValue,
+    CopilotAnswer,
+    CopilotAskIn,
+    CopilotChart,
+    CopilotDraft,
+)
 from dosadash_shared.costs import (
     CostSummaryResponse,
     DailyCost,
@@ -131,6 +139,12 @@ __all__ = [
     "ComboUpdateIn",
     "CouponType",
     "CostSummaryResponse",
+    "COPILOT_PROMPT_VERSION",
+    "CellValue",
+    "CopilotAnswer",
+    "CopilotAskIn",
+    "CopilotChart",
+    "CopilotDraft",
     "CrmReport",
     "CrmTierSummary",
     "CrmUserRow",
