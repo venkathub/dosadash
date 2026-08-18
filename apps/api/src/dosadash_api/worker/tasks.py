@@ -135,3 +135,90 @@ def nightly_demand(self: Any, horizon: int | None = None) -> dict[str, Any]:
         raise self.retry(exc=exc) from exc
     logger.info("nightly_demand %s", result)
     return result
+
+
+# ------------------------------------------------------------------ CRM segments
+
+
+async def _score_segments() -> dict[str, Any]:
+    """Aggregate 365d of orders per user → RFM/churn/LTV → customer_segments."""
+    from dosadash_api.db.models import CustomerSegment
+    from dosadash_api.worker.crm import UserAggregate, score_segments
+
+    now = datetime.now(UTC)
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with engine.connect() as conn:
+            rows = (
+                await conn.execute(
+                    text(
+                        """
+                        SELECT o.user_id,
+                               COUNT(*) AS n_orders,
+                               SUM(o.total) AS total_spend,
+                               MIN(o.placed_at) AS first_order_at,
+                               MAX(o.placed_at) AS last_order_at
+                        FROM orders o
+                        WHERE o.status != 'CANCELLED'
+                          AND o.placed_at >= :since
+                        GROUP BY o.user_id
+                        """
+                    ),
+                    {"since": now - timedelta(days=365)},
+                )
+            ).fetchall()
+
+        aggregates = [
+            UserAggregate(
+                user_id=r.user_id,
+                n_orders=int(r.n_orders),
+                total_spend=float(r.total_spend),
+                first_order_at=r.first_order_at,
+                last_order_at=r.last_order_at,
+            )
+            for r in rows
+        ]
+        scores = score_segments(aggregates, now=now)
+        if scores:
+            async with engine.begin() as conn:
+                stmt = pg_insert(CustomerSegment).values(
+                    [
+                        {
+                            "user_id": s.user_id,
+                            "rfm_tier": s.rfm_tier,
+                            "churn_risk": s.churn_risk,
+                            "ltv": s.ltv,
+                            "computed_at": now,
+                        }
+                        for s in scores
+                    ]
+                )
+                await conn.execute(
+                    stmt.on_conflict_do_update(
+                        index_elements=["user_id"],
+                        set_={
+                            "rfm_tier": stmt.excluded.rfm_tier,
+                            "churn_risk": stmt.excluded.churn_risk,
+                            "ltv": stmt.excluded.ltv,
+                            "computed_at": stmt.excluded.computed_at,
+                        },
+                    )
+                )
+    finally:
+        await engine.dispose()
+    tiers: dict[str, int] = {}
+    for s in scores:
+        tiers[s.rfm_tier] = tiers.get(s.rfm_tier, 0) + 1
+    return {"users": len(scores), "tiers": tiers}
+
+
+@app.task(name="crm.nightly_segments", bind=True, max_retries=2, default_retry_delay=300)
+def nightly_segments(self: Any) -> dict[str, Any]:
+    """03:00 IST: recompute customer_segments (idempotent full refresh)."""
+    try:
+        result = asyncio.run(_score_segments())
+    except Exception as exc:
+        logger.exception("nightly_segments failed")
+        raise self.retry(exc=exc) from exc
+    logger.info("nightly_segments %s", result)
+    return result
