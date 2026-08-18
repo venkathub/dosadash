@@ -46,11 +46,20 @@ class UserPrefs:
 
 
 @dataclass(frozen=True)
+class UserMemoryCtx:
+    """Long-term memory (Phase 6): derived "usual" + recent order episodes."""
+
+    usual: dict[str, Any] | None = None  # {"items": [{item_id, name, qty}], "times_ordered": n}
+    recent_orders: tuple[str, ...] = ()  # newest first, from user_memories EPISODE rows
+
+
+@dataclass(frozen=True)
 class AgentContext:
     items: dict[int, MenuItemCtx] = field(default_factory=dict)
     kitchen_paused: bool = False
     business_hours: dict[str, Any] | None = None
     prefs: UserPrefs | None = None
+    memory: UserMemoryCtx | None = None
 
     @property
     def kitchen_open(self) -> bool:
@@ -101,6 +110,9 @@ async def load_context(session: AsyncSession, user_id: int | None) -> AgentConte
     ).first()
 
     prefs = None
+    memory = None
+    if user_id is not None:
+        memory = await load_memory(session, user_id)
     if user_id is not None:
         prefs_row = (
             await session.execute(
@@ -124,7 +136,66 @@ async def load_context(session: AsyncSession, user_id: int | None) -> AgentConte
         kitchen_paused=bool(settings_row.kitchen_paused) if settings_row else False,
         business_hours=settings_row.business_hours if settings_row else None,
         prefs=prefs,
+        memory=memory,
     )
+
+
+USUAL_WINDOW_DAYS = 90
+USUAL_MIN_REPEATS = 2  # an order signature seen once is history, not a habit
+MAX_EPISODES = 3
+
+_USUAL_SQL = text(
+    """
+    SELECT o.id, oi.item_id, oi.qty, m.name
+    FROM orders o
+    JOIN order_items oi ON oi.order_id = o.id
+    JOIN menu_items m ON m.id = oi.item_id
+    WHERE o.user_id = :uid AND o.status != 'CANCELLED'
+      AND o.placed_at >= now() - make_interval(days => :days)
+    ORDER BY o.placed_at DESC
+    """
+)
+
+_EPISODES_SQL = text(
+    """
+    SELECT content FROM user_memories
+    WHERE user_id = :uid AND kind = 'EPISODE'
+    ORDER BY at DESC, id DESC LIMIT :limit
+    """
+)
+
+
+async def load_memory(session: AsyncSession, user_id: int) -> UserMemoryCtx:
+    """Derive "my usual" (most-repeated exact order signature over the
+    window, ≥ USUAL_MIN_REPEATS) + latest episode summaries."""
+    rows = (
+        await session.execute(_USUAL_SQL, {"uid": user_id, "days": USUAL_WINDOW_DAYS})
+    ).fetchall()
+    orders: dict[int, list[tuple[int, int, str]]] = {}
+    for row in rows:
+        orders.setdefault(row.id, []).append((row.item_id, row.qty, row.name))
+
+    signatures: dict[tuple[tuple[int, int], ...], list[list[tuple[int, int, str]]]] = {}
+    for lines in orders.values():
+        signature = tuple(sorted((item_id, qty) for item_id, qty, _ in lines))
+        signatures.setdefault(signature, []).append(lines)
+
+    usual = None
+    if signatures:
+        best_lines = max(signatures.values(), key=len)
+        if len(best_lines) >= USUAL_MIN_REPEATS:
+            usual = {
+                "items": [
+                    {"item_id": item_id, "name": name, "qty": qty}
+                    for item_id, qty, name in sorted(best_lines[0])
+                ],
+                "times_ordered": len(best_lines),
+            }
+
+    episodes = (
+        await session.execute(_EPISODES_SQL, {"uid": user_id, "limit": MAX_EPISODES})
+    ).scalars()
+    return UserMemoryCtx(usual=usual, recent_orders=tuple(episodes))
 
 
 def menu_payload(ctx: AgentContext) -> list[dict[str, Any]]:
@@ -157,3 +228,11 @@ def prefs_payload(ctx: AgentContext) -> dict[str, Any] | None:
         "preferred_spice": ctx.prefs.spice_level,
         "language": ctx.prefs.language,
     }
+
+
+def memory_payload(ctx: AgentContext) -> dict[str, Any] | None:
+    """Long-term memory for the STATE message (volatile section — sits after
+    the cache-stable prefix, so per-user data never breaks prefix caching)."""
+    if ctx.memory is None:
+        return None
+    return {"usual": ctx.memory.usual, "recent_orders": list(ctx.memory.recent_orders)}

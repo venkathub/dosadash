@@ -25,7 +25,13 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from dosadash_ai.agent.context import AgentContext, load_context, menu_payload, prefs_payload
+from dosadash_ai.agent.context import (
+    AgentContext,
+    load_context,
+    memory_payload,
+    menu_payload,
+    prefs_payload,
+)
 from dosadash_ai.agent.guardrail import gate_ready, validate_draft
 from dosadash_ai.llm.client import LLMError, embed_texts, structured_completion
 from dosadash_ai.prompts import load_prompt
@@ -90,6 +96,7 @@ def build_messages(state: AgentState) -> list[dict[str, str]]:
         "kitchen": {"open": ctx.kitchen_open, "paused": ctx.kitchen_paused},
         "preferences": prefs_payload(ctx),
         "knowledge": state.get("knowledge", []),
+        "memory": memory_payload(ctx),  # Phase 6: "my usual" + episodes
         "current_draft": request.draft.model_dump(mode="json") if request.draft else None,
     }
     return [

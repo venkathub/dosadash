@@ -10,7 +10,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-ORDER_AGENT_PROMPT_VERSION = "order_agent_v3"
+ORDER_AGENT_PROMPT_VERSION = "order_agent_v4"
 
 
 class DraftItemIn(BaseModel):
