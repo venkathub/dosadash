@@ -37,6 +37,9 @@ class Settings(BaseSettings):
 
     # AI service base URL (docker network name in prod, localhost in dev).
     ai_base_url: str = "http://ai:8001"
+    # Bot base URL for api→bot internal calls (Phase 6 owner PO notifications).
+    # Empty string disables notifications (backoffice tab still shows drafts).
+    bot_base_url: str = "http://bot:8081"
 
     # Celery worker (Phase 5) — dedicated broker Redis with `noeviction`:
     # the main cache Redis runs allkeys-lru, which may silently drop queued

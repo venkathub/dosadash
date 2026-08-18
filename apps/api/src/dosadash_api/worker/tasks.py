@@ -259,12 +259,15 @@ async def _draft_inventory_pos(coverage_days: int) -> dict[str, Any]:
     if not result.drafts:
         return {"needs": len(result.needs), "created": 0, "skipped": 0, "fallback": result.fallback}
 
+    from dosadash_api.services.po_notify import notify_owners_po_drafted
+
     engine = create_async_engine(get_settings().database_url)
     try:
         async with async_sessionmaker(engine, expire_on_commit=False)() as session:
             created, skipped = await po_service.persist_agent_drafts(session, result)
             await session.commit()
             created_ids = [po.id for po in created]
+            notified = await notify_owners_po_drafted(session, created_ids)
     finally:
         await engine.dispose()
 
@@ -277,6 +280,7 @@ async def _draft_inventory_pos(coverage_days: int) -> dict[str, Any]:
         "skipped": len(skipped),
         "fallback": result.fallback,
         "violations": len(result.violations),
+        "notified": notified,
     }
 
 
