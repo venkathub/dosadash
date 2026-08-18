@@ -40,6 +40,7 @@ from dosadash_shared import (
     ChannelType,
     CouponType,
     Diet,
+    InvoiceStatus,
     OrderState,
     OtpChannelType,
     PaymentStatus,
@@ -491,6 +492,30 @@ class PurchaseOrderItem(Base):
     ingredient: Mapped[Ingredient] = relationship()
 
     __table_args__ = (UniqueConstraint("po_id", "ingredient_id"),)
+
+
+class Invoice(TimestampMixin, Base):
+    """Supplier invoice (Phase 6): VLM extraction + PO match, held in a
+    confidence-gated review queue. APPROVED → the linked PO is RECEIVED and
+    stock moves; the extraction/match JSONB keeps full provenance."""
+
+    __tablename__ = "invoices"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    status: Mapped[InvoiceStatus] = mapped_column(
+        pg_enum(InvoiceStatus, "invoice_status"), default=InvoiceStatus.PENDING_REVIEW, index=True
+    )
+    po_id: Mapped[int | None] = mapped_column(
+        ForeignKey("purchase_orders.id", ondelete="SET NULL"), index=True
+    )
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    extraction: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    match: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    model: Mapped[str | None] = mapped_column(String(80))
+    prompt_version: Mapped[str | None] = mapped_column(String(40))
+    uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    review_note: Mapped[str | None] = mapped_column(String(300))
 
 
 class WastageEntry(Base):

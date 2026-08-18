@@ -55,6 +55,8 @@ type Ingredient = { id: number; name: string; unit: string; stock_qty: string };
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING_APPROVAL: "bg-amber-600/60 text-amber-100",
+  PENDING_REVIEW: "bg-amber-600/60 text-amber-100",
+  MATCHED: "bg-emerald-700/60 text-emerald-100",
   APPROVED: "bg-emerald-700/60 text-emerald-100",
   RECEIVED: "bg-stone-600 text-stone-200",
   REJECTED: "bg-red-900/60 text-red-200",
@@ -113,7 +115,7 @@ export function InventoryTab() {
       <div className="flex items-center gap-2">
         <select className={inputCls} value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">all statuses</option>
-          {Object.keys(STATUS_COLORS).map((s) => (
+          {["DRAFT", "PENDING_APPROVAL", "APPROVED", "RECEIVED", "REJECTED", "CANCELLED"].map((s) => (
             <option key={s}>{s}</option>
           ))}
         </select>
@@ -207,7 +209,126 @@ export function InventoryTab() {
         {pos?.length === 0 && <p className="text-sm text-stone-400">No purchase orders yet — the agent drafts nightly at 02:30 IST.</p>}
       </div>
 
+      <InvoiceSection onStockChanged={refresh} />
       <WastageSection />
+    </div>
+  );
+}
+
+type InvoiceLine = { name: string; qty: string; unit: string | null; unit_price: string | null; amount: string | null };
+type InvoiceMatchLine = {
+  po_ingredient_name: string;
+  po_qty: string;
+  invoice_name: string | null;
+  invoice_qty: string | null;
+  name_score: number;
+  qty_ok: boolean;
+};
+type Invoice = {
+  id: number;
+  status: string;
+  po_id: number | null;
+  confidence: number;
+  extraction: { supplier_name: string | null; invoice_number: string | null; invoice_date: string | null; lines: InvoiceLine[]; total: string | null } | null;
+  match: { po_id: number; score: number; line_matches: InvoiceMatchLine[]; extra_invoice_lines: string[] } | null;
+  model: string | null;
+  created_at: string;
+};
+
+function InvoiceSection({ onStockChanged }: { onStockChanged: () => void }) {
+  const loadInvoices = useCallback(() => adminApi<Invoice[]>("/admin/invoices"), []);
+  const { data: invoices, error, refresh, setError } = useLoad(loadInvoices);
+  const [busy, setBusy] = useState(false);
+
+  const upload = async (file: File) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("JPEG/PNG/WebP photos only");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      await adminApi("/admin/invoices", { method: "POST", body: { image_base64: b64, mime_type: file.type } });
+      refresh();
+    } catch (e) {
+      setError(e instanceof AdminApiError ? e.message : "upload failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const decide = (id: number, action: "approve" | "reject") =>
+    adminApi(`/admin/invoices/${id}/${action}`, { method: "POST", body: {} })
+      .then(() => {
+        refresh();
+        if (action === "approve") onStockChanged();
+      })
+      .catch((e) => setError(e instanceof AdminApiError ? e.message : "action failed"));
+
+  return (
+    <div>
+      <h2 className="mb-2 text-sm font-semibold text-amber-400">🧾 Supplier invoices (OCR)</h2>
+      <ErrorBar msg={error} />
+      <label className={`${ghostBtnCls} inline-block cursor-pointer`}>
+        {busy ? "🔍 reading invoice…" : "📷 Upload invoice photo"}
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          disabled={busy}
+          onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
+        />
+      </label>
+      <div className="mt-3 space-y-2">
+        {(invoices ?? []).map((inv) => (
+          <div key={inv.id} className="rounded bg-stone-800 p-3 text-sm">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-mono text-amber-300">INV #{inv.id}</span>
+              <span className={`rounded px-2 py-0.5 text-xs ${STATUS_COLORS[inv.status] ?? "bg-stone-700"}`}>{inv.status}</span>
+              <span className="text-stone-300">{inv.extraction?.supplier_name ?? "unknown supplier"}</span>
+              <span
+                className={`rounded px-2 py-0.5 text-xs ${
+                  inv.confidence >= 0.8 ? "bg-emerald-700/60 text-emerald-100" : "bg-red-900/60 text-red-200"
+                }`}
+              >
+                confidence {(inv.confidence * 100).toFixed(0)}%
+              </span>
+              {inv.po_id && <span className="text-xs text-stone-400">→ PO #{inv.po_id}</span>}
+              {(inv.status === "MATCHED" || inv.status === "PENDING_REVIEW") && (
+                <span className="ml-auto flex gap-2">
+                  <button className={btnCls} disabled={!inv.po_id} onClick={() => decide(inv.id, "approve")}>
+                    ✅ approve → stock in
+                  </button>
+                  <button className={`${ghostBtnCls} border-red-500 text-red-300`} onClick={() => decide(inv.id, "reject")}>
+                    reject
+                  </button>
+                </span>
+              )}
+            </div>
+            {inv.match && (
+              <div className="mt-2 text-xs text-stone-400">
+                {inv.match.line_matches.map((m, i) => (
+                  <div key={i}>
+                    {m.invoice_name
+                      ? `${m.po_ingredient_name}: ordered ${m.po_qty} · billed ${m.invoice_qty} (${m.invoice_name}) ${m.qty_ok ? "✓" : "⚠ qty off"}`
+                      : `${m.po_ingredient_name}: ⚠ missing from invoice`}
+                  </div>
+                ))}
+                {inv.match.extra_invoice_lines.length > 0 && (
+                  <div className="text-red-300">⚠ billed but not ordered: {inv.match.extra_invoice_lines.join(", ")}</div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        {invoices?.length === 0 && <p className="text-sm text-stone-400">No invoices yet — photograph a delivery challan to book stock in.</p>}
+      </div>
     </div>
   );
 }
