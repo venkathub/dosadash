@@ -16,10 +16,12 @@ dependencies = [
     "redis>=5.2",
     "langgraph>=0.2",
     "dosadash-shared",
+    "dosadash-ml[infer]",
 ]
 
 [tool.uv.sources]
 dosadash-shared = { workspace = true }
+dosadash-ml = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

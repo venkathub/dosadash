@@ -1,7 +1,8 @@
 name: dosadash
 
 # Memory budget (4 GB VPS, docs/02): postgres ~512M, redis ~128M,
-# api ~384M, ai ~512M, web ~256M, caddy ~64M — headroom for bot/celery later.
+# api ~384M, ai ~512M, web ~256M, caddy ~64M, bot ~128M,
+# worker ~320M + redis-celery ~48M (Phase 5) — total limits ≈ 2.35 GB.
 
 services:
   postgres:
@@ -39,6 +40,25 @@ services:
         limits:
           memory: 128M
 
+  # Celery broker/result store. Separate instance on purpose: the cache redis
+  # above runs allkeys-lru, which can evict queued task messages — the broker
+  # needs noeviction (docs/02 §2.4). No persistence: queues are transient and
+  # every nightly job is idempotent (upserts), so a restart just skips a beat.
+  redis-celery:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      ["redis-server", "--maxmemory", "32mb", "--maxmemory-policy", "noeviction", "--save", ""]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 48M
+
   api:
     build:
       context: ..
@@ -55,6 +75,8 @@ services:
       API_TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       API_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-}
       API_AI_BASE_URL: http://ai:8001
+      # Read-only copilot role — created by migration b3f9c82d4e61 when set
+      READONLY_DB_PASSWORD: ${READONLY_DB_PASSWORD:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,6 +86,47 @@ services:
       resources:
         limits:
           memory: 384M
+
+  # Celery worker + beat (Phase 5): nightly forecast/CRM scoring (docs/02
+  # §2.4). Same codebase/image as api, built with the `worker` extra
+  # (celery + pandas + xgboost); api container never imports celery.
+  worker:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+      args:
+        UV_EXTRA_ARGS: "--extra worker"
+    restart: unless-stopped
+    command:
+      [
+        "celery",
+        "--app=dosadash_api.worker.celery_app:app",
+        "worker",
+        "--beat",
+        "--schedule=/tmp/celerybeat-schedule",
+        "--loglevel=INFO",
+        "--concurrency=1",
+      ]
+    environment:
+      API_ENV: ${ENV:-prod}
+      API_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-dosadash}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dosadash}
+      # Cache/event-bus redis (Hard Rule 4 cascade publishing from tasks)
+      API_REDIS_URL: redis://redis:6379/0
+      API_CELERY_BROKER_URL: redis://redis-celery:6379/0
+      API_CELERY_RESULT_BACKEND: redis://redis-celery:6379/1
+      API_MODEL_DIR: /app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis-celery:
+        condition: service_healthy
+    healthcheck:
+      # Image healthcheck probes uvicorn :8000 — meaningless for the worker.
+      disable: true
+    deploy:
+      resources:
+        limits:
+          memory: 320M
 
   ai:
     build:
@@ -77,7 +140,11 @@ services:
       # service subscribes to the api's event cascade (Hard Rule 4).
       AI_REDIS_URL: redis://redis:6379/0
       AI_KNOWLEDGE_DIR: /app/knowledge
+      AI_MODEL_DIR: /app/models
       AI_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-}
+      # Copilot runs as the read-only role when set (else main role +
+      # READ ONLY transaction + SQL guardrail still apply)
+      AI_READONLY_DB_PASSWORD: ${READONLY_DB_PASSWORD:-}
       # LLM provider keys — read directly by litellm (Hard Rule 1)
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}

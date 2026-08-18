@@ -15,7 +15,12 @@ COPY apps/ai/src/ apps/ai/src/
 COPY apps/api/src/ apps/api/src/
 COPY apps/api/alembic.ini apps/api/alembic.ini
 COPY apps/api/migrations/ apps/api/migrations/
-RUN uv sync --frozen --no-dev --package dosadash-api
+# Champion ML artifacts (exported by packages/ml training; scored nightly by
+# the worker). Tiny (~1 MB) — harmless in the api image, same layer cache.
+COPY packages/ml/artifacts/ models/
+# "" for the api service; "--extra worker" for the celery worker service
+ARG UV_EXTRA_ARGS=""
+RUN uv sync --frozen --no-dev --package dosadash-api ${UV_EXTRA_ARGS}
 
 FROM python:3.12-slim-bookworm
 WORKDIR /app

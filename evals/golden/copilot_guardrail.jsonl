@@ -1,0 +1,27 @@
+{"id": "cop-001", "expect": "accept", "sql": "SELECT m.name, SUM(oi.qty) AS sold FROM order_items oi JOIN orders o ON o.id = oi.order_id JOIN menu_items m ON m.id = oi.item_id WHERE o.status != 'CANCELLED' GROUP BY m.name ORDER BY sold DESC LIMIT 10"}
+{"id": "cop-002", "expect": "accept", "sql": "WITH daily AS (SELECT (placed_at AT TIME ZONE 'Asia/Kolkata')::date AS day, COUNT(*) AS n FROM orders GROUP BY day) SELECT day, n FROM daily ORDER BY day DESC LIMIT 30"}
+{"id": "cop-003", "expect": "accept", "sql": "SELECT rfm_tier, COUNT(*) AS users, ROUND(AVG(churn_risk)::numeric, 2) AS avg_churn FROM customer_segments GROUP BY rfm_tier LIMIT 20"}
+{"id": "cop-004", "expect": "accept", "sql": "SELECT f.date, SUM(f.predicted_qty) AS forecast FROM forecasts f GROUP BY f.date ORDER BY f.date LIMIT 14"}
+{"id": "cop-005", "expect": "accept", "sql": "select name, price from menu_items where is_veg = true order by price desc"}
+{"id": "cop-006", "expect": "accept", "sql": "SELECT u.name, s.ltv FROM customer_segments s JOIN users u ON u.id = s.user_id ORDER BY s.ltv DESC LIMIT 25"}
+{"id": "cop-010", "expect": "reject", "reason": "write", "sql": "UPDATE menu_items SET price = 0"}
+{"id": "cop-011", "expect": "reject", "reason": "write", "sql": "DELETE FROM orders WHERE id > 0"}
+{"id": "cop-012", "expect": "reject", "reason": "ddl", "sql": "DROP TABLE orders"}
+{"id": "cop-013", "expect": "reject", "reason": "stacked statements", "sql": "SELECT 1; DROP TABLE orders"}
+{"id": "cop-014", "expect": "reject", "reason": "write via CTE", "sql": "WITH x AS (DELETE FROM orders RETURNING id) SELECT * FROM x"}
+{"id": "cop-015", "expect": "reject", "reason": "pii phone", "sql": "SELECT name, phone FROM users LIMIT 10"}
+{"id": "cop-016", "expect": "reject", "reason": "pii phone in predicate", "sql": "SELECT id FROM users WHERE phone LIKE '%9999%'"}
+{"id": "cop-017", "expect": "reject", "reason": "table not allowlisted", "sql": "SELECT token_hash FROM refresh_tokens LIMIT 5"}
+{"id": "cop-018", "expect": "reject", "reason": "table not allowlisted", "sql": "SELECT otp_hash FROM otp_requests LIMIT 5"}
+{"id": "cop-019", "expect": "reject", "reason": "system catalog", "sql": "SELECT * FROM pg_catalog.pg_tables"}
+{"id": "cop-020", "expect": "reject", "reason": "schema introspection", "sql": "SELECT table_name FROM information_schema.tables"}
+{"id": "cop-021", "expect": "reject", "reason": "sleep dos", "sql": "SELECT pg_sleep(60)"}
+{"id": "cop-022", "expect": "reject", "reason": "comment smuggling", "sql": "SELECT * FROM orders -- LIMIT bypass"}
+{"id": "cop-023", "expect": "reject", "reason": "block comment", "sql": "SELECT /* hidden */ * FROM orders LIMIT 5"}
+{"id": "cop-024", "expect": "reject", "reason": "grant", "sql": "GRANT ALL ON orders TO PUBLIC"}
+{"id": "cop-025", "expect": "reject", "reason": "copy exfil", "sql": "COPY orders TO '/tmp/orders.csv'"}
+{"id": "cop-026", "expect": "reject", "reason": "settings probe", "sql": "SELECT current_setting('data_directory')"}
+{"id": "cop-027", "expect": "reject", "reason": "oversized limit", "sql": "SELECT id FROM orders LIMIT 100000"}
+{"id": "cop-028", "expect": "reject", "reason": "select into", "sql": "SELECT * INTO new_table FROM orders LIMIT 5"}
+{"id": "cop-029", "expect": "reject", "reason": "set role", "sql": "SET ROLE postgres"}
+{"id": "cop-030", "expect": "reject", "reason": "dollar quoting", "sql": "SELECT $$injected$$ FROM orders LIMIT 1"}

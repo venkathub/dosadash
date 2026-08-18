@@ -1,6 +1,8 @@
 """Service settings loaded from environment variables (never hardcode secrets)."""
 
+import re
 from functools import lru_cache
+from urllib.parse import quote
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -44,6 +46,25 @@ class Settings(BaseSettings):
     semcache_threshold: float = 0.95  # cosine — docs/06
     semcache_ttl_seconds: int = 86400
     semcache_max_candidates: int = 128  # bounded in-process scoring
+
+    # Champion ML artifacts (Phase 5): exported by packages/ml training and
+    # baked into the image; ETA scoring loads {model_dir}/eta/champion.
+    model_dir: str = "packages/ml/artifacts"
+
+    # Analytics copilot (Phase 5): when a read-only role password is set
+    # (role created by api migration b3f9c82d4e61), copilot queries run as
+    # that role — DB-level enforcement behind the SQL guardrail.
+    readonly_db_user: str = "dosadash_readonly"
+    readonly_db_password: str = ""
+
+    @property
+    def copilot_database_url(self) -> str:
+        """Read-only-role DSN, or '' → fall back to the main URL (still
+        guarded by validation + READ ONLY transaction)."""
+        if not self.readonly_db_password:
+            return ""
+        creds = f"{self.readonly_db_user}:{quote(self.readonly_db_password, safe='')}"
+        return re.sub(r"//[^@/]+@", f"//{creds}@", self.database_url, count=1)
 
 
 @lru_cache

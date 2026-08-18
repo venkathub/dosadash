@@ -22,7 +22,7 @@ const btnCls =
 const ghostBtnCls =
   "rounded border border-stone-600 px-2 py-1 text-xs text-stone-300 hover:border-amber-400 hover:text-amber-300";
 
-function useLoad<T>(load: () => Promise<T>) {
+export function useLoad<T>(load: () => Promise<T>) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState("");
   const refresh = useCallback(() => {
@@ -37,7 +37,7 @@ function useLoad<T>(load: () => Promise<T>) {
   return { data, error, refresh, setError };
 }
 
-function ErrorBar({ msg }: { msg: string }) {
+export function ErrorBar({ msg }: { msg: string }) {
   if (!msg) return null;
   return <p className="mb-3 rounded bg-red-900/60 px-3 py-2 text-sm text-red-200">⚠ {msg}</p>;
 }

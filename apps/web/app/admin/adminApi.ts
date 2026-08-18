@@ -148,3 +148,69 @@ export type CostSummary = {
   days: DailyCost[];
   total_cost_usd: number;
 };
+
+/* ---------------------------------------------------- reports + CRM (Phase 5) */
+
+/** Authenticated raw-text fetch (CSV downloads). */
+export async function adminApiText(path: string): Promise<string> {
+  const headers: Record<string, string> = {};
+  const token = getAdminToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const resp = await fetch(`/api/v1${path}`, { headers });
+  if (!resp.ok) throw new AdminApiError(resp.status, `HTTP ${resp.status}`);
+  return resp.text();
+}
+
+export type SalesBucket = { period: string; orders: number; revenue: number; gst: number; aov: number };
+export type SalesReport = {
+  granularity: "daily" | "weekly" | "monthly";
+  days: number;
+  buckets: SalesBucket[];
+  total_orders: number;
+  total_revenue: number;
+  total_gst: number;
+};
+
+export type DishPnlRow = {
+  item_id: number;
+  name: string;
+  category: string;
+  qty: number;
+  revenue: number;
+  ingredient_cost: number;
+  cost_source: "recipe" | "estimated";
+  margin: number;
+  margin_pct: number;
+};
+export type DishPnlReport = { days: number; rows: DishPnlRow[] };
+
+export type ForecastPoint = {
+  date: string;
+  forecast_qty: number | null;
+  actual_qty: number | null;
+  anomaly: boolean;
+};
+export type DishAnomaly = {
+  item_id: number;
+  name: string;
+  date: string;
+  forecast_qty: number;
+  actual_qty: number;
+  deviation_pct: number;
+};
+export type ForecastReport = {
+  points: ForecastPoint[];
+  dish_anomalies: DishAnomaly[];
+  model_version: string | null;
+};
+
+export type CrmTier = { tier: string; users: number; avg_churn_risk: number; total_ltv: number };
+export type CrmUser = {
+  user_id: number;
+  name: string | null;
+  phone: string;
+  rfm_tier: string;
+  churn_risk: number;
+  ltv: number;
+};
+export type CrmReport = { computed_at: string | null; tiers: CrmTier[]; at_risk: CrmUser[] };

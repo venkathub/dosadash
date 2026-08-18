@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { clearAdminToken, getAdminToken, saveAdminToken } from "./adminApi";
+import { CopilotTab } from "./copilotTab";
+import { CrmTab, ReportsTab } from "./reportsTabs";
 import { AuditTab, CombosTab, CostsTab, EvalsTab, MenuTab, NutritionTab, OrdersTab, SettingsTab } from "./tabs";
 
-const TABS = ["Menu", "Orders", "Combos", "Nutrition", "Evals", "Costs", "Settings", "Audit"] as const;
+const TABS = ["Menu", "Orders", "Reports", "CRM", "Copilot", "Combos", "Nutrition", "Evals", "Costs", "Settings", "Audit"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function Admin() {
@@ -50,6 +52,9 @@ export default function Admin() {
       <section className="p-4" key={tab}>
         {tab === "Menu" && <MenuTab />}
         {tab === "Orders" && <OrdersTab />}
+        {tab === "Reports" && <ReportsTab />}
+        {tab === "CRM" && <CrmTab />}
+        {tab === "Copilot" && <CopilotTab />}
         {tab === "Combos" && <CombosTab />}
         {tab === "Nutrition" && <NutritionTab />}
         {tab === "Evals" && <EvalsTab />}

@@ -2,8 +2,10 @@
 (CLAUDE.md convention), plus DB-validated checkout (precursor of Hard Rule 2).
 """
 
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +23,17 @@ from dosadash_api.db.models import (
     User,
 )
 from dosadash_api.providers import PaymentProvider
-from dosadash_shared import ChannelType, OrderItemIn, OrderState, PaymentStatus, Role, availability
+from dosadash_api.services.ai_client import AIClient, AIServiceError, get_ai_client
+from dosadash_ml.eta.features import heuristic_eta_minutes
+from dosadash_shared import (
+    ChannelType,
+    EtaRequest,
+    OrderItemIn,
+    OrderState,
+    PaymentStatus,
+    Role,
+    availability,
+)
 
 STAFF_ROLES = {Role.KITCHEN_STAFF, Role.ADMIN, Role.OWNER}
 
@@ -122,6 +134,23 @@ def _totals(wanted: dict[int, int], found: dict[int, MenuItem]) -> tuple[Decimal
     return subtotal, gst, subtotal + gst
 
 
+async def _predict_eta_minutes(
+    ai: AIClient | None, *, max_prep: int, total_qty: int, n_lines: int
+) -> int:
+    """Champion ETA via the ai service; heuristic fallback keeps checkout
+    working (and fast) when the model/service is unavailable."""
+    if ai is None:
+        ai = get_ai_client()
+    try:
+        response = await ai.predict_eta(
+            EtaRequest(max_prep_minutes=max_prep, total_qty=total_qty, n_lines=n_lines)
+        )
+        return response.eta_minutes
+    except (AIServiceError, ValueError):
+        now_ist = datetime.now(ZoneInfo("Asia/Kolkata")).replace(tzinfo=None)
+        return heuristic_eta_minutes(max_prep=max_prep, total_qty=total_qty, when=now_ist)
+
+
 async def create_order(
     session: AsyncSession,
     *,
@@ -130,6 +159,7 @@ async def create_order(
     provider: PaymentProvider,
     channel: ChannelType = ChannelType.WEB,
     address_id: int | None = None,
+    ai: AIClient | None = None,
 ) -> Order:
     """Checkout: every item_id validated against the DB, totals computed
     server-side, provider order created. Order starts in PLACED."""
@@ -150,6 +180,12 @@ async def create_order(
             raise NotPermitted("address does not belong to this user")
 
     subtotal, gst, total = _totals(wanted, found)
+    eta_minutes = await _predict_eta_minutes(
+        ai,
+        max_prep=max(m.prep_minutes for m in found.values()),
+        total_qty=sum(wanted.values()),
+        n_lines=len(wanted),
+    )
 
     brand_id = found[next(iter(wanted))].brand_id or (
         await session.scalar(select(Brand.id).limit(1))
@@ -163,6 +199,7 @@ async def create_order(
         gst=gst,
         total=total,
         address_id=address_id,
+        eta_predicted=datetime.now(UTC) + timedelta(minutes=eta_minutes),
     )
     order.items = [
         OrderItem(
@@ -213,6 +250,8 @@ async def transition(
 
     previous = order.status
     order.status = target
+    if target == OrderState.DELIVERED and order.delivered_at is None:
+        order.delivered_at = datetime.now(UTC)  # ETA-model label (Phase 5)
     if actor.role in STAFF_ROLES:
         detail: dict[str, Any] = {"from": previous.value, "to": target.value}
         if note:

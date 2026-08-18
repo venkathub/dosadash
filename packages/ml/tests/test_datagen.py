@@ -5,9 +5,11 @@ from dosadash_ml.datagen import (
     MEAL_PERIODS,
     MENU_ITEMS,
     PERSONAS,
+    category_multiplier,
     demand_multiplier,
     generate_orders,
     generate_users,
+    is_festival_day,
     item_allergens,
     validate_menu,
 )
@@ -102,6 +104,32 @@ def test_orders_deterministic():
     b = generate_orders(users, days=30, end=date(2026, 6, 30), seed=7)
     assert a == b
     assert len(a) > 100  # 50 users * ~30 days produce a meaningful history
+
+
+def test_delivery_minutes_bounded_with_real_signal():
+    users = generate_users(100, seed=42)
+    orders = generate_orders(users, days=60, end=date(2026, 6, 30), seed=42)
+    minutes = [o.delivered_minutes for o in orders]
+    assert all(18 <= m <= 90 for m in minutes)
+    assert len(set(minutes)) > 10  # not a constant — real regression target
+    # peak-hour orders take longer on average (ETA-model signal)
+    peak = [o.delivered_minutes for o in orders if o.placed_at.hour in (12, 13, 19, 20, 21)]
+    off = [o.delivered_minutes for o in orders if o.placed_at.hour not in (12, 13, 19, 20, 21)]
+    assert sum(peak) / len(peak) > sum(off) / len(off)
+
+
+def test_festival_day_calendar():
+    assert is_festival_day(date(2026, 1, 15))  # Pongal window
+    assert is_festival_day(date(2025, 10, 21))  # Diwali +1
+    assert not is_festival_day(date(2026, 6, 3))
+
+
+def test_category_multiplier_matches_item_multiplier():
+    for item in MENU_ITEMS[:10]:
+        for day in (date(2026, 1, 15), date(2026, 6, 6), date(2025, 10, 20)):
+            assert demand_multiplier(item, day) == category_multiplier(
+                item.category, item.is_veg, day
+            )
 
 
 def test_orders_respect_diet():
