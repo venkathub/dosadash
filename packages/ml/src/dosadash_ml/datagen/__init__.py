@@ -19,8 +19,10 @@ from dosadash_ml.datagen.menu import (
 from dosadash_ml.datagen.orders import (
     SyntheticOrder,
     SyntheticOrderItem,
+    category_multiplier,
     demand_multiplier,
     generate_orders,
+    is_festival_day,
 )
 from dosadash_ml.datagen.users import PERSONAS, SyntheticUser, generate_users
 
@@ -34,9 +36,11 @@ __all__ = [
     "SyntheticOrder",
     "SyntheticOrderItem",
     "SyntheticUser",
+    "category_multiplier",
     "demand_multiplier",
     "generate_orders",
     "generate_users",
+    "is_festival_day",
     "item_allergens",
     "validate_menu",
 ]

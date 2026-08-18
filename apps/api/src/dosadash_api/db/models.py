@@ -12,6 +12,7 @@ Design notes:
   Phase 3 RAG work needs no schema change for menu semantics.
 """
 
+from datetime import date as date_type
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -20,6 +21,7 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    Date,
     DateTime,
     Enum,
     Float,
@@ -228,6 +230,7 @@ class Order(TimestampMixin, Base):
     eta_predicted: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     address_id: Mapped[int | None] = mapped_column(ForeignKey("addresses.id"))
     placed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     items: Mapped[list["OrderItem"]] = relationship(back_populates="order")
 
@@ -361,3 +364,47 @@ class EvalRun(TimestampMixin, Base):
     gates_passed: Mapped[bool] = mapped_column(Boolean, index=True)
     failures: Mapped[list[str]] = mapped_column(JSONB, default=list)
     case_reports: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+
+
+# --------------------------------------------------------------------------- ML (Phase 5)
+
+
+class Forecast(Base):
+    """Per-dish daily demand forecast (docs/06) — written by the nightly
+    Celery scoring task from the MLflow `champion` model; read by admin
+    forecast-vs-actual charts and (Phase 6) the inventory agent.
+
+    Unique on (item_id, date): re-scoring a day overwrites the previous
+    prediction and stamps the model_version that produced it.
+    """
+
+    __tablename__ = "forecasts"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("menu_items.id", ondelete="CASCADE"), index=True
+    )
+    date: Mapped[date_type] = mapped_column(Date, index=True)
+    predicted_qty: Mapped[float] = mapped_column(Float)
+    model_version: Mapped[str] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    __table_args__ = (UniqueConstraint("item_id", "date"),)
+
+
+class CustomerSegment(Base):
+    """Nightly CRM scoring output (docs/06): RFM tier + churn risk + LTV.
+
+    One row per user, fully recomputed by the 03:00 Celery job — `computed_at`
+    tells the admin CRM tab how fresh the segmentation is.
+    """
+
+    __tablename__ = "customer_segments"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    rfm_tier: Mapped[str] = mapped_column(String(20), index=True)
+    churn_risk: Mapped[float] = mapped_column(Float)
+    ltv: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
