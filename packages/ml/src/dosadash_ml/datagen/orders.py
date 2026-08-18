@@ -24,23 +24,65 @@ PONGAL_CATEGORIES = {"Idli & Vada", "Rice & Pongal"}
 ONAM_CATEGORIES = {"Rice & Pongal", "Sweets", "Dosa"}
 
 
-def demand_multiplier(item: SeedMenuItem, day: date) -> float:
-    """Pure seasonal multiplier for one item on one day (unit-testable)."""
+def category_multiplier(category: str, is_veg: bool, day: date) -> float:
+    """Seasonal multiplier for a (category, veg-flag) on one day.
+
+    Single source of truth for the synthetic-world festival calendar: datagen
+    uses it to *produce* demand, and the Phase 5 forecaster uses the very same
+    function as a model feature — so the feature is never out of sync with the
+    data-generating process.
+    """
     mult = 1.0
-    if day.weekday() >= 5 and item.category == "Biryani":
+    if day.weekday() >= 5 and category == "Biryani":
         mult *= 2.5
-    if (day.month, day.day) in PONGAL_DAYS and item.category in PONGAL_CATEGORIES:
+    if (day.month, day.day) in PONGAL_DAYS and category in PONGAL_CATEGORIES:
         mult *= 3.0
     diwali = DIWALI_BY_YEAR.get(day.year)
     if diwali and abs((day - diwali).days) <= 1:
-        if item.category == "Sweets":
+        if category == "Sweets":
             mult *= 4.0
-        elif item.category == "Snacks":
+        elif category == "Snacks":
             mult *= 2.0
     onam = ONAM_BY_YEAR.get(day.year)
-    if onam and day == onam and item.is_veg and item.category in ONAM_CATEGORIES:
+    if onam and day == onam and is_veg and category in ONAM_CATEGORIES:
         mult *= 2.0
     return mult
+
+
+def demand_multiplier(item: SeedMenuItem, day: date) -> float:
+    """Pure seasonal multiplier for one item on one day (unit-testable)."""
+    return category_multiplier(item.category, item.is_veg, day)
+
+
+def is_festival_day(day: date) -> bool:
+    """True on Pongal/Diwali(±1)/Onam — kitchen + rider load runs hot."""
+    if (day.month, day.day) in PONGAL_DAYS:
+        return True
+    diwali = DIWALI_BY_YEAR.get(day.year)
+    if diwali and abs((day - diwali).days) <= 1:
+        return True
+    return day == ONAM_BY_YEAR.get(day.year)
+
+
+_PEAK_HOURS = {12, 13, 19, 20, 21}
+
+
+def _delivery_minutes(
+    rng: Random, items: list[SeedMenuItem], total_qty: int, day: date, hour: int
+) -> int:
+    """Synthetic actual delivery duration (minutes) — the ETA-model target.
+
+    Correlates with observable features (prep time, basket size, peak hour,
+    weekend/festival load) plus noise, so an ETA regressor has real signal.
+    """
+    prep = max(i.prep_minutes for i in items)
+    ride = rng.uniform(8.0, 18.0)
+    peak = 8.0 if hour in _PEAK_HOURS else 0.0
+    weekend = 5.0 if day.weekday() >= 5 else 0.0
+    festival = 6.0 if is_festival_day(day) else 0.0
+    noise = rng.gauss(0.0, 3.0)
+    minutes = prep + 2.0 * total_qty + ride + peak + weekend + festival + noise
+    return max(18, min(90, round(minutes)))
 
 
 def _allowed(item: SeedMenuItem, user: SyntheticUser) -> bool:
@@ -66,6 +108,7 @@ class SyntheticOrder:
     placed_at: datetime
     channel: ChannelType
     items: tuple[SyntheticOrderItem, ...]
+    delivered_minutes: int  # actual delivery duration — ETA regression target
 
 
 def generate_orders(
@@ -110,21 +153,27 @@ def generate_orders(
             ]
             n_lines = rng.choices((1, 2, 3, 4), weights=(35, 40, 18, 7), k=1)[0]
             picked: dict[str, int] = {}
+            picked_items: dict[str, SeedMenuItem] = {}
             for _ in range(n_lines):
                 item = rng.choices(items_pool, weights=day_weights, k=1)[0]
                 picked[item.name] = picked.get(item.name, 0) + rng.choices((1, 2), (80, 20))[0]
+                picked_items[item.name] = item
 
             hour = rng.choices(
                 range(7, 23), weights=(2, 6, 8, 4, 3, 8, 10, 4, 2, 3, 5, 9, 10, 6, 3, 1)
             )[0]
             placed_at = datetime(day.year, day.month, day.day, hour, rng.randrange(60))
             channel = ChannelType.WEB if rng.random() < 0.7 else ChannelType.TELEGRAM
+            delivered_minutes = _delivery_minutes(
+                rng, list(picked_items.values()), sum(picked.values()), day, hour
+            )
             orders.append(
                 SyntheticOrder(
                     user_phone=user.phone,
                     placed_at=placed_at,
                     channel=channel,
                     items=tuple(SyntheticOrderItem(n, q) for n, q in picked.items()),
+                    delivered_minutes=delivered_minutes,
                 )
             )
     return orders

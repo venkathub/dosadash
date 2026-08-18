@@ -2,6 +2,7 @@
 (CLAUDE.md convention), plus DB-validated checkout (precursor of Hard Rule 2).
 """
 
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -213,6 +214,8 @@ async def transition(
 
     previous = order.status
     order.status = target
+    if target == OrderState.DELIVERED and order.delivered_at is None:
+        order.delivered_at = datetime.now(UTC)  # ETA-model label (Phase 5)
     if actor.role in STAFF_ROLES:
         detail: dict[str, Any] = {"from": previous.value, "to": target.value}
         if note:

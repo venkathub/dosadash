@@ -10,7 +10,7 @@ menu-safe inserts; intended for empty databases).
 
 import argparse
 import asyncio
-from datetime import UTC
+from datetime import UTC, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -125,6 +125,7 @@ async def _seed_orders(
                 (items[line.item_name].price * line.qty for line in so.items), Decimal("0")
             )
             gst = (subtotal * GST_RATE).quantize(Decimal("0.01"))
+            placed_at = so.placed_at.replace(tzinfo=UTC)
             order = Order(
                 user_id=users[so.user_phone].id,
                 brand_id=brand.id,
@@ -133,7 +134,8 @@ async def _seed_orders(
                 subtotal=subtotal,
                 gst=gst,
                 total=subtotal + gst,
-                placed_at=so.placed_at.replace(tzinfo=UTC),
+                placed_at=placed_at,
+                delivered_at=placed_at + timedelta(minutes=so.delivered_minutes),
             )
             order.items = [
                 OrderItem(
