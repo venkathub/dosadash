@@ -22,6 +22,14 @@ dependencies = [
 dosadash-shared = { workspace = true }
 dosadash-ml = { workspace = true }
 
+# Celery worker deps (compose `worker` service only — built from the same
+# Dockerfile with `--extra worker`). Keeps the api image lean (Hard Rule 7).
+[project.optional-dependencies]
+worker = [
+    "celery[redis]>=5.4",
+    "dosadash-ml[forecast]",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

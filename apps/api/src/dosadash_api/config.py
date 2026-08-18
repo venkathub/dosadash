@@ -38,6 +38,16 @@ class Settings(BaseSettings):
     # AI service base URL (docker network name in prod, localhost in dev).
     ai_base_url: str = "http://ai:8001"
 
+    # Celery worker (Phase 5) — dedicated broker Redis with `noeviction`:
+    # the main cache Redis runs allkeys-lru, which may silently drop queued
+    # task messages, so the broker gets its own tiny instance.
+    celery_broker_url: str = "redis://localhost:6380/0"
+    celery_result_backend: str = "redis://localhost:6380/1"
+    # Champion model artifacts (exported by packages/ml training, baked into
+    # the worker image — MLflow itself never runs on the VPS, docs/02).
+    model_dir: str = "/app/models"
+    forecast_horizon_days: int = 14
+
 
 @lru_cache
 def get_settings() -> Settings:
