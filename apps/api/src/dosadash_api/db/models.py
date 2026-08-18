@@ -373,6 +373,22 @@ class EvalRun(TimestampMixin, Base):
     case_reports: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
 
 
+class UserMemory(Base):
+    """Long-term agent memory (Phase 6): episodic store beyond session
+    checkpoints. `EPISODE` rows are order summaries written by order_service
+    on every placed order; the ai context loader reads the latest few (and
+    derives "my usual" from order history) for logged-in customers."""
+
+    __tablename__ = "user_memories"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=False)
+    kind: Mapped[str] = mapped_column(String(20), default="EPISODE")
+    content: Mapped[str] = mapped_column(Text)
+    meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 # --------------------------------------------------------------------------- ML (Phase 5)
 
 
