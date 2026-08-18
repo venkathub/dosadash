@@ -40,6 +40,7 @@ from dosadash_shared import (
     ChannelType,
     CouponType,
     Diet,
+    EscalationStatus,
     InvoiceStatus,
     OrderState,
     OtpChannelType,
@@ -373,6 +374,28 @@ class EvalRun(TimestampMixin, Base):
 
 
 # --------------------------------------------------------------------------- ML (Phase 5)
+
+
+class Escalation(TimestampMixin, Base):
+    """Support-agent inbox (Phase 6): refund requests and anything the agent
+    must not resolve itself. A human closes it; resolution may run the real
+    provider refund (order_service.refund, admin/owner only)."""
+
+    __tablename__ = "escalations"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    order_id: Mapped[int | None] = mapped_column(
+        ForeignKey("orders.id", ondelete="SET NULL"), index=False
+    )
+    kind: Mapped[str] = mapped_column(String(20))  # refund | support
+    status: Mapped[EscalationStatus] = mapped_column(
+        pg_enum(EscalationStatus, "escalation_status"), default=EscalationStatus.OPEN, index=True
+    )
+    customer_message: Mapped[str] = mapped_column(Text)
+    agent_summary: Mapped[str | None] = mapped_column(Text)
+    resolved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    resolution_note: Mapped[str | None] = mapped_column(String(300))
 
 
 class Forecast(Base):

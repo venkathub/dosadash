@@ -19,6 +19,8 @@ from dosadash_shared import (
     InvoiceExtractResult,
     NutritionEstimateRequest,
     NutritionEstimateResponse,
+    SupportAgentRequest,
+    SupportAgentResponse,
 )
 
 
@@ -104,6 +106,20 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return InventoryDraftResult.model_validate(resp.json())
+
+    async def support_chat(self, request: SupportAgentRequest) -> SupportAgentResponse:
+        """Support agent (Phase 6): one guarded reasoning turn."""
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/support/chat",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return SupportAgentResponse.model_validate(resp.json())
 
     async def daily_costs(self, days: int = 30) -> CostSummaryResponse:
         """LLM spend rollup (ai → Langfuse). Raises AIServiceError on failure."""

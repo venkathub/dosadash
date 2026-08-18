@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApiError, api, getUser, type Order } from "../../lib/api";
+import { SupportBox } from "./supportBox";
 
 export default function Orders() {
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -128,6 +129,7 @@ export default function Orders() {
           </article>
         ))}
       </div>
+      {getUser() && <SupportBox />}
     </main>
   );
 }
