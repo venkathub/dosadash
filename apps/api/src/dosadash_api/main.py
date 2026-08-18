@@ -19,6 +19,7 @@ from dosadash_api.routers.admin_suppliers import router as admin_suppliers_route
 from dosadash_api.routers.admin_wastage import router as admin_wastage_router
 from dosadash_api.routers.auth import router as auth_router
 from dosadash_api.routers.chat import router as chat_router
+from dosadash_api.routers.internal_mcp import router as internal_mcp_router
 from dosadash_api.routers.menu import router as menu_router
 from dosadash_api.routers.orders import router as orders_router
 from dosadash_api.routers.payments import router as payments_router
@@ -45,6 +46,7 @@ app.include_router(admin_reports_router)
 app.include_router(admin_suppliers_router)
 app.include_router(admin_wastage_router)
 app.include_router(chat_router)
+app.include_router(internal_mcp_router)
 app.include_router(menu_router)
 app.include_router(orders_router)
 app.include_router(payments_router)

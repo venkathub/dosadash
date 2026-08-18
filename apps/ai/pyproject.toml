@@ -17,7 +17,11 @@ dependencies = [
     "langgraph>=0.2",
     "dosadash-shared",
     "dosadash-ml[infer]",
+    "mcp>=2.0.0",
 ]
+
+[project.scripts]
+dosadash-mcp = "dosadash_ai.mcp_server:main"
 
 [tool.uv.sources]
 dosadash-shared = { workspace = true }
