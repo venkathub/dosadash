@@ -12,6 +12,7 @@ from dosadash_ai.config import get_settings
 from dosadash_ai.llm import configure_tracing
 from dosadash_ai.routers.agent import router as agent_router
 from dosadash_ai.routers.costs import router as costs_router
+from dosadash_ai.routers.eta import router as eta_router
 from dosadash_ai.routers.nutrition import router as nutrition_router
 from dosadash_ai.routers.rag import router as rag_router
 from dosadash_shared import HealthStatus
@@ -60,6 +61,7 @@ app.include_router(nutrition_router)
 app.include_router(rag_router)
 app.include_router(agent_router)
 app.include_router(costs_router)
+app.include_router(eta_router)
 
 
 @app.get("/healthz", response_model=HealthStatus)

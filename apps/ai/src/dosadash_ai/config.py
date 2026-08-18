@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     semcache_ttl_seconds: int = 86400
     semcache_max_candidates: int = 128  # bounded in-process scoring
 
+    # Champion ML artifacts (Phase 5): exported by packages/ml training and
+    # baked into the image; ETA scoring loads {model_dir}/eta/champion.
+    model_dir: str = "packages/ml/artifacts"
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -821,6 +821,7 @@ version = "0.1.0"
 source = { editable = "apps/ai" }
 dependencies = [
     { name = "asyncpg" },
+    { name = "dosadash-ml", extra = ["infer"] },
     { name = "dosadash-shared" },
     { name = "fastapi" },
     { name = "httpx" },
@@ -837,6 +838,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "asyncpg", specifier = ">=0.30" },
+    { name = "dosadash-ml", extras = ["infer"], editable = "packages/ml" },
     { name = "dosadash-shared", editable = "packages/shared" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },
@@ -926,6 +928,9 @@ forecast = [
     { name = "pandas" },
     { name = "xgboost" },
 ]
+infer = [
+    { name = "xgboost" },
+]
 train = [
     { name = "mlflow" },
     { name = "scikit-learn" },
@@ -933,13 +938,14 @@ train = [
 
 [package.metadata]
 requires-dist = [
+    { name = "dosadash-ml", extras = ["infer"], marker = "extra == 'forecast'" },
     { name = "dosadash-shared", editable = "packages/shared" },
     { name = "mlflow", marker = "extra == 'train'", specifier = ">=2.16" },
     { name = "pandas", marker = "extra == 'forecast'", specifier = ">=2.2" },
     { name = "scikit-learn", marker = "extra == 'train'", specifier = ">=1.5" },
-    { name = "xgboost", marker = "extra == 'forecast'", specifier = ">=2.1" },
+    { name = "xgboost", marker = "extra == 'infer'", specifier = ">=2.1" },
 ]
-provides-extras = ["forecast", "train"]
+provides-extras = ["infer", "forecast", "train"]
 
 [[package]]
 name = "dosadash-shared"

@@ -138,6 +138,7 @@ services:
       # service subscribes to the api's event cascade (Hard Rule 4).
       AI_REDIS_URL: redis://redis:6379/0
       AI_KNOWLEDGE_DIR: /app/knowledge
+      AI_MODEL_DIR: /app/models
       AI_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-}
       # LLM provider keys — read directly by litellm (Hard Rule 1)
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}

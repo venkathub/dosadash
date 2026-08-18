@@ -10,11 +10,15 @@ dependencies = [
 # Heavy ML deps are opt-in extras so the api/bot images (which depend on
 # dosadash-ml for datagen only) never pull them (4 GB RAM budget, Hard Rule 7):
 # - forecast: what the Celery worker needs to *score* (features + inference)
+# - infer:    checkout-time ETA scoring inside the ai service (xgboost only)
 # - train:    local/CI-only training + registry (MLflow never runs on the VPS)
 [project.optional-dependencies]
-forecast = [
-    "pandas>=2.2",
+infer = [
     "xgboost>=2.1",
+]
+forecast = [
+    "dosadash-ml[infer]",
+    "pandas>=2.2",
 ]
 train = [
     "mlflow>=2.16",
