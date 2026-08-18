@@ -1,0 +1,18 @@
+{
+  "model_version": "dosadash-demand-forecast/v1",
+  "features": [
+    "lag_7",
+    "lag_14",
+    "ma_7",
+    "dow",
+    "is_weekend",
+    "festival_mult"
+  ],
+  "trained_at": "2026-08-18T15:16:27.916694+00:00",
+  "valid_wape": 0.421095,
+  "valid_mae": 2.110101,
+  "baseline_lag7_wape": 0.555236,
+  "baseline_lag7_mae": 2.78228,
+  "train_rows": 16796.0,
+  "valid_rows": 1456.0
+}
