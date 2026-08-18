@@ -82,6 +82,32 @@ def link_success_text(name: str | None) -> str:
     )
 
 
+def po_notify_text(payload: dict[str, Any]) -> str:
+    """Owner approval card for an agent-drafted purchase order (Phase 6)."""
+    supplier = payload.get("supplier_name") or "Unassigned supplier"
+    lines = [f"📦 Purchase order #{payload['po_id']} — {supplier}", ""]
+    for line in payload.get("lines") or []:
+        lines.append(f"  • {line['name']}: {line['qty']} {line['unit']}")
+    cost = payload.get("expected_cost")
+    if cost:
+        lines.append(f"  Expected cost: ₹{float(cost):.0f}")
+    rationale = payload.get("rationale")
+    if rationale:
+        lines.append("")
+        lines.append(f"🤖 {rationale}")
+    lines.append("")
+    lines.append("Approve to send it to the supplier, or reject it.")
+    return "\n".join(lines)
+
+
+def po_decided_text(po_id: int, status: str | None, detail: str | None) -> str:
+    if status == "APPROVED":
+        return f"✅ PO #{po_id} approved. Mark it received in the backoffice when goods arrive."
+    if status == "REJECTED":
+        return f"🚫 PO #{po_id} rejected."
+    return f"⚠️ Couldn't update PO #{po_id}: {detail or 'please use the backoffice.'}"
+
+
 def link_failed_text(detail: str | None) -> str:
     reason = detail or "The link code is invalid or expired."
     return (

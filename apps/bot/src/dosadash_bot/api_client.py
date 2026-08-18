@@ -97,6 +97,39 @@ async def place_order(
     return PlaceResult(ok=False, detail=detail)
 
 
+class PODecisionResult:
+    def __init__(self, ok: bool, status: str | None = None, detail: str | None = None) -> None:
+        self.ok = ok
+        self.status = status
+        self.detail = detail
+
+
+async def po_decision(
+    *,
+    api_base_url: str,
+    internal_token: str,
+    tg_user_id: int,
+    po_id: int,
+    action: str,
+) -> PODecisionResult:
+    """Forward an owner's Approve/Reject tap; the api re-checks RBAC + state."""
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                f"{api_base_url}/api/v1/internal/po/decision",
+                json={"tg_user_id": tg_user_id, "po_id": po_id, "action": action},
+                headers={"X-Internal-Token": internal_token},
+            )
+    except httpx.HTTPError:
+        return PODecisionResult(ok=False, detail="API unreachable")
+    if resp.status_code != 200:
+        return PODecisionResult(ok=False, detail=f"HTTP {resp.status_code}")
+    data = resp.json()
+    return PODecisionResult(
+        ok=bool(data.get("ok")), status=data.get("status"), detail=data.get("detail")
+    )
+
+
 class LinkResult:
     def __init__(self, ok: bool, name: str | None = None, detail: str | None = None) -> None:
         self.ok = ok
