@@ -41,3 +41,7 @@ data/generated/
 # Logs
 *.log
 logs/
+
+# MLflow local tracking (packages/ml training) — artifacts/ IS committed
+packages/ml/mlflow.db
+mlruns/

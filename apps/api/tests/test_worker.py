@@ -21,6 +21,14 @@ def test_heartbeat_task_registered_and_scheduled():
     assert app.conf.beat_schedule["ops-heartbeat"]["task"] == "ops.heartbeat"
 
 
+def test_nightly_forecast_scheduled_at_2am_ist():
+    assert "forecast.nightly_demand" in app.tasks
+    entry = app.conf.beat_schedule["nightly-demand-forecast"]
+    assert entry["task"] == "forecast.nightly_demand"
+    assert entry["schedule"].hour == {2}
+    assert app.conf.timezone == "Asia/Kolkata"
+
+
 def test_heartbeat_reports_db_status(monkeypatch):
     async def fake_ping() -> bool:
         return True

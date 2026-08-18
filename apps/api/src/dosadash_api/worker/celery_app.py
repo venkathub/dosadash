@@ -37,4 +37,9 @@ app.conf.beat_schedule = {
         "task": "ops.heartbeat",
         "schedule": crontab(minute=0),
     },
+    # docs/02 §2.4: 02:00 IST per-dish 14-day demand forecast → `forecasts`.
+    "nightly-demand-forecast": {
+        "task": "forecast.nightly_demand",
+        "schedule": crontab(hour=2, minute=0),
+    },
 }
