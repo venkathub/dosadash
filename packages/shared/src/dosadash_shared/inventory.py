@@ -18,6 +18,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+INVENTORY_PROMPT_VERSION = "inventory_agent_v1"
+
 
 class POState(StrEnum):
     """Purchase-order lifecycle (docs/06 Phase 6)."""
@@ -164,3 +166,48 @@ class POItemPatchIn(BaseModel):
     """Owner line-item edit before approval."""
 
     qty: Decimal = Field(gt=0, le=Decimal("100000"))
+
+
+# ------------------------------------------------------- inventory agent (ai)
+
+
+class IngredientNeed(BaseModel):
+    """One deterministic stock-vs-forecast row: the agent's ONLY allowed
+    universe. Ingredients absent from this table cannot appear in a draft
+    (guardrail-enforced)."""
+
+    ingredient_id: int
+    name: str
+    unit: str
+    stock_qty: Decimal
+    reorder_point: Decimal
+    need_qty: Decimal  # Σ forecast × recipe qty over the coverage window
+    deficit_qty: Decimal  # max(need + reorder_point − stock, 0), > 0 here
+    unit_cost: Decimal | None = None
+    supplier_id: int | None = None
+    supplier_name: str | None = None
+
+
+class InventoryDraftRequest(BaseModel):
+    coverage_days: int = Field(default=7, ge=1, le=14)
+    session_id: str | None = None
+
+
+class PODraftBatch(BaseModel):
+    """Structured LLM output for the inventory pass (Hard Rule 3). Drafts are
+    re-grouped by supplier deterministically after validation — the model's
+    grouping is advisory only."""
+
+    drafts: list[PODraft] = Field(min_length=1, max_length=10)
+
+
+class InventoryDraftResult(BaseModel):
+    """Validated, supplier-grouped draft POs ready for the api to persist."""
+
+    coverage_days: int
+    needs: list[IngredientNeed] = []
+    drafts: list[PODraft] = []
+    model: str | None = None
+    prompt_version: str = INVENTORY_PROMPT_VERSION
+    fallback: bool = False  # True → deterministic drafts (LLM unavailable/rejected)
+    violations: list[str] = []
