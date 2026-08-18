@@ -41,6 +41,8 @@ from dosadash_shared.agent import (
 )
 from dosadash_shared.ai import (
     NUTRITION_PROMPT_VERSION,
+    EtaRequest,
+    EtaResponse,
     NutritionEnrichFailure,
     NutritionEnrichIn,
     NutritionEnrichOut,
@@ -122,6 +124,8 @@ __all__ = [
     "EvalRunDetailOut",
     "EvalRunIn",
     "EvalRunOut",
+    "EtaRequest",
+    "EtaResponse",
     "CustomizationOut",
     "Diet",
     "DraftItemIn",

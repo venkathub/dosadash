@@ -60,6 +60,25 @@ class NutritionEnrichIn(BaseModel):
     item_ids: list[int] = Field(min_length=1, max_length=10)
 
 
+# ------------------------------------------------------------------ ETA (Phase 5)
+
+
+class EtaRequest(BaseModel):
+    """api → ai: order composition + clock for the ETA regressor."""
+
+    max_prep_minutes: int = Field(ge=0, le=240)
+    total_qty: int = Field(ge=1, le=200)
+    n_lines: int = Field(ge=1, le=50)
+    placed_at: datetime | None = None  # UTC; defaults to now
+
+
+class EtaResponse(BaseModel):
+    """ai → api: predicted delivery minutes + model provenance."""
+
+    eta_minutes: int = Field(ge=1, le=240)
+    model_version: str
+
+
 class NutritionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
