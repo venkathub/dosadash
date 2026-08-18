@@ -36,7 +36,9 @@ jobs:
           enable-cache: true
 
       - name: Sync workspace
-        run: uv sync --all-packages --group dev
+        # --all-extras: worker (celery) + forecast/train (xgboost, mlflow)
+        # extras must be importable for their unit tests to run (not skip).
+        run: uv sync --all-packages --all-extras --group dev
 
       - name: Ruff lint
         run: uv run ruff check .
