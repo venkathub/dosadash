@@ -29,6 +29,13 @@ def test_nightly_forecast_scheduled_at_2am_ist():
     assert app.conf.timezone == "Asia/Kolkata"
 
 
+def test_nightly_crm_scheduled_at_3am_ist():
+    assert "crm.nightly_segments" in app.tasks
+    entry = app.conf.beat_schedule["nightly-crm-segments"]
+    assert entry["task"] == "crm.nightly_segments"
+    assert entry["schedule"].hour == {3}
+
+
 def test_heartbeat_reports_db_status(monkeypatch):
     async def fake_ping() -> bool:
         return True

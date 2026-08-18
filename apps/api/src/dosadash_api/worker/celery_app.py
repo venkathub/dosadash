@@ -42,4 +42,9 @@ app.conf.beat_schedule = {
         "task": "forecast.nightly_demand",
         "schedule": crontab(hour=2, minute=0),
     },
+    # docs/02 §2.4: 03:00 IST CRM RFM/churn/LTV → `customer_segments`.
+    "nightly-crm-segments": {
+        "task": "crm.nightly_segments",
+        "schedule": crontab(hour=3, minute=0),
+    },
 }
