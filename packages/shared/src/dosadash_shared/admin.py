@@ -194,7 +194,8 @@ class IngredientIn(BaseModel):
     name: str = Field(min_length=2, max_length=80)
     unit: str = Field(min_length=1, max_length=20)
     is_allergen: bool = False
-    supplier: str | None = Field(default=None, max_length=120)
+    supplier: str | None = Field(default=None, max_length=120)  # legacy display text
+    supplier_id: int | None = None  # Phase 6: canonical suppliers FK
     cost: Decimal | None = Field(default=None, ge=0)
     stock_qty: Decimal = Field(default=Decimal("0"), ge=0)
     reorder_point: Decimal = Field(default=Decimal("0"), ge=0)
@@ -205,6 +206,7 @@ class IngredientUpdateIn(BaseModel):
     unit: str | None = Field(default=None, min_length=1, max_length=20)
     is_allergen: bool | None = None
     supplier: str | None = Field(default=None, max_length=120)
+    supplier_id: int | None = None
     cost: Decimal | None = Field(default=None, ge=0)
     stock_qty: Decimal | None = Field(default=None, ge=0)
     reorder_point: Decimal | None = Field(default=None, ge=0)
@@ -218,6 +220,7 @@ class IngredientOut(BaseModel):
     unit: str
     is_allergen: bool
     supplier: str | None = None
+    supplier_id: int | None = None
     cost: Decimal | None = None
     stock_qty: Decimal
     reorder_point: Decimal

@@ -13,6 +13,8 @@ from dosadash_api.routers.admin_nutrition import router as admin_nutrition_route
 from dosadash_api.routers.admin_ops import router as admin_ops_router
 from dosadash_api.routers.admin_orders import router as admin_orders_router
 from dosadash_api.routers.admin_reports import router as admin_reports_router
+from dosadash_api.routers.admin_suppliers import router as admin_suppliers_router
+from dosadash_api.routers.admin_wastage import router as admin_wastage_router
 from dosadash_api.routers.auth import router as auth_router
 from dosadash_api.routers.chat import router as chat_router
 from dosadash_api.routers.menu import router as menu_router
@@ -35,6 +37,8 @@ app.include_router(admin_nutrition_router)
 app.include_router(admin_ops_router)
 app.include_router(admin_orders_router)
 app.include_router(admin_reports_router)
+app.include_router(admin_suppliers_router)
+app.include_router(admin_wastage_router)
 app.include_router(chat_router)
 app.include_router(menu_router)
 app.include_router(orders_router)
