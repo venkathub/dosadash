@@ -13,6 +13,8 @@ from dosadash_shared import (
     CostSummaryResponse,
     EtaRequest,
     EtaResponse,
+    InventoryDraftRequest,
+    InventoryDraftResult,
     NutritionEstimateRequest,
     NutritionEstimateResponse,
 )
@@ -72,6 +74,20 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return CopilotAnswer.model_validate(resp.json())
+
+    async def draft_inventory_pos(self, request: InventoryDraftRequest) -> InventoryDraftResult:
+        """Inventory agent (Phase 6): needs math + LLM pass + guardrail."""
+        try:
+            async with httpx.AsyncClient(timeout=90) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/inventory/draft-po",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return InventoryDraftResult.model_validate(resp.json())
 
     async def daily_costs(self, days: int = 30) -> CostSummaryResponse:
         """LLM spend rollup (ai → Langfuse). Raises AIServiceError on failure."""

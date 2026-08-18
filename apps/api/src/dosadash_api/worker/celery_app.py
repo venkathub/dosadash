@@ -47,4 +47,10 @@ app.conf.beat_schedule = {
         "task": "crm.nightly_segments",
         "schedule": crontab(hour=3, minute=0),
     },
+    # Phase 6: 02:30 IST (fresh forecasts land at 02:00) inventory agent →
+    # draft POs awaiting owner approval.
+    "nightly-inventory-po": {
+        "task": "inventory.nightly_po",
+        "schedule": crontab(hour=2, minute=30),
+    },
 }
