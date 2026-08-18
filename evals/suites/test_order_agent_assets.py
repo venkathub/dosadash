@@ -32,6 +32,7 @@ TAG_VOCABULARY = {
     "factual",
     "budget",
     "edge",
+    "memory",  # Phase 6: "my usual" / episodic recall
 }
 # Phase 4 golden-set coverage floors (docs/05 week 7 deliverable: 150+).
 MIN_CASES = 150
@@ -43,6 +44,7 @@ MIN_PER_TAG = {
     "allergen": 10,
     "hallucination": 4,
     "confirm": 8,
+    "memory": 4,
     "meal_period": 6,
 }
 MIN_PER_LANGUAGE = {"en": 60, "hinglish": 20, "tanglish": 20}

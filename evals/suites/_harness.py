@@ -97,22 +97,58 @@ async def ensure_eval_user(session: AsyncSession, prefs: dict) -> int:
     return user_id
 
 
-async def apply_setup(session: AsyncSession, case: dict) -> None:
+async def _seed_usual_orders(session: AsyncSession, user_id: int, spec: dict) -> None:
+    """Phase 6 memory cases: give the eval user a repeated order history so
+    the context loader derives a "usual". Cleaned up in restore()."""
+    brand_id = await session.scalar(text("SELECT MIN(id) FROM brands"))
+    for i in range(spec.get("times", 3)):
+        order_id = await session.scalar(
+            text(
+                "INSERT INTO orders (user_id, brand_id, channel, status, subtotal, gst, total, "
+                "placed_at) VALUES (:u, :b, 'WEB', 'DELIVERED', 100, 5, 105, "
+                "now() - make_interval(days => :age)) RETURNING id"
+            ),
+            {"u": user_id, "b": brand_id, "age": i * 7 + 1},
+        )
+        for line in spec["items"]:
+            await session.execute(
+                text(
+                    "INSERT INTO order_items (order_id, item_id, qty, unit_price) "
+                    "SELECT :o, id, :q, price FROM menu_items WHERE name = :n"
+                ),
+                {"o": order_id, "q": line["qty"], "n": line["name"]},
+            )
+
+
+async def apply_setup(session: AsyncSession, case: dict, user_id: int | None = None) -> None:
     if case["kitchen"] == "paused":
         await session.execute(text("UPDATE settings SET kitchen_paused = true WHERE id = 1"))
     for name in case.get("setup", {}).get("make_unavailable", []):
         await session.execute(
             text("UPDATE menu_items SET is_available = false WHERE name = :n"), {"n": name}
         )
+    seed = case.get("setup", {}).get("seed_usual_orders")
+    if seed and user_id is not None:
+        await _seed_usual_orders(session, user_id, seed)
     await session.commit()
 
 
-async def restore(session: AsyncSession, case: dict) -> None:
+async def restore(session: AsyncSession, case: dict, user_id: int | None = None) -> None:
     await session.execute(text("UPDATE settings SET kitchen_paused = false WHERE id = 1"))
     for name in case.get("setup", {}).get("make_unavailable", []):
         await session.execute(
             text("UPDATE menu_items SET is_available = true WHERE name = :n"), {"n": name}
         )
+    if case.get("setup", {}).get("seed_usual_orders") and user_id is not None:
+        await session.execute(
+            text(
+                "DELETE FROM order_items WHERE order_id IN "
+                "(SELECT id FROM orders WHERE user_id = :u)"
+            ),
+            {"u": user_id},
+        )
+        await session.execute(text("DELETE FROM orders WHERE user_id = :u"), {"u": user_id})
+        await session.execute(text("DELETE FROM user_memories WHERE user_id = :u"), {"u": user_id})
     await session.commit()
 
 
@@ -120,7 +156,7 @@ async def run_case(session: AsyncSession, case: dict) -> CaseResult:
     """Execute one golden case against the live agent (setup + restore)."""
     user_id = await ensure_eval_user(session, case["user"]) if case.get("user") else None
     try:
-        await apply_setup(session, case)
+        await apply_setup(session, case, user_id)
         request = AgentChatRequest(
             message=case["message"],
             history=[AgentMessage(**m) for m in case["history"]],
@@ -130,7 +166,7 @@ async def run_case(session: AsyncSession, case: dict) -> CaseResult:
         )
         response = await run_turn(session, request)
     finally:
-        await restore(session, case)
+        await restore(session, case, user_id)
     return CaseResult(case=case, response=response)
 
 

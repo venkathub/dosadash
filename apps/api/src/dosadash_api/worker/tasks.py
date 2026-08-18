@@ -222,3 +222,77 @@ def nightly_segments(self: Any) -> dict[str, Any]:
         raise self.retry(exc=exc) from exc
     logger.info("nightly_segments %s", result)
     return result
+
+
+# ------------------------------------------------------------------ inventory (Phase 6)
+
+
+async def _publish_inventory(event_type: str, detail: dict[str, Any]) -> None:
+    """Fresh Redis client per call: the worker runs each task in its own
+    event loop, so the api module's lru-cached client must not be reused."""
+    import json
+
+    from redis.asyncio import Redis
+
+    redis = Redis.from_url(get_settings().redis_url, decode_responses=True)
+    try:
+        from dosadash_api.events import INVENTORY_CHANNEL
+
+        await redis.publish(INVENTORY_CHANNEL, json.dumps({"type": event_type, "detail": detail}))
+    except Exception:  # noqa: BLE001 — best-effort by design
+        logger.warning("inventory event publish failed (%s)", event_type, exc_info=True)
+    finally:
+        await redis.aclose()
+
+
+async def _draft_inventory_pos(coverage_days: int) -> dict[str, Any]:
+    """Call the ai inventory agent, persist drafts as PENDING_APPROVAL POs."""
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    from dosadash_api.services import po_service
+    from dosadash_api.services.ai_client import get_ai_client
+    from dosadash_shared import InventoryDraftRequest
+
+    result = await get_ai_client().draft_inventory_pos(
+        InventoryDraftRequest(coverage_days=coverage_days, session_id="inventory-nightly")
+    )
+    if not result.drafts:
+        return {"needs": len(result.needs), "created": 0, "skipped": 0, "fallback": result.fallback}
+
+    from dosadash_api.services.po_notify import notify_owners_po_drafted
+
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            created, skipped = await po_service.persist_agent_drafts(session, result)
+            await session.commit()
+            created_ids = [po.id for po in created]
+            notified = await notify_owners_po_drafted(session, created_ids)
+    finally:
+        await engine.dispose()
+
+    for po_id in created_ids:
+        await _publish_inventory("inventory.po_drafted", {"po_id": po_id})
+    return {
+        "needs": len(result.needs),
+        "created": len(created_ids),
+        "po_ids": created_ids,
+        "skipped": len(skipped),
+        "fallback": result.fallback,
+        "violations": len(result.violations),
+        "notified": notified,
+    }
+
+
+@app.task(name="inventory.nightly_po", bind=True, max_retries=2, default_retry_delay=300)
+def nightly_po(self: Any, coverage_days: int = 7) -> dict[str, Any]:
+    """02:30 IST (after the 02:00 forecast refresh): stock vs forecast →
+    agent draft POs → PENDING_APPROVAL, awaiting the owner. Idempotent:
+    suppliers with an open agent PO are skipped."""
+    try:
+        result = asyncio.run(_draft_inventory_pos(coverage_days))
+    except Exception as exc:
+        logger.exception("nightly_po failed")
+        raise self.retry(exc=exc) from exc
+    logger.info("nightly_po %s", result)
+    return result

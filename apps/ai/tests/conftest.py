@@ -69,7 +69,16 @@ async def rag_session() -> AsyncIterator[AsyncSession]:
     await engine.dispose()
 
 
-_AGENT_TABLES = ("recipe_ingredients", "user_preferences", "ingredients", "settings", "menu_items")
+_AGENT_TABLES = (
+    "user_memories",
+    "order_items",
+    "orders",
+    "recipe_ingredients",
+    "user_preferences",
+    "ingredients",
+    "settings",
+    "menu_items",
+)
 
 _AGENT_DDL = (
     """CREATE TABLE menu_items (
@@ -89,6 +98,17 @@ _AGENT_DDL = (
     """CREATE TABLE user_preferences (
         user_id bigint PRIMARY KEY, diet text, allergens text[] DEFAULT '{}',
         spice_level int, language text DEFAULT 'en')""",
+    # Phase 6 memory: minimal shapes of the api-owned tables load_memory reads
+    """CREATE TABLE orders (
+        id bigserial PRIMARY KEY, user_id bigint NOT NULL,
+        status text NOT NULL DEFAULT 'PLACED',
+        placed_at timestamptz NOT NULL DEFAULT now())""",
+    """CREATE TABLE order_items (
+        order_id bigint NOT NULL, item_id bigint NOT NULL, qty int NOT NULL)""",
+    """CREATE TABLE user_memories (
+        id bigserial PRIMARY KEY, user_id bigint NOT NULL,
+        kind text NOT NULL DEFAULT 'EPISODE', content text NOT NULL,
+        at timestamptz NOT NULL DEFAULT now())""",
 )
 
 _AGENT_SEED = (

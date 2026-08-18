@@ -9,7 +9,9 @@ draft, and forwards button taps to the api.
 """
 
 import logging
+import secrets
 import time
+from collections.abc import Awaitable, Callable
 
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.exceptions import TelegramBadRequest
@@ -19,7 +21,7 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from aiohttp import web
 
 from dosadash_bot import render, state
-from dosadash_bot.api_client import link_account, place_order, stream_chat
+from dosadash_bot.api_client import link_account, place_order, po_decision, stream_chat
 from dosadash_bot.config import Settings, get_settings
 
 logger = logging.getLogger("dosadash_bot")
@@ -42,6 +44,18 @@ class EditThrottle:
             self._last = now
             return True
         return False
+
+
+def po_keyboard(po_id: int) -> InlineKeyboardMarkup:
+    """Owner approval buttons (Phase 6). RBAC lives in the api, not here."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Approve", callback_data=f"po:approve:{po_id}"),
+                InlineKeyboardButton(text="🚫 Reject", callback_data=f"po:reject:{po_id}"),
+            ]
+        ]
+    )
 
 
 def draft_keyboard(has_draft: bool) -> InlineKeyboardMarkup | None:
@@ -156,6 +170,31 @@ async def on_place(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
+@router.callback_query(F.data.startswith("po:"))
+async def on_po_decision(callback: CallbackQuery) -> None:
+    """Owner tapped Approve/Reject on a PO card — forward to the api (which
+    re-checks role + transition legality) and update the card in place."""
+    parts = (callback.data or "").split(":")
+    if len(parts) != 3 or parts[1] not in ("approve", "reject"):
+        await callback.answer("Unsupported action")
+        return
+    settings = get_settings()
+    result = await po_decision(
+        api_base_url=settings.api_base_url,
+        internal_token=settings.internal_api_token,
+        tg_user_id=callback.from_user.id,
+        po_id=int(parts[2]),
+        action=parts[1],
+    )
+    if callback.message is not None:
+        text = render.po_decided_text(int(parts[2]), result.status, result.detail)
+        if result.ok:
+            await _safe_edit(callback.message, text)  # buttons removed — decision is final
+        else:
+            await callback.message.answer(text)
+    await callback.answer()
+
+
 @router.callback_query(F.data == "chat:clear")
 async def on_clear(callback: CallbackQuery) -> None:
     if callback.message is not None:
@@ -171,6 +210,38 @@ async def on_unsupported(message: Message) -> None:
 
 async def healthz(_request: web.Request) -> web.Response:
     return web.json_response({"status": "ok", "service": "bot", "version": "0.1.0"})
+
+
+def make_po_notify_handler(
+    bot: Bot, settings: Settings
+) -> Callable[[web.Request], Awaitable[web.StreamResponse]]:
+    """POST /internal/po-notify (api → bot): send an owner approval card.
+
+    Guarded by the shared internal token — same trust boundary as bot→api.
+    """
+
+    async def po_notify(request: web.Request) -> web.Response:
+        provided = request.headers.get("X-Internal-Token", "")
+        if not settings.internal_api_token or not secrets.compare_digest(
+            provided, settings.internal_api_token
+        ):
+            return web.json_response({"detail": "Forbidden"}, status=403)
+        try:
+            payload = await request.json()
+            tg_user_id = int(payload["tg_user_id"])
+            po_id = int(payload["po_id"])
+        except (ValueError, KeyError):
+            return web.json_response({"detail": "Bad payload"}, status=422)
+        try:
+            await bot.send_message(
+                tg_user_id, render.po_notify_text(payload), reply_markup=po_keyboard(po_id)
+            )
+        except Exception:  # noqa: BLE001 — recipient may have blocked the bot
+            logger.warning("po notify send failed (tg %s)", tg_user_id, exc_info=True)
+            return web.json_response({"ok": False}, status=502)
+        return web.json_response({"ok": True})
+
+    return po_notify
 
 
 def create_app(settings: Settings) -> web.Application:
@@ -190,6 +261,7 @@ def create_app(settings: Settings) -> web.Application:
 
     app = web.Application()
     app.router.add_get("/healthz", healthz)
+    app.router.add_post("/internal/po-notify", make_po_notify_handler(bot, settings))
     SimpleRequestHandler(
         dispatcher=dispatcher, bot=bot, secret_token=settings.webhook_secret
     ).register(app, path=settings.webhook_path)

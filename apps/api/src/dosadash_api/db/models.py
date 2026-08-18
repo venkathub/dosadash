@@ -40,6 +40,8 @@ from dosadash_shared import (
     ChannelType,
     CouponType,
     Diet,
+    EscalationStatus,
+    InvoiceStatus,
     OrderState,
     OtpChannelType,
     PaymentStatus,
@@ -371,7 +373,45 @@ class EvalRun(TimestampMixin, Base):
     case_reports: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
 
 
+class UserMemory(Base):
+    """Long-term agent memory (Phase 6): episodic store beyond session
+    checkpoints. `EPISODE` rows are order summaries written by order_service
+    on every placed order; the ai context loader reads the latest few (and
+    derives "my usual" from order history) for logged-in customers."""
+
+    __tablename__ = "user_memories"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=False)
+    kind: Mapped[str] = mapped_column(String(20), default="EPISODE")
+    content: Mapped[str] = mapped_column(Text)
+    meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 # --------------------------------------------------------------------------- ML (Phase 5)
+
+
+class Escalation(TimestampMixin, Base):
+    """Support-agent inbox (Phase 6): refund requests and anything the agent
+    must not resolve itself. A human closes it; resolution may run the real
+    provider refund (order_service.refund, admin/owner only)."""
+
+    __tablename__ = "escalations"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    order_id: Mapped[int | None] = mapped_column(
+        ForeignKey("orders.id", ondelete="SET NULL"), index=False
+    )
+    kind: Mapped[str] = mapped_column(String(20))  # refund | support
+    status: Mapped[EscalationStatus] = mapped_column(
+        pg_enum(EscalationStatus, "escalation_status"), default=EscalationStatus.OPEN, index=True
+    )
+    customer_message: Mapped[str] = mapped_column(Text)
+    agent_summary: Mapped[str | None] = mapped_column(Text)
+    resolved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    resolution_note: Mapped[str | None] = mapped_column(String(300))
 
 
 class Forecast(Base):
@@ -491,6 +531,30 @@ class PurchaseOrderItem(Base):
     ingredient: Mapped[Ingredient] = relationship()
 
     __table_args__ = (UniqueConstraint("po_id", "ingredient_id"),)
+
+
+class Invoice(TimestampMixin, Base):
+    """Supplier invoice (Phase 6): VLM extraction + PO match, held in a
+    confidence-gated review queue. APPROVED → the linked PO is RECEIVED and
+    stock moves; the extraction/match JSONB keeps full provenance."""
+
+    __tablename__ = "invoices"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    status: Mapped[InvoiceStatus] = mapped_column(
+        pg_enum(InvoiceStatus, "invoice_status"), default=InvoiceStatus.PENDING_REVIEW, index=True
+    )
+    po_id: Mapped[int | None] = mapped_column(
+        ForeignKey("purchase_orders.id", ondelete="SET NULL"), index=True
+    )
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    extraction: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    match: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    model: Mapped[str | None] = mapped_column(String(80))
+    prompt_version: Mapped[str | None] = mapped_column(String(40))
+    uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    review_note: Mapped[str | None] = mapped_column(String(300))
 
 
 class WastageEntry(Base):

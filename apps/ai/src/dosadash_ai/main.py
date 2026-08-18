@@ -14,8 +14,11 @@ from dosadash_ai.routers.agent import router as agent_router
 from dosadash_ai.routers.copilot import router as copilot_router
 from dosadash_ai.routers.costs import router as costs_router
 from dosadash_ai.routers.eta import router as eta_router
+from dosadash_ai.routers.inventory import router as inventory_router
+from dosadash_ai.routers.invoice import router as invoice_router
 from dosadash_ai.routers.nutrition import router as nutrition_router
 from dosadash_ai.routers.rag import router as rag_router
+from dosadash_ai.routers.support import router as support_router
 from dosadash_shared import HealthStatus
 
 logger = logging.getLogger(__name__)
@@ -64,6 +67,9 @@ app.include_router(agent_router)
 app.include_router(copilot_router)
 app.include_router(costs_router)
 app.include_router(eta_router)
+app.include_router(inventory_router)
+app.include_router(invoice_router)
+app.include_router(support_router)
 
 
 @app.get("/healthz", response_model=HealthStatus)
