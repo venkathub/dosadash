@@ -28,7 +28,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dosadash_ai.config import get_settings
 from dosadash_ai.llm.client import embed_texts
 from dosadash_ml.recsys.predict import RecsysChampion, load_recsys_champion, recommend_from_history
-from dosadash_shared import RecItem, RecsRequest, RecsResponse, availability
+from dosadash_ml.recsys.suggest import ComboDef, SuggestCandidate, suggest_addons
+from dosadash_shared import (
+    CheckoutSuggestion,
+    CheckoutSuggestResponse,
+    RecItem,
+    RecsRequest,
+    RecsResponse,
+    availability,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -164,14 +172,16 @@ def _cosine_rank(
 # ------------------------------------------------------------------- serving
 
 
-async def recommend(session: AsyncSession, request: RecsRequest) -> RecsResponse:
-    menu = await load_menu(session)
-    by_id = {item.id: item for item in menu}
-    by_name = {item.name: item for item in menu}
+async def _ranked_candidates(
+    session: AsyncSession,
+    request: RecsRequest,
+    candidates: list[RecCandidate],
+    by_id: dict[int, RecCandidate],
+) -> tuple[list[tuple[RecCandidate, float]], str, str | None]:
+    """Full ranking of `candidates` (best first) + (source, model_version).
+    Shared by top-k recommendations and the checkout suggester."""
+    by_name = {item.name: item for item in candidates}
     cart_ids = [i for i in request.cart_item_ids if i in by_id]
-    candidates = [i for i in menu if i.orderable and i.id not in set(cart_ids)]
-    if not candidates:
-        return RecsResponse(items=[], source="popular", model_version=None)
 
     # 1) ALS on live history (returning customers)
     champion = _champion()
@@ -181,24 +191,21 @@ async def recommend(session: AsyncSession, request: RecsRequest) -> RecsResponse
             ranked = recommend_from_history(
                 champion,
                 history,
-                k=request.k,
-                allowed={c.name for c in candidates},
+                k=len(candidates),
+                allowed=set(by_name),
                 exclude=set(),
             )
             if ranked:
-                items = [
-                    _rec_item(by_name[name], score) for name, score in ranked if name in by_name
-                ]
-                return RecsResponse(items=items, source="als", model_version=champion.version)
+                pairs = [(by_name[n], s) for n, s in ranked if n in by_name]
+                return pairs, "als", champion.version
 
     # 2) Embedding similarity to the cart (cold-start with context)
     if cart_ids:
         try:
             embeddings = await _menu_embeddings([*candidates, *[by_id[i] for i in cart_ids]])
-            ranked_pairs = _cosine_rank(embeddings, cart_ids, candidates, request.k)
-            if ranked_pairs:
-                items = [_rec_item(item, score) for item, score in ranked_pairs]
-                return RecsResponse(items=items, source="embedding", model_version=None)
+            pairs = _cosine_rank(embeddings, cart_ids, candidates, len(candidates))
+            if pairs:
+                return pairs, "embedding", None
         except Exception:  # noqa: BLE001 — embedding provider down → popularity
             logger.warning("embedding cold-start failed, using popularity", exc_info=True)
 
@@ -206,14 +213,83 @@ async def recommend(session: AsyncSession, request: RecsRequest) -> RecsResponse
     popular_ids = await load_db_popularity(session)
     ordered = [by_id[i] for i in popular_ids if i in by_id and by_id[i] in candidates]
     ordered += [c for c in candidates if c not in ordered]  # empty-DB fallback: menu order
-    items = [
-        _rec_item(item, float(len(ordered) - rank))
-        for rank, item in enumerate(ordered[: request.k])
-    ]
-    return RecsResponse(items=items, source="popular", model_version=None)
+    pairs = [(item, float(len(ordered) - rank)) for rank, item in enumerate(ordered)]
+    return pairs, "popular", None
+
+
+async def recommend(session: AsyncSession, request: RecsRequest) -> RecsResponse:
+    menu = await load_menu(session)
+    by_id = {item.id: item for item in menu}
+    cart_ids = {i for i in request.cart_item_ids if i in by_id}
+    candidates = [i for i in menu if i.orderable and i.id not in cart_ids]
+    if not candidates:
+        return RecsResponse(items=[], source="popular", model_version=None)
+    pairs, source, model_version = await _ranked_candidates(session, request, candidates, by_id)
+    items = [_rec_item(item, score) for item, score in pairs[: request.k]]
+    return RecsResponse(items=items, source=source, model_version=model_version)
 
 
 def _rec_item(item: RecCandidate, score: float) -> RecItem:
     return RecItem(
         item_id=item.id, name=item.name, price=item.price, is_veg=item.is_veg, score=round(score, 4)
+    )
+
+
+# ------------------------------------------------------- checkout suggester
+
+
+async def load_approved_combos(session: AsyncSession) -> list[tuple[str, list[int]]]:
+    """(name, item_ids) of APPROVED combos — the only ones customers see."""
+    rows = await session.execute(
+        text("SELECT name, item_ids FROM combos WHERE status = 'APPROVED' ORDER BY id")
+    )
+    return [(row.name, list(row.item_ids)) for row in rows]
+
+
+async def suggest_checkout(session: AsyncSession, request: RecsRequest) -> CheckoutSuggestResponse:
+    """Deterministic combo/pairing suggestions for the checkout footer,
+    ranked by the same ALS/embedding/popularity chain as /internal/recs.
+    The rule engine lives in dosadash_ml.recsys.suggest — the identical code
+    the synthetic A/B sim measures (attach 15.6% vs random 12.8%)."""
+    menu = await load_menu(session)
+    by_id = {item.id: item for item in menu}
+    cart = [by_id[i] for i in request.cart_item_ids if i in by_id]
+    if not cart:
+        return CheckoutSuggestResponse(suggestions=[], source="popular", model_version=None)
+    cart_ids = {item.id for item in cart}
+    candidates = [i for i in menu if i.orderable and i.id not in cart_ids]
+    if not candidates:
+        return CheckoutSuggestResponse(suggestions=[], source="popular", model_version=None)
+
+    pairs, source, model_version = await _ranked_candidates(session, request, candidates, by_id)
+    scores = {item.name: score for item, score in pairs}
+    combo_defs = [
+        ComboDef(name=name, item_names=tuple(by_id[i].name for i in ids if i in by_id))
+        for name, ids in await load_approved_combos(session)
+    ]
+    suggestions = suggest_addons(
+        cart_names={item.name for item in cart},
+        cart_categories={item.category for item in cart},
+        candidates=[
+            SuggestCandidate(name=c.name, category=c.category, score=scores.get(c.name, -1e9))
+            for c in candidates
+        ],
+        combos=combo_defs,
+        max_suggestions=min(request.k, 4),  # api sends k≤4; keep the footer tight
+    )
+    by_name = {c.name: c for c in candidates}
+    return CheckoutSuggestResponse(
+        suggestions=[
+            CheckoutSuggestion(
+                item_id=by_name[s.item_name].id,
+                name=s.item_name,
+                price=by_name[s.item_name].price,
+                is_veg=by_name[s.item_name].is_veg,
+                kind=s.kind,
+                reason=s.reason,
+            )
+            for s in suggestions
+        ],
+        source=source,
+        model_version=model_version,
     )
