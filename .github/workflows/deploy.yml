@@ -32,5 +32,9 @@ jobs:
             docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build --remove-orphans
             docker compose -f infra/docker-compose.yml exec -T caddy caddy reload --config /etc/caddy/Caddyfile
             docker image prune -f
+            # BuildKit cache from --build accumulates in /var/lib/containerd
+            # (~26 GB by week 9, 76% disk). Keep 5 GB of recent layers so
+            # rebuilds stay fast; everything older goes.
+            docker builder prune -f --keep-storage=5GB
             sleep 5
             curl -fsS http://localhost:8080/healthz && echo "✓ healthz OK"
