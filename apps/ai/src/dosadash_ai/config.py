@@ -34,6 +34,12 @@ class Settings(BaseSettings):
         "gemini/gemini-1.5-flash",
     ]
 
+    # STT (Phase 7): Groq Whisper via litellm — API inference only, never a
+    # local Whisper on the 4 GB VPS (Hard Rule 7). No fallback: Groq is the
+    # only STT-capable provider in the stack; failures degrade to "please
+    # type" in the bot.
+    stt_model: str = "groq/whisper-large-v3"
+
     # RAG (Phase 3): embeddings via litellm; dimension pinned by the
     # vector(1536) columns (dosadash_shared.EMBEDDING_DIM).
     embedding_model: str = "text-embedding-3-small"

@@ -52,6 +52,9 @@ from dosadash_shared.ai import (
     NutritionOut,
     NutritionStatusIn,
     RecipeContextLine,
+    SttIn,
+    SttMimeType,
+    SttResult,
 )
 from dosadash_shared.copilot import (
     COPILOT_PROMPT_VERSION,
@@ -281,6 +284,9 @@ __all__ = [
     "SupplierIn",
     "SupplierOut",
     "SupplierUpdateIn",
+    "SttIn",
+    "SttMimeType",
+    "SttResult",
     "WastageIn",
     "WastageOut",
     "WastageReason",

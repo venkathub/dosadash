@@ -56,6 +56,48 @@ async def stream_chat(
         yield {"type": "error", "detail": "API unreachable"}
 
 
+class SttClientResult:
+    def __init__(
+        self,
+        ok: bool,
+        transcript: str | None = None,
+        language: str | None = None,
+        detail: str | None = None,
+    ) -> None:
+        self.ok = ok
+        self.transcript = transcript
+        self.language = language
+        self.detail = detail
+
+
+async def transcribe_voice(
+    *,
+    api_base_url: str,
+    internal_token: str,
+    tg_user_id: int,
+    audio_base64: str,
+    mime_type: str,
+) -> SttClientResult:
+    """Voice note → PII-redacted transcript via the api's STT proxy (Phase 7).
+    The bot never talks to a speech provider itself (Hard Rule 10)."""
+    payload = {"tg_user_id": tg_user_id, "audio_base64": audio_base64, "mime_type": mime_type}
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(
+                f"{api_base_url}/api/v1/chat/telegram/stt",
+                json=payload,
+                headers={"X-Internal-Token": internal_token},
+            )
+    except httpx.HTTPError:
+        return SttClientResult(ok=False, detail="API unreachable")
+    if resp.status_code != 200:
+        return SttClientResult(ok=False, detail=f"HTTP {resp.status_code}")
+    data = resp.json()
+    return SttClientResult(
+        ok=True, transcript=data.get("transcript", ""), language=data.get("language")
+    )
+
+
 class PlaceResult:
     def __init__(
         self,

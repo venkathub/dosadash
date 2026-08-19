@@ -8,7 +8,7 @@ normal checkout flow, which re-validates everything server-side.
 
 import secrets
 from collections.abc import AsyncIterator
-from typing import Annotated
+from typing import Annotated, Literal
 
 import httpx
 import jwt as pyjwt
@@ -35,6 +35,9 @@ from dosadash_shared import (
     OrderDraft,
     OrderItemIn,
     OrderOut,
+    SttIn,
+    SttMimeType,
+    SttResult,
 )
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
@@ -101,6 +104,23 @@ class AgentGateway:
             # silently truncating (headers may already be sent).
             yield b'data: {"type": "error", "detail": "Assistant unavailable"}\n\n'
 
+    async def transcribe(self, request: SttIn) -> SttResult:
+        """Voice note → transcript (Phase 7). Upstream 422 (bad audio) is
+        forwarded as-is; anything else is a 502."""
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/stt",
+                    json=request.model_dump(mode="json"),
+                    headers=self._headers,
+                )
+            if resp.status_code == 422:
+                raise HTTPException(status_code=422, detail="Unsupported audio")
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="Transcription unavailable") from exc
+        return SttResult.model_validate(resp.json())
+
 
 def get_agent_gateway() -> AgentGateway:
     s = get_settings()
@@ -166,6 +186,39 @@ class TelegramChatIn(ChatIn):
 class TelegramPlaceIn(BaseModel):
     tg_user_id: int
     items: list[OrderItemIn] = Field(min_length=1, max_length=20)
+
+
+class TelegramVoiceIn(BaseModel):
+    """Bot → api: one voice note (duration capped bot-side, bytes capped here
+    by the same bounds as SttIn)."""
+
+    tg_user_id: int
+    audio_base64: str = Field(min_length=8, max_length=4_000_000)
+    mime_type: SttMimeType
+    language_hint: Literal["en", "ta"] | None = None
+
+
+@router.post("/telegram/stt", response_model=SttResult)
+async def telegram_stt(
+    body: TelegramVoiceIn,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    gateway: GatewayDep,
+    x_internal_token: Annotated[str, Header()] = "",
+) -> SttResult:
+    """Transcribe a voice note (Phase 7). Works unlinked (like chat); the
+    linked user id only enriches the Langfuse trace. The bot feeds the
+    returned redacted transcript into the normal /telegram/stream turn."""
+    _check_internal_token(x_internal_token)
+    user = await _tg_user(session, body.tg_user_id)
+    return await gateway.transcribe(
+        SttIn(
+            audio_base64=body.audio_base64,
+            mime_type=body.mime_type,
+            language_hint=body.language_hint,
+            session_id=f"tg:{body.tg_user_id}",
+            user_id=user.id if user else None,
+        )
+    )
 
 
 @router.post("/telegram/stream")

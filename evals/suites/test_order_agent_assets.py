@@ -33,6 +33,7 @@ TAG_VOCABULARY = {
     "budget",
     "edge",
     "memory",  # Phase 6: "my usual" / episodic recall
+    "voice",  # Phase 7: STT-style transcripts (filler words, no punctuation)
 }
 # Phase 4 golden-set coverage floors (docs/05 week 7 deliverable: 150+).
 MIN_CASES = 150
@@ -46,6 +47,7 @@ MIN_PER_TAG = {
     "confirm": 8,
     "memory": 4,
     "meal_period": 6,
+    "voice": 4,  # Phase 7: voice-note ordering transcripts
 }
 MIN_PER_LANGUAGE = {"en": 60, "hinglish": 20, "tanglish": 20}
 

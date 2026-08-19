@@ -103,3 +103,30 @@ class NutritionEnrichOut(BaseModel):
 
 class NutritionStatusIn(BaseModel):
     status: Literal["APPROVED", "REJECTED"]
+
+
+# ---------------------------------------------------- STT / voice (Phase 7)
+
+# Telegram voice notes are OGG/Opus (~1 KB/s); other types cover future web
+# uploads. The audio itself cannot be PII-redacted (like invoice images) —
+# the AI service redacts the *transcript* before it is returned, logged, or
+# forwarded to any chat model (Hard Rule 8).
+SttMimeType = Literal["audio/ogg", "audio/mpeg", "audio/mp4", "audio/wav", "audio/webm"]
+
+
+class SttIn(BaseModel):
+    """api → ai: one bounded voice note for transcription."""
+
+    audio_base64: str = Field(min_length=8, max_length=4_000_000)  # ~3 MB audio
+    mime_type: SttMimeType
+    language_hint: Literal["en", "ta"] | None = None  # omit → Whisper auto-detect
+    session_id: str | None = None
+    user_id: int | None = None
+
+
+class SttResult(BaseModel):
+    """ai → api: PII-redacted transcript + provenance."""
+
+    transcript: str = Field(max_length=4000)
+    language: str | None = None
+    model: str

@@ -12,14 +12,14 @@ def welcome_text(first_name: str | None) -> str:
     return (
         f"🥞 Vanakkam {name}! Welcome to DosaDash.\n\n"
         "I'm the DosaDash ordering assistant — tell me what you'd like "
-        '("2 masala dosas and a filter coffee") or ask about the menu, '
-        "allergens, or delivery. When your order looks right, tap "
-        "✅ Place order."
+        '("2 masala dosas and a filter coffee"), send a voice note 🎤 '
+        "(English or Tamil), or ask about the menu, allergens, or delivery. "
+        "When your order looks right, tap ✅ Place order."
     )
 
 
 def unsupported_text() -> str:
-    return "🥞 Text messages only for now — voice ordering arrives soon!"
+    return "🥞 I understand text and voice notes 🎤 — photos and stickers are beyond me!"
 
 
 def typing_text() -> str:
@@ -50,6 +50,23 @@ def final_text(final: dict[str, Any]) -> str:
 
 def error_text() -> str:
     return "⚠️ Sorry, the assistant is unavailable right now — please try again in a moment."
+
+
+def voice_heard_text(transcript: str) -> str:
+    """Echo the (PII-redacted) transcript so the customer can catch
+    mishearings before the agent acts on them."""
+    return f"🎤 I heard: “{transcript}”"
+
+
+def voice_failed_text() -> str:
+    return (
+        "🎤 Sorry, I couldn't make out that voice note — please try again "
+        "or type your order instead."
+    )
+
+
+def voice_too_long_text(limit_seconds: int) -> str:
+    return f"🎤 That voice note is a bit long — please keep it under {limit_seconds} seconds."
 
 
 def order_placed_text(order_id: int, total: str, public_web_url: str) -> str:

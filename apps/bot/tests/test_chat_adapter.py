@@ -104,3 +104,26 @@ def test_draft_keyboard_only_with_draft():
     keyboard = draft_keyboard(True)
     labels = [b.text for row in keyboard.inline_keyboard for b in row]
     assert labels == ["✅ Place order", "🧹 Clear"]
+
+
+# ------------------------------------------------------------- voice (Phase 7)
+
+
+def test_normalize_voice_mime():
+    from dosadash_bot.main import normalize_voice_mime
+
+    assert normalize_voice_mime("audio/ogg") == "audio/ogg"
+    assert normalize_voice_mime("audio/mpeg") == "audio/mpeg"
+    # Telegram quirks / unknown containers fall back to the voice-note default
+    assert normalize_voice_mime("audio/ogg; codecs=opus") == "audio/ogg"
+    assert normalize_voice_mime(None) == "audio/ogg"
+
+
+def test_voice_render_texts():
+    heard = render.voice_heard_text("two masala dosas and one filter coffee")
+    assert "🎤" in heard and "two masala dosas" in heard
+    assert "type your order" in render.voice_failed_text()
+    assert "90 seconds" in render.voice_too_long_text(90)
+    # voice is live now — the fallback copy must not promise it "soon"
+    assert "soon" not in render.unsupported_text()
+    assert "voice note" in render.welcome_text("Meera")
