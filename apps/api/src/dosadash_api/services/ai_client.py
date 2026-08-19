@@ -19,6 +19,8 @@ from dosadash_shared import (
     InvoiceExtractResult,
     NutritionEstimateRequest,
     NutritionEstimateResponse,
+    RecsRequest,
+    RecsResponse,
     SupportAgentRequest,
     SupportAgentResponse,
 )
@@ -120,6 +122,21 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return SupportAgentResponse.model_validate(resp.json())
+
+    async def recommend(self, request: RecsRequest) -> RecsResponse:
+        """Recommendations (Phase 7). Short timeout: the menu page renders
+        fine without them — the caller degrades to an empty strip."""
+        try:
+            async with httpx.AsyncClient(timeout=8) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/recs",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return RecsResponse.model_validate(resp.json())
 
     async def daily_costs(self, days: int = 30) -> CostSummaryResponse:
         """LLM spend rollup (ai → Langfuse). Raises AIServiceError on failure."""

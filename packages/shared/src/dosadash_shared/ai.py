@@ -103,3 +103,36 @@ class NutritionEnrichOut(BaseModel):
 
 class NutritionStatusIn(BaseModel):
     status: Literal["APPROVED", "REJECTED"]
+
+
+# ------------------------------------------------- recommender (Phase 7)
+
+
+class RecsRequest(BaseModel):
+    """api → ai: who + current cart context. Everything else (order history,
+    orderable menu) is read fresh from the DB inside the ai service."""
+
+    user_id: int | None = None
+    cart_item_ids: list[int] = Field(default_factory=list, max_length=20)
+    k: int = Field(default=6, ge=1, le=12)
+
+
+class RecItem(BaseModel):
+    """One recommendation — always a real, orderable menu item (validated
+    against the DB before it leaves the ai service, mirroring Hard Rule 2)."""
+
+    item_id: int
+    name: str
+    price: Decimal
+    is_veg: bool
+    score: float
+
+
+class RecsResponse(BaseModel):
+    """ai → api. `source` records which strategy produced the list:
+    als | embedding (cold-start w/ cart) | popular (cold-start w/o cart) |
+    unavailable (api-side fallback when the ai service is down)."""
+
+    items: list[RecItem] = Field(default_factory=list)
+    source: Literal["als", "embedding", "popular", "unavailable"]
+    model_version: str | None = None

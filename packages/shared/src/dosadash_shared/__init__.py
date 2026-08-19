@@ -52,6 +52,9 @@ from dosadash_shared.ai import (
     NutritionOut,
     NutritionStatusIn,
     RecipeContextLine,
+    RecItem,
+    RecsRequest,
+    RecsResponse,
 )
 from dosadash_shared.copilot import (
     COPILOT_PROMPT_VERSION,
@@ -285,6 +288,9 @@ __all__ = [
     "WastageOut",
     "WastageReason",
     "RagAnswerDraft",
+    "RecItem",
+    "RecsRequest",
+    "RecsResponse",
     "RagAnswerRequest",
     "RagAnswerResponse",
     "RagChunkOut",
