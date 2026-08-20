@@ -41,6 +41,9 @@ export default function Home() {
   const [tracking, setTracking] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; discount: string; total: string } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   useEffect(() => {
     setUser(getUser());
@@ -79,7 +82,9 @@ export default function Home() {
   const cartLines = Object.values(cart);
   const cartTotal = cartLines.reduce((s, l) => s + parseFloat(l.item.price) * l.qty, 0);
 
-  const add = (item: MenuItem, delta: number) =>
+  const add = (item: MenuItem, delta: number) => {
+    setCoupon(null); // cart changed — the preview no longer prices this cart
+    setCouponError(null);
     setCart((prev) => {
       const qty = (prev[item.id]?.qty ?? 0) + delta;
       const next = { ...prev };
@@ -87,6 +92,29 @@ export default function Home() {
       else next[item.id] = { item, qty };
       return next;
     });
+  };
+
+  const applyCoupon = async () => {
+    if (!user) return setShowLogin(true);
+    setCouponError(null);
+    try {
+      const preview = await api<{ code: string; discount: string; total: string }>(
+        "/coupons/preview",
+        {
+          method: "POST",
+          auth: true,
+          body: {
+            code: couponCode,
+            items: cartLines.map((l) => ({ item_id: l.item.id, qty: l.qty })),
+          },
+        }
+      );
+      setCoupon(preview);
+    } catch (e) {
+      setCoupon(null);
+      setCouponError(e instanceof Error ? e.message : "Coupon failed");
+    }
+  };
 
   const checkout = async () => {
     if (!user) return setShowLogin(true);
@@ -96,15 +124,24 @@ export default function Home() {
       const order = await api<Order>("/orders", {
         method: "POST",
         auth: true,
-        body: { items: cartLines.map((l) => ({ item_id: l.item.id, qty: l.qty })) },
+        body: {
+          items: cartLines.map((l) => ({ item_id: l.item.id, qty: l.qty })),
+          coupon_code: coupon?.code ?? null,
+        },
       });
       setCart({});
+      setCoupon(null);
+      setCouponCode("");
       setTracking(order);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         clearSession();
         setUser(null);
         setShowLogin(true);
+      } else if (e instanceof ApiError && e.status === 400) {
+        // coupon rejected at checkout (limits/expiry changed since preview)
+        setCoupon(null);
+        setCouponError(e.message);
       } else setError(e instanceof Error ? e.message : "Checkout failed");
     } finally {
       setPlacing(false);
@@ -229,9 +266,39 @@ export default function Home() {
             menu={menu}
             onAdd={(item) => add(item, 1)}
           />
+          <div className="mx-auto mb-2 flex max-w-4xl flex-wrap items-center gap-2 text-sm">
+            <input
+              className="w-32 rounded border border-stone-300 px-2 py-1 text-xs uppercase"
+              placeholder="Coupon code"
+              value={couponCode}
+              onChange={(e) => {
+                setCouponCode(e.target.value.toUpperCase());
+                setCoupon(null);
+                setCouponError(null);
+              }}
+            />
+            <button
+              className="rounded bg-stone-200 px-3 py-1 text-xs font-semibold disabled:opacity-40"
+              disabled={couponCode.length < 2 || !!coupon}
+              onClick={applyCoupon}
+            >
+              {coupon ? "✓ Applied" : "Apply"}
+            </button>
+            {coupon && (
+              <span className="text-xs font-semibold text-green-700">
+                {coupon.code}: −₹{parseFloat(coupon.discount).toFixed(2)}
+              </span>
+            )}
+            {couponError && <span className="text-xs text-red-600">{couponError}</span>}
+          </div>
           <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
             <p className="text-sm">
               <b>{cartLines.reduce((s, l) => s + l.qty, 0)} items</b> · ₹{cartTotal.toFixed(2)}{" "}
+              {coupon && (
+                <span className="font-semibold text-green-700">
+                  −₹{parseFloat(coupon.discount).toFixed(2)}
+                </span>
+              )}{" "}
               <span className="text-stone-400">+ GST</span>
             </p>
             <button

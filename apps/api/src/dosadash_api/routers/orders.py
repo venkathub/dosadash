@@ -18,14 +18,14 @@ from sqlalchemy.orm import selectinload
 
 from dosadash_api.auth.deps import CurrentUser
 from dosadash_api.config import get_settings
-from dosadash_api.db.models import Order, OrderItem, Payment
+from dosadash_api.db.models import Coupon, Order, OrderItem, Payment
 from dosadash_api.db.session import get_session
 from dosadash_api.providers import (
     MockPaymentProvider,
     PaymentProvider,
     select_payment_provider,
 )
-from dosadash_api.services import order_service
+from dosadash_api.services import coupon_service, order_service
 from dosadash_api.services.ai_client import AIClient, AIServiceError, get_ai_client
 from dosadash_api.services.order_service import STAFF_ROLES
 from dosadash_shared import (
@@ -73,6 +73,10 @@ async def _order_out(session: AsyncSession, order: Order) -> OrderOut:
         )
         for oi in order.items
     ]
+    if order.coupon_id is not None:
+        out.coupon_code = await session.scalar(
+            select(Coupon.code).where(Coupon.id == order.coupon_id)
+        )
     payment = await session.scalar(select(Payment).where(Payment.order_id == order.id))
     out.payment = PaymentOut.model_validate(payment) if payment else None
     return out
@@ -96,7 +100,10 @@ async def checkout(
             items_in=body.items,
             provider=provider,
             address_id=body.address_id,
+            coupon_code=body.coupon_code,
         )
+    except coupon_service.CouponError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except order_service.ItemsNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except order_service.ItemsUnavailable as exc:

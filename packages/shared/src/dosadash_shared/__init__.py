@@ -79,6 +79,15 @@ from dosadash_shared.costs import (
     DailyCost,
     ModelDailyCost,
 )
+from dosadash_shared.coupons import (
+    MAX_FLAT_VALUE,
+    MAX_PCT_VALUE,
+    CouponCreateIn,
+    CouponOut,
+    CouponPreviewIn,
+    CouponPreviewOut,
+    CouponUpdateIn,
+)
 from dosadash_shared.inventory import (
     INVENTORY_PROMPT_VERSION,
     IngredientNeed,
@@ -211,6 +220,13 @@ __all__ = [
     "CostSummaryResponse",
     "COPILOT_PROMPT_VERSION",
     "CellValue",
+    "CouponCreateIn",
+    "CouponOut",
+    "CouponPreviewIn",
+    "CouponPreviewOut",
+    "CouponUpdateIn",
+    "MAX_FLAT_VALUE",
+    "MAX_PCT_VALUE",
     "CopilotAnswer",
     "CopilotAskIn",
     "CopilotChart",

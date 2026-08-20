@@ -19,6 +19,7 @@ class OrderItemIn(BaseModel):
 class OrderCreateIn(BaseModel):
     items: list[OrderItemIn] = Field(min_length=1, max_length=30)
     address_id: int | None = None
+    coupon_code: str | None = Field(default=None, min_length=2, max_length=40)
 
 
 class OrderItemOut(BaseModel):
@@ -49,6 +50,8 @@ class OrderOut(BaseModel):
     status: OrderState
     channel: ChannelType
     subtotal: Decimal
+    discount: Decimal = Decimal("0")
+    coupon_code: str | None = None  # populated by the router (not a DB column)
     gst: Decimal
     total: Decimal
     placed_at: datetime
