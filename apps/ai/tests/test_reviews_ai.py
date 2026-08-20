@@ -345,6 +345,216 @@ async def test_missing_artifact_degrades_to_llm_never_crashes(ai_client, monkeyp
     assert len(body["scores"]) == 2 and body["model"] == "gpt-4o-mini"
 
 
+# ------------------------------------------------- provider Batch API (slice 5)
+
+BATCH_SUBMIT = "/internal/reviews/batch-submit"
+BATCH_POLL = "/internal/reviews/batch-poll"
+
+
+async def test_defer_llm_returns_deferred_ids_and_never_502(ai_client, monkeypatch):
+    """Nightly bulk mode: no local champion → everything with text is
+    deferred; the live LLM must NOT be called and deferring is success."""
+
+    async def fake_acompletion(**kwargs):
+        raise AssertionError("live LLM must not be called in defer mode")
+
+    monkeypatch.setattr(llm_client.litellm, "acompletion", fake_acompletion)
+    req = ReviewScoreRequest(
+        reviews=[
+            ReviewScoreSourceItem(review_id=1, rating=5, text=""),
+            ReviewScoreSourceItem(review_id=2, rating=2, text="Cold vada."),
+        ],
+        defer_llm=True,
+    )
+    resp = await ai_client.post(SCORE, json=req.model_dump(mode="json"), headers=TOKEN)
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["rating_only_ids"] == [1]  # stars still scored deterministically
+    assert body["deferred_ids"] == [2]
+    assert body["model"] is None
+
+
+async def test_defer_llm_local_confident_still_scores(ai_client, monkeypatch):
+    _use_fake_champion(
+        monkeypatch,
+        {
+            "Crispy dosa.": SentimentPrediction(labels=("taste:POSITIVE",), confident=True),
+            "Hmm.": SentimentPrediction(labels=(), confident=False),
+        },
+    )
+    req = ReviewScoreRequest(
+        reviews=[
+            ReviewScoreSourceItem(review_id=1, rating=5, text="Crispy dosa."),
+            ReviewScoreSourceItem(review_id=2, rating=3, text="Hmm."),
+        ],
+        defer_llm=True,
+    )
+    resp = await ai_client.post(SCORE, json=req.model_dump(mode="json"), headers=TOKEN)
+    body = resp.json()
+    assert body["local_ids"] == [1]
+    assert body["deferred_ids"] == [2]
+
+
+async def test_batch_submit_builds_redacted_chunked_jsonl(ai_client, monkeypatch):
+    """Rule 8 applies to batch FILES: the uploaded JSONL must carry
+    redacted text; chunking mirrors live scoring."""
+    captured = {}
+
+    async def fake_create(jsonl, *, completion_window):
+        captured["jsonl"] = jsonl.decode()
+        captured["window"] = completion_window
+        return "batch_abc123"
+
+    monkeypatch.setattr(reviews_router, "create_chat_batch", fake_create)
+    n = REVIEW_SCORE_CHUNK_SIZE + 2
+    reviews = [
+        {"review_id": i, "rating": 2, "text": f"Late. Call me on +91 98123 4567{i % 10}."}
+        for i in range(1, n + 1)
+    ]
+    resp = await ai_client.post(BATCH_SUBMIT, json={"reviews": reviews}, headers=TOKEN)
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["provider_batch_id"] == "batch_abc123"
+    assert body["model"] == "gpt-4o-mini"
+    assert body["n_reviews"] == n
+    assert [len(c) for c in body["chunks"]] == [REVIEW_SCORE_CHUNK_SIZE, 2]
+
+    lines = [json.loads(line) for line in captured["jsonl"].strip().splitlines()]
+    assert [entry["custom_id"] for entry in lines] == ["chunk-0", "chunk-1"]
+    assert all(entry["url"] == "/v1/chat/completions" for entry in lines)
+    assert "98123" not in captured["jsonl"]  # phones never land in the file
+    assert "[phone]" in captured["jsonl"]
+    assert captured["window"] == "24h"
+
+
+async def test_batch_submit_provider_failure_is_502(ai_client, monkeypatch):
+    from dosadash_ai.llm.batch import BatchError
+
+    async def fake_create(jsonl, *, completion_window):
+        raise BatchError("no OPENAI_API_KEY")
+
+    monkeypatch.setattr(reviews_router, "create_chat_batch", fake_create)
+    resp = await ai_client.post(
+        BATCH_SUBMIT,
+        json={"reviews": [{"review_id": 1, "rating": 2, "text": "Late."}]},
+        headers=TOKEN,
+    )
+    assert resp.status_code == 502
+
+
+def _batch_line(custom_id: str, scores: list[dict]) -> str:
+    return json.dumps(
+        {
+            "custom_id": custom_id,
+            "response": {
+                "status_code": 200,
+                "body": {"choices": [{"message": {"content": json.dumps({"scores": scores})}}]},
+            },
+            "error": None,
+        }
+    )
+
+
+async def test_batch_poll_completed_runs_the_same_guardrail(ai_client, monkeypatch):
+    """Hallucinated review_ids and off-registry aspects in batch output are
+    dropped exactly as in live scoring; unanswered reviews are rejected."""
+
+    async def fake_retrieve(batch_id):
+        assert batch_id == "batch_abc123"
+        lines = [
+            _batch_line(
+                "chunk-0",
+                [
+                    {
+                        "review_id": 11,
+                        "sentiment": "NEGATIVE",
+                        "aspects": [
+                            {"aspect": "delivery", "sentiment": "NEGATIVE"},
+                            {"aspect": "vibes", "sentiment": "NEGATIVE"},  # off-registry
+                        ],
+                    },
+                    {  # hallucinated id — the api never sent 999
+                        "review_id": 999,
+                        "sentiment": "NEGATIVE",
+                        "aspects": [{"aspect": "taste", "sentiment": "NEGATIVE"}],
+                    },
+                ],
+            )
+        ]
+        return "completed", lines, None
+
+    monkeypatch.setattr(reviews_router, "retrieve_chat_batch", fake_retrieve)
+    resp = await ai_client.post(
+        BATCH_POLL,
+        json={"provider_batch_id": "batch_abc123", "chunks": [[11, 12]]},
+        headers=TOKEN,
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["status"] == "completed"
+    assert [s["review_id"] for s in body["scores"]] == [11]
+    assert [a["aspect"] for a in body["scores"][0]["aspects"]] == ["delivery"]
+    assert [r["review_id"] for r in body["rejected"]] == [12]  # unanswered
+    assert body["model"] == "gpt-4o-mini"
+
+
+async def test_batch_poll_in_progress_and_failed_pass_through(ai_client, monkeypatch):
+    async def in_progress(batch_id):
+        return "in_progress", None, None
+
+    monkeypatch.setattr(reviews_router, "retrieve_chat_batch", in_progress)
+    resp = await ai_client.post(
+        BATCH_POLL, json={"provider_batch_id": "b1", "chunks": [[1]]}, headers=TOKEN
+    )
+    assert resp.json()["status"] == "in_progress"
+
+    async def failed(batch_id):
+        return "failed", None, "provider status expired"
+
+    monkeypatch.setattr(reviews_router, "retrieve_chat_batch", failed)
+    resp = await ai_client.post(
+        BATCH_POLL, json={"provider_batch_id": "b1", "chunks": [[1]]}, headers=TOKEN
+    )
+    body = resp.json()
+    assert body["status"] == "failed"
+    assert "expired" in body["error"]
+
+
+async def test_batch_poll_malformed_line_rejects_its_chunk_only(ai_client, monkeypatch):
+    async def fake_retrieve(batch_id):
+        lines = [
+            "not json at all",
+            _batch_line(
+                "chunk-1",
+                [
+                    {
+                        "review_id": 21,
+                        "sentiment": "POSITIVE",
+                        "aspects": [{"aspect": "taste", "sentiment": "POSITIVE"}],
+                    }
+                ],
+            ),
+        ]
+        return "completed", lines, None
+
+    monkeypatch.setattr(reviews_router, "retrieve_chat_batch", fake_retrieve)
+    resp = await ai_client.post(
+        BATCH_POLL,
+        json={"provider_batch_id": "b2", "chunks": [[11], [21]]},
+        headers=TOKEN,
+    )
+    body = resp.json()
+    assert [s["review_id"] for s in body["scores"]] == [21]
+    assert [r["review_id"] for r in body["rejected"]] == [11]
+
+
+async def test_batch_endpoints_require_internal_token(ai_client):
+    body = {"reviews": [{"review_id": 1, "rating": 2, "text": "x"}]}
+    assert (await ai_client.post(BATCH_SUBMIT, json=body)).status_code == 403
+    poll = {"provider_batch_id": "b", "chunks": []}
+    assert (await ai_client.post(BATCH_POLL, json=poll)).status_code == 403
+
+
 # ------------------------------------------------------------------- replies
 
 

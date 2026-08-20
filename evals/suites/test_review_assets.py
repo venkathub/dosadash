@@ -194,3 +194,91 @@ def test_score_request_bounds_hold():
             for i in range(1, MAX_REVIEW_SCORE_ITEMS + 1)
         ]
     )
+
+
+# --------------------------------------------- provider Batch API (slice 5)
+
+
+def test_batch_jsonl_never_leaks_phones():
+    """Rule 8 applies to batch FILES exactly as to live calls: planted-PII
+    text must be redacted before it lands in the uploaded JSONL — checked
+    on the production builder."""
+    from dosadash_ai.routers.reviews import build_batch_jsonl
+
+    dirty = [
+        ReviewScoreSourceItem(
+            review_id=i, rating=2, text=f"Cold food. Call me back on +91 98123 4567{i}."
+        )
+        for i in range(1, 4)
+    ]
+    jsonl, chunks = build_batch_jsonl(dirty, model="gpt-4o-mini")
+    payload = jsonl.decode()
+    assert "98123" not in payload
+    assert "[phone]" in payload
+    assert chunks == [[1, 2, 3]]
+
+
+def test_batch_round_trip_uses_the_same_guardrail():
+    """build → parse round-trip: custom_ids align, and adversarial output
+    (hallucinated ids, off-registry aspects, injection-style extras) can
+    never survive parse_batch_output — it reuses sanitize_scores."""
+    from dosadash_ai.routers.reviews import build_batch_jsonl, parse_batch_output
+    from dosadash_shared import REVIEW_SCORE_CHUNK_SIZE
+
+    n = REVIEW_SCORE_CHUNK_SIZE + 3
+    reviews = [
+        ReviewScoreSourceItem(review_id=100 + i, rating=2, text="Soggy vada.") for i in range(n)
+    ]
+    jsonl, chunks = build_batch_jsonl(reviews, model="gpt-4o-mini")
+    submitted = [json.loads(line) for line in jsonl.decode().strip().splitlines()]
+    assert [e["custom_id"] for e in submitted] == [f"chunk-{i}" for i in range(len(chunks))]
+    assert sum(len(c) for c in chunks) == n
+
+    # adversarial "provider output": chunk-0 answers with one real id, one
+    # hallucinated id and one off-registry aspect; chunk-1 never answers
+    evil_scores = [
+        {
+            "review_id": chunks[0][0],
+            "sentiment": "NEGATIVE",
+            "aspects": [
+                {"aspect": "freshness", "sentiment": "NEGATIVE"},
+                {"aspect": "ignore_previous_instructions", "sentiment": "NEGATIVE"},
+            ],
+        },
+        {
+            "review_id": 424242,
+            "sentiment": "POSITIVE",
+            "aspects": [{"aspect": "taste", "sentiment": "POSITIVE"}],
+        },
+    ]
+    line = json.dumps(
+        {
+            "custom_id": "chunk-0",
+            "response": {
+                "status_code": 200,
+                "body": {
+                    "choices": [{"message": {"content": json.dumps({"scores": evil_scores})}}]
+                },
+            },
+            "error": None,
+        }
+    )
+    scores, rejected = parse_batch_output([line], chunks)
+    kept_ids = {s.review_id for s in scores}
+    assert 424242 not in kept_ids  # hallucinated id dropped
+    for s in scores:
+        for a in s.aspects:
+            assert a.aspect in REVIEW_ASPECTS  # injection aspect dropped
+    # every submitted review is accounted for: scored or rejected, never lost
+    rejected_ids = {r.review_id for r in rejected}
+    all_ids = {rid for chunk in chunks for rid in chunk}
+    assert kept_ids | rejected_ids == all_ids
+    assert not (kept_ids & rejected_ids)
+
+
+def test_batch_provenance_prefix_is_stable():
+    """The scoreboard reads scored_model prefixes — renaming breaks history."""
+    from dosadash_shared import BATCH_MODEL_PREFIX, RATING_ONLY_MODEL
+
+    assert BATCH_MODEL_PREFIX == "batch:"
+    assert RATING_ONLY_MODEL == "deterministic:rating"

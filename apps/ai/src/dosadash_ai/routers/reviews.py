@@ -37,6 +37,7 @@ from fastapi import APIRouter, Header, HTTPException
 
 from dosadash_ai.config import get_settings
 from dosadash_ai.llm import LLMError, structured_completion
+from dosadash_ai.llm.batch import BatchError, create_chat_batch, retrieve_chat_batch
 from dosadash_ai.prompts import load_prompt
 from dosadash_ai.redaction import REDACTED, redact_phones
 from dosadash_ml.finetune.predict import (
@@ -52,6 +53,10 @@ from dosadash_shared import (
     REVIEW_SCORE_CHUNK_SIZE,
     REVIEW_SENTIMENT_PROMPT_VERSION,
     AspectLabel,
+    ReviewBatchPollRequest,
+    ReviewBatchPollResponse,
+    ReviewBatchSubmitRequest,
+    ReviewBatchSubmitResponse,
     ReviewReplyDraft,
     ReviewReplyRequest,
     ReviewReplyResponse,
@@ -229,6 +234,17 @@ async def score_reviews(
                 local_ids.append(review.review_id)
         local_model = f"local:{champion.version}" if local_ids else None
 
+    if req.defer_llm:  # nightly bulk mode: the Batch API handles the doubt
+        return ReviewScoreResponse(
+            scores=scores,
+            rating_only_ids=[r.review_id for r in rating_only],
+            local_ids=local_ids,
+            deferred_ids=[r.review_id for r in llm_queue],
+            rejected=rejected,
+            model=None,
+            local_model=local_model,
+        )
+
     for chunk in _chunks(llm_queue, REVIEW_SCORE_CHUNK_SIZE):
         try:
             parsed, model = await structured_completion(
@@ -259,6 +275,135 @@ async def score_reviews(
         rejected=rejected,
         model=model_used,
         local_model=local_model,
+    )
+
+
+# ------------------------------------------------- provider Batch API (slice 5)
+
+
+def build_batch_jsonl(
+    reviews: list[ReviewScoreSourceItem], *, model: str, max_tokens: int = 2000
+) -> tuple[bytes, list[list[int]]]:
+    """Chunked /v1/chat/completions JSONL for the provider Batch API +
+    the custom_id → review_ids mapping (index i = "chunk-i").
+
+    Bodies go through `build_score_messages`, so phone redaction happens
+    HERE, before any text lands in the uploaded file — Rule 8 applies to
+    batch files exactly as it does to live calls (key-free eval gate)."""
+    lines: list[str] = []
+    chunks: list[list[int]] = []
+    for i, chunk in enumerate(_chunks(reviews, REVIEW_SCORE_CHUNK_SIZE)):
+        chunks.append([r.review_id for r in chunk])
+        body = {
+            "model": model,
+            "messages": build_score_messages(chunk),
+            "temperature": 0.0,
+            "max_tokens": max_tokens,
+            "response_format": {"type": "json_object"},
+        }
+        lines.append(
+            json.dumps(
+                {
+                    "custom_id": f"chunk-{i}",
+                    "method": "POST",
+                    "url": "/v1/chat/completions",
+                    "body": body,
+                },
+                ensure_ascii=False,
+            )
+        )
+    return ("\n".join(lines) + "\n").encode("utf-8"), chunks
+
+
+@router.post("/batch-submit", response_model=ReviewBatchSubmitResponse)
+async def batch_submit(
+    req: ReviewBatchSubmitRequest,
+    x_internal_token: Annotated[str, Header()] = "",
+) -> ReviewBatchSubmitResponse:
+    _check_internal_token(x_internal_token)
+    settings = get_settings()
+    jsonl, chunks = build_batch_jsonl(req.reviews, model=settings.batch_model)
+    try:
+        batch_id = await create_chat_batch(
+            jsonl, completion_window=settings.batch_completion_window
+        )
+    except BatchError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return ReviewBatchSubmitResponse(
+        provider_batch_id=batch_id,
+        model=settings.batch_model,
+        chunks=chunks,
+        n_reviews=len(req.reviews),
+    )
+
+
+def parse_batch_output(
+    lines: list[str], chunks: list[list[int]]
+) -> tuple[list[ReviewScoreDraft], list[ReviewScoreRejection]]:
+    """Batch output → the SAME guardrail as live scoring. The recorded
+    `chunks` mapping is authoritative: a review the model never answered
+    for is rejected, one it invented is dropped by `sanitize_scores`."""
+    from pydantic import ValidationError
+
+    by_custom_id: dict[str, dict] = {}
+    for line in lines:
+        try:
+            entry = json.loads(line)
+            by_custom_id[str(entry.get("custom_id"))] = entry
+        except (ValueError, AttributeError):
+            continue  # malformed line → its chunk falls out below
+
+    scores: list[ReviewScoreDraft] = []
+    rejected: list[ReviewScoreRejection] = []
+    for i, ids in enumerate(chunks):
+        # sanitize_scores only reads review_id from the requested items —
+        # rating/text placeholders keep the shared signature unchanged
+        requested = [ReviewScoreSourceItem(review_id=rid, rating=3, text="") for rid in ids]
+        entry = by_custom_id.get(f"chunk-{i}")
+        response = (entry or {}).get("response") or {}
+        content = None
+        if entry is not None and not entry.get("error") and response.get("status_code") == 200:
+            choices = (response.get("body") or {}).get("choices") or []
+            if choices:
+                content = ((choices[0].get("message")) or {}).get("content")
+        if not content:
+            rejected.extend(
+                ReviewScoreRejection(review_id=rid, reason="missing/failed batch line")
+                for rid in ids
+            )
+            continue
+        try:
+            parsed = ReviewScoreBatch.model_validate_json(content)
+        except ValidationError as exc:
+            rejected.extend(
+                ReviewScoreRejection(review_id=rid, reason=f"invalid batch output: {exc}")
+                for rid in ids
+            )
+            continue
+        kept, chunk_rejected = sanitize_scores(requested, parsed)
+        scores.extend(kept)
+        rejected.extend(chunk_rejected)
+    return scores, rejected
+
+
+@router.post("/batch-poll", response_model=ReviewBatchPollResponse)
+async def batch_poll(
+    req: ReviewBatchPollRequest,
+    x_internal_token: Annotated[str, Header()] = "",
+) -> ReviewBatchPollResponse:
+    _check_internal_token(x_internal_token)
+    try:
+        status, lines, error = await retrieve_chat_batch(req.provider_batch_id)
+    except BatchError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    if status != "completed":
+        return ReviewBatchPollResponse(status=status, error=error)  # type: ignore[arg-type]
+    scores, rejected = parse_batch_output(lines or [], req.chunks)
+    return ReviewBatchPollResponse(
+        status="completed",
+        scores=scores,
+        rejected=rejected,
+        model=get_settings().batch_model,
     )
 
 

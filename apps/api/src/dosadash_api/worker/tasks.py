@@ -296,3 +296,204 @@ def nightly_po(self: Any, coverage_days: int = 7) -> dict[str, Any]:
         raise self.retry(exc=exc) from exc
     logger.info("nightly_po %s", result)
     return result
+
+
+# ------------------------------------------------------------------ reviews (Phase 8)
+
+
+async def _nightly_review_scoring(limit: int) -> dict[str, Any]:
+    """Local INT8 champion scores what it is confident about at ₹0; the
+    residue goes to the provider Batch API at 50% of live pricing. The
+    live LLM is never called from this task (defer_llm)."""
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    from dosadash_api.db.models import Review, ReviewBatchJob
+    from dosadash_api.services.ai_client import AIServiceError, get_ai_client
+    from dosadash_api.services.review_scoring import apply_score_result
+    from dosadash_shared import (
+        ReviewBatchSubmitRequest,
+        ReviewScoreRequest,
+        ReviewScoreSourceItem,
+    )
+
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            # reviews already in a SUBMITTED batch are in flight — never
+            # double-submit (idempotence across nightly runs)
+            in_flight: set[int] = set()
+            for chunks in (
+                await session.execute(
+                    select(ReviewBatchJob.chunks).where(ReviewBatchJob.status == "SUBMITTED")
+                )
+            ).scalars():
+                in_flight.update(rid for chunk in chunks for rid in chunk)
+
+            rows = (
+                (
+                    await session.execute(
+                        select(Review)
+                        .where(Review.sentiment.is_(None))
+                        .order_by(Review.created_at.asc())
+                        .limit(limit + len(in_flight))
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            rows = [r for r in rows if r.id not in in_flight][:limit]
+            if not rows:
+                return {"scored": 0, "deferred": 0, "batch": None}
+
+            ai = get_ai_client()
+            result = await ai.score_reviews(
+                ReviewScoreRequest(
+                    reviews=[
+                        ReviewScoreSourceItem(review_id=r.id, rating=r.rating, text=r.text)
+                        for r in rows
+                    ],
+                    defer_llm=True,
+                )
+            )
+            by_id = {r.id: r for r in rows}
+            scored = apply_score_result(by_id, result, now=datetime.now(UTC))
+            # commit local/rating-only scores BEFORE the batch submit: a
+            # provider failure must never roll back work already done
+            await session.commit()
+
+            deferred_ids = set(result.deferred_ids)
+            deferred = [r for r in rows if r.id in deferred_ids]
+            batch_id: str | None = None
+            if deferred:
+                try:
+                    submitted = await ai.batch_submit_reviews(
+                        ReviewBatchSubmitRequest(
+                            reviews=[
+                                ReviewScoreSourceItem(review_id=r.id, rating=r.rating, text=r.text)
+                                for r in deferred
+                            ]
+                        )
+                    )
+                except AIServiceError:
+                    # unscored reviews simply wait for the next nightly run
+                    logger.warning("review batch submit failed", exc_info=True)
+                else:
+                    session.add(
+                        ReviewBatchJob(
+                            provider="openai",
+                            provider_batch_id=submitted.provider_batch_id,
+                            model=submitted.model,
+                            prompt_version=submitted.prompt_version,
+                            chunks=submitted.chunks,
+                            n_reviews=submitted.n_reviews,
+                            status="SUBMITTED",
+                        )
+                    )
+                    await session.commit()
+                    batch_id = submitted.provider_batch_id
+            return {
+                "scored": scored,
+                "local": len(result.local_ids),
+                "rating_only": len(result.rating_only_ids),
+                "deferred": len(deferred),
+                "batch": batch_id,
+            }
+    finally:
+        await engine.dispose()
+
+
+@app.task(name="reviews.nightly_scoring", bind=True, max_retries=2, default_retry_delay=300)
+def nightly_review_scoring(self: Any, limit: int = 200) -> dict[str, Any]:
+    """03:30 IST: score unscored reviews — INT8 champion locally, residue
+    to the Batch API. Idempotent: in-flight reviews are skipped."""
+    try:
+        result = asyncio.run(_nightly_review_scoring(limit))
+    except Exception as exc:
+        logger.exception("nightly_review_scoring failed")
+        raise self.retry(exc=exc) from exc
+    logger.info("nightly_review_scoring %s", result)
+    return result
+
+
+async def _poll_review_batches() -> dict[str, Any]:
+    """Walk SUBMITTED batch jobs; ingest completed output through the same
+    guardrail as live scoring (the ai side sanitizes)."""
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    from dosadash_api.db.models import Review, ReviewBatchJob
+    from dosadash_api.services.ai_client import AIServiceError, get_ai_client
+    from dosadash_api.services.review_scoring import apply_batch_scores
+    from dosadash_shared import ReviewBatchPollRequest
+
+    completed = failed = in_progress = 0
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            jobs = (
+                (
+                    await session.execute(
+                        select(ReviewBatchJob).where(ReviewBatchJob.status == "SUBMITTED")
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            ai = get_ai_client()
+            now = datetime.now(UTC)
+            for job in jobs:
+                try:
+                    poll = await ai.batch_poll_reviews(
+                        ReviewBatchPollRequest(
+                            provider_batch_id=job.provider_batch_id, chunks=job.chunks
+                        )
+                    )
+                except AIServiceError:
+                    logger.warning(
+                        "review batch poll failed (%s)", job.provider_batch_id, exc_info=True
+                    )
+                    continue
+                if poll.status == "in_progress":
+                    in_progress += 1
+                    continue
+                if poll.status == "failed":
+                    job.status = "FAILED"
+                    job.error = poll.error
+                    job.completed_at = now
+                    failed += 1
+                    continue
+                ids = [rid for chunk in job.chunks for rid in chunk]
+                rows = (
+                    (await session.execute(select(Review).where(Review.id.in_(ids))))
+                    .scalars()
+                    .all()
+                )
+                job.scored = apply_batch_scores(
+                    {r.id: r for r in rows},
+                    poll.scores,
+                    model=poll.model or job.model,
+                    prompt_version=job.prompt_version,
+                    now=now,
+                )
+                job.failed = len(poll.rejected)
+                job.status = "COMPLETED"
+                job.completed_at = now
+                completed += 1
+            await session.commit()
+    finally:
+        await engine.dispose()
+    return {"completed": completed, "failed": failed, "in_progress": in_progress}
+
+
+@app.task(name="reviews.batch_poll", bind=True, max_retries=1, default_retry_delay=300)
+def review_batch_poll(self: Any) -> dict[str, Any]:
+    """Hourly: ingest completed Batch API jobs (idempotent — a review
+    scored elsewhere in the meantime is never clobbered)."""
+    try:
+        result = asyncio.run(_poll_review_batches())
+    except Exception as exc:
+        logger.exception("review_batch_poll failed")
+        raise self.retry(exc=exc) from exc
+    logger.info("review_batch_poll %s", result)
+    return result

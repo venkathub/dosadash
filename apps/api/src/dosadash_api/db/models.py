@@ -702,3 +702,33 @@ class Review(TimestampMixin, Base):
     replied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (CheckConstraint("rating BETWEEN 1 AND 5", name="rating_range"),)
+
+
+class ReviewBatchJob(TimestampMixin, Base):
+    """One submitted provider Batch API job for review scoring (Phase 8
+    slice 5). `chunks` is the authoritative custom_id → review_ids mapping
+    recorded at submit time and handed back to the ai service at poll time
+    (the ai side stays stateless). SUBMITTED jobs also act as a dedup set:
+    the nightly task never re-submits a review that is already in flight.
+
+    Batch provenance lives here rather than in Langfuse — litellm's
+    callback does not fire for the files/batches endpoints."""
+
+    __tablename__ = "review_batch_jobs"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    provider: Mapped[str] = mapped_column(String(20), default="openai")
+    provider_batch_id: Mapped[str] = mapped_column(String(80), unique=True)
+    model: Mapped[str] = mapped_column(String(80))
+    prompt_version: Mapped[str] = mapped_column(String(40))
+    chunks: Mapped[list[list[int]]] = mapped_column(JSONB)
+    n_reviews: Mapped[int] = mapped_column()
+    status: Mapped[str] = mapped_column(
+        Enum("SUBMITTED", "COMPLETED", "FAILED", name="review_batch_status"),
+        default="SUBMITTED",
+        index=True,
+    )
+    scored: Mapped[int | None] = mapped_column()
+    failed: Mapped[int | None] = mapped_column()
+    error: Mapped[str | None] = mapped_column(Text)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

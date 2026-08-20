@@ -29,6 +29,10 @@ from dosadash_shared import (
     PromoSuggestResult,
     RecsRequest,
     RecsResponse,
+    ReviewBatchPollRequest,
+    ReviewBatchPollResponse,
+    ReviewBatchSubmitRequest,
+    ReviewBatchSubmitResponse,
     ReviewReplyRequest,
     ReviewReplyResponse,
     ReviewScoreRequest,
@@ -268,6 +272,38 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return ReviewReplyResponse.model_validate(resp.json())
+
+    async def batch_submit_reviews(
+        self, request: ReviewBatchSubmitRequest
+    ) -> ReviewBatchSubmitResponse:
+        """Submit deferred reviews to the provider Batch API (Phase 8 slice
+        5) — file upload + batch creation, hence the generous timeout."""
+        try:
+            async with httpx.AsyncClient(timeout=120) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/reviews/batch-submit",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return ReviewBatchSubmitResponse.model_validate(resp.json())
+
+    async def batch_poll_reviews(self, request: ReviewBatchPollRequest) -> ReviewBatchPollResponse:
+        """Poll one submitted batch; completed results arrive already
+        sanitized by the same guardrail as live scoring."""
+        try:
+            async with httpx.AsyncClient(timeout=120) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/reviews/batch-poll",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return ReviewBatchPollResponse.model_validate(resp.json())
 
 
 def get_ai_client() -> AIClient:

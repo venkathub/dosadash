@@ -46,6 +46,13 @@ class Settings(BaseSettings):
     image_size: str = "1024x1024"
     image_quality: str = "low"  # menu thumbnails — low keeps cost ~₹1/image
 
+    # Nightly bulk review scoring via the provider Batch API (Phase 8 slice
+    # 5): 50% of live pricing, 24h completion window. OpenAI only — same
+    # single-provider precedent as STT/image gen; failures leave reviews
+    # unscored for the next run, never block anything.
+    batch_model: str = "gpt-4o-mini"
+    batch_completion_window: str = "24h"
+
     # RAG (Phase 3): embeddings via litellm; dimension pinned by the
     # vector(1536) columns (dosadash_shared.EMBEDDING_DIM).
     embedding_model: str = "text-embedding-3-small"
