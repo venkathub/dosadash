@@ -55,7 +55,7 @@ All LLM paths are eval-gated in CI; classical-ML numbers are measured against co
 | Checkout combo suggester | attach 15.6% vs 12.8% random · **AOV +4.9% vs control** | 3-arm simulated A/B on 3,273 holdout checkouts (validates taste recovery, not real-world uplift — caveat in the artifact) |
 | Review sentiment (LoRA DistilBERT) | **macro-F1 0.9944 vs 0.9926 gpt-4o-mini zero-shot** on the same 250-review holdout · **₹0 vs ₹3.20 per 1k reviews** | INT8 ONNX serves on-VPS CPU: ~57 ms/review, 97.2% confident coverage @ 0.9968 macro-F1; unconfident residue falls back to the LLM (nightly via Batch API at 50% price) |
 | Invoice OCR (VLM) | structured extraction + deterministic arithmetic verifier + PO matching | confidence ≥ 0.8 pre-checks the review queue; a human always approves before stock moves |
-| Load (single-process api) | **100 concurrent users · 0 failures · P50 24 ms / P95 210 ms** · checkout P95 370 ms | locust, 91 real end-to-end orders; rate limiter shed 343 abusive reqs while served P50 held 17 ms ([details](infra/loadtest/results.md)) |
+| Load (single-process api) | **100 concurrent users · 0 failures · P50 24 ms / P95 210 ms** · checkout P95 370 ms · **prod (4 GB VPS, TLS, limiter on): 0 failures, P50 41 ms / P95 140 ms** | locust, 91 real end-to-end orders locally + off-peak run against production; rate limiter shed abusive traffic while served P50 held ([details](infra/loadtest/results.md)) |
 | Test suite | **683 tests + 115 key-free eval-asset gates** | plus the live eval gate on every PR touching AI paths |
 
 ## What's inside

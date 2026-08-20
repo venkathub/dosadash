@@ -47,6 +47,26 @@ re-run should be recorded below after the Phase 9 deploy.
   service. A short prod off-peak chat pass (with semcache warm) belongs in
   the prod section below.
 
-## Prod off-peak run — TODO after Phase 9 deploy
+## Prod off-peak run — 2026-08-20 ≈23:40 IST (post-Phase-9 deploy)
 
-(Record here: same passes against the VPS, limiter on, small user counts.)
+Against **production** (`dosadash.venkateshs.dev`, 4 GB VPS, single-process
+uvicorn, full TLS + Cloudflare + Caddy path), **rate limiter ON**, orders OFF
+(live system), 20 users / 90 s:
+
+| endpoint | # reqs | fails | P50 | P95 | P99 |
+|---|---|---|---|---|---|
+| GET /api/v1/menu | 218 | 0 | 43 ms | 140 ms | 250 ms |
+| GET /api/v1/menu/categories | 74 | 0 | 33 ms | 98 ms | 120 ms |
+| GET /api/v1/menu/items/[id] | 60 | 0 | 36 ms | 100 ms | 140 ms |
+| GET /api/v1/menu?lang=ta | 45 | 0 | 58 ms | 150 ms | 170 ms |
+| GET /api/v1/orders (history) | 44 | 0 | 36 ms | 58 ms | 76 ms |
+| **Aggregated** | **454** | **0 (0.00%)** | **41 ms** | **140 ms** | **170 ms** |
+
+- **Zero failures on the live box**; limiter shed 3 auth-tier requests
+  (Customer spawns share the runner's IP — exactly the designed behavior).
+- Direct prod probes the same evening: auth tier passed exactly 10 then
+  429 + `Retry-After`; read tier headers live on organic traffic
+  (`X-RateLimit-Limit: 240`).
+- Includes real network latency (client in India → Cloudflare → VPS), unlike
+  the local baseline above — P50 41 ms end-to-end is the honest number for
+  the README.
