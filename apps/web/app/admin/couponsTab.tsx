@@ -42,11 +42,35 @@ export function CouponsTab() {
   const loadCoupons = useCallback(() => adminApi<Coupon[]>("/admin/coupons"), []);
   const { data: coupons, error, refresh, setError } = useLoad(loadCoupons);
   const [form, setForm] = useState(EMPTY);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestNote, setSuggestNote] = useState<string | null>(null);
 
   const act = (fn: () => Promise<unknown>) =>
     fn()
       .then(refresh)
       .catch((e) => setError(e instanceof AdminApiError ? e.message : "action failed"));
+
+  const suggest = async () => {
+    setSuggesting(true);
+    setSuggestNote(null);
+    try {
+      const r = await adminApi<{ combos: unknown[]; coupons: unknown[]; skipped: string[]; fallback: boolean }>(
+        "/admin/promos/suggest",
+        { method: "POST" },
+      );
+      setSuggestNote(
+        `🤖 drafted ${r.combos.length} combo(s) + ${r.coupons.length} coupon(s)` +
+          (r.fallback ? " (deterministic fallback)" : "") +
+          (r.skipped.length ? ` · skipped: ${r.skipped.join("; ")}` : "") +
+          " — review combos on the Combos tab",
+      );
+      refresh();
+    } catch (e) {
+      setError(e instanceof AdminApiError ? e.message : "suggestion failed");
+    } finally {
+      setSuggesting(false);
+    }
+  };
 
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm({ ...form, [k]: e.target.value });
@@ -54,6 +78,12 @@ export function CouponsTab() {
   return (
     <div>
       <ErrorBar msg={error} />
+      <div className="mb-3 flex items-center gap-3">
+        <button className={btnCls} disabled={suggesting} onClick={suggest}>
+          {suggesting ? "🤖 Thinking…" : "🤖 Suggest promos"}
+        </button>
+        {suggestNote && <span className="text-xs text-stone-400">{suggestNote}</span>}
+      </div>
       <form
         className="mb-4 flex flex-wrap items-center gap-2 rounded bg-stone-800 p-3"
         onSubmit={(e) => {
