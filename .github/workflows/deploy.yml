@@ -36,5 +36,17 @@ jobs:
             # (~26 GB by week 9, 76% disk). Keep 5 GB of recent layers so
             # rebuilds stay fast; everything older goes.
             docker builder prune -f --keep-storage=5GB
-            sleep 5
-            curl -fsS http://localhost:8080/healthz && echo "✓ healthz OK"
+            # Post-deploy smoke with retries: a rebuilt api needs longer than
+            # a fixed sleep to come up, and a single eager curl once failed a
+            # deploy that was actually healthy seconds later (Phase 9). Fail
+            # only after ~60s of real downtime — that's a real incident.
+            for i in $(seq 1 12); do
+              if curl -fsS http://localhost:8080/healthz > /dev/null; then
+                echo "✓ healthz OK (attempt $i)"
+                exit 0
+              fi
+              echo "healthz not ready (attempt $i/12), retrying in 5s…"
+              sleep 5
+            done
+            echo "✗ healthz still failing after 60s — deploy is genuinely broken"
+            exit 1
