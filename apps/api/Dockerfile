@@ -26,6 +26,11 @@ FROM python:3.12-slim-bookworm
 WORKDIR /app
 RUN useradd --create-home appuser
 COPY --from=builder --chown=appuser:appuser /app /app
+# Media dir owned by appuser at build time: a FRESH named volume mounted at
+# /app/media inherits this ownership. (Phase 7 postmortem: a root-owned
+# volume crash-looped the api on mkdir — main.py now also degrades instead
+# of dying, but correct ownership is the real fix.)
+RUN mkdir -p /app/media/menu && chown -R appuser:appuser /app/media
 USER appuser
 ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000
