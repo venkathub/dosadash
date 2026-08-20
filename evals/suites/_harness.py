@@ -127,6 +127,21 @@ async def apply_setup(session: AsyncSession, case: dict, user_id: int | None = N
         await session.execute(
             text("UPDATE menu_items SET is_available = false WHERE name = :n"), {"n": name}
         )
+    # Phase 7 l10n: approved translations become agent aliases. Seeded per
+    # case (not globally) so every non-Tamil case keeps the byte-identical
+    # pre-l10n menu context. Cleaned up in restore().
+    for trans in case.get("setup", {}).get("seed_translations", []):
+        await session.execute(
+            text(
+                "INSERT INTO menu_item_translations "
+                "(item_id, lang, name, status, model, prompt_version) "
+                "SELECT id, :lang, :text, 'APPROVED', 'eval-harness', 'menu_translation_v1' "
+                "FROM menu_items WHERE name = :n "
+                "ON CONFLICT (item_id, lang) DO UPDATE "
+                "SET name = :text, status = 'APPROVED'"
+            ),
+            {"lang": trans["lang"], "text": trans["text"], "n": trans["name"]},
+        )
     seed = case.get("setup", {}).get("seed_usual_orders")
     if seed and user_id is not None:
         await _seed_usual_orders(session, user_id, seed)
@@ -138,6 +153,14 @@ async def restore(session: AsyncSession, case: dict, user_id: int | None = None)
     for name in case.get("setup", {}).get("make_unavailable", []):
         await session.execute(
             text("UPDATE menu_items SET is_available = true WHERE name = :n"), {"n": name}
+        )
+    for trans in case.get("setup", {}).get("seed_translations", []):
+        await session.execute(
+            text(
+                "DELETE FROM menu_item_translations WHERE lang = :lang AND item_id = "
+                "(SELECT id FROM menu_items WHERE name = :n)"
+            ),
+            {"lang": trans["lang"], "n": trans["name"]},
         )
     if case.get("setup", {}).get("seed_usual_orders") and user_id is not None:
         await session.execute(
