@@ -19,6 +19,20 @@ const NEXT: Record<string, string> = {
   READY: "OUT_FOR_DELIVERY",
 };
 
+type QCResult = {
+  verdict: "PASS" | "MISMATCH" | "CHECK" | "UNREADABLE";
+  missing: string[];
+  unexpected: string[];
+  issues: string[];
+};
+
+const QC_BADGE: Record<QCResult["verdict"], { label: string; cls: string }> = {
+  PASS: { label: "✅ QC pass", cls: "bg-green-900/60 text-green-300" },
+  MISMATCH: { label: "❌ Wrong dishes", cls: "bg-red-900/60 text-red-300" },
+  CHECK: { label: "⚠️ Check before dispatch", cls: "bg-amber-900/60 text-amber-300" },
+  UNREADABLE: { label: "🔄 Retake photo", cls: "bg-stone-600 text-stone-200" },
+};
+
 export default function Kds() {
   const [token, setToken] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
@@ -26,6 +40,7 @@ export default function Kds() {
   const [demoOtp, setDemoOtp] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<Record<number, OrderEvent>>({});
+  const [qc, setQc] = useState<Record<number, QCResult | "pending">>({});
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -103,6 +118,37 @@ export default function Kds() {
     if (!r.ok) setError((await r.json()).detail ?? "transition failed");
   };
 
+  const qcPhoto = async (orderId: number, file: File) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("QC photo must be JPEG/PNG/WebP");
+      return;
+    }
+    setQc((prev) => ({ ...prev, [orderId]: "pending" }));
+    try {
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const r = await fetch(`/api/v1/orders/${orderId}/qc-photo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ image_base64: b64, mime_type: file.type }),
+      });
+      if (!r.ok) throw new Error((await r.json()).detail ?? "QC failed");
+      const result: QCResult = await r.json();
+      setQc((prev) => ({ ...prev, [orderId]: result }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "QC failed");
+      setQc((prev) => {
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
+    }
+  };
+
   if (!token) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-stone-900 text-stone-100">
@@ -174,12 +220,46 @@ export default function Kds() {
                       </li>
                     ))}
                   </ul>
-                  <button
-                    className="w-full rounded bg-amber-500 py-1 text-xs font-bold text-stone-900"
-                    onClick={() => advance(o)}
-                  >
-                    → {NEXT[o.status].replace(/_/g, " ")}
-                  </button>
+                  {qc[o.order_id] && qc[o.order_id] !== "pending" && (
+                    <div
+                      className={`mb-1 rounded px-2 py-1 text-xs ${
+                        QC_BADGE[(qc[o.order_id] as QCResult).verdict].cls
+                      }`}
+                    >
+                      <b>{QC_BADGE[(qc[o.order_id] as QCResult).verdict].label}</b>
+                      {(qc[o.order_id] as QCResult).missing.length > 0 && (
+                        <p>missing: {(qc[o.order_id] as QCResult).missing.join(", ")}</p>
+                      )}
+                      {(qc[o.order_id] as QCResult).issues.map((issue) => (
+                        <p key={issue}>{issue}</p>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-1">
+                    {(col === "COOKING" || col === "READY") && (
+                      <label className="cursor-pointer rounded bg-stone-600 px-2 py-1 text-xs font-bold">
+                        {qc[o.order_id] === "pending" ? "🔍…" : "📷 QC"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          capture="environment"
+                          className="hidden"
+                          disabled={qc[o.order_id] === "pending"}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) qcPhoto(o.order_id, file);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                    )}
+                    <button
+                      className="flex-1 rounded bg-amber-500 py-1 text-xs font-bold text-stone-900"
+                      onClick={() => advance(o)}
+                    >
+                      → {NEXT[o.status].replace(/_/g, " ")}
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>

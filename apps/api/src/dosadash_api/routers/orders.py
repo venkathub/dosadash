@@ -8,9 +8,10 @@ GET  /api/v1/orders               — my order history (newest first)
 GET  /api/v1/orders/{id}          — detail (owner or staff)
 """
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -25,8 +26,11 @@ from dosadash_api.providers import (
     select_payment_provider,
 )
 from dosadash_api.services import order_service
+from dosadash_api.services.ai_client import AIClient, AIServiceError, get_ai_client
 from dosadash_api.services.order_service import STAFF_ROLES
 from dosadash_shared import (
+    DishQCIn,
+    DishQCResult,
     OrderCreateIn,
     OrderItemIn,
     OrderItemOut,
@@ -156,6 +160,43 @@ async def set_status(
     except order_service.NotPermitted as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     return await _order_out(session, order)
+
+
+class QCPhotoIn(BaseModel):
+    """Same bounds as the ai-side DishQCIn so junk fails at the api edge."""
+
+    image_base64: str = Field(min_length=8, max_length=10_000_000)
+    mime_type: Literal["image/jpeg", "image/png", "image/webp"]
+
+
+@router.post("/{order_id}/qc-photo", response_model=DishQCResult)
+async def qc_photo(
+    order_id: int,
+    body: QCPhotoIn,
+    user: CurrentUser,
+    session: SessionDep,
+    ai: Annotated[AIClient, Depends(get_ai_client)],
+) -> DishQCResult:
+    """Dish-photo QC (Phase 7): staff photographs the plated/packed order
+    before dispatch; the ai service returns a deterministic verdict computed
+    from VLM observations. Stateless — the KDS shows the verdict inline."""
+    if user.role not in STAFF_ROLES:
+        raise HTTPException(status_code=403, detail="Staff only")
+    order = await _load_order(session, order_id)
+    expected = [line.item.name for line in order.items]
+    if not expected:
+        raise HTTPException(status_code=409, detail="Order has no items to check")
+    try:
+        return await ai.qc_dish(
+            DishQCIn(
+                image_base64=body.image_base64,
+                mime_type=body.mime_type,  # DishQCIn re-validates the Literal
+                expected_dishes=expected,
+                session_id=f"kds:{user.id}",
+            )
+        )
+    except AIServiceError as exc:
+        raise HTTPException(status_code=502, detail="QC service unavailable") from exc
 
 
 @router.post("/{order_id}/pay/demo", response_model=OrderOut)

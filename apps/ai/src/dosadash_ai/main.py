@@ -17,6 +17,7 @@ from dosadash_ai.routers.eta import router as eta_router
 from dosadash_ai.routers.inventory import router as inventory_router
 from dosadash_ai.routers.invoice import router as invoice_router
 from dosadash_ai.routers.nutrition import router as nutrition_router
+from dosadash_ai.routers.qc import router as qc_router
 from dosadash_ai.routers.rag import router as rag_router
 from dosadash_ai.routers.recs import router as recs_router
 from dosadash_ai.routers.stt import router as stt_router
@@ -74,6 +75,7 @@ app.include_router(invoice_router)
 app.include_router(support_router)
 app.include_router(stt_router)
 app.include_router(recs_router)
+app.include_router(qc_router)
 
 
 @app.get("/healthz", response_model=HealthStatus)

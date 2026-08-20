@@ -182,3 +182,46 @@ class CheckoutSuggestResponse(BaseModel):
     suggestions: list[CheckoutSuggestion] = Field(default_factory=list)
     source: Literal["als", "embedding", "popular", "unavailable"]
     model_version: str | None = None
+
+
+# ------------------------------------------------ dish-photo QC (Phase 7)
+
+DISH_QC_PROMPT_VERSION = "dish_qc_v1"
+
+
+class DishQCIn(BaseModel):
+    """api → ai: one plated-dish/packaging photo + what the order says
+    should be in it. Images only (same bounds as invoice OCR)."""
+
+    image_base64: str = Field(min_length=8, max_length=10_000_000)  # ~7 MB image
+    mime_type: Literal["image/jpeg", "image/png", "image/webp"]
+    expected_dishes: list[str] = Field(min_length=1, max_length=20)
+    session_id: str | None = None
+
+
+class DishQCExtraction(BaseModel):
+    """The VLM's structured OBSERVATIONS — never a verdict. The pass/fail
+    decision is computed deterministically from these fields (same earned-
+    confidence principle as the invoice arithmetic verifier)."""
+
+    is_food_photo: bool
+    dishes_seen: list[str] = Field(default_factory=list, max_length=8)
+    presentation_issues: list[str] = Field(default_factory=list, max_length=6)
+    confidence: float = Field(ge=0, le=1)
+
+
+DishQCVerdict = Literal["PASS", "MISMATCH", "CHECK", "UNREADABLE"]
+
+
+class DishQCResult(BaseModel):
+    """ai → api: deterministic verdict + the evidence it was computed from."""
+
+    verdict: DishQCVerdict
+    matched: list[str] = Field(default_factory=list)  # expected dishes seen
+    missing: list[str] = Field(default_factory=list)  # expected but not seen
+    unexpected: list[str] = Field(default_factory=list)  # seen but not ordered
+    issues: list[str] = Field(default_factory=list)
+    extraction: DishQCExtraction | None = None
+    model: str | None = None
+    prompt_version: str = DISH_QC_PROMPT_VERSION
+    error: str | None = None
