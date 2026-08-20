@@ -129,3 +129,57 @@ def test_language_registry_coherent():
         low, high = TRANSLATION_SCRIPT_RANGES[lang]
         assert low < high
     assert 1 <= TRANSLATION_CHUNK_SIZE <= MAX_TRANSLATION_ITEMS
+
+
+# ------------------------------------------------- agent serving invariants
+
+
+def _menu_item(aliases: tuple[str, ...] = ()):
+    from decimal import Decimal
+
+    from dosadash_ai.agent.context import MenuItemCtx
+
+    return MenuItemCtx(
+        id=1,
+        name="Masala Dosa",
+        category="Dosa",
+        price=Decimal("120.00"),
+        is_veg=True,
+        contains_onion_garlic=True,
+        spice_level=1,
+        is_available=True,
+        schedule=None,
+        description=None,
+        aliases=aliases,
+    )
+
+
+def test_agent_menu_payload_byte_stable_without_aliases():
+    """Prefix-caching + live-gate invariant: an item with no approved
+    translations serializes to exactly the pre-localization key set."""
+    from dosadash_ai.agent.context import AgentContext, menu_payload
+
+    entry = menu_payload(AgentContext(items={1: _menu_item()}))[0]
+    assert set(entry) == {
+        "item_id",
+        "name",
+        "category",
+        "price_inr",
+        "veg",
+        "jain_friendly",
+        "spice",
+        "allergens",
+        "meal_periods",
+        "available",
+    }
+
+
+def test_agent_menu_payload_exposes_aliases_without_touching_canon():
+    """Aliases let a Tamil order map to the item; the canonical name the
+    guardrail and 'my usual' rely on is never replaced."""
+    from dosadash_ai.agent.context import AgentContext, menu_payload
+
+    entry = menu_payload(AgentContext(items={1: _menu_item(aliases=("மசாலா தோசை",))}))[0]
+    assert entry["aliases"] == ["மசாலா தோசை"]
+    assert entry["name"] == "Masala Dosa"
+    assert entry["item_id"] == 1

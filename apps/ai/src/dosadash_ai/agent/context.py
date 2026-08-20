@@ -31,6 +31,9 @@ class MenuItemCtx:
     description: str | None
     allergens: tuple[str, ...] = ()
     meal_periods: tuple[str, ...] = ()
+    # Owner-APPROVED translated names (Phase 7) — lets a Tamil "மசாலா தோசை"
+    # map to the canonical item. Drafts never reach the agent.
+    aliases: tuple[str, ...] = ()
 
     @property
     def orderable(self) -> bool:
@@ -78,6 +81,16 @@ async def load_context(session: AsyncSession, user_id: int | None) -> AgentConte
     for item_id, name in allergen_rows:
         allergens_by_item.setdefault(item_id, []).append(name)
 
+    alias_rows = await session.execute(
+        text(
+            "SELECT item_id, name FROM menu_item_translations "
+            "WHERE status = 'APPROVED' ORDER BY lang"
+        )
+    )
+    aliases_by_item: dict[int, list[str]] = {}
+    for item_id, name in alias_rows:
+        aliases_by_item.setdefault(item_id, []).append(name)
+
     menu_rows = await session.execute(
         text(
             "SELECT id, name, category, price, is_veg, contains_onion_garlic, spice_level, "
@@ -99,6 +112,7 @@ async def load_context(session: AsyncSession, user_id: int | None) -> AgentConte
             description=row.description,
             allergens=tuple(sorted(allergens_by_item.get(row.id, []))),
             meal_periods=tuple(row.meal_periods or ()),
+            aliases=tuple(aliases_by_item.get(row.id, [])),
         )
         for row in menu_rows
     }
@@ -201,7 +215,12 @@ async def load_memory(session: AsyncSession, user_id: int) -> UserMemoryCtx:
 def menu_payload(ctx: AgentContext) -> list[dict[str, Any]]:
     """Compact menu JSON for the prompt. Sold-out / off-schedule items are
     included but flagged, so the agent can say "sold out" instead of
-    pretending the dish doesn't exist."""
+    pretending the dish doesn't exist.
+
+    `aliases` (approved translated names, Phase 7) appears ONLY when an item
+    has any — a menu with no approved translations serializes byte-identically
+    to the pre-localization payload, so prompt prefix caching and the live
+    eval gate are unaffected until translations are actually approved."""
     return [
         {
             "item_id": item.id,
@@ -214,6 +233,7 @@ def menu_payload(ctx: AgentContext) -> list[dict[str, Any]]:
             "allergens": list(item.allergens),
             "meal_periods": list(item.meal_periods),
             "available": item.orderable,
+            **({"aliases": list(item.aliases)} if item.aliases else {}),
         }
         for item in ctx.items.values()
     ]

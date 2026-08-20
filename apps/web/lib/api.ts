@@ -10,6 +10,8 @@ export type MenuItem = {
   spice_level: number;
   meal_periods: string[];
   allergens: string[];
+  canonical_name: string | null; // English name when a translation is applied
+  category_label: string | null; // localized section heading
 };
 
 export type OrderItem = { item_id: number; name: string; qty: number; unit_price: string };
