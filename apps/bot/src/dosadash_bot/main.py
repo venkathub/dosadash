@@ -8,6 +8,7 @@ progressively edited message (draft-edit streaming), renders the validated
 draft, and forwards button taps to the api.
 """
 
+import base64
 import logging
 import secrets
 import time
@@ -21,7 +22,13 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 from aiohttp import web
 
 from dosadash_bot import render, state
-from dosadash_bot.api_client import link_account, place_order, po_decision, stream_chat
+from dosadash_bot.api_client import (
+    link_account,
+    place_order,
+    po_decision,
+    stream_chat,
+    transcribe_voice,
+)
 from dosadash_bot.config import Settings, get_settings
 
 logger = logging.getLogger("dosadash_bot")
@@ -109,8 +116,14 @@ async def on_start(message: Message) -> None:
 
 @router.message(F.text)
 async def on_message(message: Message) -> None:
+    await run_agent_turn(message, message.text or "")
+
+
+async def run_agent_turn(message: Message, text: str) -> None:
     """One agent turn with draft-edit streaming: send a placeholder, edit it
-    with reply text as tokens arrive, finish with draft + buttons."""
+    with reply text as tokens arrive, finish with draft + buttons. Shared by
+    typed text and voice transcripts — voice is an input mode, not a new
+    agent (same graph, same guardrails)."""
     settings = get_settings()
     chat_state = state.get_state(message.chat.id)
     sent = await message.answer(render.typing_text())
@@ -122,7 +135,7 @@ async def on_message(message: Message) -> None:
         api_base_url=settings.api_base_url,
         internal_token=settings.internal_api_token,
         tg_user_id=message.from_user.id if message.from_user else message.chat.id,
-        message=message.text or "",
+        message=text,
         history=chat_state.history,
         draft=chat_state.draft,
     ):
@@ -138,12 +151,58 @@ async def on_message(message: Message) -> None:
     if final is None:
         await _safe_edit(sent, render.error_text())
         return
-    state.record_turn(chat_state, message.text or "", final)
+    state.record_turn(chat_state, text, final)
     await _safe_edit(
         sent,
         render.final_text(final),
         reply_markup=draft_keyboard(chat_state.draft is not None),
     )
+
+
+_MAX_VOICE_SECONDS = 90  # bounds STT cost; Telegram supplies the duration
+_STT_MIME_TYPES = {"audio/ogg", "audio/mpeg", "audio/mp4", "audio/wav", "audio/webm"}
+
+
+def normalize_voice_mime(mime_type: str | None) -> str:
+    """Telegram voice notes are audio/ogg; anything unrecognized falls back
+    to that (the api schema rejects arbitrary strings)."""
+    return mime_type if mime_type in _STT_MIME_TYPES else "audio/ogg"
+
+
+@router.message(F.voice)
+async def on_voice(message: Message, bot: Bot) -> None:
+    """Voice-note ordering (Phase 7): download → api STT proxy (Groq Whisper,
+    EN + Tamil auto-detect) → echo the redacted transcript → same agent turn
+    as typed text. No reasoning here (Hard Rule 10)."""
+    voice = message.voice
+    if voice is None:
+        return
+    if (voice.duration or 0) > _MAX_VOICE_SECONDS:
+        await message.answer(render.voice_too_long_text(_MAX_VOICE_SECONDS))
+        return
+    settings = get_settings()
+    try:
+        buffer = await bot.download(voice)
+        audio = buffer.read() if buffer is not None else b""
+    except Exception:  # noqa: BLE001 — Telegram file API hiccup → soft failure
+        logger.warning("voice download failed (chat %s)", message.chat.id, exc_info=True)
+        audio = b""
+    if not audio:
+        await message.answer(render.voice_failed_text())
+        return
+    result = await transcribe_voice(
+        api_base_url=settings.api_base_url,
+        internal_token=settings.internal_api_token,
+        tg_user_id=message.from_user.id if message.from_user else message.chat.id,
+        audio_base64=base64.b64encode(audio).decode(),
+        mime_type=normalize_voice_mime(voice.mime_type),
+    )
+    if not result.ok or not (result.transcript or "").strip():
+        logger.info("voice transcription unavailable: %s", result.detail)
+        await message.answer(render.voice_failed_text())
+        return
+    await message.answer(render.voice_heard_text(result.transcript))
+    await run_agent_turn(message, result.transcript)
 
 
 @router.callback_query(F.data == "chat:place")

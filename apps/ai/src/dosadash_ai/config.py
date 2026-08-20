@@ -34,6 +34,18 @@ class Settings(BaseSettings):
         "gemini/gemini-1.5-flash",
     ]
 
+    # STT (Phase 7): Groq Whisper via litellm — API inference only, never a
+    # local Whisper on the 4 GB VPS (Hard Rule 7). No fallback: Groq is the
+    # only STT-capable provider in the stack; failures degrade to "please
+    # type" in the bot.
+    stt_model: str = "groq/whisper-large-v3"
+    # Menu image generation (Phase 7) — single provider, STT precedent.
+    # gpt-image-1 returns b64 PNG natively (dall-e-3 was retired upstream —
+    # caught by the pre-merge live smoke, not the mocked tests).
+    image_model: str = "gpt-image-1"
+    image_size: str = "1024x1024"
+    image_quality: str = "low"  # menu thumbnails — low keeps cost ~₹1/image
+
     # RAG (Phase 3): embeddings via litellm; dimension pinned by the
     # vector(1536) columns (dosadash_shared.EMBEDDING_DIM).
     embedding_model: str = "text-embedding-3-small"

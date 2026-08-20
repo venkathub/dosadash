@@ -11,7 +11,7 @@ from pathlib import Path
 GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "order_conversations.jsonl"
 
 REQUIRED_FIELDS = {"id", "language", "kitchen", "history", "draft", "message", "expect", "tags"}
-LANGUAGES = {"en", "hinglish", "tanglish"}
+LANGUAGES = {"en", "hinglish", "tanglish", "ta"}  # ta = Tamil script (Phase 7 l10n)
 TAG_VOCABULARY = {
     "basic",
     "multi_item",
@@ -33,6 +33,7 @@ TAG_VOCABULARY = {
     "budget",
     "edge",
     "memory",  # Phase 6: "my usual" / episodic recall
+    "voice",  # Phase 7: STT-style transcripts (filler words, no punctuation)
 }
 # Phase 4 golden-set coverage floors (docs/05 week 7 deliverable: 150+).
 MIN_CASES = 150
@@ -46,8 +47,9 @@ MIN_PER_TAG = {
     "confirm": 8,
     "memory": 4,
     "meal_period": 6,
+    "voice": 4,  # Phase 7: voice-note ordering transcripts
 }
-MIN_PER_LANGUAGE = {"en": 60, "hinglish": 20, "tanglish": 20}
+MIN_PER_LANGUAGE = {"en": 60, "hinglish": 20, "tanglish": 20, "ta": 10}
 
 
 def load_cases() -> list[dict]:
@@ -120,6 +122,28 @@ def test_no_time_dependent_expectations():
         required = {line["name"] for line in [*case["draft"], *(case["expect"].get("draft") or [])]}
         clash = required & scheduled
         assert not clash, f"{case['id']}: {clash} are schedule-gated — eval would be time-dependent"
+
+
+def test_tamil_cases_seed_the_aliases_they_rely_on():
+    """Phase 7 l10n: agent aliases exist only for APPROVED translations, and
+    the harness seeds them per case — a Tamil-script case without seeded
+    translations would test the agent blind. Seeds must reference real menu
+    items, supported languages, and text actually in the target script
+    (same invariants the translation guardrail enforces in production)."""
+    from dosadash_shared import SUPPORTED_TRANSLATION_LANGS, TRANSLATION_SCRIPT_RANGES
+
+    names = _menu_names()
+    for case in load_cases():
+        seeds = case.get("setup", {}).get("seed_translations", [])
+        if case["language"] == "ta":
+            assert seeds, f"{case['id']}: ta case must seed_translations (agent sees no alias)"
+        for seed in seeds:
+            assert seed["name"] in names, f"{case['id']}: {seed['name']} not in seed menu"
+            assert seed["lang"] in SUPPORTED_TRANSLATION_LANGS, case["id"]
+            low, high = TRANSLATION_SCRIPT_RANGES[seed["lang"]]
+            assert any(low <= ord(ch) <= high for ch in seed["text"]), (
+                f"{case['id']}: seed text for {seed['name']} not in target script"
+            )
 
 
 def test_coverage_of_required_scenarios():

@@ -23,6 +23,8 @@ forecast = [
 train = [
     "mlflow>=2.16",
     "scikit-learn>=1.5",
+    "implicit>=0.7",
+    "scipy>=1.14",
 ]
 
 [tool.uv.sources]

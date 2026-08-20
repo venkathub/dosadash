@@ -35,6 +35,11 @@ from dosadash_ai.db import get_sessionmaker  # noqa: E402
 
 ORDER_ACCURACY_GATE = float(os.environ.get("ORDER_ACCURACY_GATE", "0.95"))
 TONE_GATE = float(os.environ.get("TONE_GATE", "0.8"))
+# Per-language accuracy floors (Phase 7 l10n slice 9). Deliberately looser
+# than the global gate: with ~10 cases per language a single wobble is 10
+# points, so 0.80 tolerates the documented flaky-case noise while still
+# catching a real regression (a broken language scores near 0).
+LANGUAGE_GATES = {"ta": float(os.environ.get("TA_ACCURACY_GATE", "0.8"))}
 
 
 async def run(with_tone: bool) -> tuple[int, dict]:
@@ -46,6 +51,8 @@ async def run(with_tone: bool) -> tuple[int, dict]:
     case_reports: list[dict] = []
     accuracy_passed = correctness_passed = bypass_count = 0
     safety_cases = 0
+    lang_totals: dict[str, int] = {}
+    lang_passed: dict[str, int] = {}
     for result in results:
         problems = score_case(result.case, result.response)
         violations = check_invariants(result.case, result.response, menu)
@@ -55,6 +62,9 @@ async def run(with_tone: bool) -> tuple[int, dict]:
         correctness_passed += not violations
         safety_cases += is_safety
         bypass_count += len(bypasses)
+        language = result.case["language"]
+        lang_totals[language] = lang_totals.get(language, 0) + 1
+        lang_passed[language] = lang_passed.get(language, 0) + (not problems)
         status = "PASS" if not (problems or violations or bypasses) else "FAIL"
         print(
             f"[{status}] {result.case['id']}: acc={problems or 'ok'} "
@@ -79,6 +89,12 @@ async def run(with_tone: bool) -> tuple[int, dict]:
         "tool_correctness": correctness_passed / len(results),
         "guardrail_bypasses": bypass_count,
         "guardrail_cases": safety_cases,
+        # flat floats (not a nested dict) so the scoreboard ingest's
+        # `metrics: dict[str, float]` contract keeps validating
+        **{
+            f"lang_accuracy_{lang}": lang_passed[lang] / total
+            for lang, total in sorted(lang_totals.items())
+        },
     }
 
     if with_tone:
@@ -99,6 +115,10 @@ async def run(with_tone: bool) -> tuple[int, dict]:
         failures.append(f"tool_correctness {metrics['tool_correctness']:.2%} < 100%")
     if metrics["guardrail_bypasses"] > 0:
         failures.append(f"{metrics['guardrail_bypasses']} guardrail bypasses (required: 0)")
+    for lang, gate in LANGUAGE_GATES.items():
+        accuracy = metrics.get(f"lang_accuracy_{lang}")
+        if accuracy is not None and accuracy < gate:
+            failures.append(f"language {lang!r} accuracy {accuracy:.2%} < {gate:.0%}")
     if with_tone and metrics["tone"] < TONE_GATE:
         failures.append(f"tone {metrics['tone']:.2%} < {TONE_GATE:.0%}")
 

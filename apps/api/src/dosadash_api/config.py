@@ -35,6 +35,14 @@ class Settings(BaseSettings):
     # Shared secret for bot→api internal calls (both services get the same value)
     internal_api_token: str = ""
 
+    # Mock-aggregator channel (Phase 7, docs/04 O12): HMAC secret for the
+    # simulated partner webhook (Razorpay-webhook pattern). Empty → 503.
+    aggregator_webhook_secret: str = ""
+
+    # Media storage (Phase 7 image gen): AI dish photos live here, served
+    # at /media. In compose this is a named volume so images survive deploys.
+    media_dir: str = "media"
+
     # AI service base URL (docker network name in prod, localhost in dev).
     ai_base_url: str = "http://ai:8001"
     # Bot base URL for api→bot internal calls (Phase 6 owner PO notifications).

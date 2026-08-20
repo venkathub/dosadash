@@ -151,6 +151,7 @@ class MenuItem(TimestampMixin, Base):
     is_available: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     schedule: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     image_url: Mapped[str | None] = mapped_column(String(500))
+    image_ai: Mapped[bool] = mapped_column(Boolean, default=False)  # AI-labeled (Phase 7)
     embedding: Mapped[Any | None] = mapped_column(Vector(1536))
 
     recipe: Mapped[list["RecipeIngredient"]] = relationship()
@@ -231,6 +232,7 @@ class Order(TimestampMixin, Base):
         pg_enum(OrderState, "order_state"), default=OrderState.PLACED, index=True
     )
     subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    discount: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"))
     gst: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     total: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     coupon_id: Mapped[int | None] = mapped_column(ForeignKey("coupons.id"))
@@ -278,13 +280,22 @@ class Coupon(TimestampMixin, Base):
     __tablename__ = "coupons"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    code: Mapped[str] = mapped_column(String(40), unique=True)
+    code: Mapped[str] = mapped_column(String(40), unique=True)  # stored UPPERCASE
     type: Mapped[CouponType] = mapped_column(pg_enum(CouponType, "coupon_type"))
     value: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    description: Mapped[str | None] = mapped_column(String(200))
     segment: Mapped[str | None] = mapped_column(String(60))
     valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     usage_limit: Mapped[int | None] = mapped_column()
+    # Phase 7 engine fields: guardrails + activation + provenance.
+    min_subtotal: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    max_discount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))  # PCT cap
+    per_user_limit: Mapped[int | None] = mapped_column()
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    source: Mapped[str] = mapped_column(
+        Enum("MANUAL", "AI_SUGGESTED", name="coupon_source"), default="MANUAL"
+    )
 
 
 class CouponRedemption(Base):
@@ -332,6 +343,73 @@ class NutritionEstimateRecord(TimestampMixin, Base):
     model: Mapped[str] = mapped_column(String(80))
     prompt_version: Mapped[str] = mapped_column(String(40))
     reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+
+class MenuItemTranslation(TimestampMixin, Base):
+    """LLM-drafted menu localization per (dish, language) — owner-verified
+    (Phase 7, Tamil-first).
+
+    Same trust model as nutrition_estimates: drafts are backoffice-only and
+    only APPROVED rows will ever be served to customers. Prices/allergens/
+    flags are NOT stored here — they always come from the canonical row.
+    """
+
+    __tablename__ = "menu_item_translations"
+
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("menu_items.id", ondelete="CASCADE"), primary_key=True
+    )
+    lang: Mapped[str] = mapped_column(String(8), primary_key=True)
+    name: Mapped[str] = mapped_column(String(160))
+    description: Mapped[str | None] = mapped_column(Text)
+    category_label: Mapped[str | None] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(
+        Enum("DRAFT", "APPROVED", "REJECTED", name="translation_status"), default="DRAFT"
+    )
+    model: Mapped[str] = mapped_column(String(80))
+    prompt_version: Mapped[str] = mapped_column(String(40))
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+
+class MenuImageDraft(TimestampMixin, Base):
+    """AI-generated dish photo awaiting owner review (Phase 7) — AI-labeled.
+
+    The file lives under the api media dir; only an explicit approval copies
+    its URL onto menu_items.image_url (with image_ai = true so the customer
+    UI always shows the AI badge). Rejection deletes the file.
+    """
+
+    __tablename__ = "menu_image_drafts"
+
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("menu_items.id", ondelete="CASCADE"), primary_key=True
+    )
+    filename: Mapped[str] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(
+        Enum("DRAFT", "APPROVED", "REJECTED", name="image_draft_status"), default="DRAFT"
+    )
+    model: Mapped[str] = mapped_column(String(80))
+    prompt_version: Mapped[str] = mapped_column(String(40))
+    prompt: Mapped[str] = mapped_column(Text)
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+
+class AggregatorOrder(Base):
+    """(aggregator, external_order_id) → our order (Phase 7 mock channel).
+
+    Makes webhook delivery idempotent and status polling possible; the
+    order itself lives in `orders` with channel = MOCK_AGGREGATOR.
+    """
+
+    __tablename__ = "aggregator_orders"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    aggregator: Mapped[str] = mapped_column(String(40))
+    external_order_id: Mapped[str] = mapped_column(String(80))
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
+    received_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    __table_args__ = (UniqueConstraint("aggregator", "external_order_id"),)
 
 
 class StaffAction(Base):

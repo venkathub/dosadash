@@ -103,3 +103,125 @@ class NutritionEnrichOut(BaseModel):
 
 class NutritionStatusIn(BaseModel):
     status: Literal["APPROVED", "REJECTED"]
+
+
+# ---------------------------------------------------- STT / voice (Phase 7)
+
+# Telegram voice notes are OGG/Opus (~1 KB/s); other types cover future web
+# uploads. The audio itself cannot be PII-redacted (like invoice images) —
+# the AI service redacts the *transcript* before it is returned, logged, or
+# forwarded to any chat model (Hard Rule 8).
+SttMimeType = Literal["audio/ogg", "audio/mpeg", "audio/mp4", "audio/wav", "audio/webm"]
+
+
+class SttIn(BaseModel):
+    """api → ai: one bounded voice note for transcription."""
+
+    audio_base64: str = Field(min_length=8, max_length=4_000_000)  # ~3 MB audio
+    mime_type: SttMimeType
+    language_hint: Literal["en", "ta"] | None = None  # omit → Whisper auto-detect
+    session_id: str | None = None
+    user_id: int | None = None
+
+
+class SttResult(BaseModel):
+    """ai → api: PII-redacted transcript + provenance."""
+
+    transcript: str = Field(max_length=4000)
+    language: str | None = None
+    model: str
+
+
+# ------------------------------------------------- recommender (Phase 7)
+
+
+class RecsRequest(BaseModel):
+    """api → ai: who + current cart context. Everything else (order history,
+    orderable menu) is read fresh from the DB inside the ai service."""
+
+    user_id: int | None = None
+    cart_item_ids: list[int] = Field(default_factory=list, max_length=20)
+    k: int = Field(default=6, ge=1, le=12)
+
+
+class RecItem(BaseModel):
+    """One recommendation — always a real, orderable menu item (validated
+    against the DB before it leaves the ai service, mirroring Hard Rule 2)."""
+
+    item_id: int
+    name: str
+    price: Decimal
+    is_veg: bool
+    score: float
+
+
+class RecsResponse(BaseModel):
+    """ai → api. `source` records which strategy produced the list:
+    als | embedding (cold-start w/ cart) | popular (cold-start w/o cart) |
+    unavailable (api-side fallback when the ai service is down)."""
+
+    items: list[RecItem] = Field(default_factory=list)
+    source: Literal["als", "embedding", "popular", "unavailable"]
+    model_version: str | None = None
+
+
+class CheckoutSuggestion(BaseModel):
+    """One checkout add-on: a real orderable item + why it's suggested.
+    kind=combo → completes an APPROVED combo; kind=pairing → fills a missing
+    attach category (beverage/sweet/snack), ranked by the recommender."""
+
+    item_id: int
+    name: str
+    price: Decimal
+    is_veg: bool
+    kind: Literal["combo", "pairing"]
+    reason: str = Field(max_length=120)
+
+
+class CheckoutSuggestResponse(BaseModel):
+    suggestions: list[CheckoutSuggestion] = Field(default_factory=list)
+    source: Literal["als", "embedding", "popular", "unavailable"]
+    model_version: str | None = None
+
+
+# ------------------------------------------------ dish-photo QC (Phase 7)
+
+DISH_QC_PROMPT_VERSION = "dish_qc_v1"
+
+
+class DishQCIn(BaseModel):
+    """api → ai: one plated-dish/packaging photo + what the order says
+    should be in it. Images only (same bounds as invoice OCR)."""
+
+    image_base64: str = Field(min_length=8, max_length=10_000_000)  # ~7 MB image
+    mime_type: Literal["image/jpeg", "image/png", "image/webp"]
+    expected_dishes: list[str] = Field(min_length=1, max_length=20)
+    session_id: str | None = None
+
+
+class DishQCExtraction(BaseModel):
+    """The VLM's structured OBSERVATIONS — never a verdict. The pass/fail
+    decision is computed deterministically from these fields (same earned-
+    confidence principle as the invoice arithmetic verifier)."""
+
+    is_food_photo: bool
+    dishes_seen: list[str] = Field(default_factory=list, max_length=8)
+    presentation_issues: list[str] = Field(default_factory=list, max_length=6)
+    confidence: float = Field(ge=0, le=1)
+
+
+DishQCVerdict = Literal["PASS", "MISMATCH", "CHECK", "UNREADABLE"]
+
+
+class DishQCResult(BaseModel):
+    """ai → api: deterministic verdict + the evidence it was computed from."""
+
+    verdict: DishQCVerdict
+    matched: list[str] = Field(default_factory=list)  # expected dishes seen
+    missing: list[str] = Field(default_factory=list)  # expected but not seen
+    unexpected: list[str] = Field(default_factory=list)  # seen but not ordered
+    issues: list[str] = Field(default_factory=list)
+    extraction: DishQCExtraction | None = None
+    model: str | None = None
+    prompt_version: str = DISH_QC_PROMPT_VERSION
+    error: str | None = None

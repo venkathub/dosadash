@@ -8,17 +8,27 @@ import httpx
 
 from dosadash_api.config import get_settings
 from dosadash_shared import (
+    CheckoutSuggestResponse,
     CopilotAnswer,
     CopilotAskIn,
     CostSummaryResponse,
+    DishQCIn,
+    DishQCResult,
     EtaRequest,
     EtaResponse,
     InventoryDraftRequest,
     InventoryDraftResult,
     InvoiceExtractIn,
     InvoiceExtractResult,
+    MenuImageRequest,
+    MenuImageResult,
+    MenuTranslationRequest,
+    MenuTranslationResponse,
     NutritionEstimateRequest,
     NutritionEstimateResponse,
+    PromoSuggestResult,
+    RecsRequest,
+    RecsResponse,
     SupportAgentRequest,
     SupportAgentResponse,
 )
@@ -93,6 +103,20 @@ class AIClient:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return InvoiceExtractResult.model_validate(resp.json())
 
+    async def qc_dish(self, request: DishQCIn) -> DishQCResult:
+        """Dish-photo QC (Phase 7): VLM observations + deterministic verdict."""
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/qc/dish",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return DishQCResult.model_validate(resp.json())
+
     async def draft_inventory_pos(self, request: InventoryDraftRequest) -> InventoryDraftResult:
         """Inventory agent (Phase 6): needs math + LLM pass + guardrail."""
         try:
@@ -121,6 +145,52 @@ class AIClient:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return SupportAgentResponse.model_validate(resp.json())
 
+    async def recommend(self, request: RecsRequest) -> RecsResponse:
+        """Recommendations (Phase 7). Short timeout: the menu page renders
+        fine without them — the caller degrades to an empty strip."""
+        try:
+            async with httpx.AsyncClient(timeout=8) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/recs",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return RecsResponse.model_validate(resp.json())
+
+    async def suggest_promos(self, *, admin_user_id: int) -> PromoSuggestResult:
+        """Promo agent (Phase 7): mined candidates + LLM copy + guardrail."""
+        try:
+            async with httpx.AsyncClient(timeout=90) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/promo/suggest",
+                    headers={
+                        "X-Internal-Token": self._token,
+                        "X-Admin-User-Id": str(admin_user_id),
+                    },
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return PromoSuggestResult.model_validate(resp.json())
+
+    async def suggest_checkout(self, request: RecsRequest) -> CheckoutSuggestResponse:
+        """Checkout add-on suggestions (Phase 7). Same degrade contract as
+        recommend — checkout must never block on suggestions."""
+        try:
+            async with httpx.AsyncClient(timeout=8) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/recs/checkout",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return CheckoutSuggestResponse.model_validate(resp.json())
+
     async def daily_costs(self, days: int = 30) -> CostSummaryResponse:
         """LLM spend rollup (ai → Langfuse). Raises AIServiceError on failure."""
         try:
@@ -134,6 +204,36 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return CostSummaryResponse.model_validate(resp.json())
+
+    async def translate_menu(self, request: MenuTranslationRequest) -> MenuTranslationResponse:
+        """Menu localization drafts (Phase 7, Tamil-first). Long timeout —
+        the ai side fans one request out over several chunked LLM calls."""
+        try:
+            async with httpx.AsyncClient(timeout=180) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/translate/menu",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return MenuTranslationResponse.model_validate(resp.json())
+
+    async def generate_menu_image(self, request: MenuImageRequest) -> MenuImageResult:
+        """AI dish photo draft (Phase 7). Image models are slow — long timeout;
+        single provider ai-side, so failure comes back as one clean error."""
+        try:
+            async with httpx.AsyncClient(timeout=150) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/imagegen/menu-item",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return MenuImageResult.model_validate(resp.json())
 
 
 def get_ai_client() -> AIClient:

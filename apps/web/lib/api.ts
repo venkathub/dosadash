@@ -10,6 +10,10 @@ export type MenuItem = {
   spice_level: number;
   meal_periods: string[];
   allergens: string[];
+  image_url: string | null;
+  image_ai: boolean; // AI-generated photo — always shown with an AI badge
+  canonical_name: string | null; // English name when a translation is applied
+  category_label: string | null; // localized section heading
 };
 
 export type OrderItem = { item_id: number; name: string; qty: number; unit_price: string };
@@ -18,6 +22,8 @@ export type Order = {
   id: number;
   status: string;
   subtotal: string;
+  discount?: string;
+  coupon_code?: string | null;
   gst: string;
   total: string;
   placed_at: string;

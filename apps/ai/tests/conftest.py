@@ -77,6 +77,7 @@ _AGENT_TABLES = (
     "user_preferences",
     "ingredients",
     "settings",
+    "menu_item_translations",
     "menu_items",
 )
 
@@ -98,6 +99,10 @@ _AGENT_DDL = (
     """CREATE TABLE user_preferences (
         user_id bigint PRIMARY KEY, diet text, allergens text[] DEFAULT '{}',
         spice_level int, language text DEFAULT 'en')""",
+    # Phase 7 localization: minimal shape of the api-owned translations table
+    """CREATE TABLE menu_item_translations (
+        item_id bigint NOT NULL, lang text NOT NULL, name text NOT NULL,
+        status text NOT NULL DEFAULT 'DRAFT', PRIMARY KEY (item_id, lang))""",
     # Phase 6 memory: minimal shapes of the api-owned tables load_memory reads
     """CREATE TABLE orders (
         id bigserial PRIMARY KEY, user_id bigint NOT NULL,

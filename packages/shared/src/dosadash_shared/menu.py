@@ -29,7 +29,14 @@ class MenuItemSummary(BaseModel):
     spice_level: int
     meal_periods: list[str] = []
     image_url: str | None = None
+    image_ai: bool = False  # AI-generated photo — always labeled (Phase 7)
     allergens: list[str] = []
+    # Localization (Phase 7): when ?lang= is served, `name`/`description`
+    # carry the APPROVED translation, `canonical_name` keeps the English
+    # name (search/debug), and `category_label` is the localized section
+    # heading — `category` itself stays canonical as the stable key.
+    canonical_name: str | None = None
+    category_label: str | None = None
 
 
 class MenuItemDetail(MenuItemSummary):
@@ -44,3 +51,4 @@ class MenuItemDetail(MenuItemSummary):
 class CategoryOut(BaseModel):
     name: str
     item_count: int
+    label: str | None = None  # localized heading when ?lang= is served

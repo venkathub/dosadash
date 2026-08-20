@@ -6,7 +6,7 @@ from dosadash_api.auth.security import create_access_token
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import User
 from dosadash_api.routers.chat import get_agent_gateway
-from dosadash_shared import AgentChatResponse, OrderDraft, Role
+from dosadash_shared import AgentChatResponse, OrderDraft, Role, SttResult
 
 CHAT = "/api/v1/chat"
 
@@ -29,6 +29,14 @@ class FakeGateway:
         self.requests.append(request)
         yield b'data: {"type": "delta", "text": "Two"}\n\n'
         yield b'data: {"type": "final", "data": {"reply": "Two Masala Dosas added!"}}\n\n'
+
+    async def transcribe(self, request):
+        self.requests.append(request)
+        return SttResult(
+            transcript="two masala dosas and one filter coffee",
+            language="en",
+            model="groq/whisper-large-v3",
+        )
 
 
 @pytest.fixture
@@ -169,3 +177,50 @@ async def test_telegram_place_unlinked_403(client, gateway, monkeypatch):
     )
     assert resp.status_code == 403
     assert resp.json()["detail"] == "Telegram account not linked"
+
+
+# ------------------------------------------------------- telegram voice (STT)
+
+VOICE = {"audio_base64": "ZmFrZS1vZ2ctYnl0ZXM=", "mime_type": "audio/ogg"}
+
+
+async def test_telegram_stt_linked_user_enriches_trace(client, gateway, db_session, monkeypatch):
+    headers = _internal(monkeypatch)
+    user = await _linked_user(db_session, 777003)
+    resp = await client.post(
+        f"{CHAT}/telegram/stt", json={"tg_user_id": 777003, **VOICE}, headers=headers
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["transcript"] == "two masala dosas and one filter coffee"
+    req = gateway.requests[0]
+    assert req.user_id == user.id
+    assert req.session_id == "tg:777003"
+
+
+async def test_telegram_stt_works_unlinked(client, gateway, monkeypatch):
+    headers = _internal(monkeypatch)
+    resp = await client.post(
+        f"{CHAT}/telegram/stt", json={"tg_user_id": 888888, **VOICE}, headers=headers
+    )
+    assert resp.status_code == 200
+    assert gateway.requests[0].user_id is None
+
+
+async def test_telegram_stt_requires_internal_token(client, gateway, monkeypatch):
+    _internal(monkeypatch)
+    resp = await client.post(f"{CHAT}/telegram/stt", json={"tg_user_id": 1, **VOICE})
+    assert resp.status_code == 403
+    assert gateway.requests == []
+
+
+async def test_telegram_stt_rejects_bad_payloads(client, gateway, monkeypatch):
+    headers = _internal(monkeypatch)
+    bad_mime = {"tg_user_id": 1, "audio_base64": VOICE["audio_base64"], "mime_type": "audio/flac"}
+    assert (
+        await client.post(f"{CHAT}/telegram/stt", json=bad_mime, headers=headers)
+    ).status_code == 422
+    oversized = {"tg_user_id": 1, "audio_base64": "A" * 4_000_001, "mime_type": "audio/ogg"}
+    assert (
+        await client.post(f"{CHAT}/telegram/stt", json=oversized, headers=headers)
+    ).status_code == 422
+    assert gateway.requests == []

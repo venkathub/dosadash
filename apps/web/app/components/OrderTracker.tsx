@@ -99,7 +99,11 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
           ))}
         </ul>
         <p className="text-sm">
-          ₹{order.subtotal} + GST ₹{order.gst} = <b>₹{order.total}</b>
+          ₹{order.subtotal}
+          {order.discount && parseFloat(order.discount) > 0 ? (
+            <span className="text-green-700"> − ₹{order.discount}{order.coupon_code ? ` (${order.coupon_code})` : ""}</span>
+          ) : null}{" "}
+          + GST ₹{order.gst} = <b>₹{order.total}</b>
         </p>
         {!paid ? (
           <button className="w-full rounded bg-green-600 py-2 font-semibold text-white" onClick={pay}>
