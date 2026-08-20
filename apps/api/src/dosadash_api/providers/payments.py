@@ -153,4 +153,14 @@ class MockPaymentProvider(PaymentProvider):
         return RefundResult(provider=self.name, refund_id=f"rfnd_mock_{secrets.token_hex(8)}")
 
 
+class AggregatorPrepaidProvider(MockPaymentProvider):
+    """Aggregator orders arrive prepaid — the aggregator collected payment
+    and settles offline (Phase 7 mock channel). Same PaymentProvider
+    interface (Hard Rule 1): the payment row is created through it and
+    immediately marked CAPTURED by the ingest service; refunds resolve
+    mock-side like the dev provider."""
+
+    name = "aggregator"
+
+
 # Phase 1: RazorpayProvider(PaymentProvider) — TEST keys only (Hard Rule 9).

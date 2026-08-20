@@ -175,6 +175,13 @@ export function OrdersTab() {
           ))}
         </select>
         <button className={ghostBtnCls} onClick={refresh}>↻ refresh</button>
+        <button
+          className={ghostBtnCls}
+          title="Inject a signed mock Swiggy/Zomato order through the aggregator webhook path"
+          onClick={() => act(() => adminApi("/admin/aggregator/simulate", { method: "POST", body: { count: 1 } }))}
+        >
+          🛵 Simulate aggregator order
+        </button>
       </div>
       <div className="space-y-2">
         {(orders ?? []).map((o) => (

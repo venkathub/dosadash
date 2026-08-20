@@ -394,6 +394,24 @@ class MenuImageDraft(TimestampMixin, Base):
     reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
 
+class AggregatorOrder(Base):
+    """(aggregator, external_order_id) → our order (Phase 7 mock channel).
+
+    Makes webhook delivery idempotent and status polling possible; the
+    order itself lives in `orders` with channel = MOCK_AGGREGATOR.
+    """
+
+    __tablename__ = "aggregator_orders"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    aggregator: Mapped[str] = mapped_column(String(40))
+    external_order_id: Mapped[str] = mapped_column(String(80))
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"))
+    received_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    __table_args__ = (UniqueConstraint("aggregator", "external_order_id"),)
+
+
 class StaffAction(Base):
     """Audit log for admin/staff mutations."""
 
