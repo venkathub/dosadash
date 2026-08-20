@@ -178,7 +178,7 @@ po.drafted        → owner Telegram approval message
 │ redis:7 (maxmemory 256mb)   │ ~150 MB    │
 │ core-api (uvicorn ×2)       │ ~350 MB    │
 │ ai-service (uvicorn ×1)     │ ~650 MB    │ incl. INT8 DistilBERT (~150 MB)
-│ bot (aiogram)               │ ~120 MB    │
+│ bot (aiogram)               │ ~160 MB    │ Phase 9: lockfile-refresh rebuild grew RSS (measured 151 MiB)
 │ celery worker+beat          │ ~300 MB    │
 │ next.js (standalone)        │ ~300 MB    │
 │ caddy                       │ ~40 MB     │
