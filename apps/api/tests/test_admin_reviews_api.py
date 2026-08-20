@@ -27,17 +27,20 @@ class FakeAIClient:
     """Scores every review NEGATIVE-delivery (text) or rating-only, and
     drafts a fixed reply — shaped like the real ai-side sanitizer output."""
 
-    def __init__(self, fail: bool = False, reply_fallback: bool = False) -> None:
+    def __init__(
+        self, fail: bool = False, reply_fallback: bool = False, local_mode: bool = False
+    ) -> None:
         self.score_requests = []
         self.reply_requests = []
         self.fail = fail
         self.reply_fallback = reply_fallback
+        self.local_mode = local_mode  # slice 4: pretend the INT8 champion scored text
 
     async def score_reviews(self, request) -> ReviewScoreResponse:
         self.score_requests.append(request)
         if self.fail:
             raise AIServiceError("AI service call failed: boom")
-        scores, rating_only = [], []
+        scores, rating_only, local = [], [], []
         for r in request.reviews:
             if not r.text.strip():
                 rating_only.append(r.review_id)
@@ -49,6 +52,8 @@ class FakeAIClient:
                     )
                 )
             else:
+                if self.local_mode:
+                    local.append(r.review_id)
                 scores.append(
                     ReviewScoreDraft(
                         review_id=r.review_id,
@@ -59,8 +64,10 @@ class FakeAIClient:
         return ReviewScoreResponse(
             scores=scores,
             rating_only_ids=rating_only,
+            local_ids=local,
             rejected=[],
-            model="gpt-4o-mini",
+            model=None if self.local_mode else "gpt-4o-mini",
+            local_model="local:dosadash-sentiment/v2-int8" if self.local_mode else None,
         )
 
     async def draft_review_reply(self, request) -> ReviewReplyResponse:
@@ -210,8 +217,37 @@ async def test_score_pending_empty_queue_is_noop(client, db_session, fake_ai):
     admin = await _login_as(db_session, "+919555581006", Role.ADMIN)
     resp = await client.post(f"{ADMIN_REVIEWS}/score-pending", headers=admin)
     assert resp.status_code == 200
-    assert resp.json() == {"scored": 0, "rating_only": 0, "failed": 0, "model": None}
+    assert resp.json() == {
+        "scored": 0,
+        "rating_only": 0,
+        "failed": 0,
+        "local": 0,
+        "model": None,
+        "local_model": None,
+    }
     assert fake_ai.score_requests == []
+
+
+async def test_score_pending_local_champion_provenance(client, db_session, fake_ai):
+    """Slice 4: reviews scored by the INT8 champion carry the local model
+    version and NO prompt version — no LLM ever saw them."""
+    fake_ai.local_mode = True
+    admin = await _login_as(db_session, "+919555581016", Role.ADMIN)
+    customer = await _customer(client, "9111188016")
+    _, review_id = await _delivered_order_with_review(client, db_session, customer)
+    resp = await client.post(f"{ADMIN_REVIEWS}/score-pending", headers=admin)
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["local"] == 1 and body["scored"] == 1
+    assert body["local_model"] == "local:dosadash-sentiment/v2-int8"
+    assert body["model"] is None
+
+    review = await db_session.scalar(select(Review).where(Review.id == review_id))
+    await db_session.refresh(review)
+    assert review.sentiment == "NEGATIVE"
+    assert review.scored_model == "local:dosadash-sentiment/v2-int8"
+    assert review.scored_prompt_version is None
+    assert review.scored_at is not None
 
 
 # ------------------------------------------------------------------- replies

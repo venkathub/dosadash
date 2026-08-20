@@ -145,6 +145,7 @@ async def score_pending(
 
     by_id = {r.id: r for r in rows}
     rating_only = set(result.rating_only_ids)
+    local = set(result.local_ids)
     now = datetime.now(UTC)
     scored = 0
     for score in result.scores:
@@ -153,8 +154,16 @@ async def score_pending(
             continue
         review.sentiment = score.sentiment
         review.aspects = [a.model_dump() for a in score.aspects]
-        review.scored_model = RATING_ONLY_MODEL if score.review_id in rating_only else result.model
-        review.scored_prompt_version = result.prompt_version
+        if score.review_id in rating_only:
+            review.scored_model = RATING_ONLY_MODEL
+            review.scored_prompt_version = result.prompt_version
+        elif score.review_id in local:
+            # INT8 ONNX champion on-CPU — no LLM, no prompt involved
+            review.scored_model = result.local_model
+            review.scored_prompt_version = None
+        else:
+            review.scored_model = result.model
+            review.scored_prompt_version = result.prompt_version
         review.scored_at = now
         scored += 1
     audit.record(
@@ -165,8 +174,10 @@ async def score_pending(
         detail={
             "scored": scored,
             "rating_only": len(result.rating_only_ids),
+            "local": len(result.local_ids),
             "failed": len(result.rejected),
             "model": result.model,
+            "local_model": result.local_model,
             "prompt_version": result.prompt_version,
         },
     )
@@ -174,8 +185,10 @@ async def score_pending(
     return ReviewScoreRunOut(
         scored=scored,
         rating_only=len(result.rating_only_ids),
+        local=len(result.local_ids),
         failed=len(result.rejected),
         model=result.model,
+        local_model=result.local_model,
     )
 
 
