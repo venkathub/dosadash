@@ -39,6 +39,15 @@ from dosadash_shared.agent import (
     OrderDraft,
     OrderDraftItem,
 )
+from dosadash_shared.aggregator import (
+    MOCK_AGGREGATORS,
+    AggregatorCustomerIn,
+    AggregatorItemIn,
+    AggregatorOrderOut,
+    AggregatorSimulateIn,
+    AggregatorStatusOut,
+    AggregatorWebhookIn,
+)
 from dosadash_shared.ai import (
     DISH_QC_PROMPT_VERSION,
     NUTRITION_PROMPT_VERSION,
@@ -428,4 +437,11 @@ __all__ = [
     "MenuImageRequest",
     "MenuImageResult",
     "MenuImageStatusIn",
+    "MOCK_AGGREGATORS",
+    "AggregatorCustomerIn",
+    "AggregatorItemIn",
+    "AggregatorOrderOut",
+    "AggregatorSimulateIn",
+    "AggregatorStatusOut",
+    "AggregatorWebhookIn",
 ]

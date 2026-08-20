@@ -12,6 +12,7 @@ from dosadash_api.providers.otp import (
     TelegramOtpChannel,
 )
 from dosadash_api.providers.payments import (
+    AggregatorPrepaidProvider,
     MockPaymentProvider,
     PaymentProvider,
     ProviderOrder,
@@ -22,6 +23,7 @@ from dosadash_api.providers.payments import (
 )
 
 __all__ = [
+    "AggregatorPrepaidProvider",
     "DemoOtpChannel",
     "MockPaymentProvider",
     "OtpChannel",

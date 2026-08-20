@@ -74,6 +74,8 @@ services:
       API_RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
       API_TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       API_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-}
+      # Mock-aggregator webhook HMAC secret (Phase 7, docs/04 O12)
+      API_AGGREGATOR_WEBHOOK_SECRET: ${AGGREGATOR_WEBHOOK_SECRET:-}
       API_AI_BASE_URL: http://ai:8001
       # Read-only copilot role — created by migration b3f9c82d4e61 when set
       READONLY_DB_PASSWORD: ${READONLY_DB_PASSWORD:-}

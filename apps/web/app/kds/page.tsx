@@ -7,6 +7,7 @@ type OrderEvent = {
   order_id: number;
   status: string;
   total: string;
+  channel: string;
   placed_at: string | null;
   items: { name: string; qty: number }[];
 };
@@ -210,7 +211,17 @@ export default function Kds() {
               {byStatus(col).map((o) => (
                 <article key={o.order_id} className="rounded bg-stone-700 p-2 text-sm">
                   <div className="flex justify-between font-semibold">
-                    <span>#{o.order_id}</span>
+                    <span>
+                      #{o.order_id}
+                      {o.channel === "MOCK_AGGREGATOR" && (
+                        <span className="ml-1 rounded bg-orange-900/70 px-1 text-[10px] text-orange-200" title="Order from an aggregator channel">
+                          🛵 aggregator
+                        </span>
+                      )}
+                      {o.channel === "TELEGRAM" && (
+                        <span className="ml-1 rounded bg-sky-900/70 px-1 text-[10px] text-sky-200">✈️ telegram</span>
+                      )}
+                    </span>
                     <span>₹{o.total}</span>
                   </div>
                   <ul className="my-1 text-stone-300">
