@@ -14,6 +14,7 @@ import {
 import LoginModal from "./components/LoginModal";
 import OrderTracker from "./components/OrderTracker";
 import ChatWidget from "./components/ChatWidget";
+import Recommendations from "./components/Recommendations";
 
 type CartLine = { item: MenuItem; qty: number };
 
@@ -150,6 +151,11 @@ export default function Home() {
       {error && <p className="mx-auto mt-3 max-w-4xl px-4 text-sm text-red-600">{error}</p>}
 
       <div className="mx-auto max-w-4xl px-4">
+        <Recommendations
+          cartIds={Object.keys(cart).map(Number)}
+          menu={menu}
+          onAdd={(item) => add(item, 1)}
+        />
         {menu.length > 0 && (
           <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-amber-700">
             Good for {period} right now

@@ -28,6 +28,7 @@ from dosadash_ai.config import get_settings
 from dosadash_ai.db import get_sessionmaker
 from dosadash_ai.llm.client import embed_texts
 from dosadash_ai.llm.semcache import get_semcache
+from dosadash_ai.recsys.serve import flush_menu_embeddings
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +65,11 @@ async def handle_menu_event(session: AsyncSession, payload: dict[str, Any]) -> N
 
     EVERY menu event flushes the semantic cache: cached Q&A may cite menu
     facts (allergen guide is generated from the menu), so any mutation —
-    availability, price, delete — must invalidate (Hard Rule 4)."""
+    availability, price, delete — must invalidate (Hard Rule 4). The recsys
+    cold-start embedding cache is flushed for the same reason (item name/
+    description edits change the vectors)."""
     await get_semcache().flush()
+    flush_menu_embeddings()
     event_type = payload.get("type", "")
     item_id = payload.get("item_id")
     if event_type in _REEMBED_EVENTS and isinstance(item_id, int):
