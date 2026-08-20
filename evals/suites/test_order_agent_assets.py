@@ -34,6 +34,7 @@ TAG_VOCABULARY = {
     "edge",
     "memory",  # Phase 6: "my usual" / episodic recall
     "voice",  # Phase 7: STT-style transcripts (filler words, no punctuation)
+    "serving_window",  # Phase 11: dish outside its hard serving window
 }
 # Phase 4 golden-set coverage floors (docs/05 week 7 deliverable: 150+).
 MIN_CASES = 150
@@ -48,6 +49,7 @@ MIN_PER_TAG = {
     "memory": 4,
     "meal_period": 6,
     "voice": 4,  # Phase 7: voice-note ordering transcripts
+    "serving_window": 4,  # Phase 11: off-window refusals must stay covered
 }
 MIN_PER_LANGUAGE = {"en": 60, "hinglish": 20, "tanglish": 20, "ta": 10}
 
@@ -112,16 +114,38 @@ def test_referenced_items_exist_in_seed_menu():
 
 
 def test_no_time_dependent_expectations():
-    """Dishes with a serving schedule (e.g. pongal 06:00-12:00) may never be
-    REQUIRED in a draft — the live gate runs at arbitrary wall-clock times
-    and the agent correctly refuses off-schedule dishes."""
-    from dosadash_ml.datagen import MENU_ITEMS
+    """Phase 11: every dish carries a serving window, and the live gate pins
+    the availability clock to _harness.EVAL_CLOCK_IST. Deterministic rule:
+    any dish a case REQUIRES (input draft, expected draft, or seeded usual)
+    must be ON schedule at the pinned instant; serving_window cases must
+    forbid a dish that is OFF at the pinned instant."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
 
-    scheduled = {m.name for m in MENU_ITEMS if m.schedule}
+    from _harness import EVAL_CLOCK_IST
+
+    from dosadash_ml.datagen import MENU_ITEMS
+    from dosadash_shared.availability import item_on_schedule
+
+    pinned = datetime.fromisoformat(EVAL_CLOCK_IST).replace(tzinfo=ZoneInfo("Asia/Kolkata"))
+    on_schedule = {m.name: item_on_schedule(m.schedule, pinned) for m in MENU_ITEMS}
     for case in load_cases():
         required = {line["name"] for line in [*case["draft"], *(case["expect"].get("draft") or [])]}
-        clash = required & scheduled
-        assert not clash, f"{case['id']}: {clash} are schedule-gated — eval would be time-dependent"
+        usual = case.get("setup", {}).get("seed_usual_orders", {})
+        if isinstance(usual, dict):
+            required |= {line["name"] for line in usual.get("items", [])}
+        off = {name for name in required if not on_schedule.get(name, True)}
+        assert not off, (
+            f"{case['id']}: {off} are off-schedule at the pinned eval clock "
+            f"({EVAL_CLOCK_IST} IST) — the agent would correctly refuse them"
+        )
+        if "serving_window" in case["tags"]:
+            forbidden = set(case["expect"].get("forbid_names", []))
+            off_window_forbidden = {n for n in forbidden if n in on_schedule and not on_schedule[n]}
+            assert off_window_forbidden, (
+                f"{case['id']}: serving_window case must forbid a dish that is "
+                f"off-schedule at {EVAL_CLOCK_IST} IST"
+            )
 
 
 def test_tamil_cases_seed_the_aliases_they_rely_on():
