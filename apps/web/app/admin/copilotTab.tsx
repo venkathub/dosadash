@@ -3,11 +3,18 @@
 /** Analytics copilot tab (Phase 5): NL question → guarded SQL → table + chart. */
 
 import { useState } from "react";
+import {
+  Btn,
+  Chip,
+  Input,
+  tableCls,
+  tdCls,
+  thCls,
+  theadCls,
+  trCls,
+} from "../components/ui";
 import { adminApi } from "./adminApi";
 import { ErrorBar } from "./tabs";
-
-const btnCls =
-  "rounded bg-amber-500 px-3 py-1 text-sm font-semibold text-stone-900 hover:bg-amber-400 disabled:opacity-40";
 
 type Chart = { type: "bar" | "line" | "none"; x: string; y: string };
 type Cell = string | number | boolean | null;
@@ -61,45 +68,46 @@ export function CopilotTab() {
         }}
         className="mb-3 flex gap-2"
       >
-        <input
+        <Input
+          tone="dark"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="Ask about sales, dishes, forecasts, customers…"
-          className="flex-1 rounded bg-stone-700 px-3 py-2 text-sm text-stone-100 placeholder-stone-400 outline-none focus:ring-1 focus:ring-amber-400"
+          className="flex-1 px-3 py-2"
         />
-        <button className={btnCls} disabled={busy || question.trim().length < 3}>
+        <Btn variant="gold" size="md" disabled={busy || question.trim().length < 3}>
           {busy ? "Thinking…" : "Ask"}
-        </button>
+        </Btn>
       </form>
       <div className="mb-4 flex flex-wrap gap-2">
         {SUGGESTIONS.map((s) => (
-          <button
+          <Chip
             key={s}
-            className="rounded-full border border-stone-700 px-3 py-1 text-xs text-stone-400 hover:border-amber-400 hover:text-amber-300"
+            surface="dark"
             onClick={() => {
               setQuestion(s);
               void submit(s);
             }}
           >
             {s}
-          </button>
+          </Chip>
         ))}
       </div>
       <ErrorBar msg={error} />
 
       {answer?.error && (
-        <p className="rounded bg-red-900/60 px-3 py-2 text-sm text-red-200">
+        <p className="rounded-lg border border-chili-500/40 bg-chili-600/20 px-3 py-2 text-sm text-chili-200">
           ⚠ {answer.error} (after {answer.attempts} attempt{answer.attempts > 1 ? "s" : ""})
         </p>
       )}
 
       {answer && !answer.error && (
         <div className="space-y-4">
-          <p className="text-sm text-stone-300">
+          <p className="text-sm text-leaf-200">
             {answer.explanation}{" "}
-            <span className="text-xs text-stone-500">
-              — {answer.row_count} row{answer.row_count === 1 ? "" : "s"}
-              {answer.truncated && " (truncated)"} · {answer.model} · attempt {answer.attempts}
+            <span className="ai-meta">
+              🤖 {answer.model} · attempt {answer.attempts} · {answer.row_count} row{answer.row_count === 1 ? "" : "s"}
+              {answer.truncated && " (truncated)"}
             </span>
           </p>
 
@@ -107,16 +115,16 @@ export function CopilotTab() {
             <CopilotChart answer={answer} />
           )}
 
-          <div className="max-h-96 overflow-auto rounded border border-stone-800">
-            <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 bg-stone-800 uppercase text-stone-400">
-                <tr>{answer.columns.map((c) => <th key={c} className="p-2">{c}</th>)}</tr>
+          <div className="max-h-96 overflow-auto rounded-lg border border-white/5">
+            <table className={tableCls}>
+              <thead className={`${theadCls} sticky top-0 bg-leaf-800`}>
+                <tr>{answer.columns.map((c) => <th key={c} className={thCls}>{c}</th>)}</tr>
               </thead>
               <tbody>
                 {answer.rows.map((row, i) => (
-                  <tr key={i} className="border-t border-stone-800">
+                  <tr key={i} className={trCls}>
                     {row.map((cell, j) => (
-                      <td key={j} className="p-2 text-stone-300">{cell === null ? "—" : String(cell)}</td>
+                      <td key={j} className={`${tdCls} text-leaf-200 ${typeof cell === "number" ? "text-right" : ""}`}>{cell === null ? "—" : String(cell)}</td>
                     ))}
                   </tr>
                 ))}
@@ -124,9 +132,9 @@ export function CopilotTab() {
             </table>
           </div>
 
-          <details className="text-xs text-stone-400">
-            <summary className="cursor-pointer hover:text-amber-300">Show SQL</summary>
-            <pre className="mt-2 overflow-auto rounded bg-stone-800/80 p-3 text-stone-300">{answer.sql}</pre>
+          <details className="text-xs text-leaf-200/70">
+            <summary className="cursor-pointer transition-colors duration-150 hover:text-brass-300">Show SQL</summary>
+            <pre className="mt-2 overflow-auto rounded-lg bg-leaf-950/60 p-3 font-mono text-leaf-200">{answer.sql}</pre>
           </details>
         </div>
       )}
@@ -151,11 +159,14 @@ function CopilotChart({ answer }: { answer: Answer }) {
   const y = (v: number) => H - pad - (v / max) * (H - 2 * pad);
   const barW = Math.max(3, (W - 2 * pad) / points.length - 4);
 
+  /* Token hex literals for SVG paint (Tailwind arbitrary fills are unreliable
+     with CSS-var tokens): #C8A24B = brass-500, #BFD6C8 = leaf-200. */
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded bg-stone-800/60">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-lg bg-leaf-950/60">
+      <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="rgba(255,255,255,0.05)" />
       {answer.chart.type === "bar" ? (
         points.map((p, i) => (
-          <rect key={i} x={x(i) - barW / 2} y={y(p.y)} width={barW} height={H - pad - y(p.y)} className="fill-amber-400">
+          <rect key={i} x={x(i) - barW / 2} y={y(p.y)} width={barW} height={H - pad - y(p.y)} fill="#C8A24B" fillOpacity={0.8}>
             <title>{`${p.x}: ${p.y}`}</title>
           </rect>
         ))
@@ -164,14 +175,14 @@ function CopilotChart({ answer }: { answer: Answer }) {
           points={points.map((p, i) => `${x(i)},${y(p.y)}`).join(" ")}
           fill="none"
           strokeWidth={2}
-          className="stroke-amber-400"
+          stroke="#BFD6C8"
         />
       )}
-      <text x={pad} y={14} className="fill-stone-400 text-[10px]">
+      <text x={pad} y={14} fill="#BFD6C8" className="text-[10px]">
         {answer.chart.y} by {answer.chart.x || "row"} (max {max.toLocaleString()})
       </text>
-      <text x={pad} y={H - 8} className="fill-stone-500 text-[9px]">{points[0]?.x}</text>
-      <text x={W - pad} y={H - 8} textAnchor="end" className="fill-stone-500 text-[9px]">
+      <text x={pad} y={H - 8} fill="#BFD6C8" fillOpacity={0.6} className="text-[9px]">{points[0]?.x}</text>
+      <text x={W - pad} y={H - 8} textAnchor="end" fill="#BFD6C8" fillOpacity={0.6} className="text-[9px]">
         {points[points.length - 1]?.x}
       </text>
     </svg>

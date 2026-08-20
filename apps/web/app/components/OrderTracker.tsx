@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api, getToken, wsUrl, type Order } from "../../lib/api";
+import { Btn, Modal, SectionHeading, cx } from "./ui";
 
 const STEPS = ["PLACED", "CONFIRMED", "COOKING", "READY", "OUT_FOR_DELIVERY", "DELIVERED"];
 
@@ -53,7 +54,7 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
         order_id: order.payment?.provider_order_id,
         name: "DosaDash",
         description: `Order #${order.id}`,
-        theme: { color: "#f59e0b" },
+        theme: { color: "#14342B" },
         handler: async (resp: { razorpay_payment_id: string; razorpay_signature: string }) => {
           try {
             await api<Order>(`/orders/${order.id}/pay`, {
@@ -85,50 +86,80 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
   const cancelled = status === "CANCELLED" || status === "REFUNDED";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="w-96 space-y-4 rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Order #{order.id}</h2>
-          <span className="text-sm text-stone-500">live ●</span>
-        </div>
-        <ul className="text-sm text-stone-600">
-          {order.items.map((i) => (
-            <li key={i.item_id}>
-              {i.qty}× {i.name}
+    <Modal tone="light" onClose={onClose} className="w-96 space-y-4 p-6">
+      <div className="flex items-center justify-between">
+        <SectionHeading as="h2" className="text-lg text-leaf-800">
+          Order #{order.id}
+        </SectionHeading>
+        <span className="text-sm text-ink-600">
+          live <span className="animate-pulse-soft text-veg-500">●</span>
+        </span>
+      </div>
+      <ul className="text-sm text-ink-600">
+        {order.items.map((i) => (
+          <li key={i.item_id}>
+            {i.qty}× {i.name}
+          </li>
+        ))}
+      </ul>
+      <p className="tnum text-sm text-ink-900">
+        ₹{order.subtotal}
+        {order.discount && parseFloat(order.discount) > 0 ? (
+          <span className="text-veg-600"> − ₹{order.discount}{order.coupon_code ? ` (${order.coupon_code})` : ""}</span>
+        ) : null}{" "}
+        + GST ₹{order.gst} = <b className="font-display">₹{order.total}</b>
+      </p>
+      {!paid ? (
+        <Btn className="w-full" onClick={pay}>
+          {payLabel}
+        </Btn>
+      ) : (
+        <p className="rounded-lg border border-veg-500/30 bg-veg-200 px-3 py-1 text-sm text-veg-600">
+          ✓ Payment captured
+        </p>
+      )}
+      {cancelled ? (
+        <p className="rounded-lg border border-chili-500/30 bg-chili-200 px-3 py-2 text-sm text-chili-600">
+          Order {status.toLowerCase()}
+        </p>
+      ) : (
+        <ol className="space-y-1.5">
+          {STEPS.map((s, i) => (
+            <li
+              key={s}
+              className={cx(
+                "flex items-center gap-2 text-sm",
+                i < stepIdx
+                  ? "text-ink-900"
+                  : i === stepIdx
+                    ? "font-semibold text-ink-900"
+                    : "text-ink-400",
+              )}
+            >
+              <span
+                className={cx(
+                  "inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold",
+                  i < stepIdx
+                    ? "border-veg-500 bg-veg-500 text-cream-50"
+                    : i === stepIdx
+                      ? "animate-pulse-soft border-brass-500 bg-brass-500 text-leaf-900"
+                      : "border-cream-300 bg-cream-100 text-ink-400",
+                )}
+              >
+                {i < stepIdx ? "✓" : "●"}
+              </span>
+              {s.replace(/_/g, " ")}
             </li>
           ))}
-        </ul>
-        <p className="text-sm">
-          ₹{order.subtotal}
-          {order.discount && parseFloat(order.discount) > 0 ? (
-            <span className="text-green-700"> − ₹{order.discount}{order.coupon_code ? ` (${order.coupon_code})` : ""}</span>
-          ) : null}{" "}
-          + GST ₹{order.gst} = <b>₹{order.total}</b>
-        </p>
-        {!paid ? (
-          <button className="w-full rounded bg-green-600 py-2 font-semibold text-white" onClick={pay}>
-            {payLabel}
-          </button>
-        ) : (
-          <p className="rounded bg-green-100 px-3 py-1 text-sm text-green-800">✓ Payment captured</p>
-        )}
-        {cancelled ? (
-          <p className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Order {status.toLowerCase()}</p>
-        ) : (
-          <ol className="space-y-1">
-            {STEPS.map((s, i) => (
-              <li key={s} className={`flex items-center gap-2 text-sm ${i <= stepIdx ? "text-stone-900" : "text-stone-400"}`}>
-                <span>{i < stepIdx ? "✅" : i === stepIdx ? "🟡" : "⚪"}</span>
-                {s.replace(/_/g, " ")}
-              </li>
-            ))}
-          </ol>
-        )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button className="w-full rounded border border-stone-300 py-2 text-sm" onClick={onClose}>
-          Close
-        </button>
-      </div>
-    </div>
+        </ol>
+      )}
+      {error && <p className="text-sm text-chili-600">{error}</p>}
+      <button
+        className="w-full rounded-lg border border-leaf-600 py-2 text-sm font-semibold text-leaf-800 transition-colors duration-150 hover:border-brass-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass-500"
+        onClick={onClose}
+      >
+        Close
+      </button>
+    </Modal>
   );
 }

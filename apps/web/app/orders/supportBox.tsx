@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { api } from "../../lib/api";
+import { Btn, Input } from "../components/ui";
 
 type SupportMsg = { role: "user" | "assistant"; content: string };
 type SupportReply = {
@@ -51,7 +52,7 @@ export function SupportBox() {
   if (!open)
     return (
       <button
-        className="fixed bottom-4 right-4 rounded-full bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-lg"
+        className="btn-gold fixed bottom-4 right-4 rounded-full px-4 py-2 text-sm font-bold shadow-lift transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass-500"
         onClick={() => setOpen(true)}
       >
         🛟 Need help?
@@ -59,40 +60,50 @@ export function SupportBox() {
     );
 
   return (
-    <div className="fixed bottom-4 right-4 flex h-96 w-80 flex-col rounded-xl border border-amber-300 bg-white shadow-xl">
-      <div className="flex items-center justify-between rounded-t-xl bg-amber-500 px-3 py-2 text-sm font-bold text-white">
-        🛟 Order help
-        <button onClick={() => setOpen(false)}>✕</button>
+    <div className="fixed bottom-4 right-4 flex h-96 w-80 flex-col overflow-hidden rounded-2xl bg-cream-50 shadow-modal">
+      <div className="flex items-center justify-between bg-leaf-800 px-3 py-2 text-sm">
+        <b className="font-display font-semibold tracking-tight text-brass-300">🛟 Order help</b>
+        <button
+          className="text-leaf-200 transition-colors duration-150 hover:text-brass-300"
+          onClick={() => setOpen(false)}
+        >
+          ✕
+        </button>
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-3 text-sm">
         {history.length === 0 && (
-          <p className="text-stone-500">
+          <p className="text-ink-400">
             Ask about an order — status, cancelling, or a refund request. E.g. “where is my order?”
           </p>
         )}
         {history.map((m, i) => (
           <p
             key={i}
-            className={`whitespace-pre-wrap rounded-lg px-3 py-2 ${
-              m.role === "user" ? "ml-8 bg-amber-100" : "mr-8 bg-stone-100"
+            className={`animate-fade-up whitespace-pre-wrap px-3 py-2 ${
+              m.role === "user"
+                ? "ml-10 rounded-2xl rounded-br-md bg-leaf-700 text-cream-50"
+                : "mr-10 rounded-2xl rounded-bl-md bg-cream-200 text-ink-900"
             }`}
           >
             {m.content}
           </p>
         ))}
-        {busy && <p className="mr-8 rounded-lg bg-stone-100 px-3 py-2 text-stone-400">…</p>}
+        {busy && (
+          <p className="mr-10 rounded-2xl rounded-bl-md bg-cream-200 px-3 py-2 text-ink-400">…</p>
+        )}
       </div>
-      <div className="flex gap-2 border-t border-stone-200 p-2">
-        <input
-          className="flex-1 rounded border border-stone-300 px-2 py-1 text-sm outline-none focus:border-amber-400"
+      <div className="flex gap-2 border-t border-cream-300 p-2">
+        <Input
+          tone="light"
+          className="flex-1 rounded-full"
           value={input}
           placeholder="Type your question…"
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
         />
-        <button className="rounded bg-amber-500 px-3 py-1 text-sm font-bold text-white disabled:opacity-40" disabled={busy} onClick={send}>
+        <Btn size="sm" disabled={busy} onClick={send}>
           Send
-        </button>
+        </Btn>
       </div>
     </div>
   );

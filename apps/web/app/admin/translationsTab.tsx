@@ -1,13 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { Badge, Btn, EmptyState, Input, statusBadgeTone } from "../components/ui";
 import { AdminApiError, adminApi, type AdminItem } from "./adminApi";
 import { ErrorBar, useLoad } from "./tabs";
-
-const inputCls =
-  "rounded border border-stone-600 bg-stone-900 px-2 py-1 text-sm text-stone-100 placeholder-stone-500";
-const btnCls = "rounded bg-amber-500 px-3 py-1 text-sm font-semibold text-stone-900 disabled:opacity-40";
-const smallBtn = "rounded bg-stone-700 px-2 py-0.5 text-xs disabled:opacity-40";
 
 export type Translation = {
   item_id: number;
@@ -22,16 +18,6 @@ export type Translation = {
 };
 
 const LANG = "ta"; // Tamil-first; more languages join this const later
-
-function StatusBadge({ status }: { status: string }) {
-  const cls =
-    status === "APPROVED"
-      ? "bg-green-800 text-green-200"
-      : status === "REJECTED"
-        ? "bg-red-900 text-red-200"
-        : "bg-amber-900 text-amber-200";
-  return <span className={`rounded px-2 py-0.5 text-xs ${cls}`}>{status}</span>;
-}
 
 /** Menu localization (Phase 7, Tamil-first): the LLM drafts Tamil names /
  * descriptions, the owner edits + approves — nothing is served to customers
@@ -101,10 +87,10 @@ export function TranslationsTab() {
     <div>
       <ErrorBar msg={error} />
       <div className="mb-3 flex items-center gap-3">
-        <button className={btnCls} disabled={busy !== null || missing === 0} onClick={draftMissing}>
+        <Btn variant="gold" size="sm" disabled={busy !== null || missing === 0} onClick={draftMissing}>
           {busy === "all" ? "✨ Translating…" : `✨ Draft ${missing} missing (Tamil)`}
-        </button>
-        <span className="text-xs text-stone-400">
+        </Btn>
+        <span className="text-xs text-leaf-200/70">
           LLM drafts Tamil text — nothing is served without your approval. Prices and allergens
           always come from the English row.
         </span>
@@ -114,12 +100,13 @@ export function TranslationsTab() {
           const t = data?.byItem.get(item.id);
           const edit = edits[item.id];
           return (
-            <div key={item.id} className="flex flex-wrap items-center gap-3 rounded bg-stone-800 p-3 text-sm">
+            <div key={item.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-leaf-800 p-3 text-sm">
               <span className="w-44 shrink-0 font-semibold">{item.name}</span>
               {t ? (
                 <>
-                  <input
-                    className={`${inputCls} w-56`}
+                  <Input
+                    tone="dark"
+                    className="w-56 px-2 py-1"
                     value={edit ? edit.name : t.name}
                     onChange={(e) =>
                       setEdits({
@@ -131,8 +118,9 @@ export function TranslationsTab() {
                       })
                     }
                   />
-                  <input
-                    className={`${inputCls} w-72 flex-1`}
+                  <Input
+                    tone="dark"
+                    className="w-72 flex-1 px-2 py-1"
                     placeholder="Tamil description"
                     value={edit ? edit.description : (t.description ?? "")}
                     onChange={(e) =>
@@ -142,49 +130,42 @@ export function TranslationsTab() {
                       })
                     }
                   />
-                  {t.category_label && <span className="text-xs text-stone-500">{t.category_label}</span>}
-                  <StatusBadge status={t.status} />
+                  {t.category_label && <span className="text-xs text-leaf-200/60">{t.category_label}</span>}
+                  <Badge tone={statusBadgeTone(t.status)}>{t.status}</Badge>
+                  <span className="ai-meta">🤖 {t.model} · {t.prompt_version}</span>
                   <span className="flex gap-2">
                     {edit && (
-                      <button className={smallBtn} disabled={busy !== null} onClick={() => save(item.id)}>
+                      <Btn variant="leaf" size="sm" disabled={busy !== null} onClick={() => save(item.id)}>
                         💾 Save
-                      </button>
+                      </Btn>
                     )}
                     {t.status === "DRAFT" && !edit && (
                       <>
-                        <button
-                          className="rounded bg-green-800 px-2 py-0.5 text-xs text-green-200 disabled:opacity-40"
-                          disabled={busy !== null}
-                          onClick={() => setStatus(item.id, "APPROVED")}
-                        >
+                        <Btn variant="gold" size="sm" disabled={busy !== null} onClick={() => setStatus(item.id, "APPROVED")}>
                           ✓ Approve
-                        </button>
-                        <button
-                          className="rounded bg-red-900 px-2 py-0.5 text-xs text-red-200 disabled:opacity-40"
-                          disabled={busy !== null}
-                          onClick={() => setStatus(item.id, "REJECTED")}
-                        >
+                        </Btn>
+                        <Btn variant="danger" size="sm" disabled={busy !== null} onClick={() => setStatus(item.id, "REJECTED")}>
                           ✗ Reject
-                        </button>
+                        </Btn>
                       </>
                     )}
-                    <button className={smallBtn} disabled={busy !== null} onClick={() => draftOne(item.id)}>
+                    <Btn variant="ghost" size="sm" disabled={busy !== null} onClick={() => draftOne(item.id)}>
                       {busy === item.id ? "…" : "✨ re-draft"}
-                    </button>
+                    </Btn>
                   </span>
                 </>
               ) : (
                 <>
-                  <span className="text-xs text-stone-500">no Tamil text yet</span>
-                  <button className={smallBtn} disabled={busy !== null} onClick={() => draftOne(item.id)}>
+                  <span className="text-xs text-leaf-200/60">no Tamil text yet</span>
+                  <Btn variant="ghost" size="sm" disabled={busy !== null} onClick={() => draftOne(item.id)}>
                     {busy === item.id ? "…" : "✨ draft"}
-                  </button>
+                  </Btn>
                 </>
               )}
             </div>
           );
         })}
-        {items.length === 0 && <p className="text-sm text-stone-500">No menu items.</p>}
+        {items.length === 0 && <EmptyState>No menu items.</EmptyState>}
       </div>
     </div>
   );

@@ -1,12 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { Badge, Btn, EmptyState, Eyebrow, Input, Select } from "../components/ui";
 import { AdminApiError, adminApi } from "./adminApi";
 import { ErrorBar, useLoad } from "./tabs";
-
-const inputCls =
-  "rounded border border-stone-600 bg-stone-900 px-2 py-1 text-sm text-stone-100 placeholder-stone-500";
-const btnCls = "rounded bg-amber-500 px-3 py-1 text-sm font-semibold text-stone-900 disabled:opacity-40";
 
 type Coupon = {
   id: number;
@@ -79,13 +76,13 @@ export function CouponsTab() {
     <div>
       <ErrorBar msg={error} />
       <div className="mb-3 flex items-center gap-3">
-        <button className={btnCls} disabled={suggesting} onClick={suggest}>
+        <Btn variant="gold" size="sm" disabled={suggesting} onClick={suggest}>
           {suggesting ? "🤖 Thinking…" : "🤖 Suggest promos"}
-        </button>
-        {suggestNote && <span className="text-xs text-stone-400">{suggestNote}</span>}
+        </Btn>
+        {suggestNote && <span className="ai-meta">{suggestNote}</span>}
       </div>
       <form
-        className="mb-4 flex flex-wrap items-center gap-2 rounded bg-stone-800 p-3"
+        className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-leaf-800 p-3"
         onSubmit={(e) => {
           e.preventDefault();
           act(() =>
@@ -105,57 +102,57 @@ export function CouponsTab() {
           ).then(() => setForm(EMPTY));
         }}
       >
-        <span className="text-xs uppercase tracking-wide text-stone-400">New coupon</span>
-        <input className={`${inputCls} w-28`} placeholder="CODE" required value={form.code} onChange={set("code")} />
-        <select className={inputCls} value={form.type} onChange={set("type")}>
+        <Eyebrow>New coupon</Eyebrow>
+        <Input tone="dark" className="w-28 px-2 py-1 font-mono" placeholder="CODE" required value={form.code} onChange={set("code")} />
+        <Select tone="dark" className="px-2 py-1" value={form.type} onChange={set("type")}>
           <option value="PCT">% off</option>
           <option value="FLAT">₹ off</option>
-        </select>
-        <input className={`${inputCls} w-20`} placeholder={form.type === "PCT" ? "%" : "₹"} required value={form.value} onChange={set("value")} />
-        <input className={`${inputCls} w-24`} placeholder="min ₹ cart" value={form.min_subtotal} onChange={set("min_subtotal")} />
+        </Select>
+        <Input tone="dark" className="w-20 px-2 py-1" placeholder={form.type === "PCT" ? "%" : "₹"} required value={form.value} onChange={set("value")} />
+        <Input tone="dark" className="w-24 px-2 py-1" placeholder="min ₹ cart" value={form.min_subtotal} onChange={set("min_subtotal")} />
         {form.type === "PCT" && (
-          <input className={`${inputCls} w-24`} placeholder="max ₹ off" value={form.max_discount} onChange={set("max_discount")} />
+          <Input tone="dark" className="w-24 px-2 py-1" placeholder="max ₹ off" value={form.max_discount} onChange={set("max_discount")} />
         )}
-        <input className={`${inputCls} w-20`} placeholder="uses" value={form.usage_limit} onChange={set("usage_limit")} />
-        <input className={`${inputCls} w-20`} placeholder="per user" value={form.per_user_limit} onChange={set("per_user_limit")} />
-        <input className={`${inputCls} w-44`} placeholder="Description" value={form.description} onChange={set("description")} />
-        <button className={btnCls}>Create (inactive)</button>
+        <Input tone="dark" className="w-20 px-2 py-1" placeholder="uses" value={form.usage_limit} onChange={set("usage_limit")} />
+        <Input tone="dark" className="w-20 px-2 py-1" placeholder="per user" value={form.per_user_limit} onChange={set("per_user_limit")} />
+        <Input tone="dark" className="w-44 px-2 py-1" placeholder="Description" value={form.description} onChange={set("description")} />
+        <Btn variant="gold" size="sm">Create (inactive)</Btn>
       </form>
 
       <div className="space-y-2">
         {(coupons ?? []).map((c) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-3 rounded bg-stone-800 p-3 text-sm">
-            <span className="font-mono font-bold">{c.code}</span>
-            <span>{c.type === "PCT" ? `${parseFloat(c.value)}% off${c.max_discount ? ` (max ₹${parseFloat(c.max_discount)})` : ""}` : `₹${parseFloat(c.value)} off`}</span>
-            {c.min_subtotal && <span className="text-stone-400">min ₹{parseFloat(c.min_subtotal)}</span>}
-            <span className="text-stone-400">
+          <div key={c.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-leaf-800 p-3 text-sm">
+            <span className="font-mono font-bold text-brass-300">{c.code}</span>
+            <span className="tnum">{c.type === "PCT" ? `${parseFloat(c.value)}% off${c.max_discount ? ` (max ₹${parseFloat(c.max_discount)})` : ""}` : `₹${parseFloat(c.value)} off`}</span>
+            {c.min_subtotal && <span className="tnum text-leaf-200/70">min ₹{parseFloat(c.min_subtotal)}</span>}
+            <span className="tnum text-leaf-200/70">
               used {c.times_used}
               {c.usage_limit ? `/${c.usage_limit}` : ""}
             </span>
-            {c.description && <span className="text-xs text-stone-500">{c.description}</span>}
-            <span className={`rounded px-2 py-0.5 text-xs ${c.is_active ? "bg-green-800 text-green-200" : "bg-stone-700"}`}>
-              {c.is_active ? "ACTIVE" : "INACTIVE"}
-              {c.source === "AI_SUGGESTED" ? " · 🤖 AI" : ""}
-            </span>
+            {c.description && <span className="text-xs text-leaf-200/60">{c.description}</span>}
+            <Badge tone={c.is_active ? "success" : "danger"}>{c.is_active ? "ACTIVE" : "INACTIVE"}</Badge>
+            {c.source === "AI_SUGGESTED" && <span className="ai-meta">🤖 AI</span>}
             <span className="ml-auto flex gap-2">
-              <button
-                className="rounded bg-stone-700 px-2 py-0.5 text-xs"
+              <Btn
+                variant={c.is_active ? "ghost" : "gold"}
+                size="sm"
                 onClick={() => act(() => adminApi(`/admin/coupons/${c.id}`, { method: "PATCH", body: { is_active: !c.is_active } }))}
               >
                 {c.is_active ? "Deactivate" : "Activate"}
-              </button>
+              </Btn>
               {c.times_used === 0 && (
-                <button
-                  className="rounded bg-red-900 px-2 py-0.5 text-xs text-red-200"
+                <Btn
+                  variant="danger"
+                  size="sm"
                   onClick={() => act(() => adminApi(`/admin/coupons/${c.id}`, { method: "DELETE" }))}
                 >
                   Delete
-                </button>
+                </Btn>
               )}
             </span>
           </div>
         ))}
-        {coupons?.length === 0 && <p className="text-sm text-stone-500">No coupons yet.</p>}
+        {coupons?.length === 0 && <EmptyState>No coupons yet.</EmptyState>}
       </div>
     </div>
   );

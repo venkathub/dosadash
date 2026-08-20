@@ -1,6 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Badge,
+  Btn,
+  Card,
+  ErrorBar,
+  Eyebrow,
+  Input,
+  SectionHeading,
+  statusBadgeTone,
+} from "../components/ui";
 
 type OrderEvent = {
   type: string;
@@ -20,6 +30,14 @@ const NEXT: Record<string, string> = {
   READY: "OUT_FOR_DELIVERY",
 };
 
+/** Left accent bar per column — readable from across the kitchen. */
+const STATUS_ACCENT: Record<(typeof COLUMNS)[number], string> = {
+  PLACED: "bg-info-500",
+  CONFIRMED: "bg-brass-500",
+  COOKING: "bg-turmeric-500",
+  READY: "bg-veg-500",
+};
+
 type QCResult = {
   verdict: "PASS" | "MISMATCH" | "CHECK" | "UNREADABLE";
   missing: string[];
@@ -27,11 +45,11 @@ type QCResult = {
   issues: string[];
 };
 
-const QC_BADGE: Record<QCResult["verdict"], { label: string; cls: string }> = {
-  PASS: { label: "✅ QC pass", cls: "bg-green-900/60 text-green-300" },
-  MISMATCH: { label: "❌ Wrong dishes", cls: "bg-red-900/60 text-red-300" },
-  CHECK: { label: "⚠️ Check before dispatch", cls: "bg-amber-900/60 text-amber-300" },
-  UNREADABLE: { label: "🔄 Retake photo", cls: "bg-stone-600 text-stone-200" },
+const QC_LABEL: Record<QCResult["verdict"], string> = {
+  PASS: "✅ QC pass",
+  MISMATCH: "❌ Wrong dishes",
+  CHECK: "⚠️ Check before dispatch",
+  UNREADABLE: "🔄 Retake photo",
 };
 
 export default function Kds() {
@@ -152,37 +170,41 @@ export default function Kds() {
 
   if (!token) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-stone-900 text-stone-100">
-        <div className="w-80 space-y-3 rounded-lg bg-stone-800 p-6">
-          <h1 className="text-xl font-semibold">🥞 KDS Login</h1>
-          <input
-            className="w-full rounded bg-stone-700 px-3 py-2"
+      <main className="flex min-h-screen items-center justify-center bg-leaf-950 text-leaf-100">
+        <Card tone="dark" className="w-80 space-y-3 p-6">
+          <SectionHeading as="h1" className="text-xl text-brass-300">
+            🥞 Kitchen sign-in
+          </SectionHeading>
+          <Input
+            tone="dark"
+            className="min-h-[44px] w-full"
             placeholder="Staff phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
           {demoOtp === null ? (
-            <button className="w-full rounded bg-amber-500 py-2 font-medium text-stone-900" onClick={requestOtp}>
+            <Btn variant="gold" className="min-h-[44px] w-full" onClick={requestOtp}>
               Send OTP
-            </button>
+            </Btn>
           ) : (
             <>
-              <p className="rounded bg-amber-200/20 px-2 py-1 text-xs text-amber-300">
+              <p className="rounded-lg border border-brass-500/40 bg-brass-500/15 px-2 py-1 text-xs text-brass-300">
                 Demo OTP: <b>{demoOtp}</b>
               </p>
-              <input
-                className="w-full rounded bg-stone-700 px-3 py-2"
+              <Input
+                tone="dark"
+                className="min-h-[44px] w-full"
                 placeholder="OTP"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
               />
-              <button className="w-full rounded bg-amber-500 py-2 font-medium text-stone-900" onClick={verifyOtp}>
+              <Btn variant="gold" className="min-h-[44px] w-full" onClick={verifyOtp}>
                 Verify
-              </button>
+              </Btn>
             </>
           )}
-          {error && <p className="text-sm text-red-400">{error}</p>}
-        </div>
+          <ErrorBar msg={error} />
+        </Card>
       </main>
     );
   }
@@ -193,38 +215,56 @@ export default function Kds() {
       .sort((a, b) => (a.placed_at ?? "").localeCompare(b.placed_at ?? ""));
 
   return (
-    <main className="min-h-screen bg-stone-900 p-4 text-stone-100">
+    <main className="min-h-screen bg-leaf-950 p-4 text-leaf-100">
       <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">🥞 DosaDash KDS</h1>
-        <span className={`text-sm ${connected ? "text-green-400" : "text-red-400"}`}>
-          {connected ? "● live" : "○ reconnecting…"}
-        </span>
+        <h1 className="font-display text-xl font-semibold tracking-tight text-brass-300">
+          🔥 Kitchen
+        </h1>
+        {connected ? (
+          <span className="text-sm font-semibold text-veg-200">
+            <span className="animate-pulse-soft">●</span> live
+          </span>
+        ) : (
+          <span className="text-sm font-semibold text-turmeric-200">○ reconnecting…</span>
+        )}
       </header>
-      {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
+      {error && (
+        <div className="mb-2">
+          <ErrorBar msg={error} />
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {COLUMNS.map((col) => (
-          <section key={col} className="rounded-lg bg-stone-800 p-3">
-            <h2 className="mb-2 text-sm font-bold tracking-wide text-amber-400">
-              {col} ({byStatus(col).length})
-            </h2>
+          <section key={col} className="rounded-xl bg-leaf-900 p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <Eyebrow>{col}</Eyebrow>
+              <span className="tnum rounded-full bg-leaf-700 px-2 text-xs font-semibold text-leaf-100">
+                {byStatus(col).length}
+              </span>
+            </div>
             <div className="space-y-2">
               {byStatus(col).map((o) => (
-                <article key={o.order_id} className="rounded bg-stone-700 p-2 text-sm">
-                  <div className="flex justify-between font-semibold">
-                    <span>
-                      #{o.order_id}
+                <article
+                  key={o.order_id}
+                  className="animate-fade-up relative rounded-lg bg-leaf-800 p-3 pl-4 text-sm"
+                >
+                  <span
+                    aria-hidden
+                    className={`absolute left-0 top-0 h-full w-1 rounded-l-lg ${STATUS_ACCENT[col]}`}
+                  />
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="flex flex-wrap items-center gap-1">
+                      <span className="font-display font-semibold">#{o.order_id}</span>
                       {o.channel === "MOCK_AGGREGATOR" && (
-                        <span className="ml-1 rounded bg-orange-900/70 px-1 text-[10px] text-orange-200" title="Order from an aggregator channel">
+                        <Badge tone="warning" title="Order from an aggregator channel">
                           🛵 aggregator
-                        </span>
+                        </Badge>
                       )}
-                      {o.channel === "TELEGRAM" && (
-                        <span className="ml-1 rounded bg-sky-900/70 px-1 text-[10px] text-sky-200">✈️ telegram</span>
-                      )}
+                      {o.channel === "TELEGRAM" && <Badge tone="info">✈️ telegram</Badge>}
                     </span>
-                    <span>₹{o.total}</span>
+                    <span className="font-display tnum font-semibold text-brass-300">₹{o.total}</span>
                   </div>
-                  <ul className="my-1 text-stone-300">
+                  <ul className="my-1.5 text-[15px] leading-snug text-leaf-100">
                     {o.items.map((i) => (
                       <li key={i.name}>
                         {i.qty}× {i.name}
@@ -232,24 +272,30 @@ export default function Kds() {
                     ))}
                   </ul>
                   {qc[o.order_id] && qc[o.order_id] !== "pending" && (
-                    <div
-                      className={`mb-1 rounded px-2 py-1 text-xs ${
-                        QC_BADGE[(qc[o.order_id] as QCResult).verdict].cls
-                      }`}
-                    >
-                      <b>{QC_BADGE[(qc[o.order_id] as QCResult).verdict].label}</b>
+                    <div className="mb-1.5 space-y-0.5">
+                      <Badge tone={statusBadgeTone((qc[o.order_id] as QCResult).verdict)}>
+                        {QC_LABEL[(qc[o.order_id] as QCResult).verdict]}
+                      </Badge>
                       {(qc[o.order_id] as QCResult).missing.length > 0 && (
-                        <p>missing: {(qc[o.order_id] as QCResult).missing.join(", ")}</p>
+                        <p className="text-xs text-chili-200">
+                          missing: {(qc[o.order_id] as QCResult).missing.join(", ")}
+                        </p>
                       )}
                       {(qc[o.order_id] as QCResult).issues.map((issue) => (
-                        <p key={issue}>{issue}</p>
+                        <p key={issue} className="text-xs text-turmeric-200">
+                          {issue}
+                        </p>
                       ))}
                     </div>
                   )}
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5">
                     {(col === "COOKING" || col === "READY") && (
-                      <label className="cursor-pointer rounded bg-stone-600 px-2 py-1 text-xs font-bold">
-                        {qc[o.order_id] === "pending" ? "🔍…" : "📷 QC"}
+                      <label
+                        className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-leaf-700 px-2.5 py-1 text-xs font-semibold text-leaf-100 transition-colors duration-150 hover:bg-leaf-600 ${
+                          qc[o.order_id] === "pending" ? "cursor-not-allowed opacity-40" : ""
+                        }`}
+                      >
+                        {qc[o.order_id] === "pending" ? "🔍…" : "📷 QC photo"}
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
@@ -264,12 +310,14 @@ export default function Kds() {
                         />
                       </label>
                     )}
-                    <button
-                      className="flex-1 rounded bg-amber-500 py-1 text-xs font-bold text-stone-900"
+                    <Btn
+                      variant="gold"
+                      size="sm"
+                      className="min-h-[44px] flex-1"
                       onClick={() => advance(o)}
                     >
                       → {NEXT[o.status].replace(/_/g, " ")}
-                    </button>
+                    </Btn>
                   </div>
                 </article>
               ))}

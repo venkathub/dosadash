@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 import { ApiError, api, getUser, type Order } from "../../lib/api";
 import { ReviewBox } from "./reviewBox";
 import { SupportBox } from "./supportBox";
+import { Badge, Btn, Card, EmptyState, statusBadgeTone } from "../components/ui";
+
+const lightGhostBtn =
+  "rounded-lg border border-leaf-600 px-3 py-1 text-xs font-semibold text-leaf-800 transition-colors duration-150 hover:border-brass-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass-500";
 
 export default function Orders() {
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -69,69 +73,77 @@ export default function Orders() {
   };
 
   return (
-    <main className="mx-auto min-h-screen max-w-2xl px-4 py-6">
-      <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-extrabold">🥞 Your orders</h1>
-        <div className="flex items-center gap-3">
-          {tgLinked ? (
-            <span className="flex items-center gap-2 text-xs">
-              <span className="rounded bg-sky-100 px-2 py-1 font-semibold text-sky-700">
-                ✈️ Telegram linked ✓
+    <main className="min-h-screen pb-10">
+      <header className="sticky top-0 z-40 border-b border-brass-500/30 bg-leaf-800 px-4 py-3">
+        <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3">
+          <h1 className="font-display text-xl font-semibold tracking-tight text-brass-300">
+            🥞 Your orders
+          </h1>
+          <div className="flex items-center gap-3">
+            {tgLinked ? (
+              <span className="flex items-center gap-2 text-xs">
+                <Badge tone="info">✈️ Telegram linked ✓</Badge>
+                <button
+                  className="text-leaf-200 underline underline-offset-4 transition-colors duration-150 hover:text-brass-300"
+                  onClick={unlinkTelegram}
+                >
+                  Unlink
+                </button>
               </span>
-              <button className="text-stone-500 underline" onClick={unlinkTelegram}>
-                Unlink
-              </button>
-            </span>
-          ) : (
-            <button
-              className="rounded bg-sky-500 px-3 py-1 text-xs font-bold text-white"
-              onClick={linkTelegram}
+            ) : (
+              <Btn variant="leaf" size="sm" onClick={linkTelegram}>
+                ✈️ Link Telegram
+              </Btn>
+            )}
+            <Link
+              href="/"
+              className="text-sm text-leaf-100 underline decoration-brass-500/50 underline-offset-4 transition-colors duration-150 hover:text-brass-300"
             >
-              ✈️ Link Telegram
-            </button>
-          )}
-          <Link href="/" className="text-sm underline">
-            ← Menu
-          </Link>
+              ← Menu
+            </Link>
+          </div>
         </div>
       </header>
-      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
-      {orders === null && <p className="text-stone-500">Loading…</p>}
-      {orders?.length === 0 && !error && <p className="text-stone-500">No orders yet — go grab a dosa!</p>}
-      <div className="space-y-3">
-        {orders?.map((o) => (
-          <article key={o.id} className="rounded-lg border border-amber-200 bg-white p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-bold">#{o.id}</h2>
-              <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold">{o.status}</span>
-            </div>
-            <p className="my-1 text-sm text-stone-600">
-              {o.items.map((i) => `${i.qty}× ${i.name}`).join(", ")}
-            </p>
-            <div className="flex items-center justify-between">
-              <p className="text-sm">
-                <b>₹{o.total}</b> · {new Date(o.placed_at).toLocaleString("en-IN")}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  className="rounded border border-amber-400 px-3 py-1 text-xs font-semibold"
-                  onClick={() => router.push(`/?track=${o.id}`)}
-                >
-                  Track
-                </button>
-                <button
-                  className="rounded bg-amber-500 px-3 py-1 text-xs font-bold"
-                  onClick={() => reorder(o.id)}
-                >
-                  ↻ Reorder
-                </button>
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        {error && <p className="mb-3 text-sm text-chili-600">{error}</p>}
+        {orders === null && <p className="text-ink-400">Loading…</p>}
+        {orders?.length === 0 && !error && (
+          <EmptyState surface="light">No orders yet — go grab a dosa!</EmptyState>
+        )}
+        <div className="space-y-3">
+          {orders?.map((o) => (
+            <Card key={o.id} tone="light" className="p-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-lg font-semibold tracking-tight text-leaf-800">
+                  #{o.id}
+                </h2>
+                <Badge surface="light" tone={statusBadgeTone(o.status)}>
+                  {o.status}
+                </Badge>
               </div>
-            </div>
-            {o.status === "DELIVERED" && <ReviewBox orderId={o.id} />}
-          </article>
-        ))}
+              <p className="my-1 text-sm text-ink-600">
+                {o.items.map((i) => `${i.qty}× ${i.name}`).join(", ")}
+              </p>
+              <div className="flex items-center justify-between">
+                <p className="tnum text-sm text-ink-900">
+                  <b className="font-display">₹{o.total}</b> ·{" "}
+                  {new Date(o.placed_at).toLocaleString("en-IN")}
+                </p>
+                <div className="flex gap-2">
+                  <button className={lightGhostBtn} onClick={() => router.push(`/?track=${o.id}`)}>
+                    Track
+                  </button>
+                  <button className={lightGhostBtn} onClick={() => reorder(o.id)}>
+                    ↻ Reorder
+                  </button>
+                </div>
+              </div>
+              {o.status === "DELIVERED" && <ReviewBox orderId={o.id} />}
+            </Card>
+          ))}
+        </div>
+        {getUser() && <SupportBox />}
       </div>
-      {getUser() && <SupportBox />}
     </main>
   );
 }

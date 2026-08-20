@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ApiError, api, saveSession, type User } from "../../lib/api";
+import { Btn, Input, Modal, SectionHeading } from "./ui";
 
 type TokenResponse = { access_token: string; user: User };
 
@@ -54,51 +55,45 @@ export default function LoginModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="w-80 space-y-3 rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-bold">🥞 Login to order</h2>
-        <input
-          className="w-full rounded border border-stone-300 px-3 py-2"
-          placeholder="Phone (e.g. 98765 43210)"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-        {!requested ? (
-          <button
-            className="w-full rounded bg-amber-500 py-2 font-semibold disabled:opacity-50"
-            disabled={busy || phone.length < 10}
-            onClick={requestOtp}
-          >
-            Send OTP
-          </button>
-        ) : (
-          <>
-            {demoOtp !== null ? (
-              <p className="rounded bg-amber-100 px-3 py-2 text-sm">
-                📟 Demo mode — your OTP is <b>{demoOtp}</b>
-              </p>
-            ) : (
-              <p className="rounded bg-sky-100 px-3 py-2 text-sm">
-                ✈️ OTP sent to your linked <b>Telegram</b> — check your DMs
-              </p>
-            )}
-            <input
-              className="w-full rounded border border-stone-300 px-3 py-2"
-              placeholder="Enter OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-            />
-            <button
-              className="w-full rounded bg-amber-500 py-2 font-semibold disabled:opacity-50"
-              disabled={busy || otp.length !== 6}
-              onClick={verify}
-            >
-              Verify & continue
-            </button>
-          </>
-        )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-      </div>
-    </div>
+    <Modal tone="light" onClose={onClose} className="w-80 space-y-3 p-6">
+      <SectionHeading as="h2" className="text-lg text-leaf-800">
+        🥞 Login to order
+      </SectionHeading>
+      <Input
+        tone="light"
+        className="w-full py-2"
+        placeholder="Phone (e.g. 98765 43210)"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+      />
+      {!requested ? (
+        <Btn className="w-full" disabled={busy || phone.length < 10} onClick={requestOtp}>
+          Send OTP
+        </Btn>
+      ) : (
+        <>
+          {demoOtp !== null ? (
+            <p className="rounded-lg border border-brass-500/40 bg-cream-200 px-3 py-2 text-sm text-ink-900">
+              📟 Demo mode — your OTP is <b>{demoOtp}</b>
+            </p>
+          ) : (
+            <p className="rounded-lg border border-info-500/30 bg-info-200 px-3 py-2 text-sm text-ink-900">
+              ✈️ OTP sent to your linked <b>Telegram</b> — check your DMs
+            </p>
+          )}
+          <Input
+            tone="light"
+            className="w-full py-2"
+            placeholder="Enter OTP"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+          />
+          <Btn className="w-full" disabled={busy || otp.length !== 6} onClick={verify}>
+            Verify & continue
+          </Btn>
+        </>
+      )}
+      {error && <p className="text-sm text-chili-600">{error}</p>}
+    </Modal>
   );
 }

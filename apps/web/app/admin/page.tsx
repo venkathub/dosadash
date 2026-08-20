@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  Badge,
+  Btn,
+  Card,
+  Eyebrow,
+  Input,
+  SectionHeading,
+} from "../components/ui";
 import { clearAdminToken, getAdminToken, saveAdminToken } from "./adminApi";
 import { CopilotTab } from "./copilotTab";
 import { CouponsTab } from "./couponsTab";
@@ -12,8 +20,25 @@ import { SupportInboxTab } from "./supportInboxTab";
 import { TranslationsTab } from "./translationsTab";
 import { AuditTab, CombosTab, CostsTab, EvalsTab, MenuTab, NutritionTab, OrdersTab, SettingsTab } from "./tabs";
 
-const TABS = ["Menu", "Orders", "Inventory", "Support", "Reviews", "Reports", "CRM", "Copilot", "Combos", "Coupons", "Nutrition", "Translations", "Images", "Evals", "Costs", "Settings", "Audit"] as const;
+const TAB_GROUPS = [
+  { label: "Operations", tabs: ["Menu", "Orders", "Inventory", "Support", "Reviews"] },
+  { label: "Growth", tabs: ["Coupons", "Combos", "CRM", "Reports"] },
+  { label: "AI Studio", tabs: ["Copilot", "Nutrition", "Translations", "Images", "Evals", "Costs"] },
+  { label: "System", tabs: ["Settings", "Audit"] },
+] as const;
+
+const TABS = ["Menu", "Orders", "Inventory", "Support", "Reviews", "Coupons", "Combos", "CRM", "Reports", "Copilot", "Nutrition", "Translations", "Images", "Evals", "Costs", "Settings", "Audit"] as const;
 type Tab = (typeof TABS)[number];
+
+/** Display-only: read the role claim out of the stored JWT for the header chip. */
+function roleFromToken(token: string): string | null {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return typeof payload.role === "string" ? payload.role : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function Admin() {
   const [token, setToken] = useState<string | null>(null);
@@ -28,51 +53,80 @@ export default function Admin() {
   if (!ready) return null;
   if (!token) return <AdminLogin onLogin={setToken} />;
 
+  const role = roleFromToken(token);
+  const activeGroup = TAB_GROUPS.find((g) => (g.tabs as readonly string[]).includes(tab));
+
   return (
-    <main className="min-h-screen bg-stone-900 text-stone-100">
-      <header className="flex items-center gap-4 border-b border-stone-800 px-4 py-3">
-        <h1 className="text-lg font-bold text-amber-400">🥞 DosaDash — Backoffice</h1>
-        <nav className="flex gap-1">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`rounded px-3 py-1 text-sm ${
-                tab === t ? "bg-amber-500 font-semibold text-stone-900" : "text-stone-300 hover:bg-stone-800"
-              }`}
-            >
-              {t}
-            </button>
+    <main className="min-h-screen bg-leaf-950 text-leaf-100">
+      <header className="border-b border-white/5 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <h1 className="font-display text-lg font-semibold tracking-tight text-brass-300">🥞 DosaDash</h1>
+          <Eyebrow>Backoffice</Eyebrow>
+          {role && <Badge tone="brass">{role}</Badge>}
+          <Btn
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            onClick={() => {
+              clearAdminToken();
+              setToken(null);
+            }}
+          >
+            sign out
+          </Btn>
+        </div>
+        <nav className="mt-3 flex items-center gap-1 overflow-x-auto whitespace-nowrap pb-1">
+          {TAB_GROUPS.map((group, gi) => (
+            <span key={group.label} className="flex items-center gap-1">
+              {gi > 0 && (
+                <span aria-hidden className="mx-1.5 select-none tracking-[0.2em] text-brass-400/50">
+                  ·∙·
+                </span>
+              )}
+              <Eyebrow className="mr-1 hidden text-brass-300/50 sm:block">{group.label}</Eyebrow>
+              {group.tabs.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={
+                    tab === t
+                      ? "rounded-full btn-gold px-3 py-1 text-xs font-semibold"
+                      : "rounded-full px-3 py-1 text-xs text-leaf-200 transition-colors duration-150 hover:bg-leaf-800 hover:text-brass-300"
+                  }
+                >
+                  {t}
+                </button>
+              ))}
+            </span>
           ))}
         </nav>
-        <button
-          className="ml-auto text-xs text-stone-400 hover:text-stone-200"
-          onClick={() => {
-            clearAdminToken();
-            setToken(null);
-          }}
-        >
-          sign out
-        </button>
       </header>
       <section className="p-4" key={tab}>
-        {tab === "Menu" && <MenuTab />}
-        {tab === "Orders" && <OrdersTab />}
-        {tab === "Inventory" && <InventoryTab />}
-        {tab === "Support" && <SupportInboxTab />}
-        {tab === "Reviews" && <ReviewsTab />}
-        {tab === "Reports" && <ReportsTab />}
-        {tab === "CRM" && <CrmTab />}
-        {tab === "Copilot" && <CopilotTab />}
-        {tab === "Combos" && <CombosTab />}
-        {tab === "Coupons" && <CouponsTab />}
-        {tab === "Nutrition" && <NutritionTab />}
-        {tab === "Translations" && <TranslationsTab />}
-        {tab === "Images" && <ImagesTab />}
-        {tab === "Evals" && <EvalsTab />}
-        {tab === "Costs" && <CostsTab />}
-        {tab === "Settings" && <SettingsTab />}
-        {tab === "Audit" && <AuditTab />}
+        <div className="mb-3">
+          {activeGroup && <Eyebrow>{activeGroup.label}</Eyebrow>}
+          <SectionHeading as="h2" className="inline-block text-xl text-leaf-100">
+            {tab}
+          </SectionHeading>
+        </div>
+        <Card tone="dark" className="p-4 sm:p-5">
+          {tab === "Menu" && <MenuTab />}
+          {tab === "Orders" && <OrdersTab />}
+          {tab === "Inventory" && <InventoryTab />}
+          {tab === "Support" && <SupportInboxTab />}
+          {tab === "Reviews" && <ReviewsTab />}
+          {tab === "Reports" && <ReportsTab />}
+          {tab === "CRM" && <CrmTab />}
+          {tab === "Copilot" && <CopilotTab />}
+          {tab === "Combos" && <CombosTab />}
+          {tab === "Coupons" && <CouponsTab />}
+          {tab === "Nutrition" && <NutritionTab />}
+          {tab === "Translations" && <TranslationsTab />}
+          {tab === "Images" && <ImagesTab />}
+          {tab === "Evals" && <EvalsTab />}
+          {tab === "Costs" && <CostsTab />}
+          {tab === "Settings" && <SettingsTab />}
+          {tab === "Audit" && <AuditTab />}
+        </Card>
       </section>
     </main>
   );
@@ -122,47 +176,50 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-stone-900">
-      <div className="w-80 rounded-xl bg-stone-800 p-6 shadow-xl">
-        <h1 className="mb-4 text-lg font-bold text-amber-400">🥞 Backoffice sign-in</h1>
+    <main className="flex min-h-screen items-center justify-center bg-leaf-950">
+      <Card tone="dark" className="w-80 p-6 shadow-modal">
+        <div className="mb-4">
+          <div className="font-display text-lg font-semibold tracking-tight text-brass-300">🥞 DosaDash</div>
+          <SectionHeading as="h1" className="text-xl text-leaf-100">
+            Backoffice
+          </SectionHeading>
+        </div>
         {stage === "phone" ? (
           <>
-            <input
-              className="mb-3 w-full rounded bg-stone-700 px-3 py-2 text-stone-100 outline-none focus:ring-1 focus:ring-amber-400"
+            <Input
+              tone="dark"
+              className="mb-3 w-full py-2"
               placeholder="Phone number"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && request()}
             />
-            <button className="w-full rounded bg-amber-500 py-2 font-semibold text-stone-900 hover:bg-amber-400" onClick={request}>
+            <Btn variant="gold" className="w-full py-2" onClick={request}>
               Send OTP
-            </button>
+            </Btn>
           </>
         ) : (
           <>
             {demoOtp ? (
-              <p className="mb-2 text-sm text-stone-300">📟 Demo mode — your OTP is <b className="text-amber-300">{demoOtp}</b></p>
+              <p className="mb-2 text-sm text-leaf-200">📟 Demo mode — your OTP is <b className="text-brass-300">{demoOtp}</b></p>
             ) : (
-              <p className="mb-2 text-sm text-stone-300">✈️ OTP sent to your linked Telegram</p>
+              <p className="mb-2 text-sm text-leaf-200">✈️ OTP sent to your linked Telegram</p>
             )}
-            <input
-              className="mb-3 w-full rounded bg-stone-700 px-3 py-2 text-stone-100 outline-none focus:ring-1 focus:ring-amber-400"
+            <Input
+              tone="dark"
+              className="mb-3 w-full py-2"
               placeholder="6-digit OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && otp.length === 6 && verify()}
             />
-            <button
-              className="w-full rounded bg-amber-500 py-2 font-semibold text-stone-900 hover:bg-amber-400 disabled:opacity-40"
-              disabled={otp.length !== 6}
-              onClick={verify}
-            >
+            <Btn variant="gold" className="w-full py-2" disabled={otp.length !== 6} onClick={verify}>
               Sign in
-            </button>
+            </Btn>
           </>
         )}
-        {error && <p className="mt-3 text-sm text-red-300">⚠ {error}</p>}
-      </div>
+        {error && <p className="mt-3 text-sm text-chili-200">⚠ {error}</p>}
+      </Card>
     </main>
   );
 }

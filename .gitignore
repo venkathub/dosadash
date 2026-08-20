@@ -21,6 +21,7 @@ node_modules/
 .next/
 out/
 .turbo/
+*.tsbuildinfo
 
 # ML artifacts
 mlruns/
