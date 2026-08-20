@@ -27,6 +27,7 @@ Rate-limiter interplay (dosadash_api/ratelimit.py):
 
 import os
 import random
+from typing import Any
 
 from locust import HttpUser, between, events, task
 
@@ -40,8 +41,9 @@ RATE_LIMITED_COUNT = {"n": 0}
 
 
 @events.quitting.add_listener
-def _print_rate_limited(environment, **_kwargs) -> None:
+def _print_rate_limited(environment: Any, **_kwargs: Any) -> None:
     print(f"[ratelimit] 429 responses observed during run: {RATE_LIMITED_COUNT['n']}")
+
 
 CHAT_PROMPTS = [
     "Do you have masala dosa?",
@@ -51,7 +53,7 @@ CHAT_PROMPTS = [
 ]
 
 
-def _rate_limited(response) -> bool:
+def _rate_limited(response: Any) -> bool:
     """Count 429s as their own outcome — the limiter working is not a failure
     of the SERVICE, but we want it visible in the report."""
     if response.status_code == 429:
@@ -113,13 +115,21 @@ class Customer(HttpUser):
         self.token = None
         self.item_ids: list[int] = []
         phone = "+919" + "".join(random.choices("0123456789", k=9))
-        resp = self.client.post("/api/v1/auth/otp/request", json={"phone": phone})
-        otp = resp.json().get("demo_otp") if resp.status_code == 200 else None
+        with self.client.post(
+            "/api/v1/auth/otp/request", json={"phone": phone}, catch_response=True
+        ) as resp:
+            if _rate_limited(resp) or resp.status_code != 200:
+                return  # rate-limited or non-demo channel — stay anonymous
+            otp = resp.json().get("demo_otp")
         if not otp:
-            return  # rate-limited or non-demo channel — stay anonymous
-        verify = self.client.post("/api/v1/auth/otp/verify", json={"phone": phone, "otp": otp})
-        if verify.status_code == 200:
-            self.token = verify.json()["access_token"]
+            return
+        with self.client.post(
+            "/api/v1/auth/otp/verify", json={"phone": phone, "otp": otp}, catch_response=True
+        ) as resp:
+            if _rate_limited(resp):
+                return
+            if resp.status_code == 200:
+                self.token = resp.json()["access_token"]
 
     def _headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self.token}"} if self.token else {}
@@ -135,9 +145,7 @@ class Customer(HttpUser):
 
     @task(3)
     def browse_menu(self) -> None:
-        with self.client.get(
-            "/api/v1/menu", headers=self._headers(), catch_response=True
-        ) as resp:
+        with self.client.get("/api/v1/menu", headers=self._headers(), catch_response=True) as resp:
             if _rate_limited(resp):
                 return
             if resp.status_code == 200:
