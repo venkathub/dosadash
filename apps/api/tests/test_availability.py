@@ -39,6 +39,40 @@ def test_overnight_window_spans_midnight():
     assert not availability.item_on_schedule(late, SAT_LUNCH)
 
 
+TIFFIN = {  # dosa-style: breakfast AND dinner, never lunch — Phase 11 multi-window
+    d: [{"start": "06:00", "end": "11:30"}, {"start": "17:00", "end": "22:00"}]
+    for d in availability.WEEKDAYS
+}
+
+
+def test_multi_window_day_breakfast_and_dinner_not_lunch():
+    sat_breakfast = datetime(2026, 8, 22, 8, 0, tzinfo=IST)
+    sat_dinner = datetime(2026, 8, 22, 19, 30, tzinfo=IST)
+    assert availability.item_on_schedule(TIFFIN, sat_breakfast)
+    assert availability.item_on_schedule(TIFFIN, sat_dinner)
+    assert not availability.item_on_schedule(TIFFIN, SAT_LUNCH)  # dosa not at lunch
+    assert not availability.item_on_schedule(TIFFIN, SAT_NIGHT)
+
+
+def test_serving_windows_text_humanizes():
+    assert availability.serving_windows_text(None) is None
+    assert availability.serving_windows_text(TIFFIN) == "6–11:30 AM & 5–10 PM"
+    lunch_only = {d: {"start": "11:30", "end": "16:00"} for d in availability.WEEKDAYS}
+    assert availability.serving_windows_text(lunch_only) == "11:30 AM–4 PM"
+    weekend = {"sat": {"start": "11:30", "end": "16:00"}}
+    assert availability.serving_windows_text(weekend, SAT_LUNCH) == "today 11:30 AM–4 PM"
+    assert availability.serving_windows_text(weekend, SUN_LUNCH) == "not served today"
+
+
+def test_env_clock_override_pins_now_ist(monkeypatch):
+    monkeypatch.setenv("DOSADASH_NOW_IST", "2026-08-22T13:00:00")
+    pinned = availability.now_ist()
+    assert (pinned.year, pinned.hour, pinned.tzinfo) == (2026, 13, IST)
+    assert not availability.item_on_schedule(TIFFIN)  # lunch → dosa off-schedule
+    monkeypatch.delenv("DOSADASH_NOW_IST")
+    assert abs((availability.now_ist() - datetime.now(IST)).total_seconds()) < 5
+
+
 # ----------------------------------------------------------- integration level
 
 
