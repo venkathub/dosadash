@@ -1,7 +1,11 @@
 """FastAPI entrypoint for the core API service."""
 
-from fastapi import FastAPI
+from pathlib import Path
 
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from dosadash_api.config import get_settings
 from dosadash_api.routers.admin_combos import router as admin_combos_router
 from dosadash_api.routers.admin_copilot import router as admin_copilot_router
 from dosadash_api.routers.admin_costs import router as admin_costs_router
@@ -12,6 +16,7 @@ from dosadash_api.routers.admin_ingredients import router as admin_ingredients_r
 from dosadash_api.routers.admin_inventory import router as admin_inventory_router
 from dosadash_api.routers.admin_invoices import router as admin_invoices_router
 from dosadash_api.routers.admin_menu import router as admin_menu_router
+from dosadash_api.routers.admin_menu_images import router as admin_menu_images_router
 from dosadash_api.routers.admin_nutrition import router as admin_nutrition_router
 from dosadash_api.routers.admin_ops import router as admin_ops_router
 from dosadash_api.routers.admin_orders import router as admin_orders_router
@@ -45,6 +50,7 @@ app.include_router(admin_ingredients_router)
 app.include_router(admin_inventory_router)
 app.include_router(admin_invoices_router)
 app.include_router(admin_menu_router)
+app.include_router(admin_menu_images_router)
 app.include_router(admin_nutrition_router)
 app.include_router(admin_ops_router)
 app.include_router(admin_orders_router)
@@ -63,6 +69,12 @@ app.include_router(profile_router)
 app.include_router(recs_router)
 app.include_router(support_router)
 app.include_router(ws_router)
+
+# AI dish photos (Phase 7): owner-approved files served from the media dir
+# (named volume in compose; Caddy routes /media/* here).
+_media_root = Path(get_settings().media_dir)
+(_media_root / "menu").mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=_media_root), name="media")
 
 
 @app.get("/healthz", response_model=HealthStatus)

@@ -20,6 +20,8 @@ from dosadash_shared import (
     InventoryDraftResult,
     InvoiceExtractIn,
     InvoiceExtractResult,
+    MenuImageRequest,
+    MenuImageResult,
     MenuTranslationRequest,
     MenuTranslationResponse,
     NutritionEstimateRequest,
@@ -217,6 +219,21 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return MenuTranslationResponse.model_validate(resp.json())
+
+    async def generate_menu_image(self, request: MenuImageRequest) -> MenuImageResult:
+        """AI dish photo draft (Phase 7). Image models are slow — long timeout;
+        single provider ai-side, so failure comes back as one clean error."""
+        try:
+            async with httpx.AsyncClient(timeout=150) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/imagegen/menu-item",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return MenuImageResult.model_validate(resp.json())
 
 
 def get_ai_client() -> AIClient:

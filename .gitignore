@@ -45,3 +45,4 @@ logs/
 # MLflow local tracking (packages/ml training) — artifacts/ IS committed
 packages/ml/mlflow.db
 mlruns/
+media/

@@ -29,6 +29,7 @@ class MenuItemSummary(BaseModel):
     spice_level: int
     meal_periods: list[str] = []
     image_url: str | None = None
+    image_ai: bool = False  # AI-generated photo — always labeled (Phase 7)
     allergens: list[str] = []
     # Localization (Phase 7): when ?lang= is served, `name`/`description`
     # carry the APPROVED translation, `canonical_name` keeps the English
