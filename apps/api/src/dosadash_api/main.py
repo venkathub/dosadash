@@ -1,5 +1,6 @@
 """FastAPI entrypoint for the core API service."""
 
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -73,10 +74,18 @@ app.include_router(support_router)
 app.include_router(ws_router)
 
 # AI dish photos (Phase 7): owner-approved files served from the media dir
-# (named volume in compose; Caddy routes /media/* here).
+# (named volume in compose; Caddy routes /media/* here). Media is a
+# nice-to-have — a broken volume mount must degrade to "no photos", never
+# take checkout down (learned in prod: a root-owned fresh volume denied
+# mkdir and crash-looped the whole api).
 _media_root = Path(get_settings().media_dir)
-(_media_root / "menu").mkdir(parents=True, exist_ok=True)
-app.mount("/media", StaticFiles(directory=_media_root), name="media")
+try:
+    (_media_root / "menu").mkdir(parents=True, exist_ok=True)
+    app.mount("/media", StaticFiles(directory=_media_root), name="media")
+except OSError:
+    logging.getLogger(__name__).exception(
+        "media dir %s unusable — /media disabled, API continues without photos", _media_root
+    )
 
 
 @app.get("/healthz", response_model=HealthStatus)
