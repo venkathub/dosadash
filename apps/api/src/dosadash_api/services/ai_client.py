@@ -11,6 +11,8 @@ from dosadash_shared import (
     CopilotAnswer,
     CopilotAskIn,
     CostSummaryResponse,
+    DishQCIn,
+    DishQCResult,
     EtaRequest,
     EtaResponse,
     InventoryDraftRequest,
@@ -92,6 +94,20 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return InvoiceExtractResult.model_validate(resp.json())
+
+    async def qc_dish(self, request: DishQCIn) -> DishQCResult:
+        """Dish-photo QC (Phase 7): VLM observations + deterministic verdict."""
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/qc/dish",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return DishQCResult.model_validate(resp.json())
 
     async def draft_inventory_pos(self, request: InventoryDraftRequest) -> InventoryDraftResult:
         """Inventory agent (Phase 6): needs math + LLM pass + guardrail."""
