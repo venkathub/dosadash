@@ -1,47 +1,57 @@
-# 07 — Resume Bullets (targets — replace with YOUR real measured numbers)
+# 07 — Resume Bullets (real measured numbers — sources in parentheses)
+
+All numbers below are measured and reproducible: eval-gate runs are recorded in the
+`eval_runs` table (admin scoreboard), ML numbers live in committed benchmark
+artifacts under `packages/ml/artifacts/`, load numbers in `infra/loadtest/results.md`.
+Where a number comes from synthetic data or simulation, the bullet says so — that
+honesty is itself a talking point.
 
 ## Project Header
 
-**DosaDash — AI-Native Cloud Kitchen Platform** (Production: <your-domain> · GitHub: <repo>)
-*Python, FastAPI, LangGraph, PostgreSQL/pgvector, Next.js, XGBoost, MLflow, Langfuse, Docker — deployed on VPS*
+**DosaDash — AI-Native Cloud Kitchen Platform** (Production: dosadash.venkateshs.dev · GitHub: venkathub/dosadash)
+*Python, FastAPI, LangGraph, PostgreSQL/pgvector, Next.js, XGBoost, MLflow, Langfuse, Docker — deployed on a 4 GB VPS*
 
 ## Bullets (pick 4–6 per application, tailor to JD)
 
 ### AI/LLM Engineering
-- Built and production-deployed an AI-native cloud kitchen platform serving a conversational ordering agent (web + Telegram + voice) with **97% order-extraction accuracy** across 150+ golden multilingual test conversations, enforced as a CI merge gate.
-- Designed a production RAG pipeline (hybrid BM25 + pgvector retrieval, RRF fusion, LLM reranking) over recipe/allergen knowledge base, achieving **0 menu hallucinations** via DB-grounded output validation guardrails.
-- Implemented LangGraph multi-agent system — inventory procurement agent (forecast-driven PO drafting with human-in-the-loop Telegram approvals) and guardrailed customer-support agent — plus an **MCP server** enabling external LLM clients to place orders via tools.
-- Fine-tuned a LoRA aspect-sentiment model matching gpt-4o-mini zero-shot accuracy at **~15x lower inference cost**, with a documented build-vs-API benchmark.
+- Built and production-deployed an AI-native cloud-kitchen platform serving a conversational ordering agent (web + Telegram text/voice, EN/Hinglish/Tanglish/Tamil) with **96.4% order-extraction accuracy, 100% tool correctness and 0 guardrail bypasses** across a 168-conversation live golden set, enforced as a **CI merge gate (≥95%)** that blocked two real regressions pre-merge (at 85% and 92.7%).
+- Designed a production RAG pipeline (hybrid BM25 + pgvector RRF → LLM rerank → citations) with an event cascade that re-embeds on menu changes; **zero menu hallucinations reach checkout** via DB-grounded validation of every structured `OrderDraft` — enforced by guardrail-bypass evals, not prompt-begging.
+- Implemented LangGraph agents with deterministic guardrails — forecast-driven inventory agent (draft POs → human Telegram approval), support agent (refunds structurally impossible to auto-execute; escalation inbox), promo agent, and a text-to-SQL analytics copilot (read-only DB role, SQL allowlist, self-correction) — plus an **MCP server letting Claude Desktop place real orders** through the production order service.
+- Fine-tuned a LoRA aspect-sentiment model (DistilBERT, 16-label multi-hot) that **beat gpt-4o-mini zero-shot on the same held-out set (macro-F1 0.9944 vs 0.9926)** at **₹0 vs ₹3.20 per 1k reviews**, quantized to INT8 ONNX serving at **~57 ms/review on VPS CPU** with 97.2% confident coverage and LLM fallback for the residue (scored nightly via provider Batch API at 50% price).
 
 ### LLMOps / Production
-- Instrumented full LLMOps stack (Langfuse tracing, token-cost dashboards, prompt A/B testing); cut LLM cost per order **~40%** via model routing (Groq/OpenAI fallback chains) and Redis semantic caching.
-- Established LLM eval pipeline (golden datasets incl. Hinglish/Tanglish + adversarial injection cases, LLM-as-judge rubrics) gating every PR in GitHub Actions.
-- Deployed 7-service Docker Compose stack on a 4 GB VPS with Caddy/Cloudflare, health-checked zero-downtime CI/CD, nightly backups, and uptime monitoring — **~$10/month total running cost**.
+- Instrumented the full LLMOps loop: every LLM call traced to Langfuse (session, user, prompt version), token-cost dashboard, Redis **semantic cache with measured hit rate** surfaced in the admin UI, prompt-cache-friendly stable prefixes with the provider's real `cached_tokens` share measured — plus litellm routing with a 3-model fallback chain.
+- Established the eval pipeline as infrastructure: versioned golden datasets with coverage-floor gates (adversarial injection, sold-out, allergen-conflict, per-language floors incl. Tamil ≥0.80), LLM-as-judge tone rubric, key-free asset gates in unit CI, and live suites gating every PR that touches AI paths in GitHub Actions.
+- Deployed the 8-service Docker Compose stack (**≈2.6 GB of a 4 GB VPS**) with Caddy, health-checked CI/CD via SSH where **merge-to-main = production deploy**; the pipeline's own smoke test caught a crash-looping deploy that was fixed and hotfixed within minutes (postmortem in repo).
+- Hardened for the public internet: tiered rate limiting (LLM endpoints strictest; fail-open on Redis outage; **load-tested shedding 343 abusive requests while served P50 held 17 ms**), PII redaction before any LLM call including batch files, HMAC-verified webhooks.
 
 ### ML Engineering
-- Trained XGBoost demand-forecasting models with festival-calendar features (Pongal/Diwali) reducing simulated food waste **~22%**; automated nightly scoring and weekly retraining via Celery + MLflow registry with alias-based rollback.
-- Built implicit-feedback (ALS) recommender with embedding-based cold-start fallback; checkout combo suggestions lifted simulated AOV **~12%** in A/B test.
-- Shipped prep-time/ETA regression powering live customer order tracking and kitchen queue prioritization.
+- Trained XGBoost per-dish demand forecasting with festival-calendar features (Pongal/Diwali multipliers) achieving **WAPE 0.421 vs 0.555 naive lag-7 baseline (−24%)** on synthetic history; nightly Celery scoring with MLflow registry where champions are **promoted only on measured improvement**.
+- Built an implicit-feedback ALS recommender: **Recall@10 0.417 vs 0.378 popularity baseline, and tail-Recall@10 0.345 vs 0.000** — on a 52-item catalog the long-tail number is the personalization story; embedding cold-start fallback; serving folds live DB history via ALS normal equations (numpy-only, no training deps in the image).
+- Ran a 3-arm simulated A/B (3,273 holdout checkouts) for checkout combo suggestions: **15.6% attach vs 12.8% random, +4.9% AOV vs control** — with the caveat documented in the artifact that this validates taste recovery on synthetic personas, not real-world uplift.
+- Shipped an ETA regression (MAE 3.35 min at the synthetic noise floor — oracle 3.32) powering live order tracking.
 
 ### Full-Stack / Platform
-- Implemented passwordless OTP authentication with pluggable delivery channels (Telegram DM / demo UI), rotating refresh tokens, rate limiting, and 4-role RBAC.
-- Built complete cloud-kitchen back office (menu ops with instant "86" propagation, inventory, CRM with churn scoring, promotions, GST reports) using an **event-driven cascade keeping the AI layer consistent with business state** (menu edits auto-re-embed RAG; kitchen-pause propagates to agents in real time).
-- Designed multi-channel order ingestion (web, Telegram, simulated aggregator webhooks) behind a unified order state machine with WebSocket fan-out to kitchen displays.
+- Implemented passwordless OTP auth with pluggable delivery channels (Telegram DM / demo UI) behind an `OtpChannel` interface, rotating refresh tokens, tiered rate limiting, and 4-role RBAC with audit logging.
+- Built the complete backoffice (menu ops with instant 86 propagation, inventory + VLM invoice OCR with human review, CRM churn scoring, promos, GST reports, eval scoreboard, cost dashboards) on an **event-driven cascade that keeps the AI layer consistent with business state** — a menu edit re-embeds RAG and flushes caches in the same breath; stock changes deliberately don't (separate channel).
+- Designed multi-channel order ingestion (web, Telegram, MCP, HMAC-verified simulated aggregator) converging on one order state machine with WebSocket fan-out to kitchen displays; **load-tested at 100 concurrent users with 0 failures (P50 24 ms / P95 210 ms; checkout P95 370 ms across 91 real end-to-end orders)** on a single-process api matching prod topology.
+- **683 tests + 115 eval-asset gates**; conventional commits; phase branches → protected `main`; every phase deployed to production before the next began.
 
 ## Interview Talking Points
 
-1. **Why one Postgres for OLTP + vectors?** Right-sized trade-off at this scale; HNSW + FTS in one box; describe the migration path to a dedicated vector DB.
-2. **Zero-hallucination guardrail** — structured outputs + DB validation beats prompt-begging.
-3. **Evals as merge gates** — show a PR that CI blocked, and the fix.
-4. **LoRA vs API benchmark** — accuracy/cost/latency table; when fine-tuning wins.
-5. **Event cascade** — how AI stays consistent with business state (most demos miss this).
-6. **Scaling story** — seams already in place (service boundaries, provider interfaces, pub/sub, brand_id) → config change, not rewrite.
-7. **Scope discipline** — simulated aggregator, deferred multi-brand UI, explicit cuts.
+1. **Why one Postgres for OLTP + vectors?** Right-sized trade-off at this scale; HNSW + FTS in one box; migration path to a dedicated vector DB is a config seam, not a rewrite.
+2. **Zero-hallucination guardrail** — structured outputs + DB validation beats prompt-begging; show the guardrail-bypass suite (45 adversarial cases, 0 bypasses).
+3. **Evals as merge gates** — show the two PRs CI actually blocked (85% and 92.7% runs on the scoreboard) and the fixes (data calibration + prompt v2/v3); also the flaky-first re-run protocol.
+4. **LoRA vs API benchmark** — the committed accuracy/cost/latency artifact; when fine-tuning wins (high-volume, narrow-label tasks) and the honesty note (planted-label recovery, not human agreement).
+5. **Event cascade** — how AI stays consistent with business state (most demos miss this); why inventory events deliberately DON'T re-embed RAG.
+6. **Measure, don't assume** — raw-count ALS lost to popularity until log1p; QUInt8 beat QInt8 empirically; fixed-priority combo ranking lost to random in the A/B sim; cache tuning deferred until metrics existed.
+7. **Scaling story** — service boundaries, provider interfaces, pub/sub, `brand_id` already in schema → config change, not rewrite.
+8. **Scope discipline** — simulated aggregator, deferred multi-brand UI, explicit cut line; 12 weeks, nothing cut in the end.
 
 ## Demo Script (3 minutes)
 
-1. (30s) Customer: OTP login → voice note in Telegram → agent builds order → pay with test card → live tracking with AI ETA.
-2. (45s) Ask bot "is sambar vegan?" → RAG answer with citations; try prompt injection → refusal.
-3. (45s) Owner: dashboard anomaly flag → 86 an item → show bot instantly refusing it → approve AI-drafted PO from Telegram.
-4. (30s) Langfuse traces + cost dashboard + CI eval gate screenshot.
-5. (30s) Claude Desktop orders a dosa via MCP.
+1. (30s) Customer: OTP login (on-screen demo OTP) → voice note in Telegram → agent builds order → pay with test card → live tracking with AI ETA.
+2. (45s) Ask "is the ghee roast vegan?" → RAG answer with citations; order in Tamil script; try prompt injection → refusal. Show "my usual".
+3. (45s) Owner: 86 an item → agent instantly refuses it (offering allergen-checked alternatives) → approve the AI-drafted PO from Telegram → upload a supplier invoice photo → VLM extraction lands in the review queue.
+4. (30s) Backoffice: eval scoreboard (incl. the two blocked runs), Langfuse traces, cost + cache dashboards, analytics copilot refusing a PII query.
+5. (30s) Claude Desktop orders a dosa via MCP → it appears on the KDS.
