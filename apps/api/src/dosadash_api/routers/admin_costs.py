@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from dosadash_api.auth.deps import require_role
 from dosadash_api.db.models import User
 from dosadash_api.services.ai_client import AIClient, AIServiceError, get_ai_client
-from dosadash_shared import CostSummaryResponse, Role
+from dosadash_shared import CacheStatsResponse, CostSummaryResponse, Role
 
 router = APIRouter(prefix="/api/v1/admin/costs", tags=["admin:costs"])
 
@@ -29,3 +29,15 @@ async def daily_costs(
         return await ai.daily_costs(days=days)
     except AIServiceError as exc:
         raise HTTPException(status_code=502, detail="Cost data unavailable") from exc
+
+
+@router.get("/cache", response_model=CacheStatsResponse)
+async def cache_stats(
+    ai: Annotated[AIClient, Depends(get_ai_client)],
+    admin: User = AdminUser,
+) -> CacheStatsResponse:
+    """Semantic-cache hit rate + provider prompt-cache share (Phase 9)."""
+    try:
+        return await ai.cache_stats()
+    except AIServiceError as exc:
+        raise HTTPException(status_code=502, detail="Cache stats unavailable") from exc

@@ -149,6 +149,34 @@ export type CostSummary = {
   total_cost_usd: number;
 };
 
+/* ------------------------------------------------ cache stats (Phase 9) */
+
+export type SemcacheStats = {
+  exact_hits: number;
+  semantic_hits: number;
+  misses: number;
+  stores: number;
+  flushes: number;
+  lookups: number;
+  hit_rate: number;
+};
+
+export type PromptCacheStats = {
+  calls: number;
+  prompt_tokens: number;
+  cached_prompt_tokens: number;
+  completion_tokens: number;
+  cached_share: number;
+};
+
+export type CacheStats = {
+  semcache: SemcacheStats;
+  prompt_cache: PromptCacheStats;
+  semcache_enabled: boolean;
+  semcache_threshold: number;
+  semcache_ttl_seconds: number;
+};
+
 /* ---------------------------------------------------- reports + CRM (Phase 5) */
 
 /** Authenticated raw-text fetch (CSV downloads). */

@@ -19,6 +19,7 @@ import litellm
 from pydantic import BaseModel, ValidationError
 
 from dosadash_ai.config import get_settings
+from dosadash_ai.llm.usage_stats import get_usage_stats
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +93,11 @@ async def structured_completion[T: BaseModel](
                 logger.warning("llm call failed on %s: %s", model, exc)
                 last_error = exc
                 break
+            # Phase 9 observability: accumulate prompt-cache token counters
+            # (best-effort, never raises). Streaming path is not counted —
+            # providers omit usage on streamed chunks; Langfuse stays the
+            # billing source of truth.
+            await get_usage_stats().record_response(response)
             raw = response.choices[0].message.content or ""
             try:
                 return response_model.model_validate_json(raw), model
