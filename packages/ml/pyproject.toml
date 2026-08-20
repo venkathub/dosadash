@@ -16,6 +16,14 @@ dependencies = [
 infer = [
     "xgboost>=2.1",
 ]
+# INT8 ONNX sentiment champion serving (Phase 8): onnxruntime + the Rust
+# tokenizers lib only — torch/transformers/peft stay in the root `finetune`
+# dependency group and NEVER reach the VPS images (Hard Rule 7 economics).
+sentiment = [
+    "onnxruntime>=1.19",
+    "tokenizers>=0.20",
+    "numpy>=1.26",
+]
 forecast = [
     "dosadash-ml[infer]",
     "pandas>=2.2",

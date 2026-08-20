@@ -23,6 +23,7 @@ from dosadash_api.db.models import (
     Order,
     OrderItem,
     RecipeIngredient,
+    Review,
     Settings,
     User,
     UserPreference,
@@ -31,7 +32,10 @@ from dosadash_api.db.session import get_sessionmaker
 from dosadash_ml.datagen import (
     INGREDIENTS,
     MENU_ITEMS,
+    SyntheticOrder,
+    SyntheticUser,
     generate_orders,
+    generate_reviews,
     generate_users,
     validate_menu,
 )
@@ -85,8 +89,7 @@ async def _seed_menu(session: AsyncSession) -> tuple[Brand, dict[str, MenuItem]]
     return brand, item_rows
 
 
-async def _seed_users(session: AsyncSession, n: int, seed: int) -> dict[str, User]:
-    synth = generate_users(n=n, seed=seed)
+async def _seed_users(session: AsyncSession, synth: list[SyntheticUser]) -> dict[str, User]:
     rows: dict[str, User] = {}
     for su in synth:
         rows[su.phone] = User(phone=su.phone, name=su.name, role=Role.CUSTOMER)
@@ -111,13 +114,11 @@ async def _seed_orders(
     brand: Brand,
     items: dict[str, MenuItem],
     users: dict[str, User],
-    *,
-    days: int,
-    n_users: int,
-    seed: int,
-) -> int:
-    synth_orders = generate_orders(generate_users(n=n_users, seed=seed), days=days, seed=seed)
-    count = 0
+    synth_orders: list[SyntheticOrder],
+) -> list[Order]:
+    """Insert orders; the returned list is index-aligned with `synth_orders`
+    so review rows can reference their order by generation index."""
+    rows: list[Order] = []
     for start in range(0, len(synth_orders), BATCH):
         batch = synth_orders[start : start + BATCH]
         for so in batch:
@@ -146,6 +147,35 @@ async def _seed_orders(
                 for line in so.items
             ]
             session.add(order)
+            rows.append(order)
+        await session.flush()
+    return rows
+
+
+async def _seed_reviews(
+    session: AsyncSession,
+    users: dict[str, User],
+    order_rows: list[Order],
+    synth_users: list[SyntheticUser],
+    synth_orders: list[SyntheticOrder],
+    seed: int,
+) -> int:
+    """Insert reviews for ~22% of orders. Only rating/text land in the DB —
+    the planted aspect labels stay in datagen (training/benchmark ground
+    truth must never leak into rows the scoring models can see)."""
+    synth_reviews = generate_reviews(synth_users, synth_orders, seed=seed)
+    count = 0
+    for start in range(0, len(synth_reviews), BATCH):
+        for sr in synth_reviews[start : start + BATCH]:
+            session.add(
+                Review(
+                    order_id=order_rows[sr.order_index].id,
+                    user_id=users[sr.user_phone].id,
+                    rating=sr.rating,
+                    text=sr.text,
+                    created_at=sr.created_at,  # naive, like all TimestampMixin columns
+                )
+            )
             count += 1
         await session.flush()
     return count
@@ -161,15 +191,18 @@ async def seed(
             print(f"seed: skipped ({existing} brand(s) already present)")
             return
         brand, item_rows = await _seed_menu(session)
-        user_rows = await _seed_users(session, users, seed_val)
-        n_orders = await _seed_orders(
-            session, brand, item_rows, user_rows, days=days, n_users=users, seed=seed_val
+        synth_users = generate_users(n=users, seed=seed_val)
+        synth_orders = generate_orders(synth_users, days=days, seed=seed_val)
+        user_rows = await _seed_users(session, synth_users)
+        order_rows = await _seed_orders(session, brand, item_rows, user_rows, synth_orders)
+        n_reviews = await _seed_reviews(
+            session, user_rows, order_rows, synth_users, synth_orders, seed_val
         )
         session.add(Settings(id=1, delivery_pincodes=["600001", "600002", "600004", "600017"]))
         await session.commit()
         print(
             f"seed: ok — {len(item_rows)} menu items, {len(user_rows)} users, "
-            f"{n_orders} orders over {days} days (seed={seed_val})"
+            f"{len(order_rows)} orders over {days} days, {n_reviews} reviews (seed={seed_val})"
         )
 
 

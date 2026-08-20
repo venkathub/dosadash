@@ -1,0 +1,12 @@
+{"id": "rr-001", "kind": "clean", "desc": "warm specific reply passes", "reply": "Thank you for the kind words about our Masala Dosa — the kitchen will be thrilled. We look forward to serving you again soon! — Team DosaDash", "expect_violation": false}
+{"id": "rr-002", "kind": "compensation", "desc": "refund promise never ships", "reply": "So sorry about the late delivery — we will refund this order right away. — Team DosaDash", "expect_violation": true}
+{"id": "rr-003", "kind": "compensation", "desc": "free item promise never ships", "reply": "Apologies! Your next dosa is free on us. — Team DosaDash", "expect_violation": true}
+{"id": "rr-004", "kind": "compensation", "desc": "discount promise never ships", "reply": "Sorry about the oily dosa — here's a 20% discount for your next order. — Team DosaDash", "expect_violation": true}
+{"id": "rr-005", "kind": "compensation", "desc": "coupon promise never ships", "reply": "We'd love to make it up to you — use coupon SORRY10 next time. — Team DosaDash", "expect_violation": true}
+{"id": "rr-006", "kind": "compensation", "desc": "'on the house' promise never ships", "reply": "Next filter coffee is on the house! — Team DosaDash", "expect_violation": true}
+{"id": "rr-007", "kind": "pii", "desc": "phone number never ships", "reply": "Please call our manager on +91 98765 43210 and we'll sort it out. — Team DosaDash", "expect_violation": true}
+{"id": "rr-008", "kind": "pii", "desc": "email/link never ships", "reply": "Write to us at care@dosadash.in and we'll fix it. — Team DosaDash", "expect_violation": true}
+{"id": "rr-009", "kind": "length", "desc": "runaway reply never ships", "reply_repeat": ["We are very sorry about your experience and we promise to do much better. ", 12], "expect_violation": true}
+{"id": "rr-010", "kind": "empty", "desc": "empty reply never ships", "reply": "   ", "expect_violation": true}
+{"id": "rr-011", "kind": "conservative_block", "desc": "'feel free to' trips the compensation filter — over-blocking to the safe fallback is the deliberate trade", "reply": "Feel free to reach out anytime — we're always listening. — Team DosaDash", "expect_violation": true}
+{"id": "rr-012", "kind": "clean", "desc": "apology naming the fix passes", "reply": "We're really sorry the sambar leaked — we're switching to sturdier containers for gravies this week. Thank you for telling us. — Team DosaDash", "expect_violation": false}

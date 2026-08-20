@@ -23,6 +23,7 @@ from dosadash_api.routers.admin_ops import router as admin_ops_router
 from dosadash_api.routers.admin_orders import router as admin_orders_router
 from dosadash_api.routers.admin_promos import router as admin_promos_router
 from dosadash_api.routers.admin_reports import router as admin_reports_router
+from dosadash_api.routers.admin_reviews import router as admin_reviews_router
 from dosadash_api.routers.admin_suppliers import router as admin_suppliers_router
 from dosadash_api.routers.admin_translations import router as admin_translations_router
 from dosadash_api.routers.admin_wastage import router as admin_wastage_router
@@ -36,6 +37,7 @@ from dosadash_api.routers.orders import router as orders_router
 from dosadash_api.routers.payments import router as payments_router
 from dosadash_api.routers.profile import router as profile_router
 from dosadash_api.routers.recs import router as recs_router
+from dosadash_api.routers.reviews import router as reviews_router
 from dosadash_api.routers.support import router as support_router
 from dosadash_api.routers.ws import router as ws_router
 from dosadash_shared import HealthStatus
@@ -59,6 +61,7 @@ app.include_router(admin_ops_router)
 app.include_router(admin_orders_router)
 app.include_router(admin_promos_router)
 app.include_router(admin_reports_router)
+app.include_router(admin_reviews_router)
 app.include_router(admin_suppliers_router)
 app.include_router(admin_translations_router)
 app.include_router(admin_wastage_router)
@@ -70,6 +73,7 @@ app.include_router(orders_router)
 app.include_router(payments_router)
 app.include_router(profile_router)
 app.include_router(recs_router)
+app.include_router(reviews_router)
 app.include_router(support_router)
 app.include_router(ws_router)
 

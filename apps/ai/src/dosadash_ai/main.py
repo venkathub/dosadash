@@ -22,6 +22,7 @@ from dosadash_ai.routers.promo import router as promo_router
 from dosadash_ai.routers.qc import router as qc_router
 from dosadash_ai.routers.rag import router as rag_router
 from dosadash_ai.routers.recs import router as recs_router
+from dosadash_ai.routers.reviews import router as reviews_router
 from dosadash_ai.routers.stt import router as stt_router
 from dosadash_ai.routers.support import router as support_router
 from dosadash_ai.routers.translation import router as translation_router
@@ -82,6 +83,7 @@ app.include_router(qc_router)
 app.include_router(promo_router)
 app.include_router(translation_router)
 app.include_router(imagegen_router)
+app.include_router(reviews_router)
 
 
 @app.get("/healthz", response_model=HealthStatus)

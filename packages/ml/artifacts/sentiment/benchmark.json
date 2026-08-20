@@ -1,0 +1,41 @@
+{
+  "model_version": "dosadash-sentiment/v2",
+  "subset_n": 250,
+  "test_n": 772,
+  "lora": {
+    "full_test": {
+      "micro_f1": 0.996571,
+      "macro_f1": 0.995608,
+      "exact_match": 0.989637,
+      "sentiment_accuracy": 0.993523,
+      "examples": 772.0
+    },
+    "zero_shot_subset": {
+      "micro_f1": 0.995327,
+      "macro_f1": 0.994381,
+      "exact_match": 0.988,
+      "sentiment_accuracy": 0.992,
+      "examples": 250.0
+    },
+    "cpu_ms_per_review": 34.86,
+    "cost_inr_per_1k_reviews": 0.0,
+    "cost_note": "self-hosted CPU inference on the existing VPS \u2014 zero marginal cost"
+  },
+  "zero_shot": {
+    "models_used": [
+      "gpt-4o-mini"
+    ],
+    "prompt_version": "review_sentiment_v1",
+    "zero_shot_subset": {
+      "micro_f1": 0.993039,
+      "macro_f1": 0.992558,
+      "exact_match": 0.98,
+      "sentiment_accuracy": 1.0,
+      "examples": 250.0
+    },
+    "cost_inr_per_1k_reviews": 3.2
+  },
+  "macro_f1_gap_on_subset": 0.001823,
+  "ran_at": "2026-08-20T12:35:04.073893+00:00",
+  "honesty": "planted synthetic labels: measures label recovery on this distribution, not human agreement; zero-shot cost estimated from token counts"
+}

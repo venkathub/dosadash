@@ -1,8 +1,9 @@
 name: dosadash
 
 # Memory budget (4 GB VPS, docs/02): postgres ~512M, redis ~128M,
-# api ~384M, ai ~512M, web ~256M, caddy ~64M, bot ~128M,
-# worker ~320M + redis-celery ~48M (Phase 5) — total limits ≈ 2.35 GB.
+# api ~384M, ai ~768M (Phase 8: +INT8 DistilBERT sentiment champion,
+# ~150 MB loaded), web ~256M, caddy ~64M, bot ~128M,
+# worker ~320M + redis-celery ~48M (Phase 5) — total limits ≈ 2.6 GB.
 
 services:
   postgres:
@@ -172,7 +173,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 768M
 
   web:
     build:

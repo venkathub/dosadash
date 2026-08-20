@@ -21,6 +21,7 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Enum,
@@ -656,3 +657,78 @@ class WastageEntry(Base):
     )
 
     ingredient: Mapped[Ingredient] = relationship()
+
+
+# --------------------------------------------------------------------------- reviews (Phase 8)
+
+
+class Review(TimestampMixin, Base):
+    """Customer review for one DELIVERED order (docs/06) — one per order.
+
+    `sentiment`/`aspects` are written by the scoring path (zero-shot LLM now,
+    quantized LoRA later), never by the customer: NULL sentiment = unscored,
+    and `scored_model`/`scored_prompt_version` keep provenance so the
+    LoRA-vs-API benchmark can be read straight off the table.
+
+    Reply flow mirrors the owner-approval pattern: `reply_draft` is the
+    AI-drafted reply (backoffice-only); only an explicit publish copies text
+    into `owner_reply` (source AI_DRAFT if the draft shipped, MANUAL if the
+    owner wrote their own).
+    """
+
+    __tablename__ = "reviews"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    rating: Mapped[int] = mapped_column()
+    text: Mapped[str] = mapped_column(Text, default="")
+    # scoring output + provenance (NULL sentiment = not scored yet)
+    sentiment: Mapped[str | None] = mapped_column(
+        Enum("POSITIVE", "NEGATIVE", "MIXED", name="review_sentiment")
+    )
+    aspects: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
+    scored_model: Mapped[str | None] = mapped_column(String(80))
+    scored_prompt_version: Mapped[str | None] = mapped_column(String(40))
+    scored_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # owner reply flow
+    reply_draft: Mapped[str | None] = mapped_column(Text)
+    reply_draft_model: Mapped[str | None] = mapped_column(String(80))
+    owner_reply: Mapped[str | None] = mapped_column(Text)
+    reply_source: Mapped[str | None] = mapped_column(
+        Enum("AI_DRAFT", "MANUAL", name="reply_source")
+    )
+    replied_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    replied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (CheckConstraint("rating BETWEEN 1 AND 5", name="rating_range"),)
+
+
+class ReviewBatchJob(TimestampMixin, Base):
+    """One submitted provider Batch API job for review scoring (Phase 8
+    slice 5). `chunks` is the authoritative custom_id → review_ids mapping
+    recorded at submit time and handed back to the ai service at poll time
+    (the ai side stays stateless). SUBMITTED jobs also act as a dedup set:
+    the nightly task never re-submits a review that is already in flight.
+
+    Batch provenance lives here rather than in Langfuse — litellm's
+    callback does not fire for the files/batches endpoints."""
+
+    __tablename__ = "review_batch_jobs"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    provider: Mapped[str] = mapped_column(String(20), default="openai")
+    provider_batch_id: Mapped[str] = mapped_column(String(80), unique=True)
+    model: Mapped[str] = mapped_column(String(80))
+    prompt_version: Mapped[str] = mapped_column(String(40))
+    chunks: Mapped[list[list[int]]] = mapped_column(JSONB)
+    n_reviews: Mapped[int] = mapped_column()
+    status: Mapped[str] = mapped_column(
+        Enum("SUBMITTED", "COMPLETED", "FAILED", name="review_batch_status"),
+        default="SUBMITTED",
+        index=True,
+    )
+    scored: Mapped[int | None] = mapped_column()
+    failed: Mapped[int | None] = mapped_column()
+    error: Mapped[str | None] = mapped_column(Text)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

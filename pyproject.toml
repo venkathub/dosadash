@@ -24,6 +24,26 @@ dev = [
     "ruff>=0.8",
     "fakeredis>=2.26",
 ]
+# LoRA fine-tune stack (Phase 8) — a GROUP, not an extra, so CI's
+# `--all-extras` sync and the VPS images never pull torch. CPU-only wheels
+# by design: the whole point is CPU training/serving economics.
+#   uv sync --group finetune
+finetune = [
+    "torch>=2.4",
+    "transformers>=4.44",
+    "peft>=0.13",
+    # ONNX INT8 export of the champion (serving artifact — Phase 8 slice 4)
+    "onnx>=1.16",
+    "onnxruntime>=1.19",
+]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.ruff]
 line-length = 100
