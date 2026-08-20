@@ -84,9 +84,12 @@ from dosadash_shared.copilot import (
     CopilotDraft,
 )
 from dosadash_shared.costs import (
+    CacheStatsResponse,
     CostSummaryResponse,
     DailyCost,
     ModelDailyCost,
+    PromptCacheStats,
+    SemcacheStats,
 )
 from dosadash_shared.coupons import (
     MAX_FLAT_VALUE,
@@ -305,7 +308,10 @@ __all__ = [
     "ComboStatusIn",
     "ComboUpdateIn",
     "CouponType",
+    "CacheStatsResponse",
     "CostSummaryResponse",
+    "PromptCacheStats",
+    "SemcacheStats",
     "COPILOT_PROMPT_VERSION",
     "CellValue",
     "CouponCreateIn",

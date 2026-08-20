@@ -6,9 +6,17 @@ from dosadash_api.auth.security import create_access_token
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import User
 from dosadash_api.services.ai_client import AIServiceError, get_ai_client
-from dosadash_shared import CostSummaryResponse, DailyCost, Role
+from dosadash_shared import (
+    CacheStatsResponse,
+    CostSummaryResponse,
+    DailyCost,
+    PromptCacheStats,
+    Role,
+    SemcacheStats,
+)
 
 COSTS = "/api/v1/admin/costs/daily"
+CACHE = "/api/v1/admin/costs/cache"
 
 
 async def _login_as(db_session, phone: str, role: Role) -> dict:
@@ -41,6 +49,19 @@ class FakeAIClient:
             raise AIServiceError("ai down")
         self.days_arg = days
         return self.response
+
+    async def cache_stats(self):
+        if self.error:
+            raise AIServiceError("ai down")
+        return CacheStatsResponse(
+            semcache=SemcacheStats(
+                exact_hits=3, semantic_hits=1, misses=4, lookups=8, hit_rate=0.5
+            ),
+            prompt_cache=PromptCacheStats(
+                calls=10, prompt_tokens=10_000, cached_prompt_tokens=7_500, cached_share=0.75
+            ),
+            semcache_threshold=0.95,
+        )
 
 
 @pytest.fixture
@@ -90,5 +111,28 @@ async def test_costs_not_configured_passthrough(client, admin, client_app):
         body = (await client.get(COSTS, headers=admin)).json()
         assert body["configured"] is False
         assert body["days"] == []
+    finally:
+        client_app.dependency_overrides.pop(get_ai_client, None)
+
+
+async def test_cache_stats_require_admin(client, db_session):
+    assert (await client.get(CACHE)).status_code == 401
+    kitchen = await _login_as(db_session, "+919555557003", Role.KITCHEN_STAFF)
+    assert (await client.get(CACHE, headers=kitchen)).status_code == 403
+
+
+async def test_cache_stats_proxy_happy_path(client, admin, fake_ai):
+    resp = await client.get(CACHE, headers=admin)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["semcache"]["hit_rate"] == pytest.approx(0.5)
+    assert body["prompt_cache"]["cached_share"] == pytest.approx(0.75)
+    assert body["semcache_threshold"] == pytest.approx(0.95)
+
+
+async def test_cache_stats_ai_failure_maps_to_502(client, admin, client_app):
+    client_app.dependency_overrides[get_ai_client] = lambda: FakeAIClient(error=True)
+    try:
+        assert (await client.get(CACHE, headers=admin)).status_code == 502
     finally:
         client_app.dependency_overrides.pop(get_ai_client, None)

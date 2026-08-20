@@ -6,6 +6,7 @@ import {
   AdminItem,
   AdminOrder,
   AuditRow,
+  CacheStats,
   Combo,
   CostSummary,
   EvalRun,
@@ -612,13 +613,52 @@ const compact = (v: number) =>
 export function CostsTab() {
   const loadCosts = useCallback(() => adminApi<CostSummary>("/admin/costs/daily?days=14"), []);
   const { data: summary, error, refresh } = useLoad(loadCosts);
+  const loadCache = useCallback(() => adminApi<CacheStats>("/admin/costs/cache"), []);
+  const { data: cache, refresh: refreshCache } = useLoad(loadCache);
+
+  const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+
+  const cachePanel = cache && (
+    <div className="mb-5 rounded bg-stone-800/60 p-3 text-xs">
+      <div className="mb-2 flex items-center gap-2">
+        <p className="text-xs font-semibold uppercase text-stone-400">Cache efficiency (Phase 9)</p>
+        <button className={ghostBtnCls} onClick={refreshCache}>↻</button>
+      </div>
+      <div className="flex flex-wrap gap-8">
+        <div>
+          <p className="text-stone-400">
+            Semantic cache {cache.semcache_enabled ? `(cosine ≥ ${cache.semcache_threshold})` : "(disabled)"}
+          </p>
+          <p className="text-lg font-semibold text-amber-300">{pct(cache.semcache.hit_rate)} hit rate</p>
+          <p className="text-stone-400">
+            {cache.semcache.exact_hits} exact · {cache.semcache.semantic_hits} semantic ·{" "}
+            {cache.semcache.misses} misses · {cache.semcache.stores} stores · {cache.semcache.flushes} flushes
+          </p>
+        </div>
+        <div>
+          <p className="text-stone-400">Provider prompt cache (prefix-stable layout)</p>
+          <p className="text-lg font-semibold text-amber-300">{pct(cache.prompt_cache.cached_share)} of prompt tokens cached</p>
+          <p className="text-stone-400">
+            {compact(cache.prompt_cache.cached_prompt_tokens)} / {compact(cache.prompt_cache.prompt_tokens)} prompt tok
+            over {cache.prompt_cache.calls} calls
+          </p>
+        </div>
+      </div>
+      <p className="mt-2 text-stone-500">
+        Running counters on the cache Redis (LRU may reset them) — billing truth stays in Langfuse.
+      </p>
+    </div>
+  );
 
   if (summary && !summary.configured) {
     return (
-      <p className="rounded bg-stone-800/60 p-4 text-sm text-stone-300">
-        Langfuse keys are not configured on the AI service — cost tracking is off.
-        Set LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY to enable the dashboard.
-      </p>
+      <div>
+        {cachePanel}
+        <p className="rounded bg-stone-800/60 p-4 text-sm text-stone-300">
+          Langfuse keys are not configured on the AI service — cost tracking is off.
+          Set LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY to enable the dashboard.
+        </p>
+      </div>
     );
   }
 
@@ -628,6 +668,7 @@ export function CostsTab() {
   return (
     <div>
       <ErrorBar msg={error} />
+      {cachePanel}
       <div className="mb-4 flex items-center gap-6">
         <div>
           <p className="text-xs uppercase text-stone-400">Last 7 days</p>

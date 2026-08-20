@@ -8,6 +8,7 @@ import httpx
 
 from dosadash_api.config import get_settings
 from dosadash_shared import (
+    CacheStatsResponse,
     CheckoutSuggestResponse,
     CopilotAnswer,
     CopilotAskIn,
@@ -212,6 +213,19 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return CostSummaryResponse.model_validate(resp.json())
+
+    async def cache_stats(self) -> CacheStatsResponse:
+        """Cache observability rollup (Phase 9). Raises AIServiceError on failure."""
+        try:
+            async with httpx.AsyncClient(timeout=8) as client:
+                resp = await client.get(
+                    f"{self._base_url}/internal/costs/cache",
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return CacheStatsResponse.model_validate(resp.json())
 
     async def translate_menu(self, request: MenuTranslationRequest) -> MenuTranslationResponse:
         """Menu localization drafts (Phase 7, Tamil-first). Long timeout —

@@ -18,7 +18,16 @@ import httpx
 from fastapi import APIRouter, Header, HTTPException, Query
 
 from dosadash_ai.config import get_settings
-from dosadash_shared import CostSummaryResponse, DailyCost, ModelDailyCost
+from dosadash_ai.llm.semcache import get_semcache
+from dosadash_ai.llm.usage_stats import get_usage_stats
+from dosadash_shared import (
+    CacheStatsResponse,
+    CostSummaryResponse,
+    DailyCost,
+    ModelDailyCost,
+    PromptCacheStats,
+    SemcacheStats,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -112,3 +121,46 @@ async def daily_costs(
     )
     _cache[days] = (time.monotonic(), response)
     return response
+
+
+@router.get("/cache", response_model=CacheStatsResponse)
+async def cache_stats(x_internal_token: Annotated[str, Header()] = "") -> CacheStatsResponse:
+    """Cache observability (Phase 9): semantic-cache hit rate + provider
+    prompt-cache token share. Counters are running indicators on the cache
+    Redis (LRU eviction may reset them); billing truth stays in Langfuse."""
+    _check_internal_token(x_internal_token)
+    settings = get_settings()
+
+    sem_raw = await get_semcache().stats()
+    exact = sem_raw.get("exact_hits", 0)
+    semantic = sem_raw.get("semantic_hits", 0)
+    misses = sem_raw.get("misses", 0)
+    lookups = exact + semantic + misses
+    semcache = SemcacheStats(
+        exact_hits=exact,
+        semantic_hits=semantic,
+        misses=misses,
+        stores=sem_raw.get("stores", 0),
+        flushes=sem_raw.get("flushes", 0),
+        lookups=lookups,
+        hit_rate=round((exact + semantic) / lookups, 4) if lookups else 0.0,
+    )
+
+    prompt_raw = await get_usage_stats().snapshot()
+    prompt_tokens = prompt_raw.get("prompt_tokens", 0)
+    cached = prompt_raw.get("cached_prompt_tokens", 0)
+    prompt_cache = PromptCacheStats(
+        calls=prompt_raw.get("calls", 0),
+        prompt_tokens=prompt_tokens,
+        cached_prompt_tokens=cached,
+        completion_tokens=prompt_raw.get("completion_tokens", 0),
+        cached_share=round(cached / prompt_tokens, 4) if prompt_tokens else 0.0,
+    )
+
+    return CacheStatsResponse(
+        semcache=semcache,
+        prompt_cache=prompt_cache,
+        semcache_enabled=settings.semcache_enabled,
+        semcache_threshold=settings.semcache_threshold,
+        semcache_ttl_seconds=settings.semcache_ttl_seconds,
+    )
