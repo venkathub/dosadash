@@ -44,6 +44,19 @@ ingredient, or outside an item's scheduled serving window. Unavailable items
 cannot be ordered — by any channel, including the AI assistant — until the
 kitchen re-enables them.
 
+### Why can't I order a dosa at lunch?
+
+Because we cook like a proper Tamil tiffin centre: every dish has a serving
+window, and the dosa griddle rests at lunch. Dosas, idlis, vadas, uttapams,
+millet tiffin, and tiffin dishes like idiyappam and appam serve at breakfast
+(6–11:30 AM IST) and again at dinner (5–10 PM IST). Between 11:30 AM and
+5 PM the kitchen turns to its lunch counters — rice varieties, biryani,
+Chettinad curries, and mess specials (11:30 AM–10 PM). Pongals are
+mornings-only (6 AM–12 noon), the Mini Tiffin is breakfast-only, veg meals
+run in two sittings, and the Non-Veg Mess Meals are lunch-only (11:30 AM–
+4 PM). Sweets and beverages serve all day. Each dish's window is listed in
+its menu guide, and the site simply hides dishes outside their window.
+
 ### What are your hours?
 
 Kitchen hours are set by the restaurant and shown on the site. Outside
