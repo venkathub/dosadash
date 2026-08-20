@@ -14,6 +14,11 @@
 		reverse_proxy api:8000
 	}
 
+	# Owner-approved AI dish photos (Phase 7) — static files from the api
+	handle /media/* {
+		reverse_proxy api:8000
+	}
+
 	# AI service (agents, RAG, SSE streaming)
 	handle_path /ai/* {
 		reverse_proxy ai:8001

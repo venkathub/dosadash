@@ -10,6 +10,8 @@ export type MenuItem = {
   spice_level: number;
   meal_periods: string[];
   allergens: string[];
+  image_url: string | null;
+  image_ai: boolean; // AI-generated photo — always shown with an AI badge
   canonical_name: string | null; // English name when a translation is applied
   category_label: string | null; // localized section heading
 };

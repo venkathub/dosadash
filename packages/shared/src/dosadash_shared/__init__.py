@@ -88,6 +88,13 @@ from dosadash_shared.coupons import (
     CouponPreviewOut,
     CouponUpdateIn,
 )
+from dosadash_shared.imagegen import (
+    MENU_IMAGE_PROMPT_VERSION,
+    MenuImageDraftOut,
+    MenuImageRequest,
+    MenuImageResult,
+    MenuImageStatusIn,
+)
 from dosadash_shared.inventory import (
     INVENTORY_PROMPT_VERSION,
     IngredientNeed,
@@ -416,4 +423,9 @@ __all__ = [
     "TranslationRejection",
     "TranslationSourceItem",
     "TranslationStatusIn",
+    "MENU_IMAGE_PROMPT_VERSION",
+    "MenuImageDraftOut",
+    "MenuImageRequest",
+    "MenuImageResult",
+    "MenuImageStatusIn",
 ]

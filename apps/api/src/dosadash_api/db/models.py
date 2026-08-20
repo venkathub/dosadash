@@ -151,6 +151,7 @@ class MenuItem(TimestampMixin, Base):
     is_available: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     schedule: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     image_url: Mapped[str | None] = mapped_column(String(500))
+    image_ai: Mapped[bool] = mapped_column(Boolean, default=False)  # AI-labeled (Phase 7)
     embedding: Mapped[Any | None] = mapped_column(Vector(1536))
 
     recipe: Mapped[list["RecipeIngredient"]] = relationship()
@@ -367,6 +368,29 @@ class MenuItemTranslation(TimestampMixin, Base):
     )
     model: Mapped[str] = mapped_column(String(80))
     prompt_version: Mapped[str] = mapped_column(String(40))
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+
+class MenuImageDraft(TimestampMixin, Base):
+    """AI-generated dish photo awaiting owner review (Phase 7) — AI-labeled.
+
+    The file lives under the api media dir; only an explicit approval copies
+    its URL onto menu_items.image_url (with image_ai = true so the customer
+    UI always shows the AI badge). Rejection deletes the file.
+    """
+
+    __tablename__ = "menu_image_drafts"
+
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("menu_items.id", ondelete="CASCADE"), primary_key=True
+    )
+    filename: Mapped[str] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(
+        Enum("DRAFT", "APPROVED", "REJECTED", name="image_draft_status"), default="DRAFT"
+    )
+    model: Mapped[str] = mapped_column(String(80))
+    prompt_version: Mapped[str] = mapped_column(String(40))
+    prompt: Mapped[str] = mapped_column(Text)
     reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
 

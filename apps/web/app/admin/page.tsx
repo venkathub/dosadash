@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { clearAdminToken, getAdminToken, saveAdminToken } from "./adminApi";
 import { CopilotTab } from "./copilotTab";
 import { CouponsTab } from "./couponsTab";
+import { ImagesTab } from "./imagesTab";
 import { InventoryTab } from "./inventoryTab";
 import { CrmTab, ReportsTab } from "./reportsTabs";
 import { SupportInboxTab } from "./supportInboxTab";
 import { TranslationsTab } from "./translationsTab";
 import { AuditTab, CombosTab, CostsTab, EvalsTab, MenuTab, NutritionTab, OrdersTab, SettingsTab } from "./tabs";
 
-const TABS = ["Menu", "Orders", "Inventory", "Support", "Reports", "CRM", "Copilot", "Combos", "Coupons", "Nutrition", "Translations", "Evals", "Costs", "Settings", "Audit"] as const;
+const TABS = ["Menu", "Orders", "Inventory", "Support", "Reports", "CRM", "Copilot", "Combos", "Coupons", "Nutrition", "Translations", "Images", "Evals", "Costs", "Settings", "Audit"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function Admin() {
@@ -65,6 +66,7 @@ export default function Admin() {
         {tab === "Coupons" && <CouponsTab />}
         {tab === "Nutrition" && <NutritionTab />}
         {tab === "Translations" && <TranslationsTab />}
+        {tab === "Images" && <ImagesTab />}
         {tab === "Evals" && <EvalsTab />}
         {tab === "Costs" && <CostsTab />}
         {tab === "Settings" && <SettingsTab />}
