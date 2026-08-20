@@ -1,7 +1,9 @@
 """Review scoring + reply chain tests (Phase 8): endpoint auth, rating-only
-split, redaction-before-LLM, guardrail end-to-end, and the reply fallback —
-litellm is always mocked (CI never calls providers). Pure sanitizer cases
-live in evals/suites/test_review_assets.py."""
+split, local INT8-champion-first scoring (slice 4), redaction-before-LLM,
+guardrail end-to-end, and the reply fallback — litellm is always mocked and
+the local champion is stubbed (CI never calls providers nor loads ONNX here;
+artifact parity gates live in evals/suites/test_sentiment_serving_assets.py).
+Pure sanitizer cases live in evals/suites/test_review_assets.py."""
 
 import json
 
@@ -10,6 +12,8 @@ import pytest
 
 from dosadash_ai import config
 from dosadash_ai.llm import client as llm_client
+from dosadash_ai.routers import reviews as reviews_router
+from dosadash_ml.finetune.predict import SentimentPrediction
 from dosadash_shared import (
     REVIEW_SCORE_CHUNK_SIZE,
     ReviewReplyRequest,
@@ -59,6 +63,28 @@ def _token_env(monkeypatch):
     config.get_settings.cache_clear()
     yield
     config.get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _no_local_champion(monkeypatch):
+    """LLM-path tests run without the local champion (as if the artifact
+    were absent — the degrade path). Local-path tests override this."""
+    monkeypatch.setattr(reviews_router, "local_champion", lambda: None)
+
+
+class FakeChampion:
+    """Stub SentimentChampion: canned per-text predictions."""
+
+    version = "dosadash-sentiment/v2-int8"
+
+    def __init__(self, by_text: dict[str, SentimentPrediction]) -> None:
+        self.by_text = by_text
+        self.seen: list[str] = []
+
+
+def _fake_predict(champion: FakeChampion, texts: list[str]) -> list[SentimentPrediction]:
+    champion.seen.extend(texts)
+    return [champion.by_text.get(t, SentimentPrediction(labels=(), confident=False)) for t in texts]
 
 
 @pytest.fixture
@@ -175,6 +201,148 @@ async def test_all_rating_only_needs_no_llm_at_all(ai_client, monkeypatch):
     resp = await ai_client.post(SCORE, json=req.model_dump(mode="json"), headers=TOKEN)
     assert resp.status_code == 200
     assert resp.json()["model"] is None
+
+
+# ------------------------------------------------- local INT8 champion (slice 4)
+
+
+def _use_fake_champion(monkeypatch, by_text) -> FakeChampion:
+    champ = FakeChampion(by_text)
+    monkeypatch.setattr(reviews_router, "local_champion", lambda: champ)
+    monkeypatch.setattr(reviews_router, "predict_sentiment", _fake_predict)
+    return champ
+
+
+async def test_local_confident_scores_skip_the_llm_entirely(ai_client, monkeypatch):
+    async def fake_acompletion(**kwargs):
+        raise AssertionError("LLM must not be called for confident local scores")
+
+    monkeypatch.setattr(llm_client.litellm, "acompletion", fake_acompletion)
+    champ = _use_fake_champion(
+        monkeypatch,
+        {
+            "Crispy dosa, loved it.": SentimentPrediction(
+                labels=("taste:POSITIVE",), confident=True
+            ),
+            "Late and cold.": SentimentPrediction(
+                labels=("delivery:NEGATIVE", "temperature:NEGATIVE"), confident=True
+            ),
+        },
+    )
+    req = ReviewScoreRequest(
+        reviews=[
+            ReviewScoreSourceItem(review_id=1, rating=5, text="Crispy dosa, loved it."),
+            ReviewScoreSourceItem(review_id=2, rating=2, text="Late and cold."),
+        ]
+    )
+    resp = await ai_client.post(SCORE, json=req.model_dump(mode="json"), headers=TOKEN)
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert sorted(body["local_ids"]) == [1, 2]
+    assert body["local_model"] == "local:dosadash-sentiment/v2-int8"
+    assert body["model"] is None  # no LLM was involved
+    by_id = {s["review_id"]: s for s in body["scores"]}
+    assert by_id[1]["sentiment"] == "POSITIVE"
+    assert by_id[2]["sentiment"] == "NEGATIVE"  # rollup computed, not model-claimed
+    assert {a["aspect"] for a in by_id[2]["aspects"]} == {"delivery", "temperature"}
+    assert champ.seen == ["Crispy dosa, loved it.", "Late and cold."]
+
+
+async def test_local_unconfident_escalates_to_the_llm(ai_client, monkeypatch):
+    calls = []
+
+    async def fake_acompletion(**kwargs):
+        calls.append(json.loads(kwargs["messages"][-1]["content"]))
+        return _echo_scores(kwargs)
+
+    monkeypatch.setattr(llm_client.litellm, "acompletion", fake_acompletion)
+    _use_fake_champion(
+        monkeypatch,
+        {
+            "Crispy dosa, loved it.": SentimentPrediction(
+                labels=("taste:POSITIVE",), confident=True
+            ),
+            "Hmm, hard to say.": SentimentPrediction(labels=(), confident=False),
+        },
+    )
+    req = ReviewScoreRequest(
+        reviews=[
+            ReviewScoreSourceItem(review_id=1, rating=5, text="Crispy dosa, loved it."),
+            ReviewScoreSourceItem(review_id=2, rating=3, text="Hmm, hard to say."),
+        ]
+    )
+    resp = await ai_client.post(SCORE, json=req.model_dump(mode="json"), headers=TOKEN)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["local_ids"] == [1]
+    assert body["model"] == "gpt-4o-mini"  # the doubt went to the chain
+    assert len(calls) == 1
+    assert [r["review_id"] for r in calls[0]["reviews"]] == [2]
+
+
+async def test_local_contradictory_polarities_escalate(ai_client, monkeypatch):
+    """Confident flag but both polarities for one aspect → not trustworthy,
+    the LLM gets a second opinion."""
+    calls = []
+
+    async def fake_acompletion(**kwargs):
+        calls.append(json.loads(kwargs["messages"][-1]["content"]))
+        return _echo_scores(kwargs)
+
+    monkeypatch.setattr(llm_client.litellm, "acompletion", fake_acompletion)
+    _use_fake_champion(
+        monkeypatch,
+        {
+            "Weird one.": SentimentPrediction(
+                labels=("taste:NEGATIVE", "taste:POSITIVE"), confident=True
+            )
+        },
+    )
+    req = _score_req(n=1, text="Weird one.")
+    resp = await ai_client.post(SCORE, json=req.model_dump(mode="json"), headers=TOKEN)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["local_ids"] == []
+    assert len(calls) == 1
+
+
+async def test_force_llm_bypasses_the_local_champion(ai_client, monkeypatch):
+    calls = []
+
+    async def fake_acompletion(**kwargs):
+        calls.append(1)
+        return _echo_scores(kwargs)
+
+    monkeypatch.setattr(llm_client.litellm, "acompletion", fake_acompletion)
+    champ = _use_fake_champion(
+        monkeypatch,
+        {"Late delivery.": SentimentPrediction(labels=("delivery:NEGATIVE",), confident=True)},
+    )
+    req = ReviewScoreRequest(
+        reviews=[ReviewScoreSourceItem(review_id=1, rating=2, text="Late delivery.")],
+        force_llm=True,
+    )
+    resp = await ai_client.post(SCORE, json=req.model_dump(mode="json"), headers=TOKEN)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["local_ids"] == [] and body["local_model"] is None
+    assert calls and champ.seen == []
+
+
+async def test_missing_artifact_degrades_to_llm_never_crashes(ai_client, monkeypatch):
+    """local_champion() returning None (artifact missing/corrupt) must leave
+    the LLM path fully in charge — the autouse fixture already simulates
+    this; assert the shape explicitly."""
+
+    async def fake_acompletion(**kwargs):
+        return _echo_scores(kwargs)
+
+    monkeypatch.setattr(llm_client.litellm, "acompletion", fake_acompletion)
+    resp = await ai_client.post(SCORE, json=_score_req().model_dump(mode="json"), headers=TOKEN)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["local_ids"] == [] and body["local_model"] is None
+    assert len(body["scores"]) == 2 and body["model"] == "gpt-4o-mini"
 
 
 # ------------------------------------------------------------------- replies

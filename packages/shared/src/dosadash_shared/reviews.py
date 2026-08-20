@@ -116,6 +116,9 @@ class ReviewScoreSourceItem(BaseModel):
 
 class ReviewScoreRequest(BaseModel):
     reviews: list[ReviewScoreSourceItem] = Field(min_length=1, max_length=MAX_REVIEW_SCORE_ITEMS)
+    # Skip the local INT8 champion and go straight to the LLM path — used by
+    # benchmarks/debugging; production leaves this False (local-first).
+    force_llm: bool = False
 
 
 class ReviewScoreDraft(BaseModel):
@@ -142,12 +145,16 @@ class ReviewScoreRejection(BaseModel):
 class ReviewScoreResponse(BaseModel):
     """ai → api: sanitized scores + per-review rejections + provenance.
     `model` is per-score-set; rating-only reviews carry RATING_ONLY_MODEL
-    in their own field because no LLM ever saw them."""
+    in their own field because no LLM ever saw them. `local_ids` are the
+    reviews scored by the INT8 ONNX champion on-CPU (slice 4): those carry
+    `local_model` provenance and no prompt version — no LLM saw them either."""
 
     scores: list[ReviewScoreDraft] = Field(default_factory=list)
     rating_only_ids: list[int] = Field(default_factory=list)
+    local_ids: list[int] = Field(default_factory=list)
     rejected: list[ReviewScoreRejection] = Field(default_factory=list)
     model: str | None = None
+    local_model: str | None = None
     prompt_version: str = REVIEW_SENTIMENT_PROMPT_VERSION
 
 
@@ -216,7 +223,9 @@ class ReviewScoreRunOut(BaseModel):
     scored: int
     rating_only: int
     failed: int
+    local: int = 0  # scored by the INT8 ONNX champion (no LLM call)
     model: str | None = None
+    local_model: str | None = None
 
 
 class ReviewReplyPublishIn(BaseModel):

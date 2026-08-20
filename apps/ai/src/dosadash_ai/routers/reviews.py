@@ -1,15 +1,22 @@
 """Internal review endpoints (api → ai) — Phase 8.
 
-POST /internal/reviews/score — batch aspect-sentiment tagging. The LLM only
-OBSERVES aspect mentions; everything else is deterministic:
+POST /internal/reviews/score — batch aspect-sentiment tagging. Local-first
+since slice 4: the INT8 ONNX LoRA champion (CPU, ₹0/review) scores text
+reviews and only its UNCONFIDENT predictions escalate to the LLM chain —
+the tiny model handles the bulk, the LLM handles the doubt. Everything
+around the models stays deterministic:
 
-- rating-only reviews (no text) never reach an LLM — scored from stars
-- phone numbers are redacted from review text BEFORE any LLM call (Rule 8 —
-  datagen plants ~1% "call me back" reviews precisely to exercise this)
-- guardrail: hallucinated review_ids dropped, aspects outside the shared
-  registry dropped, per-review duplicates deduped, and the review-level
-  sentiment is RECOMPUTED from the kept aspects (dish-QC philosophy: the
-  model observes, the verdict is computed)
+- rating-only reviews (no text) never reach any model — scored from stars
+- the local model never sees the network and its inputs never leave the
+  process; phone numbers are still redacted BEFORE any LLM call (Rule 8)
+- local predictions are only trusted when confident (no probability in the
+  ambiguity band, ≥1 label fired, no contradictory both-polarity aspect) —
+  anything else gets the LLM's second opinion
+- if the artifact is missing/corrupt the local path degrades to the LLM
+  chain (postmortem #72 pattern: nice-to-haves degrade, never crash)
+- LLM guardrail unchanged: hallucinated review_ids dropped, off-registry
+  aspects dropped, duplicates deduped, review-level sentiment RECOMPUTED
+  from kept aspects (dish-QC philosophy: models observe, verdicts computed)
 
 POST /internal/reviews/draft-reply — one AI-drafted owner reply. Guardrail:
 a draft that promises compensation (refund/discount/free/...) or carries
@@ -18,9 +25,12 @@ the model must never give away food the owner didn't approve. Every draft
 lands api-side as a backoffice draft: a human approves before publishing.
 """
 
+import asyncio
 import json
+import logging
 import secrets
 from collections.abc import Iterator
+from functools import lru_cache
 from typing import Annotated
 
 from fastapi import APIRouter, Header, HTTPException
@@ -29,6 +39,11 @@ from dosadash_ai.config import get_settings
 from dosadash_ai.llm import LLMError, structured_completion
 from dosadash_ai.prompts import load_prompt
 from dosadash_ai.redaction import REDACTED, redact_phones
+from dosadash_ml.finetune.predict import (
+    SentimentChampion,
+    load_sentiment_champion,
+    predict_sentiment,
+)
 from dosadash_shared import (
     MAX_REPLY_CHARS,
     REPLY_FORBIDDEN_TERMS,
@@ -49,6 +64,8 @@ from dosadash_shared import (
     rating_only_sentiment,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/internal/reviews", tags=["internal:reviews"])
 
 
@@ -58,6 +75,45 @@ def _check_internal_token(provided: str) -> None:
         raise HTTPException(status_code=503, detail="Internal API not configured")
     if not secrets.compare_digest(provided, expected):
         raise HTTPException(status_code=403, detail="Forbidden")
+
+
+# ------------------------------------------------------- local INT8 champion
+
+
+@lru_cache
+def _cached_champion() -> SentimentChampion:
+    return load_sentiment_champion(get_settings().model_dir)
+
+
+def local_champion() -> SentimentChampion | None:
+    """The INT8 ONNX champion, or None when unavailable — the LLM chain
+    covers everything then (degrade, never crash)."""
+    try:
+        return _cached_champion()
+    except Exception as exc:  # noqa: BLE001 — missing/corrupt artifact
+        logger.warning("reviews: local sentiment champion unavailable: %s", exc)
+        return None
+
+
+def draft_from_local_labels(review_id: int, labels: tuple[str, ...]) -> ReviewScoreDraft | None:
+    """Deterministic draft from the local model's label set. Returns None
+    when the set contradicts itself (both polarities for one aspect) —
+    that review escalates to the LLM instead."""
+    aspects: list[AspectLabel] = []
+    seen: set[str] = set()
+    for label in labels:
+        aspect, polarity = label.rsplit(":", 1)
+        if aspect in seen:  # taste:POSITIVE + taste:NEGATIVE → not trustworthy
+            return None
+        if aspect not in REVIEW_ASPECTS:  # label space drifted → never serve it
+            return None
+        seen.add(aspect)
+        aspects.append(AspectLabel(aspect=aspect, sentiment=polarity))
+    if not aspects:  # empty set is never confident, but belt-and-braces
+        return None
+    return ReviewScoreDraft(
+        review_id=review_id, sentiment=_rollup(aspects, "MIXED"), aspects=aspects
+    )
 
 
 # ------------------------------------------------------------------- scoring
@@ -137,7 +193,7 @@ async def score_reviews(
 ) -> ReviewScoreResponse:
     _check_internal_token(x_internal_token)
 
-    # rating-only reviews: deterministic, no LLM, no cost
+    # rating-only reviews: deterministic, no model of any kind, no cost
     rating_only = [r for r in req.reviews if not r.text.strip()]
     with_text = [r for r in req.reviews if r.text.strip()]
     scores: list[ReviewScoreDraft] = [
@@ -149,7 +205,31 @@ async def score_reviews(
     rejected: list[ReviewScoreRejection] = []
     model_used: str | None = None
 
-    for chunk in _chunks(with_text, REVIEW_SCORE_CHUNK_SIZE):
+    # local INT8 champion first (slice 4): confident predictions are final;
+    # unconfident/contradictory ones escalate to the LLM chain below
+    local_ids: list[int] = []
+    local_model: str | None = None
+    llm_queue: list[ReviewScoreSourceItem] = with_text
+    champion = None if req.force_llm else local_champion()
+    if champion is not None and with_text:
+        predictions = await asyncio.to_thread(
+            predict_sentiment, champion, [r.text for r in with_text]
+        )
+        llm_queue = []
+        for review, prediction in zip(with_text, predictions, strict=True):
+            draft = (
+                draft_from_local_labels(review.review_id, prediction.labels)
+                if prediction.confident
+                else None
+            )
+            if draft is None:
+                llm_queue.append(review)
+            else:
+                scores.append(draft)
+                local_ids.append(review.review_id)
+        local_model = f"local:{champion.version}" if local_ids else None
+
+    for chunk in _chunks(llm_queue, REVIEW_SCORE_CHUNK_SIZE):
         try:
             parsed, model = await structured_completion(
                 messages=build_score_messages(chunk),
@@ -170,13 +250,15 @@ async def score_reviews(
         scores.extend(kept)
         rejected.extend(chunk_rejected)
 
-    if with_text and model_used is None:  # every LLM chunk failed → loud
+    if llm_queue and model_used is None:  # every LLM chunk failed → loud
         raise HTTPException(status_code=502, detail="LLM chain failed for every batch")
     return ReviewScoreResponse(
         scores=scores,
         rating_only_ids=[r.review_id for r in rating_only],
+        local_ids=local_ids,
         rejected=rejected,
         model=model_used,
+        local_model=local_model,
     )
 
 

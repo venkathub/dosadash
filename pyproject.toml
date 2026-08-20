@@ -32,6 +32,9 @@ finetune = [
     "torch>=2.4",
     "transformers>=4.44",
     "peft>=0.13",
+    # ONNX INT8 export of the champion (serving artifact — Phase 8 slice 4)
+    "onnx>=1.16",
+    "onnxruntime>=1.19",
 ]
 
 [tool.uv.sources]

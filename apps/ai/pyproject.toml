@@ -16,7 +16,7 @@ dependencies = [
     "redis>=5.2",
     "langgraph>=0.2",
     "dosadash-shared",
-    "dosadash-ml[infer]",
+    "dosadash-ml[infer,sentiment]",
     "mcp>=2.0.0",
 ]
 

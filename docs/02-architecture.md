@@ -177,15 +177,19 @@ po.drafted        → owner Telegram approval message
 │ postgres:16 + pgvector      │ ~450 MB    │
 │ redis:7 (maxmemory 256mb)   │ ~150 MB    │
 │ core-api (uvicorn ×2)       │ ~350 MB    │
-│ ai-service (uvicorn ×1)     │ ~500 MB    │
+│ ai-service (uvicorn ×1)     │ ~650 MB    │ incl. INT8 DistilBERT (~150 MB)
 │ bot (aiogram)               │ ~120 MB    │
 │ celery worker+beat          │ ~300 MB    │
 │ next.js (standalone)        │ ~300 MB    │
 │ caddy                       │ ~40 MB     │
 ├─────────────────────────────┼────────────┤
-│ total                       │ ~2.2 GB    │ + OS ~400 MB ⇒ ~1.4 GB headroom
+│ total                       │ ~2.35 GB   │ + OS ~400 MB ⇒ ~1.25 GB headroom
 └─────────────────────────────┴────────────┘
-+ 2 GB swapfile. No local model inference on VPS — APIs only.
++ 2 GB swapfile. No local LLM/Whisper inference on VPS — generative AI via
+APIs only (Hard Rule 7). Tiny classical/tuned models DO serve locally by
+design: xgboost (forecast/ETA), ALS item factors (recsys), and the INT8
+ONNX DistilBERT sentiment champion (Phase 8 — the whole point is ₹0 CPU
+serving on this box).
 MLflow runs locally/CI; artifacts synced to VPS.
 ```
 
