@@ -108,16 +108,37 @@ export default function DemoPage() {
 
       <Section title="3 · Test payments (Razorpay TEST mode)">
         <p className="mb-2 text-sm text-stone-700">
-          After checkout, the pay button opens Razorpay&rsquo;s test checkout. Use any of these — no
-          real charge is possible on a TEST key:
+          After checkout, the pay button opens Razorpay&rsquo;s test checkout. Use the official{" "}
+          <a
+            className="underline"
+            href="https://razorpay.com/docs/payments/payments/test-card-details/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            test credentials
+          </a>{" "}
+          — no real charge is possible on a TEST key:
         </p>
         <table className="w-full text-left text-sm">
           <tbody className="align-top">
             <tr className="border-t border-stone-200">
-              <td className="py-2 pr-3">Card (success)</td>
+              <td className="py-2 pr-3">Card (Visa)</td>
               <td className="py-2">
-                <span className={chip}>4111 1111 1111 1111</span> · any future expiry · any CVV ·
-                any name
+                <span className={chip}>4386 2894 0766 0153</span> · any CVV · any future expiry
+              </td>
+            </tr>
+            <tr className="border-t border-stone-200">
+              <td className="py-2 pr-3">Card (Mastercard)</td>
+              <td className="py-2">
+                <span className={chip}>2305 3242 5784 8228</span> · any CVV · any future expiry
+              </td>
+            </tr>
+            <tr className="border-t border-stone-200">
+              <td className="py-2 pr-3">Card outcome</td>
+              <td className="py-2">
+                A mock bank page follows — choose <strong>Success</strong> or{" "}
+                <strong>Failure</strong> there (if it asks for an OTP instead: 4+ random digits =
+                success, fewer = failure)
               </td>
             </tr>
             <tr className="border-t border-stone-200">
@@ -135,9 +156,10 @@ export default function DemoPage() {
           </tbody>
         </table>
         <p className="mt-2 text-xs text-stone-500">
-          If the environment runs without Razorpay keys, the button becomes a one-click demo
-          payment instead (the <span className={chip}>PaymentProvider</span> interface swaps
-          providers without touching checkout).
+          Real cards are rejected in test mode by design. If the environment runs without Razorpay
+          keys, the button becomes a one-click demo payment instead (the{" "}
+          <span className={chip}>PaymentProvider</span> interface swaps providers without touching
+          checkout).
         </p>
       </Section>
 

@@ -22,7 +22,7 @@ that make engineers lean in: the eval gate and MCP.
 | 0:08 | Login: type any phone, OTP appears on screen | "Auth is passwordless OTP — demo channel shows it on screen; linked Telegram users get a DM instead." |
 | 0:15 | Telegram: send a VOICE note — "two masala dosas and one filter coffee" | "Voice note in — Whisper transcribes, and the same LangGraph agent that runs web chat builds a structured draft." |
 | 0:25 | Edit by text: "make one of them onion dosa" → draft updates | "Every item is validated against the database — this agent cannot invent a dish." |
-| 0:33 | Confirm → checkout → Razorpay TEST card 4111… | "Payments are Razorpay test mode behind a provider interface." |
+| 0:33 | Confirm → checkout → Razorpay TEST card (Visa 4386 2894 0766 0153, from the /demo guide) → mock bank page → Success | "Payments are Razorpay test mode behind a provider interface." |
 | 0:43 | Order tracking page with the AI ETA | "The ETA is an XGBoost regression — 3.4 minutes mean error on the benchmark." |
 
 ## Scene 2 — The agent under pressure (0:50–1:30)
