@@ -197,6 +197,13 @@ from dosadash_shared.reports import (
     SalesBucket,
     SalesReport,
 )
+from dosadash_shared.reviews import (
+    REVIEW_ASPECTS,
+    REVIEW_SENTIMENTS,
+    AspectLabel,
+    ReviewCreateIn,
+    ReviewOut,
+)
 from dosadash_shared.schemas import (
     ChannelType,
     CouponType,
@@ -414,6 +421,11 @@ __all__ = [
     "SettingsUpdateIn",
     "StaffActionOut",
     "StatusUpdateIn",
+    "REVIEW_ASPECTS",
+    "REVIEW_SENTIMENTS",
+    "AspectLabel",
+    "ReviewCreateIn",
+    "ReviewOut",
     "MAX_TRANSLATION_ITEMS",
     "MENU_TRANSLATION_PROMPT_VERSION",
     "SUPPORTED_TRANSLATION_LANGS",

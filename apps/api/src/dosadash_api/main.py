@@ -36,6 +36,7 @@ from dosadash_api.routers.orders import router as orders_router
 from dosadash_api.routers.payments import router as payments_router
 from dosadash_api.routers.profile import router as profile_router
 from dosadash_api.routers.recs import router as recs_router
+from dosadash_api.routers.reviews import router as reviews_router
 from dosadash_api.routers.support import router as support_router
 from dosadash_api.routers.ws import router as ws_router
 from dosadash_shared import HealthStatus
@@ -70,6 +71,7 @@ app.include_router(orders_router)
 app.include_router(payments_router)
 app.include_router(profile_router)
 app.include_router(recs_router)
+app.include_router(reviews_router)
 app.include_router(support_router)
 app.include_router(ws_router)
 
