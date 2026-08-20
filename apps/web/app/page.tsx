@@ -44,10 +44,11 @@ export default function Home() {
   const [couponCode, setCouponCode] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; discount: string; total: string } | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [lang, setLang] = useState<"en" | "ta">("en");
 
   useEffect(() => {
     setUser(getUser());
-    api<MenuItem[]>("/menu").then(setMenu).catch(() => setError("Menu failed to load"));
+    setLang(localStorage.getItem("menu_lang") === "ta" ? "ta" : "en");
     const params = new URLSearchParams(location.search);
     const track = params.get("track");
     if (track) {
@@ -56,6 +57,18 @@ export default function Home() {
         .catch(() => null);
     }
   }, []);
+
+  // Owner-approved translations only; English is the canonical fallback.
+  useEffect(() => {
+    api<MenuItem[]>(lang === "ta" ? "/menu?lang=ta" : "/menu")
+      .then(setMenu)
+      .catch(() => setError("Menu failed to load"));
+  }, [lang]);
+
+  const switchLang = (next: "en" | "ta") => {
+    localStorage.setItem("menu_lang", next);
+    setLang(next);
+  };
 
   const period = useMemo(() => currentMealPeriod(), []);
   const inPeriod = (m: MenuItem) =>
@@ -66,7 +79,9 @@ export default function Home() {
       menu.filter(
         (m) =>
           (!vegOnly || m.is_veg) &&
-          (search.length < 2 || m.name.toLowerCase().includes(search.toLowerCase()))
+          (search.length < 2 ||
+            m.name.toLowerCase().includes(search.toLowerCase()) ||
+            (m.canonical_name ?? "").toLowerCase().includes(search.toLowerCase()))
       ),
     [menu, vegOnly, search]
   );
@@ -160,6 +175,13 @@ export default function Home() {
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="flex items-center gap-3 text-sm">
+            <button
+              className="rounded-full border border-amber-300 px-2 py-0.5 text-xs font-semibold"
+              title={lang === "ta" ? "Switch to English" : "தமிழில் காட்டு"}
+              onClick={() => switchLang(lang === "ta" ? "en" : "ta")}
+            >
+              {lang === "ta" ? "EN" : "தமிழ்"}
+            </button>
             <label className="flex cursor-pointer items-center gap-1">
               <input type="checkbox" checked={vegOnly} onChange={(e) => setVegOnly(e.target.checked)} />
               <span className="text-green-700">Veg</span>
@@ -201,7 +223,9 @@ export default function Home() {
         )}
         {categories.map((cat) => (
           <section key={cat} className="mt-6">
-            <h2 className="mb-2 text-lg font-bold">{cat}</h2>
+            <h2 className="mb-2 text-lg font-bold">
+              {visible.find((m) => m.category === cat && m.category_label)?.category_label ?? cat}
+            </h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {visible
                 .filter((m) => m.category === cat)

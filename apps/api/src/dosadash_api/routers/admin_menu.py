@@ -22,6 +22,7 @@ from dosadash_api.db.models import (
     Customization,
     Ingredient,
     MenuItem,
+    MenuItemTranslation,
     OrderItem,
     RecipeIngredient,
     User,
@@ -120,12 +121,30 @@ async def update_item(
         raise HTTPException(status_code=422, detail="No fields to update")
     for field, value in changes.items():
         setattr(item, field, value)
+    # Localization staleness (Phase 7): if the canonical text changed, any
+    # APPROVED translation of it is now unreviewed — pull it back to DRAFT
+    # in the same transaction so stale Tamil never serves.
+    stale_translations: list[str] = []
+    if changes.keys() & {"name", "description", "category"}:
+        rows = (
+            await session.scalars(
+                select(MenuItemTranslation).where(
+                    MenuItemTranslation.item_id == item_id,
+                    MenuItemTranslation.status == "APPROVED",
+                )
+            )
+        ).all()
+        for trans in rows:
+            trans.status = "DRAFT"
+            trans.reviewed_by = None
+            stale_translations.append(trans.lang)
     audit.record(
         session,
         actor=admin,
         action="menu.update",
         entity=f"menu_item:{item.id}",
-        detail={"fields": sorted(changes)},
+        detail={"fields": sorted(changes)}
+        | ({"translations_reset": sorted(stale_translations)} if stale_translations else {}),
     )
     try:
         await session.commit()
