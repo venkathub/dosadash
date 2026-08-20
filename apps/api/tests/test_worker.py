@@ -36,6 +36,23 @@ def test_nightly_crm_scheduled_at_3am_ist():
     assert entry["schedule"].hour == {3}
 
 
+def test_nightly_review_scoring_scheduled_after_crm():
+    """Phase 8: 03:30 IST — after CRM (03:00), local champion + Batch API."""
+    assert "reviews.nightly_scoring" in app.tasks
+    entry = app.conf.beat_schedule["nightly-review-scoring"]
+    assert entry["task"] == "reviews.nightly_scoring"
+    assert entry["schedule"].hour == {3}
+    assert entry["schedule"].minute == {30}
+
+
+def test_review_batch_poll_scheduled_hourly():
+    assert "reviews.batch_poll" in app.tasks
+    entry = app.conf.beat_schedule["review-batch-poll"]
+    assert entry["task"] == "reviews.batch_poll"
+    assert entry["schedule"].minute == {20}
+    assert len(entry["schedule"].hour) == 24  # every hour
+
+
 def test_heartbeat_reports_db_status(monkeypatch):
     async def fake_ping() -> bool:
         return True

@@ -119,6 +119,11 @@ class ReviewScoreRequest(BaseModel):
     # Skip the local INT8 champion and go straight to the LLM path — used by
     # benchmarks/debugging; production leaves this False (local-first).
     force_llm: bool = False
+    # Nightly bulk mode (slice 5): do NOT call the live LLM for reviews the
+    # local champion couldn't confidently score — return them as
+    # `deferred_ids` so the caller can submit them to the provider Batch API
+    # at 50% cost instead. Never combined with a 502: deferring is success.
+    defer_llm: bool = False
 
 
 class ReviewScoreDraft(BaseModel):
@@ -152,9 +157,56 @@ class ReviewScoreResponse(BaseModel):
     scores: list[ReviewScoreDraft] = Field(default_factory=list)
     rating_only_ids: list[int] = Field(default_factory=list)
     local_ids: list[int] = Field(default_factory=list)
+    deferred_ids: list[int] = Field(default_factory=list)  # defer_llm=True only
     rejected: list[ReviewScoreRejection] = Field(default_factory=list)
     model: str | None = None
     local_model: str | None = None
+    prompt_version: str = REVIEW_SENTIMENT_PROMPT_VERSION
+
+
+# ------------------------------------------------------------- batch scoring
+
+# Provider Batch API (slice 5): OpenAI only — single-provider precedent set
+# by STT (Groq) and image gen (gpt-image-1). Failure leaves reviews unscored;
+# the on-demand admin path and the next nightly run cover them.
+BATCH_MODEL_PREFIX = "batch:"  # scored_model provenance, e.g. "batch:gpt-4o-mini"
+
+
+class ReviewBatchSubmitRequest(BaseModel):
+    """api → ai: submit unscored reviews to the provider Batch API. Same
+    source shape as live scoring — the ai side redacts phones before any
+    text lands in the uploaded JSONL (Rule 8 applies to batch files too)."""
+
+    reviews: list[ReviewScoreSourceItem] = Field(min_length=1, max_length=MAX_REVIEW_SCORE_ITEMS)
+
+
+class ReviewBatchSubmitResponse(BaseModel):
+    """`chunks` is the authoritative custom_id → review_ids mapping (index i
+    = custom_id "chunk-i"). The api persists it and hands it back at poll
+    time so the ai side stays stateless."""
+
+    provider_batch_id: str
+    model: str
+    chunks: list[list[int]] = Field(default_factory=list)
+    n_reviews: int
+    prompt_version: str = REVIEW_SENTIMENT_PROMPT_VERSION
+
+
+class ReviewBatchPollRequest(BaseModel):
+    provider_batch_id: str
+    chunks: list[list[int]] = Field(default_factory=list)
+
+
+class ReviewBatchPollResponse(BaseModel):
+    """`scores` only when status == completed — already sanitized by the
+    SAME guardrail as live scoring (hallucinated ids dropped, off-registry
+    aspects dropped, sentiment recomputed)."""
+
+    status: Literal["in_progress", "completed", "failed"]
+    scores: list[ReviewScoreDraft] = Field(default_factory=list)
+    rejected: list[ReviewScoreRejection] = Field(default_factory=list)
+    model: str | None = None
+    error: str | None = None
     prompt_version: str = REVIEW_SENTIMENT_PROMPT_VERSION
 
 

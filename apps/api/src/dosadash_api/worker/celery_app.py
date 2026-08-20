@@ -53,4 +53,17 @@ app.conf.beat_schedule = {
         "task": "inventory.nightly_po",
         "schedule": crontab(hour=2, minute=30),
     },
+    # Phase 8: 03:30 IST (after CRM at 03:00) — INT8 champion scores
+    # unscored reviews locally; the unconfident residue goes to the
+    # provider Batch API at 50% cost.
+    "nightly-review-scoring": {
+        "task": "reviews.nightly_scoring",
+        "schedule": crontab(hour=3, minute=30),
+    },
+    # Phase 8: hourly ingest of completed Batch API jobs (provider window
+    # is 24h; completion usually lands much sooner).
+    "review-batch-poll": {
+        "task": "reviews.batch_poll",
+        "schedule": crontab(minute=20),
+    },
 }

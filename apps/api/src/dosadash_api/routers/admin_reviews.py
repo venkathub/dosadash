@@ -25,9 +25,9 @@ from dosadash_api.db.models import MenuItem, OrderItem, Review, User
 from dosadash_api.db.session import get_session
 from dosadash_api.services import audit
 from dosadash_api.services.ai_client import AIClient, AIServiceError, get_ai_client
+from dosadash_api.services.review_scoring import apply_score_result
 from dosadash_shared import (
     MAX_REVIEW_SCORE_ITEMS,
-    RATING_ONLY_MODEL,
     REVIEW_ASPECTS,
     AdminReviewListOut,
     AdminReviewOut,
@@ -144,28 +144,8 @@ async def score_pending(
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     by_id = {r.id: r for r in rows}
-    rating_only = set(result.rating_only_ids)
-    local = set(result.local_ids)
     now = datetime.now(UTC)
-    scored = 0
-    for score in result.scores:
-        review = by_id.get(score.review_id)
-        if review is None:  # ai must never add reviews the api didn't send
-            continue
-        review.sentiment = score.sentiment
-        review.aspects = [a.model_dump() for a in score.aspects]
-        if score.review_id in rating_only:
-            review.scored_model = RATING_ONLY_MODEL
-            review.scored_prompt_version = result.prompt_version
-        elif score.review_id in local:
-            # INT8 ONNX champion on-CPU — no LLM, no prompt involved
-            review.scored_model = result.local_model
-            review.scored_prompt_version = None
-        else:
-            review.scored_model = result.model
-            review.scored_prompt_version = result.prompt_version
-        review.scored_at = now
-        scored += 1
+    scored = apply_score_result(by_id, result, now=now)
     audit.record(
         session,
         actor=admin,
