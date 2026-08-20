@@ -30,7 +30,22 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build --remove-orphans
-            docker compose -f infra/docker-compose.yml exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+            # Caddyfile is a SINGLE-FILE bind mount: `git reset --hard` above
+            # replaces the host file's inode, but the mount keeps exposing the
+            # OLD inode to the container — so `caddy reload` faithfully
+            # re-reads STALE config forever (Phase 10 postmortem: /media/*
+            # 404'd in prod for days; caddy had been up since before Phase 7
+            # while every deploy "reloaded" the pre-Phase-7 file). Compare
+            # host vs in-container checksums and restart caddy only on drift
+            # (restart re-resolves the bind path to the new inode).
+            HOST_SUM=$(sha256sum infra/Caddyfile | cut -d' ' -f1)
+            CTR_SUM=$(docker compose -f infra/docker-compose.yml exec -T caddy sha256sum /etc/caddy/Caddyfile | cut -d' ' -f1)
+            if [ "$HOST_SUM" != "$CTR_SUM" ]; then
+              echo "Caddyfile drift detected (host $HOST_SUM != container $CTR_SUM) — restarting caddy"
+              docker compose -f infra/docker-compose.yml restart caddy
+            else
+              echo "✓ caddy config in sync"
+            fi
             docker image prune -f
             # BuildKit cache from --build accumulates in /var/lib/containerd
             # (~26 GB by week 9, 76% disk). Keep 5 GB of recent layers so
