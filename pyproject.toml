@@ -36,6 +36,12 @@ finetune = [
     "onnx>=1.16",
     "onnxruntime>=1.19",
 ]
+# Load testing (Phase 9) — a GROUP for the finetune reason: locust/gevent
+# must never land in CI's --all-extras sync or the service images.
+#   uv run --group loadtest locust -f infra/loadtest/locustfile.py ...
+loadtest = [
+    "locust>=2.31",
+]
 
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu" }]
