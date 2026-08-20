@@ -22,9 +22,9 @@ from dosadash_shared import (
     InvoiceExtractResult,
     NutritionEstimateRequest,
     NutritionEstimateResponse,
+    PromoSuggestResult,
     RecsRequest,
     RecsResponse,
-    PromoSuggestResult,
     SupportAgentRequest,
     SupportAgentResponse,
 )
