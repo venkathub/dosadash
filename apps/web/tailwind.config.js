@@ -1,54 +1,58 @@
 /** @type {import('tailwindcss').Config} */
 // Heritage Luxe tokens — docs/12-ui-premium-design.md
+// NOTE: values are literal hex (not var(--x)) so Tailwind opacity modifiers
+// (bg-leaf-800/95, text-brass-300/80, …) work. Keep in sync with the CSS
+// variables in app/globals.css (single place each: CSS vars feed the custom
+// component utilities, these feed utility classes).
 module.exports = {
   content: ["./app/**/*.{js,ts,jsx,tsx,mdx}", "./components/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
         leaf: {
-          950: "var(--leaf-950)",
-          900: "var(--leaf-900)",
-          800: "var(--leaf-800)",
-          700: "var(--leaf-700)",
-          600: "var(--leaf-600)",
-          500: "var(--leaf-500)",
-          200: "var(--leaf-200)",
-          100: "var(--leaf-100)",
+          950: "#0b1f1a",
+          900: "#10291f",
+          800: "#14342b",
+          700: "#1c4436",
+          600: "#2a5a47",
+          500: "#3e7258",
+          200: "#bfd6c8",
+          100: "#dce9df",
         },
         brass: {
-          600: "var(--brass-600)",
-          500: "var(--brass-500)",
-          400: "var(--brass-400)",
-          300: "var(--brass-300)",
+          600: "#a88434",
+          500: "#c8a24b",
+          400: "#ddbc6e",
+          300: "#ebd49a",
         },
         cream: {
-          50: "var(--cream-50)",
-          100: "var(--cream-100)",
-          200: "var(--cream-200)",
-          300: "var(--cream-300)",
+          50: "#fdfbf5",
+          100: "#fbf6ec",
+          200: "#f3ead7",
+          300: "#e7d9be",
         },
         ink: {
-          900: "var(--ink-900)",
-          600: "var(--ink-600)",
-          400: "var(--ink-400)",
+          900: "#1f2421",
+          600: "#55605a",
+          400: "#8a948d",
         },
         chili: {
-          600: "var(--chili-600)",
-          500: "var(--chili-500)",
-          200: "var(--chili-200)",
+          600: "#b3372b",
+          500: "#d0483a",
+          200: "#f3c4be",
         },
         veg: {
-          600: "var(--veg-600)",
-          500: "var(--veg-500)",
-          200: "var(--veg-200)",
+          600: "#256c43",
+          500: "#2f8a56",
+          200: "#c4e3d1",
         },
         turmeric: {
-          500: "var(--turmeric-500)",
-          200: "var(--turmeric-200)",
+          500: "#d99a2b",
+          200: "#f4dfb4",
         },
         info: {
-          500: "var(--info-500)",
-          200: "var(--info-200)",
+          500: "#3e7cb1",
+          200: "#c3daec",
         },
       },
       fontFamily: {
