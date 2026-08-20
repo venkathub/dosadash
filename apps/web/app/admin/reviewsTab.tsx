@@ -5,15 +5,18 @@
  *  a reply ships as AI_DRAFT only when published verbatim. */
 
 import { useCallback, useState } from "react";
+import {
+  Badge,
+  Btn,
+  EmptyState,
+  Eyebrow,
+  SectionHeading,
+  Select,
+  Textarea,
+  statusBadgeTone,
+} from "../components/ui";
 import { AdminApiError, adminApi } from "./adminApi";
 import { ErrorBar, useLoad } from "./tabs";
-
-const inputCls =
-  "rounded bg-stone-700 px-2 py-1 text-sm text-stone-100 placeholder-stone-400 outline-none focus:ring-1 focus:ring-amber-400";
-const btnCls =
-  "rounded bg-amber-500 px-2 py-1 text-xs font-semibold text-stone-900 hover:bg-amber-400 disabled:opacity-40";
-const ghostBtnCls =
-  "rounded border border-stone-600 px-2 py-1 text-xs text-stone-300 hover:border-amber-400 hover:text-amber-300";
 
 type AspectTag = { aspect: string; sentiment: "POSITIVE" | "NEGATIVE" };
 
@@ -39,14 +42,8 @@ type TrendPoint = { week_start: string; count: number };
 type AspectTrend = { aspect: string; points: TrendPoint[]; alert: boolean; top_dishes: string[] };
 type Trends = { weeks: number; aspects: AspectTrend[] };
 
-const SENTIMENT_BADGE: Record<string, string> = {
-  POSITIVE: "bg-emerald-900/60 text-emerald-200",
-  NEGATIVE: "bg-red-900/60 text-red-200",
-  MIXED: "bg-amber-900/60 text-amber-200",
-};
-
 function Stars({ n }: { n: number }) {
-  return <span className="text-amber-300">{"★".repeat(n)}{"☆".repeat(5 - n)}</span>;
+  return <span className="text-brass-400">{"★".repeat(n)}{"☆".repeat(5 - n)}</span>;
 }
 
 function AspectChips({ aspects }: { aspects: AspectTag[] | null }) {
@@ -54,12 +51,9 @@ function AspectChips({ aspects }: { aspects: AspectTag[] | null }) {
   return (
     <span className="flex flex-wrap gap-1">
       {aspects.map((a) => (
-        <span
-          key={a.aspect}
-          className={`rounded px-1.5 py-0.5 text-[10px] ${a.sentiment === "NEGATIVE" ? "bg-red-900/50 text-red-200" : "bg-emerald-900/50 text-emerald-200"}`}
-        >
+        <Badge key={a.aspect} tone={a.sentiment === "NEGATIVE" ? "danger" : "success"} className="text-[10px]">
           {a.sentiment === "NEGATIVE" ? "▼" : "▲"} {a.aspect}
-        </span>
+        </Badge>
       ))}
     </span>
   );
@@ -99,46 +93,45 @@ function ReviewCard({
     act(() => adminApi(`/admin/reviews/${review.id}/reply`, { method: "POST", body: { reply } }));
 
   return (
-    <div className="rounded bg-stone-800 p-3 text-sm">
+    <div className="rounded-lg bg-leaf-800 p-3 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <Stars n={review.rating} />
         {review.sentiment ? (
-          <span className={`rounded px-2 py-0.5 text-xs ${SENTIMENT_BADGE[review.sentiment] ?? "bg-stone-700"}`}>
-            {review.sentiment}
-          </span>
+          <Badge tone={statusBadgeTone(review.sentiment)}>{review.sentiment}</Badge>
         ) : (
-          <span className="rounded bg-stone-700 px-2 py-0.5 text-xs text-stone-400">unscored</span>
+          <Badge tone="neutral">unscored</Badge>
         )}
         <AspectChips aspects={review.aspects} />
-        <span className="ml-auto text-xs text-stone-400">
+        <span className="ml-auto text-xs text-leaf-200/70">
           order #{review.order_id} · {review.dishes.join(", ")}
           {review.created_at && ` · ${new Date(review.created_at).toLocaleDateString("en-IN")}`}
         </span>
       </div>
-      {review.text && <p className="mt-2 text-stone-300">“{review.text}”</p>}
+      {review.text && <p className="mt-2 text-leaf-200">“{review.text}”</p>}
       {review.owner_reply ? (
-        <p className="mt-2 rounded bg-stone-700/60 p-2 text-xs text-stone-300">
-          <span className="text-emerald-300">✔ replied ({review.reply_source}):</span> {review.owner_reply}
+        <p className="mt-2 rounded-lg bg-leaf-700/60 p-2 text-xs text-leaf-200">
+          <span className="text-veg-200">✔ replied ({review.reply_source}):</span> {review.owner_reply}
         </p>
       ) : (
         review.text && (
           <div className="mt-2 flex flex-wrap items-start gap-2">
-            <textarea
-              className={`${inputCls} min-h-[3rem] w-full max-w-xl flex-1`}
+            <Textarea
+              tone="dark"
+              className="min-h-[3rem] w-full max-w-xl flex-1 px-2 py-1"
               placeholder="Owner reply…"
               value={reply}
               onChange={(e) => setReply(e.target.value)}
             />
             <span className="flex flex-col gap-1">
-              <button className={ghostBtnCls} disabled={busy} onClick={draftReply}>
+              <Btn variant="ghost" size="sm" disabled={busy} onClick={draftReply}>
                 🤖 draft reply
-              </button>
-              <button className={btnCls} disabled={busy || !reply.trim()} onClick={publish}>
+              </Btn>
+              <Btn variant="gold" size="sm" disabled={busy || !reply.trim()} onClick={publish}>
                 publish
-              </button>
+              </Btn>
             </span>
             {review.reply_draft_model && (
-              <span className="w-full text-[10px] text-stone-500">draft by {review.reply_draft_model}</span>
+              <span className="w-full"><span className="ai-meta">🤖 draft by {review.reply_draft_model}</span></span>
             )}
           </div>
         )
@@ -155,14 +148,17 @@ function TrendsPanel() {
   const alerts = data.aspects.filter((a) => a.alert);
   const max = Math.max(1, ...data.aspects.flatMap((a) => a.points.map((p) => p.count)));
   return (
-    <div className="mb-4 rounded bg-stone-800 p-3">
-      <h3 className="mb-2 text-sm font-semibold text-stone-200">
-        Complaint trends <span className="text-xs font-normal text-stone-400">(negative mentions / week, {data.weeks}w)</span>
-      </h3>
+    <div className="mb-4 rounded-lg bg-leaf-800 p-3">
+      <div className="mb-2">
+        <Eyebrow>Reviews</Eyebrow>
+        <SectionHeading as="h3" kolam={false} className="text-base text-leaf-100">
+          Complaint trends <span className="font-sans text-xs font-normal text-leaf-200/70">(negative mentions / week, {data.weeks}w)</span>
+        </SectionHeading>
+      </div>
       {alerts.length > 0 && (
         <div className="mb-2 space-y-1">
           {alerts.map((a) => (
-            <p key={a.aspect} className="rounded bg-red-900/40 px-2 py-1 text-xs text-red-200">
+            <p key={a.aspect} className="rounded-lg border border-chili-500/40 bg-chili-600/20 px-2 py-1 text-xs text-chili-200">
               ⚠ {a.aspect} complaints spiking ↑{a.top_dishes.length > 0 && <> — {a.top_dishes.join(", ")}</>}
             </p>
           ))}
@@ -172,14 +168,14 @@ function TrendsPanel() {
         {data.aspects
           .filter((a) => a.points.some((p) => p.count > 0))
           .map((a) => (
-            <div key={a.aspect} className="text-xs text-stone-400">
-              <span className={a.alert ? "text-red-300" : ""}>{a.aspect}</span>
-              <div className="mt-1 flex h-8 items-end gap-0.5">
+            <div key={a.aspect} className="text-xs text-leaf-200/70">
+              <span className={a.alert ? "text-chili-200" : ""}>{a.aspect}</span>
+              <div className="mt-1 flex h-8 items-end gap-0.5 rounded bg-leaf-950/60 px-0.5 pt-0.5">
                 {a.points.map((p) => (
                   <span
                     key={p.week_start}
                     title={`${p.week_start}: ${p.count}`}
-                    className={`w-2 rounded-t ${a.alert ? "bg-red-400/80" : "bg-amber-400/60"}`}
+                    className={`w-2 rounded-t ${a.alert ? "bg-chili-500/80" : "bg-brass-500/60"}`}
                     style={{ height: `${Math.max(8, (p.count / max) * 100)}%`, opacity: p.count === 0 ? 0.15 : 1 }}
                   />
                 ))}
@@ -222,22 +218,22 @@ export function ReviewsTab() {
       <ErrorBar msg={error} />
       <TrendsPanel />
       <div className="mb-3 flex items-center gap-2">
-        <select className={inputCls} value={filter} onChange={(e) => setFilter(e.target.value)}>
+        <Select tone="dark" className="px-2 py-1" value={filter} onChange={(e) => setFilter(e.target.value)}>
           {["all", "unscored", "negative", "unreplied"].map((f) => (
             <option key={f}>{f}</option>
           ))}
-        </select>
-        <button className={btnCls} disabled={scoring || (data?.unscored ?? 0) === 0} onClick={scorePending}>
+        </Select>
+        <Btn variant="gold" size="sm" disabled={scoring || (data?.unscored ?? 0) === 0} onClick={scorePending}>
           {scoring ? "scoring…" : `🤖 score ${data?.unscored ?? 0} pending`}
-        </button>
-        <button className={ghostBtnCls} onClick={refresh}>↻ refresh</button>
-        {data && <span className="text-xs text-stone-400">{data.total} review(s)</span>}
+        </Btn>
+        <Btn variant="ghost" size="sm" onClick={refresh}>↻ refresh</Btn>
+        {data && <span className="text-xs text-leaf-200/70">{data.total} review(s)</span>}
       </div>
       <div className="space-y-2">
         {(data?.reviews ?? []).map((r) => (
           <ReviewCard key={r.id} review={r} onAction={refresh} onError={setError} />
         ))}
-        {data?.reviews.length === 0 && <p className="text-sm text-stone-400">No reviews here 🎉</p>}
+        {data?.reviews.length === 0 && <EmptyState>No reviews here 🎉</EmptyState>}
       </div>
     </div>
   );

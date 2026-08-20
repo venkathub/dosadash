@@ -2,6 +2,22 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  Badge,
+  Btn,
+  ErrorBar as SharedErrorBar,
+  EmptyState,
+  Eyebrow,
+  Input,
+  Select,
+  Textarea,
+  statusBadgeTone,
+  tableCls,
+  tdCls,
+  thCls,
+  theadCls,
+  trCls,
+} from "../components/ui";
+import {
   AdminApiError,
   AdminItem,
   AdminOrder,
@@ -15,13 +31,6 @@ import {
   SettingsRow,
   adminApi,
 } from "./adminApi";
-
-const inputCls =
-  "rounded bg-stone-700 px-2 py-1 text-sm text-stone-100 placeholder-stone-400 outline-none focus:ring-1 focus:ring-amber-400";
-const btnCls =
-  "rounded bg-amber-500 px-2 py-1 text-xs font-semibold text-stone-900 hover:bg-amber-400 disabled:opacity-40";
-const ghostBtnCls =
-  "rounded border border-stone-600 px-2 py-1 text-xs text-stone-300 hover:border-amber-400 hover:text-amber-300";
 
 export function useLoad<T>(load: () => Promise<T>) {
   const [data, setData] = useState<T | null>(null);
@@ -38,9 +47,14 @@ export function useLoad<T>(load: () => Promise<T>) {
   return { data, error, refresh, setError };
 }
 
+/** Shared error bar with the admin surface's bottom margin baked in. */
 export function ErrorBar({ msg }: { msg: string }) {
   if (!msg) return null;
-  return <p className="mb-3 rounded bg-red-900/60 px-3 py-2 text-sm text-red-200">⚠ {msg}</p>;
+  return (
+    <div className="mb-3">
+      <SharedErrorBar msg={`⚠ ${msg}`} />
+    </div>
+  );
 }
 
 /* -------------------------------------------------------------- Menu tab */
@@ -60,7 +74,7 @@ export function MenuTab() {
     <div>
       <ErrorBar msg={error} />
       <form
-        className="mb-4 flex flex-wrap items-center gap-2 rounded bg-stone-800 p-3"
+        className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-leaf-800 p-3"
         onSubmit={(e) => {
           e.preventDefault();
           act(() =>
@@ -77,38 +91,39 @@ export function MenuTab() {
           ).then(() => setForm({ name: "", category: "", price: "", is_veg: true, spice: 1 }));
         }}
       >
-        <span className="text-xs uppercase tracking-wide text-stone-400">New item</span>
-        <input className={inputCls} placeholder="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <input className={inputCls} placeholder="Category" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
-        <input className={`${inputCls} w-24`} placeholder="₹ price" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-        <label className="flex items-center gap-1 text-xs text-stone-300">
+        <Eyebrow>New item</Eyebrow>
+        <Input tone="dark" className="px-2 py-1" placeholder="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <Input tone="dark" className="px-2 py-1" placeholder="Category" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+        <Input tone="dark" className="w-24 px-2 py-1" placeholder="₹ price" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+        <label className="flex items-center gap-1 text-xs text-leaf-200">
           <input type="checkbox" checked={form.is_veg} onChange={(e) => setForm({ ...form, is_veg: e.target.checked })} /> veg
         </label>
-        <select className={inputCls} value={form.spice} onChange={(e) => setForm({ ...form, spice: Number(e.target.value) })}>
+        <Select tone="dark" className="px-2 py-1" value={form.spice} onChange={(e) => setForm({ ...form, spice: Number(e.target.value) })}>
           {[0, 1, 2, 3].map((s) => (
             <option key={s} value={s}>{"🌶".repeat(s) || "no spice"}</option>
           ))}
-        </select>
-        <button className={btnCls}>Add</button>
+        </Select>
+        <Btn variant="gold" size="sm">Add</Btn>
       </form>
 
-      <table className="w-full text-left text-sm">
-        <thead className="text-xs uppercase text-stone-400">
-          <tr><th className="p-2">Item</th><th>Category</th><th>Price ₹</th><th>Schedule</th><th className="text-right">86</th></tr>
+      <table className={tableCls}>
+        <thead className={theadCls}>
+          <tr><th className={thCls}>Item</th><th className={thCls}>Category</th><th className={`${thCls} text-right`}>Price ₹</th><th className={thCls}>Schedule</th><th className={`${thCls} text-right`}>86</th></tr>
         </thead>
         <tbody>
           {(items ?? []).map((i) => (
-            <tr key={i.id} className="border-t border-stone-800">
-              <td className="p-2">
+            <tr key={i.id} className={trCls}>
+              <td className={tdCls}>
                 {i.is_veg ? "🟢" : "🔴"} {i.name}
                 {i.allergens.length > 0 && (
-                  <span className="ml-2 text-xs text-orange-300">{i.allergens.join(", ")}</span>
+                  <span className="ml-2 text-xs text-turmeric-200">{i.allergens.join(", ")}</span>
                 )}
               </td>
-              <td className="text-stone-400">{i.category}</td>
-              <td>
-                <input
-                  className={`${inputCls} w-20`}
+              <td className={`${tdCls} text-leaf-200`}>{i.category}</td>
+              <td className={`${tdCls} text-right`}>
+                <Input
+                  tone="dark"
+                  className="w-20 px-2 py-1 text-right"
                   value={priceEdits[i.id] ?? i.price}
                   onChange={(e) => setPriceEdits({ ...priceEdits, [i.id]: e.target.value })}
                   onBlur={() => {
@@ -118,10 +133,11 @@ export function MenuTab() {
                   }}
                 />
               </td>
-              <td className="text-xs text-stone-400">{i.schedule ? Object.keys(i.schedule).join(" ") : "always"}</td>
-              <td className="p-2 text-right">
-                <button
-                  className={i.is_available ? ghostBtnCls : `${btnCls} bg-red-500 hover:bg-red-400`}
+              <td className={`${tdCls} text-xs text-leaf-200/70`}>{i.schedule ? Object.keys(i.schedule).join(" ") : "always"}</td>
+              <td className={`${tdCls} text-right`}>
+                <Btn
+                  variant={i.is_available ? "ghost" : "danger"}
+                  size="sm"
                   onClick={() =>
                     act(() =>
                       adminApi(`/admin/menu/items/${i.id}/availability`, {
@@ -132,7 +148,7 @@ export function MenuTab() {
                   }
                 >
                   {i.is_available ? "86 it" : "86'd — restore"}
-                </button>
+                </Btn>
               </td>
             </tr>
           ))}
@@ -169,55 +185,58 @@ export function OrdersTab() {
     <div>
       <ErrorBar msg={error} />
       <div className="mb-3 flex items-center gap-2">
-        <select className={inputCls} value={status} onChange={(e) => setStatus(e.target.value)}>
+        <Select tone="dark" className="px-2 py-1" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">all statuses</option>
           {["PLACED", "CONFIRMED", "COOKING", "READY", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REFUNDED"].map((s) => (
             <option key={s}>{s}</option>
           ))}
-        </select>
-        <button className={ghostBtnCls} onClick={refresh}>↻ refresh</button>
-        <button
-          className={ghostBtnCls}
+        </Select>
+        <Btn variant="ghost" size="sm" onClick={refresh}>↻ refresh</Btn>
+        <Btn
+          variant="ghost"
+          size="sm"
           title="Inject a signed mock Swiggy/Zomato order through the aggregator webhook path"
           onClick={() => act(() => adminApi("/admin/aggregator/simulate", { method: "POST", body: { count: 1 } }))}
         >
           🛵 Simulate aggregator order
-        </button>
+        </Btn>
       </div>
       <div className="space-y-2">
         {(orders ?? []).map((o) => (
-          <div key={o.id} className="flex flex-wrap items-center gap-3 rounded bg-stone-800 p-3 text-sm">
-            <span className="font-mono text-amber-300">#{o.id}</span>
-            <span className="rounded bg-stone-700 px-2 py-0.5 text-xs">{o.status}</span>
-            <span className="text-stone-300">{o.items.map((it) => `${it.qty}× ${it.name}`).join(", ")}</span>
-            <span className="ml-auto font-semibold">₹{o.total}</span>
-            {o.payment && <span className="text-xs text-stone-400">pay: {o.payment.status}</span>}
+          <div key={o.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-leaf-800 p-3 text-sm">
+            <span className="font-mono text-brass-300">#{o.id}</span>
+            <Badge tone={statusBadgeTone(o.status)}>{o.status}</Badge>
+            <span className="text-leaf-200">{o.items.map((it) => `${it.qty}× ${it.name}`).join(", ")}</span>
+            <span className="tnum ml-auto font-display font-semibold">₹{o.total}</span>
+            {o.payment && <span className="text-xs text-leaf-200/70">pay: {o.payment.status}</span>}
             {NEXT[o.status] && (
-              <button className={btnCls} onClick={() => act(() => adminApi(`/orders/${o.id}/status`, { method: "POST", body: { status: NEXT[o.status] } }))}>
+              <Btn variant="gold" size="sm" onClick={() => act(() => adminApi(`/orders/${o.id}/status`, { method: "POST", body: { status: NEXT[o.status] } }))}>
                 → {NEXT[o.status]}
-              </button>
+              </Btn>
             )}
             {["PLACED", "CONFIRMED", "COOKING"].includes(o.status) && (
-              <button
-                className={ghostBtnCls}
+              <Btn
+                variant="danger"
+                size="sm"
                 onClick={() => {
                   const reason = window.prompt("Cancel reason?");
                   if (reason) act(() => adminApi(`/admin/orders/${o.id}/cancel`, { method: "POST", body: { reason } }));
                 }}
               >
                 cancel
-              </button>
+              </Btn>
             )}
             {["DELIVERED", "CANCELLED"].includes(o.status) && o.payment?.status === "CAPTURED" && (
-              <button
-                className={`${ghostBtnCls} border-red-500 text-red-300`}
+              <Btn
+                variant="danger"
+                size="sm"
                 onClick={() => {
                   const reason = window.prompt("Refund reason?");
                   if (reason) act(() => adminApi(`/admin/orders/${o.id}/refund`, { method: "POST", body: { reason } }));
                 }}
               >
                 refund
-              </button>
+              </Btn>
             )}
           </div>
         ))}
@@ -250,7 +269,7 @@ export function CombosTab() {
     <div>
       <ErrorBar msg={error} />
       <form
-        className="mb-4 rounded bg-stone-800 p-3"
+        className="mb-4 rounded-lg bg-leaf-800 p-3"
         onSubmit={(e) => {
           e.preventDefault();
           act(() => adminApi("/admin/combos", { method: "POST", body: { name: form.name, price: form.price, item_ids: form.ids } })).then(() =>
@@ -259,14 +278,14 @@ export function CombosTab() {
         }}
       >
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="text-xs uppercase tracking-wide text-stone-400">New combo</span>
-          <input className={inputCls} placeholder="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <input className={`${inputCls} w-24`} placeholder="₹ price" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-          <button className={btnCls} disabled={form.ids.length < 2}>Create draft ({form.ids.length} items)</button>
+          <Eyebrow>New combo</Eyebrow>
+          <Input tone="dark" className="px-2 py-1" placeholder="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input tone="dark" className="w-24 px-2 py-1" placeholder="₹ price" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+          <Btn variant="gold" size="sm" disabled={form.ids.length < 2}>Create draft ({form.ids.length} items)</Btn>
         </div>
         <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
           {(data?.items ?? []).map((i) => (
-            <label key={i.id} className="flex items-center gap-1 rounded bg-stone-700 px-2 py-0.5 text-xs">
+            <label key={i.id} className="flex items-center gap-1 rounded-full bg-leaf-700 px-2 py-0.5 text-xs text-leaf-100">
               <input
                 type="checkbox"
                 checked={form.ids.includes(i.id)}
@@ -282,19 +301,18 @@ export function CombosTab() {
 
       <div className="space-y-2">
         {(data?.combos ?? []).map((c) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-3 rounded bg-stone-800 p-3 text-sm">
+          <div key={c.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-leaf-800 p-3 text-sm">
             <span className="font-semibold">{c.name}</span>
-            <span className="text-stone-400">{c.item_ids.map(itemName).join(" + ")}</span>
-            <span>₹{c.price}</span>
-            <span className={`rounded px-2 py-0.5 text-xs ${c.status === "APPROVED" ? "bg-green-800 text-green-200" : c.status === "REJECTED" ? "bg-red-900 text-red-300" : "bg-stone-700"}`}>
-              {c.status}{c.source === "AI_SUGGESTED" ? " · 🤖 AI" : ""}
-            </span>
+            <span className="text-leaf-200/70">{c.item_ids.map(itemName).join(" + ")}</span>
+            <span className="tnum">₹{c.price}</span>
+            <Badge tone={statusBadgeTone(c.status)}>{c.status}</Badge>
+            {c.source === "AI_SUGGESTED" && <span className="ai-meta">🤖 AI suggested</span>}
             <span className="ml-auto" />
             {c.status !== "APPROVED" && (
-              <button className={btnCls} onClick={() => act(() => adminApi(`/admin/combos/${c.id}/status`, { method: "POST", body: { status: "APPROVED" } }))}>approve</button>
+              <Btn variant="gold" size="sm" onClick={() => act(() => adminApi(`/admin/combos/${c.id}/status`, { method: "POST", body: { status: "APPROVED" } }))}>approve</Btn>
             )}
             {c.status !== "REJECTED" && (
-              <button className={ghostBtnCls} onClick={() => act(() => adminApi(`/admin/combos/${c.id}/status`, { method: "POST", body: { status: "REJECTED" } }))}>reject</button>
+              <Btn variant="danger" size="sm" onClick={() => act(() => adminApi(`/admin/combos/${c.id}/status`, { method: "POST", body: { status: "REJECTED" } }))}>reject</Btn>
             )}
           </div>
         ))}
@@ -324,34 +342,31 @@ export function NutritionTab() {
   return (
     <div>
       <ErrorBar msg={error} />
-      <p className="mb-3 text-xs text-stone-400">
+      <p className="mb-3 text-xs text-leaf-200/70">
         LLM drafts from the recipe mapping — nothing goes public without your approval.
       </p>
-      <table className="w-full text-left text-sm">
-        <thead className="text-xs uppercase text-stone-400">
-          <tr><th className="p-2">Item</th><th>kcal</th><th>P / C / F (g)</th><th>conf.</th><th>Status</th><th className="text-right">Actions</th></tr>
+      <table className={tableCls}>
+        <thead className={theadCls}>
+          <tr><th className={thCls}>Item</th><th className={`${thCls} text-right`}>kcal</th><th className={`${thCls} text-right`}>P / C / F (g)</th><th className={`${thCls} text-right`}>conf.</th><th className={thCls}>Status</th><th className={`${thCls} text-right`}>Actions</th></tr>
         </thead>
         <tbody>
           {(data?.items ?? []).map((i) => {
             const n = data?.byId.get(i.id);
             return (
-              <tr key={i.id} className="border-t border-stone-800">
-                <td className="p-2">{i.name}</td>
-                <td>{n ? Math.round(n.estimate.calories_kcal) : "—"}</td>
-                <td className="text-stone-400">
+              <tr key={i.id} className={trCls}>
+                <td className={tdCls}>{i.name}</td>
+                <td className={`${tdCls} text-right`}>{n ? Math.round(n.estimate.calories_kcal) : "—"}</td>
+                <td className={`${tdCls} text-right text-leaf-200`}>
                   {n ? `${n.estimate.protein_g} / ${n.estimate.carbs_g} / ${n.estimate.fat_g}` : "—"}
                 </td>
-                <td>{n ? `${Math.round(n.estimate.confidence * 100)}%` : ""}</td>
-                <td>
-                  {n && (
-                    <span className={`rounded px-2 py-0.5 text-xs ${n.status === "APPROVED" ? "bg-green-800 text-green-200" : n.status === "REJECTED" ? "bg-red-900 text-red-300" : "bg-amber-900 text-amber-200"}`}>
-                      {n.status}
-                    </span>
-                  )}
+                <td className={`${tdCls} text-right`}>{n ? `${Math.round(n.estimate.confidence * 100)}%` : ""}</td>
+                <td className={tdCls}>
+                  {n && <Badge tone={statusBadgeTone(n.status)}>{n.status}</Badge>}
                 </td>
-                <td className="p-2 text-right">
-                  <button
-                    className={ghostBtnCls}
+                <td className={`${tdCls} text-right`}>
+                  <Btn
+                    variant="ghost"
+                    size="sm"
                     disabled={busy === i.id}
                     onClick={() => {
                       setBusy(i.id);
@@ -365,11 +380,11 @@ export function NutritionTab() {
                     }}
                   >
                     {busy === i.id ? "…thinking" : n ? "re-enrich" : "✨ enrich"}
-                  </button>
+                  </Btn>
                   {n && n.status === "DRAFT" && (
                     <>
-                      <button className={`${btnCls} ml-1`} onClick={() => act(() => adminApi(`/admin/nutrition/${i.id}/status`, { method: "POST", body: { status: "APPROVED" } }))}>approve</button>
-                      <button className={`${ghostBtnCls} ml-1`} onClick={() => act(() => adminApi(`/admin/nutrition/${i.id}/status`, { method: "POST", body: { status: "REJECTED" } }))}>reject</button>
+                      <Btn variant="gold" size="sm" className="ml-1" onClick={() => act(() => adminApi(`/admin/nutrition/${i.id}/status`, { method: "POST", body: { status: "APPROVED" } }))}>approve</Btn>
+                      <Btn variant="danger" size="sm" className="ml-1" onClick={() => act(() => adminApi(`/admin/nutrition/${i.id}/status`, { method: "POST", body: { status: "REJECTED" } }))}>reject</Btn>
                     </>
                   )}
                 </td>
@@ -407,10 +422,11 @@ export function SettingsTab() {
   return (
     <div className="max-w-2xl space-y-4">
       <ErrorBar msg={error} />
-      <div className="rounded bg-stone-800 p-4">
-        <h3 className="mb-2 text-sm font-semibold">Kitchen</h3>
-        <button
-          className={settings.kitchen_paused ? btnCls : `${ghostBtnCls} border-red-500 text-red-300`}
+      <div className="rounded-lg bg-leaf-800 p-4">
+        <Eyebrow className="mb-2 text-brass-300/80">Kitchen</Eyebrow>
+        <Btn
+          variant={settings.kitchen_paused ? "gold" : "danger"}
+          size="sm"
           onClick={() => {
             const reason = settings.kitchen_paused ? null : window.prompt("Pause reason?");
             if (settings.kitchen_paused || reason)
@@ -418,40 +434,46 @@ export function SettingsTab() {
           }}
         >
           {settings.kitchen_paused ? "▶ resume orders" : "⏸ pause kitchen"}
-        </button>
-        {settings.kitchen_paused && <span className="ml-3 text-sm text-red-300">orders are paused — checkout returns 503</span>}
+        </Btn>
+        {settings.kitchen_paused && <span className="ml-3 text-sm text-chili-200">orders are paused — checkout returns 503</span>}
       </div>
 
-      <div className="rounded bg-stone-800 p-4">
-        <h3 className="mb-2 text-sm font-semibold">Delivery pincodes</h3>
-        <textarea
-          className={`${inputCls} w-full`}
+      <div className="rounded-lg bg-leaf-800 p-4">
+        <Eyebrow className="mb-2 text-brass-300/80">Delivery pincodes</Eyebrow>
+        <Textarea
+          tone="dark"
+          className="w-full"
           rows={2}
           value={pincodes ?? settings.delivery_pincodes.join(", ")}
           onChange={(e) => setPincodes(e.target.value)}
         />
-        <button
-          className={`${btnCls} mt-2`}
+        <Btn
+          variant="gold"
+          size="sm"
+          className="mt-2"
           disabled={pincodes === null}
           onClick={() => act(() => adminApi("/admin/settings", { method: "PUT", body: { delivery_pincodes: (pincodes ?? "").split(",").map((p) => p.trim()).filter(Boolean) } }))}
         >
           Save pincodes
-        </button>
+        </Btn>
       </div>
 
-      <div className="rounded bg-stone-800 p-4">
-        <h3 className="mb-2 text-sm font-semibold">Business hours <span className="font-normal text-stone-400">(blank day = closed; none set = always open)</span></h3>
+      <div className="rounded-lg bg-leaf-800 p-4">
+        <Eyebrow className="mb-2 text-brass-300/80">
+          Business hours <span className="normal-case tracking-normal text-leaf-200/60">(blank day = closed; none set = always open)</span>
+        </Eyebrow>
         {DAYS.map((d) => (
           <div key={d} className="mb-1 flex items-center gap-2 text-sm">
-            <span className="w-10 uppercase text-stone-400">{d}</span>
-            <input className={`${inputCls} w-20`} placeholder="09:00" value={hrs[d]?.start ?? ""} onChange={(e) => setHours({ ...hrs, [d]: { start: e.target.value, end: hrs[d]?.end ?? "" } })} />
-            <span className="text-stone-500">–</span>
-            <input className={`${inputCls} w-20`} placeholder="22:00" value={hrs[d]?.end ?? ""} onChange={(e) => setHours({ ...hrs, [d]: { start: hrs[d]?.start ?? "", end: e.target.value } })} />
+            <span className="w-10 uppercase text-leaf-200/70">{d}</span>
+            <Input tone="dark" className="w-20 px-2 py-1" placeholder="09:00" value={hrs[d]?.start ?? ""} onChange={(e) => setHours({ ...hrs, [d]: { start: e.target.value, end: hrs[d]?.end ?? "" } })} />
+            <span className="text-leaf-500">–</span>
+            <Input tone="dark" className="w-20 px-2 py-1" placeholder="22:00" value={hrs[d]?.end ?? ""} onChange={(e) => setHours({ ...hrs, [d]: { start: hrs[d]?.start ?? "", end: e.target.value } })} />
           </div>
         ))}
         <div className="mt-2 flex gap-2">
-          <button
-            className={btnCls}
+          <Btn
+            variant="gold"
+            size="sm"
             disabled={hours === null}
             onClick={() => {
               const filled = Object.fromEntries(Object.entries(hrs).filter(([, w]) => w.start && w.end));
@@ -459,10 +481,10 @@ export function SettingsTab() {
             }}
           >
             Save hours
-          </button>
-          <button className={ghostBtnCls} onClick={() => act(() => adminApi("/admin/settings", { method: "PUT", body: { business_hours: null } }))}>
+          </Btn>
+          <Btn variant="ghost" size="sm" onClick={() => act(() => adminApi("/admin/settings", { method: "PUT", body: { business_hours: null } }))}>
             Clear (always open)
-          </button>
+          </Btn>
         </div>
       </div>
     </div>
@@ -482,21 +504,21 @@ export function AuditTab() {
     <div>
       <ErrorBar msg={error} />
       <div className="mb-3 flex gap-2">
-        <input className={inputCls} placeholder="filter action/entity…" value={filter} onChange={(e) => setFilter(e.target.value)} />
-        <button className={ghostBtnCls} onClick={refresh}>↻</button>
+        <Input tone="dark" className="px-2 py-1" placeholder="filter action/entity…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        <Btn variant="ghost" size="sm" onClick={refresh}>↻</Btn>
       </div>
-      <table className="w-full text-left text-xs">
-        <thead className="uppercase text-stone-400">
-          <tr><th className="p-2">When (UTC)</th><th>Actor</th><th>Action</th><th>Entity</th><th>Detail</th></tr>
+      <table className={tableCls}>
+        <thead className={theadCls}>
+          <tr><th className={thCls}>When (UTC)</th><th className={thCls}>Actor</th><th className={thCls}>Action</th><th className={thCls}>Entity</th><th className={thCls}>Detail</th></tr>
         </thead>
         <tbody>
           {visible.map((r) => (
-            <tr key={r.id} className="border-t border-stone-800 align-top">
-              <td className="p-2 whitespace-nowrap text-stone-400">{r.at.replace("T", " ").slice(0, 19)}</td>
-              <td>u{r.user_id}</td>
-              <td className="text-amber-300">{r.action}</td>
-              <td>{r.entity}</td>
-              <td className="max-w-md break-all text-stone-400">{r.detail ? JSON.stringify(r.detail) : ""}</td>
+            <tr key={r.id} className={`${trCls} align-top`}>
+              <td className={`${tdCls} whitespace-nowrap text-leaf-200/70`}>{r.at.replace("T", " ").slice(0, 19)}</td>
+              <td className={tdCls}>u{r.user_id}</td>
+              <td className={`${tdCls} text-brass-300`}>{r.action}</td>
+              <td className={tdCls}>{r.entity}</td>
+              <td className={`${tdCls} max-w-md break-all font-mono text-xs text-leaf-200/70`}>{r.detail ? JSON.stringify(r.detail) : ""}</td>
             </tr>
           ))}
         </tbody>
@@ -510,11 +532,7 @@ export function AuditTab() {
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
 function GateBadge({ passed }: { passed: boolean }) {
-  return passed ? (
-    <span className="rounded bg-emerald-900/70 px-2 py-0.5 text-emerald-300">PASS</span>
-  ) : (
-    <span className="rounded bg-red-900/70 px-2 py-0.5 text-red-300">FAIL</span>
-  );
+  return passed ? <Badge tone="success">PASS</Badge> : <Badge tone="danger">FAIL</Badge>;
 }
 
 export function EvalsTab() {
@@ -533,67 +551,65 @@ export function EvalsTab() {
     <div>
       <ErrorBar msg={error} />
       <div className="mb-3 flex items-center gap-3">
-        <h2 className="text-sm font-semibold text-stone-300">
+        <Eyebrow>
           Live eval scoreboard — merge gate: order_accuracy ≥ 95%, zero bypasses
-        </h2>
-        <button className={ghostBtnCls} onClick={refresh}>↻</button>
+        </Eyebrow>
+        <Btn variant="ghost" size="sm" onClick={refresh}>↻</Btn>
       </div>
-      <table className="w-full text-left text-xs">
-        <thead className="uppercase text-stone-400">
+      <table className={tableCls}>
+        <thead className={theadCls}>
           <tr>
-            <th className="p-2">Ran (UTC)</th><th>Commit</th><th>Trigger</th><th>Cases</th>
-            <th>Order acc.</th><th>Tool</th><th>Bypasses</th><th>Tone</th><th>Gates</th>
+            <th className={thCls}>Ran (UTC)</th><th className={thCls}>Commit</th><th className={thCls}>Trigger</th><th className={`${thCls} text-right`}>Cases</th>
+            <th className={`${thCls} text-right`}>Order acc.</th><th className={`${thCls} text-right`}>Tool</th><th className={`${thCls} text-right`}>Bypasses</th><th className={`${thCls} text-right`}>Tone</th><th className={thCls}>Gates</th>
           </tr>
         </thead>
         <tbody>
           {(runs ?? []).map((r) => (
             <tr
               key={r.id}
-              className="cursor-pointer border-t border-stone-800 hover:bg-stone-800/50"
+              className={`${trCls} cursor-pointer`}
               onClick={() => openDetail(r.id)}
             >
-              <td className="p-2 whitespace-nowrap text-stone-400">{r.ran_at.replace("T", " ").slice(0, 19)}</td>
-              <td className="font-mono text-stone-400">{r.git_sha?.slice(0, 7) ?? "—"}</td>
-              <td>{r.trigger}</td>
-              <td>{r.cases}</td>
-              <td className={r.order_accuracy >= 0.95 ? "text-emerald-300" : "text-red-300"}>{pct(r.order_accuracy)}</td>
-              <td className={r.tool_correctness >= 1 ? "text-emerald-300" : "text-red-300"}>{pct(r.tool_correctness)}</td>
-              <td className={r.guardrail_bypasses === 0 ? "text-emerald-300" : "text-red-300"}>
+              <td className={`${tdCls} whitespace-nowrap text-leaf-200/70`}>{r.ran_at.replace("T", " ").slice(0, 19)}</td>
+              <td className={`${tdCls} font-mono text-leaf-200/70`}>{r.git_sha?.slice(0, 7) ?? "—"}</td>
+              <td className={tdCls}>{r.trigger}</td>
+              <td className={`${tdCls} tnum text-right`}>{r.cases}</td>
+              <td className={`${tdCls} tnum text-right ${r.order_accuracy >= 0.95 ? "text-veg-200" : "text-chili-200"}`}>{pct(r.order_accuracy)}</td>
+              <td className={`${tdCls} tnum text-right ${r.tool_correctness >= 1 ? "text-veg-200" : "text-chili-200"}`}>{pct(r.tool_correctness)}</td>
+              <td className={`${tdCls} tnum text-right ${r.guardrail_bypasses === 0 ? "text-veg-200" : "text-chili-200"}`}>
                 {r.guardrail_bypasses}/{r.guardrail_cases}
               </td>
-              <td>{r.tone === null ? "—" : pct(r.tone)}</td>
-              <td><GateBadge passed={r.gates_passed} /></td>
+              <td className={`${tdCls} tnum text-right`}>{r.tone === null ? "—" : pct(r.tone)}</td>
+              <td className={tdCls}><GateBadge passed={r.gates_passed} /></td>
             </tr>
           ))}
         </tbody>
       </table>
       {runs && runs.length === 0 && (
-        <p className="p-3 text-sm text-stone-400">
-          No runs recorded yet — CI posts here after every live eval gate run.
-        </p>
+        <EmptyState>No runs recorded yet — CI posts here after every live eval gate run.</EmptyState>
       )}
       {detail && (
-        <div className="mt-4 rounded border border-stone-700 bg-stone-800/40 p-3 text-xs">
+        <div className="mt-4 rounded-lg bg-leaf-800 p-3 text-xs">
           <div className="mb-2 flex items-center gap-3">
-            <span className="font-semibold text-stone-200">
-              Run #{detail.id} · {detail.git_sha?.slice(0, 7) ?? "local"} · <GateBadge passed={detail.gates_passed} />
+            <span className="font-semibold text-leaf-100">
+              Run #{detail.id} · <span className="font-mono">{detail.git_sha?.slice(0, 7) ?? "local"}</span> · <GateBadge passed={detail.gates_passed} />
             </span>
-            <button className={ghostBtnCls} onClick={() => setDetail(null)}>close</button>
+            <Btn variant="ghost" size="sm" onClick={() => setDetail(null)}>close</Btn>
           </div>
           {detail.failures.length > 0 && (
-            <p className="mb-2 text-red-300">gate failures: {detail.failures.join("; ")}</p>
+            <p className="mb-2 text-chili-200">gate failures: {detail.failures.join("; ")}</p>
           )}
           {problemCases.length === 0 ? (
-            <p className="text-emerald-300">All {detail.cases} cases clean.</p>
+            <p className="text-veg-200">All {detail.cases} cases clean.</p>
           ) : (
             <ul className="space-y-1">
               {problemCases.map((c) => (
-                <li key={c.id} className="border-t border-stone-800 pt-1">
-                  <span className="text-amber-300">{c.id}</span>{" "}
-                  <span className="text-stone-500">({c.language} · {c.tags.join(", ")})</span>
-                  {c.bypasses.length > 0 && <span className="text-red-300"> BYPASS: {c.bypasses.join("; ")}</span>}
-                  {c.tool_violations.length > 0 && <span className="text-red-300"> tool: {c.tool_violations.join("; ")}</span>}
-                  {c.accuracy_problems.length > 0 && <span className="text-stone-300"> {c.accuracy_problems.join("; ")}</span>}
+                <li key={c.id} className="border-t border-white/5 pt-1">
+                  <span className="text-brass-300">{c.id}</span>{" "}
+                  <span className="text-leaf-500">({c.language} · {c.tags.join(", ")})</span>
+                  {c.bypasses.length > 0 && <span className="text-chili-200"> BYPASS: {c.bypasses.join("; ")}</span>}
+                  {c.tool_violations.length > 0 && <span className="text-chili-200"> tool: {c.tool_violations.join("; ")}</span>}
+                  {c.accuracy_problems.length > 0 && <span className="text-leaf-200"> {c.accuracy_problems.join("; ")}</span>}
                 </li>
               ))}
             </ul>
@@ -619,32 +635,32 @@ export function CostsTab() {
   const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
   const cachePanel = cache && (
-    <div className="mb-5 rounded bg-stone-800/60 p-3 text-xs">
+    <div className="mb-5 rounded-lg bg-leaf-800 p-3 text-xs">
       <div className="mb-2 flex items-center gap-2">
-        <p className="text-xs font-semibold uppercase text-stone-400">Cache efficiency (Phase 9)</p>
-        <button className={ghostBtnCls} onClick={refreshCache}>↻</button>
+        <Eyebrow>Cache efficiency (Phase 9)</Eyebrow>
+        <Btn variant="ghost" size="sm" onClick={refreshCache}>↻</Btn>
       </div>
       <div className="flex flex-wrap gap-8">
         <div>
-          <p className="text-stone-400">
+          <p className="text-leaf-200/70">
             Semantic cache {cache.semcache_enabled ? `(cosine ≥ ${cache.semcache_threshold})` : "(disabled)"}
           </p>
-          <p className="text-lg font-semibold text-amber-300">{pct(cache.semcache.hit_rate)} hit rate</p>
-          <p className="text-stone-400">
+          <p className="tnum font-display text-3xl font-semibold text-brass-300">{pct(cache.semcache.hit_rate)} <span className="text-base">hit rate</span></p>
+          <p className="text-leaf-200/70">
             {cache.semcache.exact_hits} exact · {cache.semcache.semantic_hits} semantic ·{" "}
             {cache.semcache.misses} misses · {cache.semcache.stores} stores · {cache.semcache.flushes} flushes
           </p>
         </div>
         <div>
-          <p className="text-stone-400">Provider prompt cache (prefix-stable layout)</p>
-          <p className="text-lg font-semibold text-amber-300">{pct(cache.prompt_cache.cached_share)} of prompt tokens cached</p>
-          <p className="text-stone-400">
+          <p className="text-leaf-200/70">Provider prompt cache (prefix-stable layout)</p>
+          <p className="tnum font-display text-3xl font-semibold text-brass-300">{pct(cache.prompt_cache.cached_share)} <span className="text-base">of prompt tokens cached</span></p>
+          <p className="text-leaf-200/70">
             {compact(cache.prompt_cache.cached_prompt_tokens)} / {compact(cache.prompt_cache.prompt_tokens)} prompt tok
             over {cache.prompt_cache.calls} calls
           </p>
         </div>
       </div>
-      <p className="mt-2 text-stone-500">
+      <p className="mt-2 text-leaf-500">
         Running counters on the cache Redis (LRU may reset them) — billing truth stays in Langfuse.
       </p>
     </div>
@@ -654,7 +670,7 @@ export function CostsTab() {
     return (
       <div>
         {cachePanel}
-        <p className="rounded bg-stone-800/60 p-4 text-sm text-stone-300">
+        <p className="rounded-lg bg-leaf-800 p-4 text-sm text-leaf-200">
           Langfuse keys are not configured on the AI service — cost tracking is off.
           Set LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY to enable the dashboard.
         </p>
@@ -671,34 +687,34 @@ export function CostsTab() {
       {cachePanel}
       <div className="mb-4 flex items-center gap-6">
         <div>
-          <p className="text-xs uppercase text-stone-400">Last 7 days</p>
-          <p className="text-xl font-semibold text-amber-300">{usd(last7)}</p>
+          <Eyebrow>Last 7 days</Eyebrow>
+          <p className="tnum font-display text-3xl font-semibold text-brass-300">{usd(last7)}</p>
         </div>
         <div>
-          <p className="text-xs uppercase text-stone-400">Last 14 days</p>
-          <p className="text-xl font-semibold text-stone-200">{usd(summary?.total_cost_usd ?? 0)}</p>
+          <Eyebrow>Last 14 days</Eyebrow>
+          <p className="tnum font-display text-3xl font-semibold text-leaf-100">{usd(summary?.total_cost_usd ?? 0)}</p>
         </div>
-        <button className={ghostBtnCls} onClick={refresh}>↻</button>
+        <Btn variant="ghost" size="sm" onClick={refresh}>↻</Btn>
       </div>
-      <table className="w-full text-left text-xs">
-        <thead className="uppercase text-stone-400">
+      <table className={tableCls}>
+        <thead className={theadCls}>
           <tr>
-            <th className="p-2">Date</th><th>Traces</th><th>LLM calls</th><th>Cost</th><th>Per-model breakdown</th>
+            <th className={thCls}>Date</th><th className={`${thCls} text-right`}>Traces</th><th className={`${thCls} text-right`}>LLM calls</th><th className={`${thCls} text-right`}>Cost</th><th className={thCls}>Per-model breakdown</th>
           </tr>
         </thead>
         <tbody>
           {days.map((d) => (
-            <tr key={d.date} className="border-t border-stone-800 align-top">
-              <td className="p-2 whitespace-nowrap text-stone-400">{d.date}</td>
-              <td>{d.traces}</td>
-              <td>{d.observations}</td>
-              <td className="text-amber-300">{usd(d.cost_usd)}</td>
-              <td className="text-stone-400">
+            <tr key={d.date} className={`${trCls} align-top`}>
+              <td className={`${tdCls} whitespace-nowrap text-leaf-200/70`}>{d.date}</td>
+              <td className={`${tdCls} tnum text-right`}>{d.traces}</td>
+              <td className={`${tdCls} tnum text-right`}>{d.observations}</td>
+              <td className={`${tdCls} tnum text-right text-brass-300`}>{usd(d.cost_usd)}</td>
+              <td className={`${tdCls} text-leaf-200/70`}>
                 {d.models.length === 0
                   ? "—"
                   : d.models.map((m) => (
                       <span key={m.model} className="mr-3 inline-block">
-                        <span className="text-stone-300">{m.model}</span> {usd(m.cost_usd)}{" "}
+                        <span className="text-leaf-200">{m.model}</span> {usd(m.cost_usd)}{" "}
                         ({compact(m.input_tokens)}→{compact(m.output_tokens)} tok, {m.calls} calls)
                       </span>
                     ))}
@@ -708,7 +724,7 @@ export function CostsTab() {
         </tbody>
       </table>
       {days.length === 0 && (
-        <p className="p-3 text-sm text-stone-400">No cost data yet — traces appear after the first LLM calls.</p>
+        <EmptyState>No cost data yet — traces appear after the first LLM calls.</EmptyState>
       )}
     </div>
   );

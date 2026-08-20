@@ -5,6 +5,18 @@
 
 import { useCallback, useState } from "react";
 import {
+  Btn,
+  EmptyState,
+  Eyebrow,
+  Input,
+  SectionHeading,
+  tableCls,
+  tdCls,
+  thCls,
+  theadCls,
+  trCls,
+} from "../components/ui";
+import {
   CrmReport,
   DishPnlReport,
   ForecastReport,
@@ -14,12 +26,15 @@ import {
 } from "./adminApi";
 import { ErrorBar, useLoad } from "./tabs";
 
-const btnCls =
-  "rounded bg-amber-500 px-2 py-1 text-xs font-semibold text-stone-900 hover:bg-amber-400 disabled:opacity-40";
-const ghostBtnCls =
-  "rounded border border-stone-600 px-2 py-1 text-xs text-stone-300 hover:border-amber-400 hover:text-amber-300";
-
 const inr = (v: number) => `₹${v.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+function ReportHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <SectionHeading as="h3" kolam={false} className="text-base text-leaf-100">
+      {children}
+    </SectionHeading>
+  );
+}
 
 /* ------------------------------------------------------------- Reports tab */
 
@@ -61,37 +76,38 @@ export function ReportsTab() {
     <div className="space-y-8">
       <section>
         <div className="mb-2 flex items-center gap-2">
-          <h2 className="text-sm font-semibold uppercase text-stone-400">Sales</h2>
+          <ReportHeading>Sales</ReportHeading>
           {(["daily", "weekly", "monthly"] as const).map((g) => (
-            <button
+            <Btn
               key={g}
               onClick={() => setGranularity(g)}
-              className={granularity === g ? btnCls : ghostBtnCls}
+              variant={granularity === g ? "gold" : "ghost"}
+              size="sm"
             >
               {g}
-            </button>
+            </Btn>
           ))}
         </div>
         <ErrorBar msg={sales.error} />
         {sales.data && (
           <>
-            <p className="mb-2 text-sm text-stone-300">
-              <span className="text-amber-300">{inr(sales.data.total_revenue)}</span> revenue ·{" "}
+            <p className="tnum mb-2 text-sm text-leaf-200">
+              <span className="font-display text-brass-300">{inr(sales.data.total_revenue)}</span> revenue ·{" "}
               {sales.data.total_orders} orders · {inr(sales.data.total_gst)} GST (last{" "}
               {sales.data.days}d)
             </p>
-            <table className="w-full text-left text-xs">
-              <thead className="uppercase text-stone-400">
-                <tr><th className="p-2">Period</th><th>Orders</th><th>Revenue</th><th>GST</th><th>AOV</th></tr>
+            <table className={tableCls}>
+              <thead className={theadCls}>
+                <tr><th className={thCls}>Period</th><th className={`${thCls} text-right`}>Orders</th><th className={`${thCls} text-right`}>Revenue</th><th className={`${thCls} text-right`}>GST</th><th className={`${thCls} text-right`}>AOV</th></tr>
               </thead>
               <tbody>
                 {sales.data.buckets.slice(-12).reverse().map((b) => (
-                  <tr key={b.period} className="border-t border-stone-800">
-                    <td className="p-2 text-stone-400">{b.period}</td>
-                    <td>{b.orders}</td>
-                    <td className="text-amber-300">{inr(b.revenue)}</td>
-                    <td>{inr(b.gst)}</td>
-                    <td>{inr(b.aov)}</td>
+                  <tr key={b.period} className={trCls}>
+                    <td className={`${tdCls} text-leaf-200/70`}>{b.period}</td>
+                    <td className={`${tdCls} text-right`}>{b.orders}</td>
+                    <td className={`${tdCls} text-right text-brass-300`}>{inr(b.revenue)}</td>
+                    <td className={`${tdCls} text-right`}>{inr(b.gst)}</td>
+                    <td className={`${tdCls} text-right`}>{inr(b.aov)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -102,28 +118,24 @@ export function ReportsTab() {
 
       <section>
         <div className="mb-2 flex items-center gap-3">
-          <h2 className="text-sm font-semibold uppercase text-stone-400">
-            Forecast vs actual (dishes/day)
-          </h2>
+          <ReportHeading>Forecast vs actual (dishes/day)</ReportHeading>
           {forecast.data?.model_version && (
-            <span className="text-xs text-stone-500">model {forecast.data.model_version}</span>
+            <span className="ai-meta">🤖 model {forecast.data.model_version}</span>
           )}
         </div>
         <ErrorBar msg={forecast.error} />
         {forecast.data && forecast.data.points.length === 0 && (
-          <p className="text-sm text-stone-400">
-            No forecasts yet — the nightly scoring job (02:00 IST) hasn&apos;t run.
-          </p>
+          <EmptyState>No forecasts yet — the nightly scoring job (02:00 IST) hasn&apos;t run.</EmptyState>
         )}
         {forecast.data && forecast.data.points.length > 0 && (
           <ForecastChart report={forecast.data} />
         )}
         {forecast.data && forecast.data.dish_anomalies.length > 0 && (
           <div className="mt-3">
-            <h3 className="mb-1 text-xs font-semibold uppercase text-red-300">Anomalies</h3>
+            <Eyebrow className="mb-1 text-chili-200">Anomalies</Eyebrow>
             {forecast.data.dish_anomalies.map((a) => (
-              <p key={`${a.item_id}-${a.date}`} className="text-xs text-stone-300">
-                <span className="text-red-300">⚑</span> {a.date} — {a.name}: forecast{" "}
+              <p key={`${a.item_id}-${a.date}`} className="tnum text-xs text-leaf-200">
+                <span className="text-chili-200">⚑</span> {a.date} — {a.name}: forecast{" "}
                 {a.forecast_qty}, actual {a.actual_qty} ({a.deviation_pct}% off)
               </p>
             ))}
@@ -132,36 +144,36 @@ export function ReportsTab() {
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase text-stone-400">
-          Dish P&L (last 30d)
-        </h2>
+        <div className="mb-2">
+          <ReportHeading>Dish P&L (last 30d)</ReportHeading>
+        </div>
         <ErrorBar msg={pnl.error} />
         {pnl.data && (
-          <table className="w-full text-left text-xs">
-            <thead className="uppercase text-stone-400">
+          <table className={tableCls}>
+            <thead className={theadCls}>
               <tr>
-                <th className="p-2">Dish</th><th>Qty</th><th>Revenue</th>
-                <th>Ingredient cost</th><th>Margin</th><th>Margin %</th>
+                <th className={thCls}>Dish</th><th className={`${thCls} text-right`}>Qty</th><th className={`${thCls} text-right`}>Revenue</th>
+                <th className={`${thCls} text-right`}>Ingredient cost</th><th className={`${thCls} text-right`}>Margin</th><th className={`${thCls} text-right`}>Margin %</th>
               </tr>
             </thead>
             <tbody>
               {pnl.data.rows.slice(0, 20).map((r) => (
-                <tr key={r.item_id} className="border-t border-stone-800">
-                  <td className="p-2">
-                    {r.name} <span className="text-stone-500">{r.category}</span>
+                <tr key={r.item_id} className={trCls}>
+                  <td className={tdCls}>
+                    {r.name} <span className="text-leaf-200/60">{r.category}</span>
                   </td>
-                  <td>{r.qty}</td>
-                  <td className="text-amber-300">{inr(r.revenue)}</td>
-                  <td>
+                  <td className={`${tdCls} text-right`}>{r.qty}</td>
+                  <td className={`${tdCls} text-right text-brass-300`}>{inr(r.revenue)}</td>
+                  <td className={`${tdCls} text-right`}>
                     {inr(r.ingredient_cost)}{" "}
                     {r.cost_source === "estimated" && (
-                      <span title="No priced recipe — 35% food-cost estimate" className="text-stone-500">
+                      <span title="No priced recipe — 35% food-cost estimate" className="text-leaf-200/60">
                         est.
                       </span>
                     )}
                   </td>
-                  <td className={r.margin >= 0 ? "text-green-300" : "text-red-300"}>{inr(r.margin)}</td>
-                  <td>{r.margin_pct}%</td>
+                  <td className={`${tdCls} text-right ${r.margin >= 0 ? "text-veg-200" : "text-chili-200"}`}>{inr(r.margin)}</td>
+                  <td className={`${tdCls} text-right`}>{r.margin_pct}%</td>
                 </tr>
               ))}
             </tbody>
@@ -170,23 +182,26 @@ export function ReportsTab() {
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase text-stone-400">GST export</h2>
+        <div className="mb-2">
+          <ReportHeading>GST export</ReportHeading>
+        </div>
         <ErrorBar msg={csvError} />
         <div className="flex items-center gap-2">
-          <input
+          <Input
+            tone="dark"
             type="month"
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="rounded bg-stone-700 px-2 py-1 text-sm text-stone-100"
+            className="px-2 py-1"
           />
-          <button className={btnCls} onClick={downloadGst}>Download CSV</button>
+          <Btn variant="gold" size="sm" onClick={downloadGst}>Download CSV</Btn>
         </div>
       </section>
     </div>
   );
 }
 
-/** Dependency-free SVG chart: actual bars, forecast line, red anomaly dots. */
+/** Dependency-free SVG chart: actual bars, forecast line, anomaly dots. */
 function ForecastChart({ report }: { report: ForecastReport }) {
   const points = report.points;
   const W = 640, H = 160, pad = 24;
@@ -198,8 +213,11 @@ function ForecastChart({ report }: { report: ForecastReport }) {
     .filter(Boolean)
     .join(" ");
   const barW = Math.max(3, (W - 2 * pad) / points.length - 6);
+  /* Token hex literals for SVG paint (Tailwind arbitrary fills are unreliable
+     with CSS-var tokens): #C8A24B = brass-500, #BFD6C8 = leaf-200, #D0483A = chili-500. */
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-3xl rounded bg-stone-800/60">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-3xl rounded-lg bg-leaf-950/60">
+      <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="rgba(255,255,255,0.05)" />
       {points.map((p, i) =>
         p.actual_qty === null ? null : (
           <rect
@@ -208,19 +226,20 @@ function ForecastChart({ report }: { report: ForecastReport }) {
             y={y(p.actual_qty)}
             width={barW}
             height={H - pad - y(p.actual_qty)}
-            className="fill-stone-500"
+            fill="#C8A24B"
+            fillOpacity={0.8}
           />
         ),
       )}
-      <polyline points={line} fill="none" strokeWidth={2} className="stroke-amber-400" />
+      <polyline points={line} fill="none" strokeWidth={2} stroke="#BFD6C8" />
       {points.map((p, i) =>
         p.anomaly && p.actual_qty !== null ? (
-          <circle key={`a-${p.date}`} cx={x(i)} cy={y(p.actual_qty)} r={4} className="fill-red-400">
+          <circle key={`a-${p.date}`} cx={x(i)} cy={y(p.actual_qty)} r={4} fill="#D0483A">
             <title>{`${p.date}: forecast ${p.forecast_qty}, actual ${p.actual_qty}`}</title>
           </circle>
         ) : null,
       )}
-      <text x={pad} y={12} className="fill-stone-400 text-[10px]">
+      <text x={pad} y={12} fill="#BFD6C8" className="text-[10px]">
         ▬ actual · ─ forecast · ● anomaly (max {Math.round(max)}/day)
       </text>
     </svg>
@@ -237,9 +256,7 @@ export function CrmTab() {
 
   if (data && data.computed_at === null) {
     return (
-      <p className="rounded bg-stone-800/60 p-4 text-sm text-stone-300">
-        No segments yet — the nightly CRM scoring job (03:00 IST) hasn&apos;t run.
-      </p>
+      <EmptyState>No segments yet — the nightly CRM scoring job (03:00 IST) hasn&apos;t run.</EmptyState>
     );
   }
   const tiers = (data?.tiers ?? [])
@@ -249,43 +266,45 @@ export function CrmTab() {
     <div>
       <ErrorBar msg={error} />
       <div className="mb-2 flex items-center gap-3">
-        <h2 className="text-sm font-semibold uppercase text-stone-400">Segments</h2>
+        <ReportHeading>Segments</ReportHeading>
         {data?.computed_at && (
-          <span className="text-xs text-stone-500">
+          <span className="text-xs text-leaf-200/60">
             scored {new Date(data.computed_at).toLocaleString()}
           </span>
         )}
-        <button className={ghostBtnCls} onClick={refresh}>↻</button>
+        <Btn variant="ghost" size="sm" onClick={refresh}>↻</Btn>
       </div>
       <div className="mb-6 flex flex-wrap gap-3">
         {tiers.map((t) => (
-          <div key={t.tier} className="rounded bg-stone-800/60 px-4 py-3">
-            <p className="text-xs uppercase text-stone-400">{t.tier}</p>
-            <p className="text-lg font-semibold text-amber-300">{t.users}</p>
-            <p className="text-xs text-stone-400">
+          <div key={t.tier} className="rounded-lg bg-leaf-800 px-4 py-3">
+            <Eyebrow>{t.tier}</Eyebrow>
+            <p className="tnum font-display text-lg font-semibold text-brass-300">{t.users}</p>
+            <p className="tnum text-xs text-leaf-200/70">
               LTV {inr(t.total_ltv)} · churn {(t.avg_churn_risk * 100).toFixed(0)}%
             </p>
           </div>
         ))}
       </div>
-      <h2 className="mb-2 text-sm font-semibold uppercase text-stone-400">
-        Win-back targets <span className="text-stone-500">(high LTV × churn risk)</span>
-      </h2>
-      <table className="w-full text-left text-xs">
-        <thead className="uppercase text-stone-400">
-          <tr><th className="p-2">Customer</th><th>Tier</th><th>Churn risk</th><th>LTV</th></tr>
+      <div className="mb-2">
+        <ReportHeading>
+          Win-back targets <span className="font-sans text-xs font-normal text-leaf-200/60">(high LTV × churn risk)</span>
+        </ReportHeading>
+      </div>
+      <table className={tableCls}>
+        <thead className={theadCls}>
+          <tr><th className={thCls}>Customer</th><th className={thCls}>Tier</th><th className={`${thCls} text-right`}>Churn risk</th><th className={`${thCls} text-right`}>LTV</th></tr>
         </thead>
         <tbody>
           {(data?.at_risk ?? []).map((u) => (
-            <tr key={u.user_id} className="border-t border-stone-800">
-              <td className="p-2">
-                {u.name ?? "—"} <span className="text-stone-500">{u.phone}</span>
+            <tr key={u.user_id} className={trCls}>
+              <td className={tdCls}>
+                {u.name ?? "—"} <span className="font-mono text-leaf-200/60">{u.phone}</span>
               </td>
-              <td>{u.rfm_tier}</td>
-              <td className={u.churn_risk >= 0.8 ? "text-red-300" : "text-amber-300"}>
+              <td className={tdCls}>{u.rfm_tier}</td>
+              <td className={`${tdCls} text-right ${u.churn_risk >= 0.8 ? "text-chili-200" : "text-brass-300"}`}>
                 {(u.churn_risk * 100).toFixed(0)}%
               </td>
-              <td>{inr(u.ltv)}</td>
+              <td className={`${tdCls} text-right`}>{inr(u.ltv)}</td>
             </tr>
           ))}
         </tbody>
