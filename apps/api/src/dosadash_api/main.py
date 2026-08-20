@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from dosadash_api.config import get_settings
+from dosadash_api.ratelimit import RateLimitMiddleware
 from dosadash_api.routers.admin_combos import router as admin_combos_router
 from dosadash_api.routers.admin_copilot import router as admin_copilot_router
 from dosadash_api.routers.admin_costs import router as admin_costs_router
@@ -43,6 +44,8 @@ from dosadash_api.routers.ws import router as ws_router
 from dosadash_shared import HealthStatus
 
 app = FastAPI(title="DosaDash API", version="0.1.0")
+# Phase 9 hardening: inbound rate limiting (pure ASGI — SSE-safe, fail-open).
+app.add_middleware(RateLimitMiddleware)
 app.include_router(auth_router)
 app.include_router(aggregator_router)
 app.include_router(admin_combos_router)
