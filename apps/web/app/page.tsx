@@ -126,8 +126,17 @@ export default function Home() {
   }, [visible, period]);
   const cartLines = Object.values(cart);
   const cartTotal = cartLines.reduce((s, l) => s + parseFloat(l.item.price) * l.qty, 0);
+  // Cart lines hold a snapshot of the item from when it was added — resolve
+  // against the freshly fetched menu so a dish that slipped out of its serving
+  // window since then still blocks checkout (instead of a confusing 409).
+  const offWindowLines = cartLines
+    .map((l) => menu.find((m) => m.id === l.item.id) ?? l.item)
+    .filter((m) => m.available_now === false);
 
   const add = (item: MenuItem, delta: number) => {
+    // Off-window dishes can never be ADDED (recs/suggestions funnel through
+    // here too) — removing an existing line is always allowed.
+    if (delta > 0 && item.available_now === false) return;
     setCoupon(null); // cart changed — the preview no longer prices this cart
     setCouponError(null);
     setCart((prev) => {
@@ -305,11 +314,13 @@ export default function Home() {
               {visible
                 .filter((m) => m.category === cat)
                 .sort((a, b) => Number(inPeriod(b)) - Number(inPeriod(a)))
-                .map((m) => (
+                .map((m) => {
+                  const off = m.available_now === false;
+                  return (
                   <Card
                     key={m.id}
                     tone="light"
-                    hover
+                    hover={!off}
                     className="flex justify-between gap-3 p-3"
                   >
                     {m.image_url && (
@@ -318,7 +329,10 @@ export default function Home() {
                         <img
                           src={m.image_url}
                           alt={m.name}
-                          className="h-24 w-24 rounded-lg object-cover"
+                          className={cx(
+                            "h-24 w-24 rounded-lg object-cover",
+                            off && "opacity-40 saturate-50",
+                          )}
                         />
                         {m.image_ai && (
                           <span
@@ -333,11 +347,18 @@ export default function Home() {
                     <div className="min-w-0 flex-1">
                       <h3 className="flex items-center gap-1.5 font-semibold text-ink-900">
                         <VegMark isVeg={m.is_veg} />
-                        <span className="truncate">{m.name}</span>
+                        <span className={cx("truncate", off && "text-ink-400")}>{m.name}</span>
                       </h3>
-                      <p className="mt-0.5 text-sm text-ink-600 line-clamp-2">{m.description}</p>
+                      <p
+                        className={cx(
+                          "mt-0.5 text-sm text-ink-600 line-clamp-2",
+                          off && "opacity-60",
+                        )}
+                      >
+                        {m.description}
+                      </p>
                       {(m.spice_level > 0 || m.allergens.length > 0) && (
-                        <p className="mt-1 flex flex-wrap gap-1">
+                        <p className={cx("mt-1 flex flex-wrap gap-1", off && "opacity-60")}>
                           {m.spice_level > 0 && (
                             <span className="rounded-full border border-chili-500/30 bg-chili-200/50 px-1.5 py-0.5 text-[10px]">
                               {SPICE[m.spice_level]}
@@ -351,7 +372,7 @@ export default function Home() {
                         </p>
                       )}
                       {m.meal_periods.length > 0 && (
-                        <p className="mt-1 flex flex-wrap gap-1">
+                        <p className={cx("mt-1 flex flex-wrap gap-1", off && "opacity-60")}>
                           {m.meal_periods.map((p) => (
                             <span
                               key={p}
@@ -367,7 +388,25 @@ export default function Home() {
                           ))}
                         </p>
                       )}
-                      <p className="tnum mt-1 font-display text-base font-semibold text-leaf-800">
+                      {/* Serving-window badge (server-built text, stays English by design) */}
+                      {off ? (
+                        <p className="mt-1">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-ink-400/30 bg-cream-200 px-1.5 py-0.5 text-[10px] font-semibold text-ink-600">
+                            ⏰ Not available now
+                            {m.serving_windows && <> · Serves {m.serving_windows}</>}
+                          </span>
+                        </p>
+                      ) : (
+                        m.serving_windows && (
+                          <p className="mt-1 text-[10px] text-ink-400">⏰ {m.serving_windows}</p>
+                        )
+                      )}
+                      <p
+                        className={cx(
+                          "tnum mt-1 font-display text-base font-semibold text-leaf-800",
+                          off && "opacity-60",
+                        )}
+                      >
                         ₹{m.price}
                       </p>
                     </div>
@@ -384,20 +423,27 @@ export default function Home() {
                             {cart[m.id].qty}
                           </span>
                           <button
-                            className="h-6 w-6 rounded-full font-bold text-leaf-800 transition-colors duration-150 hover:bg-cream-200"
+                            className="h-6 w-6 rounded-full font-bold text-leaf-800 transition-colors duration-150 hover:bg-cream-200 disabled:cursor-not-allowed disabled:opacity-40"
+                            disabled={off}
                             onClick={() => add(m, 1)}
                           >
                             +
                           </button>
                         </div>
                       ) : (
-                        <Btn size="sm" onClick={() => add(m, 1)}>
+                        <Btn
+                          size="sm"
+                          disabled={off}
+                          title={off ? "Not available right now" : undefined}
+                          onClick={() => add(m, 1)}
+                        >
                           ADD
                         </Btn>
                       )}
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
             </div>
           </section>
         ))}
@@ -450,10 +496,30 @@ export default function Home() {
               )}{" "}
               <span className="text-leaf-500">+ GST</span>
             </p>
-            <Btn size="lg" disabled={placing} onClick={checkout}>
+            <Btn
+              size="lg"
+              disabled={placing || offWindowLines.length > 0}
+              title={
+                offWindowLines.length > 0
+                  ? "Remove the unavailable dishes to checkout"
+                  : undefined
+              }
+              onClick={checkout}
+            >
               {placing ? "Placing…" : "Checkout →"}
             </Btn>
           </div>
+          {offWindowLines.length > 0 && (
+            <div className="mx-auto mt-2 max-w-4xl text-xs text-chili-200">
+              {offWindowLines.map((m) => (
+                <p key={m.id}>
+                  ⏰ {m.name} is not available right now
+                  {m.serving_windows && <> (serves {m.serving_windows})</>} — remove it to
+                  checkout.
+                </p>
+              ))}
+            </div>
+          )}
         </footer>
       )}
 

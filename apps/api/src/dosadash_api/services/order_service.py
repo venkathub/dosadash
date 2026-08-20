@@ -172,9 +172,14 @@ async def create_order(
         raise OutsideBusinessHours
 
     wanted, customizations, found = await _validate_items(session, items_in)
-    off_schedule = [m.name for m in found.values() if not availability.item_on_schedule(m.schedule)]
+    off_schedule = [m for m in found.values() if not availability.item_on_schedule(m.schedule)]
     if off_schedule:
-        raise ItemsUnavailable(sorted(off_schedule))
+        # Tell the customer WHEN the dish is served, not just that it isn't.
+        labelled = sorted(
+            f"{m.name} (served {availability.serving_windows_text(m.schedule)})"
+            for m in off_schedule
+        )
+        raise ItemsUnavailable(labelled)
 
     if address_id is not None:
         address = await session.get(Address, address_id)

@@ -46,6 +46,56 @@ def test_unavailable_item_is_stripped_with_name():
     assert any("Mysore Pak" in w and "not available" in w for w in warnings)
 
 
+def test_off_window_item_stripped_with_serving_hint(monkeypatch):
+    """Phase 11: a dish outside its serving window is removed with WHEN it
+    is served — never a bare refusal ('Dosa is not available in Lunch')."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from dosadash_shared import availability
+
+    tiffin = {
+        d: [{"start": "06:00", "end": "11:30"}, {"start": "17:00", "end": "22:00"}]
+        for d in availability.WEEKDAYS
+    }
+    lunch = datetime(2026, 8, 20, 13, 0, tzinfo=ZoneInfo("Asia/Kolkata"))
+    monkeypatch.setattr(availability, "now_ist", lambda: lunch)
+    items = {1: _item(1, "Masala Dosa", "120")}
+    scheduled = MenuItemCtx(**{**items[1].__dict__, "schedule": tiffin})
+    ctx = AgentContext(items={1: scheduled})
+
+    draft, warnings = validate_draft(ctx, [DraftItemIn(item_id=1, qty=1)])
+    assert draft.items == []
+    assert any("Masala Dosa" in w and "served 6–11:30 AM & 5–10 PM" in w for w in warnings)
+
+
+def test_menu_payload_serving_key_only_when_off_window(monkeypatch):
+    """`serving` follows the aliases emit-only-when-relevant rule: absent for
+    always-on and 86'd dishes, present (with window text) when off-window."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from dosadash_ai.agent.context import menu_payload
+    from dosadash_shared import availability
+
+    tiffin = {
+        d: [{"start": "06:00", "end": "11:30"}, {"start": "17:00", "end": "22:00"}]
+        for d in availability.WEEKDAYS
+    }
+    lunch = datetime(2026, 8, 20, 13, 0, tzinfo=ZoneInfo("Asia/Kolkata"))
+    monkeypatch.setattr(availability, "now_ist", lambda: lunch)
+    base = _ctx().items
+    scheduled = MenuItemCtx(**{**base[1].__dict__, "schedule": tiffin})
+    ctx = AgentContext(items={1: scheduled, 2: base[2], 3: base[3]})
+
+    payload = {p["item_id"]: p for p in menu_payload(ctx)}
+    assert payload[1]["available"] is False
+    assert payload[1]["serving"] == "6–11:30 AM & 5–10 PM"  # off-window → hint
+    assert "serving" not in payload[2]  # always-on → byte-stable payload
+    assert payload[3]["available"] is False
+    assert "serving" not in payload[3]  # 86'd → plain unavailable, no hint
+
+
 def test_valid_items_get_db_name_and_price():
     draft, warnings = validate_draft(_ctx(), [DraftItemIn(item_id=1, qty=2, notes="less spicy")])
     assert warnings == []

@@ -59,6 +59,35 @@ export function ErrorBar({ msg }: { msg: string }) {
 
 /* -------------------------------------------------------------- Menu tab */
 
+/** Read-only schedule summary — a weekday entry can be a single window (legacy)
+ *  or a multi-window list (Phase 11). Compact text + full windows in the tooltip. */
+const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+function scheduleSummary(schedule: AdminItem["schedule"]): { text: string; title: string } {
+  if (!schedule || Object.keys(schedule).length === 0)
+    return { text: "always", title: "Served all day, every day" };
+  const days = [
+    ...DAY_ORDER.filter((d) => d in schedule),
+    ...Object.keys(schedule).filter((d) => !DAY_ORDER.includes(d)),
+  ];
+  const windowsOf = (d: string) => {
+    const entry = schedule[d];
+    return Array.isArray(entry) ? entry : entry ? [entry] : [];
+  };
+  const total = days.reduce((n, d) => n + windowsOf(d).length, 0);
+  const title = days
+    .map(
+      (d) =>
+        `${d} ${windowsOf(d)
+          .map((w) => `${w.start}–${w.end}`)
+          .join(", ") || "—"}`,
+    )
+    .join(" · ");
+  return {
+    text: `${days.length}d · ${total} window${total === 1 ? "" : "s"}`,
+    title,
+  };
+}
+
 export function MenuTab() {
   const loadItems = useCallback(() => adminApi<AdminItem[]>("/admin/menu/items"), []);
   const { data: items, error, refresh, setError } = useLoad(loadItems);
@@ -133,7 +162,12 @@ export function MenuTab() {
                   }}
                 />
               </td>
-              <td className={`${tdCls} text-xs text-leaf-200/70`}>{i.schedule ? Object.keys(i.schedule).join(" ") : "always"}</td>
+              <td
+                className={`${tdCls} text-xs text-leaf-200/70`}
+                title={scheduleSummary(i.schedule).title}
+              >
+                {scheduleSummary(i.schedule).text}
+              </td>
               <td className={`${tdCls} text-right`}>
                 <Btn
                   variant={i.is_available ? "ghost" : "danger"}

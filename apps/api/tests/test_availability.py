@@ -121,7 +121,7 @@ async def test_checkout_blocked_outside_business_hours(client, db_session, monke
     assert resp.status_code == 201
 
 
-async def test_scheduled_item_hidden_and_unorderable_off_window(
+async def test_scheduled_item_annotated_and_unorderable_off_window(
     client, db_session, frozen_saturday_lunch, monkeypatch
 ):
     admin = await _admin(db_session)
@@ -136,19 +136,23 @@ async def test_scheduled_item_hidden_and_unorderable_off_window(
         json={"schedule": {"sat": {"start": "18:00", "end": "23:00"}}},
     )
 
-    names = [i["name"] for i in (await client.get("/api/v1/menu")).json()]
-    assert "Chicken Biryani" not in names  # 13:00 — off window
+    # 13:00 — off window: stays VISIBLE but annotated (Phase 11), still blocked
+    by_name = {i["name"]: i for i in (await client.get("/api/v1/menu")).json()}
+    biryani = by_name["Chicken Biryani"]
+    assert biryani["available_now"] is False
+    assert biryani["serving_windows"] == "today 6–11 PM"
     resp = await client.post(
         "/api/v1/orders", headers=customer, json={"items": [{"item_id": biryani_id, "qty": 1}]}
     )
     assert resp.status_code == 409
     assert "Chicken Biryani" in resp.json()["detail"]
+    assert "served" in resp.json()["detail"]  # tells the customer WHEN
 
-    # 20:00 the same evening — visible and orderable
+    # 20:00 the same evening — available and orderable
     evening = datetime(2026, 8, 22, 20, 0, tzinfo=IST)
     monkeypatch.setattr(availability, "now_ist", lambda: evening)
-    names = [i["name"] for i in (await client.get("/api/v1/menu")).json()]
-    assert "Chicken Biryani" in names
+    by_name = {i["name"]: i for i in (await client.get("/api/v1/menu")).json()}
+    assert by_name["Chicken Biryani"]["available_now"] is True
     resp = await client.post(
         "/api/v1/orders", headers=customer, json={"items": [{"item_id": biryani_id, "qty": 1}]}
     )
