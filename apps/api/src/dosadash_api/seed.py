@@ -217,9 +217,17 @@ def main() -> None:
         metavar="PHONE",
         help="Promote (or create) this phone as kitchen_staff and exit",
     )
+    parser.add_argument(
+        "--demo-accounts",
+        action="store_true",
+        help="Ensure the public demo credentials exist (see /demo page) and exit",
+    )
     args = parser.parse_args()
     if args.make_staff:
         asyncio.run(make_staff(args.make_staff))
+        return
+    if args.demo_accounts:
+        asyncio.run(ensure_demo_accounts())
         return
     asyncio.run(seed(days=args.days, users=args.users, seed_val=args.seed, force=args.force))
 
@@ -237,6 +245,39 @@ async def make_staff(phone: str) -> None:
             user.role = Role.KITCHEN_STAFF
         await session.commit()
         print(f"staff: user id={user.id} role={user.role.value}")
+
+
+# Public demo credentials (Phase 9, docs/05: "demo credentials on demo page").
+# Customer access is self-serve (demo OTP renders on screen for any phone);
+# these two let reviewers open the KDS and backoffice without contacting the
+# owner. OWNER deliberately has no public credential — owner-only flows
+# (Telegram PO approval) are shown in the demo video instead. Everything a
+# demo admin can vandalize is reseedable and audit-logged.
+DEMO_ACCOUNTS: list[tuple[str, Role, str]] = [
+    ("+919000000011", Role.KITCHEN_STAFF, "Demo Kitchen"),
+    ("+919000000012", Role.ADMIN, "Demo Admin"),
+]
+
+
+async def ensure_demo_accounts() -> None:
+    """Idempotent: create or re-promote the public demo accounts."""
+    async with get_sessionmaker()() as session:
+        await apply_demo_accounts(session)
+    print(f"demo accounts: {', '.join(f'{p} ({r.value})' for p, r, _ in DEMO_ACCOUNTS)}")
+
+
+async def apply_demo_accounts(session: AsyncSession) -> None:
+    """Session-scoped core (unit-testable)."""
+    for phone, role, name in DEMO_ACCOUNTS:
+        user = await session.scalar(select(User).where(User.phone == phone))
+        if user is None:
+            user = User(phone=phone, name=name, role=role)
+            session.add(user)
+        else:
+            user.role = role  # re-promote if a previous demo run demoted it
+            if not user.name:
+                user.name = name
+    await session.commit()
 
 
 if __name__ == "__main__":

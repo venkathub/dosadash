@@ -189,6 +189,9 @@ export default function Home() {
             <Link href="/orders" className="underline">
               Orders
             </Link>
+            <Link href="/demo" className="underline" title="Demo guide: credentials + test cards">
+              Demo
+            </Link>
             {user ? (
               <button
                 className="text-stone-500 underline"
