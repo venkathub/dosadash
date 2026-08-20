@@ -29,6 +29,10 @@ from dosadash_shared import (
     PromoSuggestResult,
     RecsRequest,
     RecsResponse,
+    ReviewReplyRequest,
+    ReviewReplyResponse,
+    ReviewScoreRequest,
+    ReviewScoreResponse,
     SupportAgentRequest,
     SupportAgentResponse,
 )
@@ -234,6 +238,36 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return MenuImageResult.model_validate(resp.json())
+
+    async def score_reviews(self, request: ReviewScoreRequest) -> ReviewScoreResponse:
+        """Aspect-sentiment tagging (Phase 8). Long timeout — the ai side
+        fans one request out over several chunked LLM calls."""
+        try:
+            async with httpx.AsyncClient(timeout=180) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/reviews/score",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return ReviewScoreResponse.model_validate(resp.json())
+
+    async def draft_review_reply(self, request: ReviewReplyRequest) -> ReviewReplyResponse:
+        """AI-drafted owner reply (Phase 8) — never fails business flow:
+        the ai side falls back to a deterministic template on LLM failure."""
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/reviews/draft-reply",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return ReviewReplyResponse.model_validate(resp.json())
 
 
 def get_ai_client() -> AIClient:

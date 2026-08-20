@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApiError, api, getUser, type Order } from "../../lib/api";
+import { ReviewBox } from "./reviewBox";
 import { SupportBox } from "./supportBox";
 
 export default function Orders() {
@@ -126,6 +127,7 @@ export default function Orders() {
                 </button>
               </div>
             </div>
+            {o.status === "DELIVERED" && <ReviewBox orderId={o.id} />}
           </article>
         ))}
       </div>
