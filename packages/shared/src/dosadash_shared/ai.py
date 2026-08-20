@@ -163,3 +163,22 @@ class RecsResponse(BaseModel):
     items: list[RecItem] = Field(default_factory=list)
     source: Literal["als", "embedding", "popular", "unavailable"]
     model_version: str | None = None
+
+
+class CheckoutSuggestion(BaseModel):
+    """One checkout add-on: a real orderable item + why it's suggested.
+    kind=combo → completes an APPROVED combo; kind=pairing → fills a missing
+    attach category (beverage/sweet/snack), ranked by the recommender."""
+
+    item_id: int
+    name: str
+    price: Decimal
+    is_veg: bool
+    kind: Literal["combo", "pairing"]
+    reason: str = Field(max_length=120)
+
+
+class CheckoutSuggestResponse(BaseModel):
+    suggestions: list[CheckoutSuggestion] = Field(default_factory=list)
+    source: Literal["als", "embedding", "popular", "unavailable"]
+    model_version: str | None = None

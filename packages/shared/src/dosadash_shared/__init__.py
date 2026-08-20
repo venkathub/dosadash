@@ -41,6 +41,8 @@ from dosadash_shared.agent import (
 )
 from dosadash_shared.ai import (
     NUTRITION_PROMPT_VERSION,
+    CheckoutSuggestion,
+    CheckoutSuggestResponse,
     EtaRequest,
     EtaResponse,
     NutritionEnrichFailure,
@@ -294,6 +296,8 @@ __all__ = [
     "WastageOut",
     "WastageReason",
     "RagAnswerDraft",
+    "CheckoutSuggestion",
+    "CheckoutSuggestResponse",
     "RecItem",
     "RecsRequest",
     "RecsResponse",

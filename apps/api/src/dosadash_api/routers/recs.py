@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Query
 
 from dosadash_api.routers.chat import OptionalUser
 from dosadash_api.services.ai_client import AIClient, AIServiceError, get_ai_client
-from dosadash_shared import RecsRequest, RecsResponse
+from dosadash_shared import CheckoutSuggestResponse, RecsRequest, RecsResponse
 
 logger = logging.getLogger(__name__)
 
@@ -50,3 +50,23 @@ async def recommendations(
     except AIServiceError:
         logger.warning("recs unavailable — returning empty strip")
         return RecsResponse(items=[], source="unavailable", model_version=None)
+
+
+@router.get("/checkout", response_model=CheckoutSuggestResponse)
+async def checkout_suggestions(
+    user: OptionalUser,
+    client: Annotated[AIClient, Depends(get_ai_client)],
+    cart: str = "",
+    k: Annotated[int, Query(ge=1, le=4)] = 2,
+) -> CheckoutSuggestResponse:
+    """Add-on suggestions for the checkout footer. Same never-block contract:
+    ai down or empty cart → empty suggestions, checkout proceeds normally."""
+    cart_ids = _parse_cart(cart)
+    if not cart_ids:
+        return CheckoutSuggestResponse(suggestions=[], source="unavailable", model_version=None)
+    request = RecsRequest(user_id=user.id if user else None, cart_item_ids=cart_ids, k=k)
+    try:
+        return await client.suggest_checkout(request)
+    except AIServiceError:
+        logger.warning("checkout suggestions unavailable — returning none")
+        return CheckoutSuggestResponse(suggestions=[], source="unavailable", model_version=None)

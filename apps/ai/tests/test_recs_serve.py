@@ -224,3 +224,69 @@ async def test_recs_endpoint_happy_path(ai_client, monkeypatch):
     body = resp.json()
     assert body["source"] == "popular"
     assert len(body["items"]) == 2
+
+
+# -------------------------------------------------------- checkout suggester
+
+
+def _fake_combos(combos):
+    async def load(session):
+        return combos
+
+    return load
+
+
+async def test_checkout_combo_completion(monkeypatch, tmp_path):
+    champion = _toy_champion(tmp_path)
+    monkeypatch.setattr(serve, "_champion", lambda: champion)
+    monkeypatch.setattr(serve, "load_history", _fake_history({"Masala Dosa": 5.0}))
+    # cart holds Masala Dosa (1); combo = Masala Dosa + Filter Coffee (3)
+    monkeypatch.setattr(
+        serve, "load_approved_combos", _fake_combos([("Dosa Coffee Combo", [1, 3])])
+    )
+    resp = await serve.suggest_checkout(None, RecsRequest(user_id=7, cart_item_ids=[1], k=2))
+    assert resp.source == "als"
+    assert resp.suggestions[0].kind == "combo"
+    assert resp.suggestions[0].name == "Filter Coffee"
+    assert "Dosa Coffee Combo" in resp.suggestions[0].reason
+
+
+async def test_checkout_pairing_uses_ranking_and_skips_86d(monkeypatch, tmp_path):
+    champion = _toy_champion(tmp_path)
+    monkeypatch.setattr(serve, "_champion", lambda: champion)
+    # taste vector points at dosa factors → Filter Coffee still wins the
+    # Beverages gap (only beverage), Podi Dosa (86'd) never appears
+    monkeypatch.setattr(serve, "load_history", _fake_history({"Masala Dosa": 5.0}))
+    monkeypatch.setattr(serve, "load_approved_combos", _fake_combos([]))
+    resp = await serve.suggest_checkout(None, RecsRequest(user_id=7, cart_item_ids=[1], k=2))
+    names = [s.name for s in resp.suggestions]
+    assert "Podi Dosa" not in names
+    assert all(s.kind == "pairing" for s in resp.suggestions)
+    assert "Filter Coffee" in names  # fills the missing Beverages gap
+
+
+async def test_checkout_empty_cart_no_suggestions(monkeypatch):
+    monkeypatch.setattr(serve, "_champion", lambda: None)
+    resp = await serve.suggest_checkout(None, RecsRequest(cart_item_ids=[], k=2))
+    assert resp.suggestions == []
+
+
+async def test_checkout_endpoint(ai_client, monkeypatch):
+    monkeypatch.setattr(serve, "_champion", lambda: None)
+    monkeypatch.setattr(serve, "load_db_popularity", _fake_popularity([3, 4]))
+    monkeypatch.setattr(serve, "load_approved_combos", _fake_combos([]))
+    resp = await ai_client.post(
+        "/internal/recs/checkout",
+        json={"cart_item_ids": [1], "k": 2},
+        headers={"X-Internal-Token": "test-internal-token"},
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    # anonymous + cart → embedding ranking (fake embedder via autouse fixture)
+    assert body["source"] == "embedding"
+    assert all(s["kind"] in ("combo", "pairing") for s in body["suggestions"])
+
+
+async def test_checkout_endpoint_requires_token(ai_client):
+    resp = await ai_client.post("/internal/recs/checkout", json={"cart_item_ids": [1]})
+    assert resp.status_code == 403

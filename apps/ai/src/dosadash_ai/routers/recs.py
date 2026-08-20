@@ -13,8 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_ai.config import get_settings
 from dosadash_ai.db import get_session
-from dosadash_ai.recsys.serve import recommend
-from dosadash_shared import RecsRequest, RecsResponse
+from dosadash_ai.recsys.serve import recommend, suggest_checkout
+from dosadash_shared import CheckoutSuggestResponse, RecsRequest, RecsResponse
 
 router = APIRouter(prefix="/internal/recs", tags=["internal:recs"])
 
@@ -35,3 +35,15 @@ async def recs(
 ) -> RecsResponse:
     _check_internal_token(x_internal_token)
     return await recommend(session, request)
+
+
+@router.post("/checkout", response_model=CheckoutSuggestResponse)
+async def checkout_suggestions(
+    request: RecsRequest,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    x_internal_token: Annotated[str, Header()] = "",
+) -> CheckoutSuggestResponse:
+    """Combo-completion + pairing-gap add-ons for the checkout footer (the
+    rule engine measured by the synthetic A/B sim, ranked per-customer)."""
+    _check_internal_token(x_internal_token)
+    return await suggest_checkout(session, request)

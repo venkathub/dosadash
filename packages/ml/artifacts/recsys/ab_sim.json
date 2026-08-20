@@ -1,0 +1,19 @@
+{
+  "config": {
+    "users": 500,
+    "days": 365,
+    "valid_days": 28,
+    "seed": 42,
+    "base_accept": 0.35,
+    "model_version": "dosadash-recsys/v1"
+  },
+  "sessions": 3273,
+  "attach_rate_random": 0.1277,
+  "attach_rate_personalized": 0.1558,
+  "aov_control": 292.78,
+  "aov_random": 302.79,
+  "aov_personalized": 307.18,
+  "aov_uplift_vs_control_pct": 4.92,
+  "aov_uplift_vs_random_pct": 1.45,
+  "caveat": "Acceptance is simulated from the personas that generated the training data; this validates end-to-end taste recovery, not real-world uplift."
+}

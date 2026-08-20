@@ -15,6 +15,7 @@ import LoginModal from "./components/LoginModal";
 import OrderTracker from "./components/OrderTracker";
 import ChatWidget from "./components/ChatWidget";
 import Recommendations from "./components/Recommendations";
+import CheckoutSuggestions from "./components/CheckoutSuggestions";
 
 type CartLine = { item: MenuItem; qty: number };
 
@@ -223,6 +224,11 @@ export default function Home() {
 
       {cartLines.length > 0 && (
         <footer className="fixed bottom-0 left-0 right-0 z-40 border-t border-amber-300 bg-white p-3 shadow-2xl">
+          <CheckoutSuggestions
+            cartIds={Object.keys(cart).map(Number)}
+            menu={menu}
+            onAdd={(item) => add(item, 1)}
+          />
           <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
             <p className="text-sm">
               <b>{cartLines.reduce((s, l) => s + l.qty, 0)} items</b> · ₹{cartTotal.toFixed(2)}{" "}
