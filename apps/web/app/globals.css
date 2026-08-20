@@ -1,3 +1,158 @@
+/* DosaDash "Heritage Luxe" design system — see docs/12-ui-premium-design.md */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ---------- Self-hosted variable fonts (no build-time network fetch) ---------- */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/fraunces-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/fraunces-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F;
+}
+@font-face {
+  font-family: "Noto Sans Tamil";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/noto-tamil.woff2") format("woff2");
+  unicode-range: U+0964-0965, U+0B82-0BFA, U+200C-200D, U+20B9, U+25CC;
+}
+
+/* ---------- Design tokens ---------- */
+:root {
+  /* banana-leaf greens */
+  --leaf-950: #0b1f1a;
+  --leaf-900: #10291f;
+  --leaf-800: #14342b;
+  --leaf-700: #1c4436;
+  --leaf-600: #2a5a47;
+  --leaf-500: #3e7258;
+  --leaf-200: #bfd6c8;
+  --leaf-100: #dce9df;
+  /* brass / gold */
+  --brass-600: #a88434;
+  --brass-500: #c8a24b;
+  --brass-400: #ddbc6e;
+  --brass-300: #ebd49a;
+  /* cream surfaces */
+  --cream-50: #fdfbf5;
+  --cream-100: #fbf6ec;
+  --cream-200: #f3ead7;
+  --cream-300: #e7d9be;
+  /* ink text-on-light */
+  --ink-900: #1f2421;
+  --ink-600: #55605a;
+  --ink-400: #8a948d;
+  /* semantic */
+  --chili-600: #b3372b;
+  --chili-500: #d0483a;
+  --chili-200: #f3c4be;
+  --veg-600: #256c43;
+  --veg-500: #2f8a56;
+  --veg-200: #c4e3d1;
+  --turmeric-500: #d99a2b;
+  --turmeric-200: #f4dfb4;
+  --info-500: #3e7cb1;
+  --info-200: #c3daec;
+}
+
+@layer components {
+  /* gold CTA — the one true primary button surface */
+  .btn-gold {
+    background-image: linear-gradient(180deg, var(--brass-400), var(--brass-500));
+    border: 1px solid var(--brass-600);
+    color: var(--leaf-900);
+  }
+  .btn-gold:hover:not(:disabled) {
+    background-image: linear-gradient(180deg, #e6cc8b, var(--brass-400));
+  }
+  /* kolam dot divider */
+  .kolam::after {
+    content: "\00B7 \2219 \2022 \2219 \00B7";
+    display: block;
+    margin-top: 0.125rem;
+    letter-spacing: 0.35em;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: color-mix(in srgb, var(--brass-400) 60%, transparent);
+  }
+  /* AI provenance chip */
+  .ai-meta {
+    @apply inline-flex items-center gap-1 rounded-full bg-leaf-700 px-2 py-0.5 text-[11px] text-brass-300;
+  }
+  /* tabular numerals for prices/tables */
+  .tnum {
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: fade-up 0.2s ease-out both;
+  }
+  .animate-pulse-soft {
+    animation: pulse-soft 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-pulse-soft {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
