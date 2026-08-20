@@ -98,12 +98,17 @@ async def _seed_minimal_menu(session: AsyncSession) -> None:
 async def client(db_session: AsyncSession):
     import httpx
 
+    from dosadash_api import ratelimit
     from dosadash_api.db.session import get_session
     from dosadash_api.main import app
 
     async def _override() -> AsyncIterator[AsyncSession]:
         yield db_session
 
+    # Rate limiting is exercised by its own dedicated tests (which install a
+    # limiter with an in-memory store); the general suite fires hundreds of
+    # requests from one identity within a minute and must not trip real limits.
+    ratelimit.get_limiter().enabled = False
     app.dependency_overrides[get_session] = _override
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:

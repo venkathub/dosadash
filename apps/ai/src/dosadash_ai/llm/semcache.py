@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 
 _PREFIX = "semcache:rag:"
 _KEYS_LIST = "semcache:rag:keys"
+# Phase 9 observability: hit/miss counters (outside _PREFIX so flush() —
+# which drops cached ANSWERS — never wipes the running stats).
+STATS_KEY = "cachestats:semcache"
 
 
 def _normalize(question: str) -> str:
@@ -66,6 +69,22 @@ class SemanticCache:
             self._redis = Redis.from_url(get_settings().redis_url, decode_responses=True)
         return self._redis
 
+    async def _bump(self, field: str, by: int = 1) -> None:
+        """Best-effort stat counter — must never turn a hit into a miss."""
+        try:
+            await self._client().hincrby(STATS_KEY, field, by)
+        except Exception:  # noqa: BLE001 — observability never breaks lookups
+            logger.debug("semcache: stat bump failed (%s)", field)
+
+    async def stats(self) -> dict[str, int]:
+        """Current counters ({} on Redis failure). Never raises."""
+        try:
+            raw = await self._client().hgetall(STATS_KEY)
+            return {k: int(v) for k, v in raw.items()}
+        except Exception:  # noqa: BLE001
+            logger.warning("semcache: stats read failed")
+            return {}
+
     async def get(self, question: str, embedding: list[float]) -> dict[str, Any] | None:
         """Cached response payload, or None. Never raises."""
         settings = get_settings()
@@ -76,10 +95,12 @@ class SemanticCache:
             exact = await redis.get(_entry_key(question))
             if exact is not None:
                 logger.info("semcache: exact hit")
+                await self._bump("exact_hits")
                 return json.loads(exact)["response"]
 
             keys = await redis.lrange(_KEYS_LIST, 0, settings.semcache_max_candidates - 1)
             if not keys:
+                await self._bump("misses")
                 return None
             raw_entries = await redis.mget(keys)
             best: tuple[float, dict[str, Any]] | None = None
@@ -92,7 +113,9 @@ class SemanticCache:
                     best = (score, entry)
             if best is not None:
                 logger.info("semcache: semantic hit (cosine %.3f)", best[0])
+                await self._bump("semantic_hits")
                 return best[1]["response"]
+            await self._bump("misses")
             return None
         except Exception:  # noqa: BLE001 — cache failure must never break answers
             logger.warning("semcache: lookup failed, treating as miss", exc_info=True)
@@ -114,6 +137,7 @@ class SemanticCache:
                 pipe.lpush(_KEYS_LIST, key)
                 pipe.ltrim(_KEYS_LIST, 0, settings.semcache_max_candidates - 1)
                 await pipe.execute()
+            await self._bump("stores")
         except Exception:  # noqa: BLE001
             logger.warning("semcache: store failed, skipping", exc_info=True)
 
@@ -131,6 +155,7 @@ class SemanticCache:
             await redis.delete(_KEYS_LIST)
             if removed:
                 logger.info("semcache: flushed %d entries", removed)
+            await self._bump("flushes")
             return removed
         except Exception:  # noqa: BLE001
             logger.warning("semcache: flush failed", exc_info=True)
