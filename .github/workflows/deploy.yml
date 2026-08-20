@@ -30,22 +30,19 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build --remove-orphans
-            # Caddyfile is a SINGLE-FILE bind mount: `git reset --hard` above
-            # replaces the host file's inode, but the mount keeps exposing the
-            # OLD inode to the container — so `caddy reload` faithfully
-            # re-reads STALE config forever (Phase 10 postmortem: /media/*
-            # 404'd in prod for days; caddy had been up since before Phase 7
-            # while every deploy "reloaded" the pre-Phase-7 file). Compare
-            # host vs in-container checksums and restart caddy only on drift
-            # (restart re-resolves the bind path to the new inode).
-            HOST_SUM=$(sha256sum infra/Caddyfile | cut -d' ' -f1)
-            CTR_SUM=$(docker compose -f infra/docker-compose.yml exec -T caddy sha256sum /etc/caddy/Caddyfile | cut -d' ' -f1)
-            if [ "$HOST_SUM" != "$CTR_SUM" ]; then
-              echo "Caddyfile drift detected (host $HOST_SUM != container $CTR_SUM) — restarting caddy"
-              docker compose -f infra/docker-compose.yml restart caddy
-            else
-              echo "✓ caddy config in sync"
-            fi
+            # Always restart caddy after up. Rationale (Phase 10 postmortem):
+            # the Caddyfile is a SINGLE-FILE bind mount; `git reset --hard`
+            # replaces the host inode while the mount keeps exposing the OLD
+            # one, so `caddy reload` re-reads STALE config forever (prod
+            # /media/* 404'd; caddy had run pre-Phase-7 config through five
+            # phases of deploys). A restart re-resolves the bind path. The
+            # first fix probed in-container checksums via `compose exec`,
+            # which exited 1 under the CI SSH session with no diagnostics
+            # (worked over a plain ssh session) — deleted in favor of the
+            # dumbest thing that works: deploys already recreate api/web,
+            # dropping every WS connection anyway, so an unconditional caddy
+            # restart adds zero extra disruption (~1s, before the smoke).
+            docker compose -f infra/docker-compose.yml restart caddy
             docker image prune -f
             # BuildKit cache from --build accumulates in /var/lib/containerd
             # (~26 GB by week 9, 76% disk). Keep 5 GB of recent layers so
