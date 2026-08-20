@@ -344,6 +344,32 @@ class NutritionEstimateRecord(TimestampMixin, Base):
     reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
 
+class MenuItemTranslation(TimestampMixin, Base):
+    """LLM-drafted menu localization per (dish, language) — owner-verified
+    (Phase 7, Tamil-first).
+
+    Same trust model as nutrition_estimates: drafts are backoffice-only and
+    only APPROVED rows will ever be served to customers. Prices/allergens/
+    flags are NOT stored here — they always come from the canonical row.
+    """
+
+    __tablename__ = "menu_item_translations"
+
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("menu_items.id", ondelete="CASCADE"), primary_key=True
+    )
+    lang: Mapped[str] = mapped_column(String(8), primary_key=True)
+    name: Mapped[str] = mapped_column(String(160))
+    description: Mapped[str | None] = mapped_column(Text)
+    category_label: Mapped[str | None] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(
+        Enum("DRAFT", "APPROVED", "REJECTED", name="translation_status"), default="DRAFT"
+    )
+    model: Mapped[str] = mapped_column(String(80))
+    prompt_version: Mapped[str] = mapped_column(String(40))
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+
 class StaffAction(Base):
     """Audit log for admin/staff mutations."""
 

@@ -23,6 +23,7 @@ from dosadash_ai.routers.rag import router as rag_router
 from dosadash_ai.routers.recs import router as recs_router
 from dosadash_ai.routers.stt import router as stt_router
 from dosadash_ai.routers.support import router as support_router
+from dosadash_ai.routers.translation import router as translation_router
 from dosadash_shared import HealthStatus
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,7 @@ app.include_router(stt_router)
 app.include_router(recs_router)
 app.include_router(qc_router)
 app.include_router(promo_router)
+app.include_router(translation_router)
 
 
 @app.get("/healthz", response_model=HealthStatus)

@@ -20,6 +20,8 @@ from dosadash_shared import (
     InventoryDraftResult,
     InvoiceExtractIn,
     InvoiceExtractResult,
+    MenuTranslationRequest,
+    MenuTranslationResponse,
     NutritionEstimateRequest,
     NutritionEstimateResponse,
     PromoSuggestResult,
@@ -200,6 +202,21 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return CostSummaryResponse.model_validate(resp.json())
+
+    async def translate_menu(self, request: MenuTranslationRequest) -> MenuTranslationResponse:
+        """Menu localization drafts (Phase 7, Tamil-first). Long timeout —
+        the ai side fans one request out over several chunked LLM calls."""
+        try:
+            async with httpx.AsyncClient(timeout=180) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/translate/menu",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return MenuTranslationResponse.model_validate(resp.json())
 
 
 def get_ai_client() -> AIClient:
