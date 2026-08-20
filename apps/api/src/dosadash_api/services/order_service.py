@@ -23,7 +23,7 @@ from dosadash_api.db.models import (
     User,
 )
 from dosadash_api.providers import PaymentProvider
-from dosadash_api.services import memory_service
+from dosadash_api.services import coupon_service, memory_service
 from dosadash_api.services.ai_client import AIClient, AIServiceError, get_ai_client
 from dosadash_ml.eta.features import heuristic_eta_minutes
 from dosadash_shared import (
@@ -160,6 +160,7 @@ async def create_order(
     provider: PaymentProvider,
     channel: ChannelType = ChannelType.WEB,
     address_id: int | None = None,
+    coupon_code: str | None = None,
     ai: AIClient | None = None,
 ) -> Order:
     """Checkout: every item_id validated against the DB, totals computed
@@ -181,6 +182,14 @@ async def create_order(
             raise NotPermitted("address does not belong to this user")
 
     subtotal, gst, total = _totals(wanted, found)
+    coupon, discount = None, Decimal("0")
+    if coupon_code:
+        # coupon_service.CouponError propagates — the router maps it to 400.
+        coupon, discount = await coupon_service.resolve(
+            session, code=coupon_code, user_id=user.id, subtotal=subtotal
+        )
+        gst = coupon_service.discounted_gst(gst, subtotal, discount)
+        total = subtotal - discount + gst
     eta_minutes = await _predict_eta_minutes(
         ai,
         max_prep=max(m.prep_minutes for m in found.values()),
@@ -197,8 +206,10 @@ async def create_order(
         channel=channel,
         status=OrderState.PLACED,
         subtotal=subtotal,
+        discount=discount,
         gst=gst,
         total=total,
+        coupon_id=coupon.id if coupon else None,
         address_id=address_id,
         eta_predicted=datetime.now(UTC) + timedelta(minutes=eta_minutes),
     )
@@ -213,6 +224,8 @@ async def create_order(
     ]
     session.add(order)
     await session.flush()
+    if coupon is not None:
+        coupon_service.redeem(session, coupon=coupon, user_id=user.id, order_id=order.id)
 
     provider_order = await provider.create_order(amount=total)
     session.add(

@@ -18,6 +18,8 @@ export type Order = {
   id: number;
   status: string;
   subtotal: string;
+  discount?: string;
+  coupon_code?: string | null;
   gst: string;
   total: string;
   placed_at: string;

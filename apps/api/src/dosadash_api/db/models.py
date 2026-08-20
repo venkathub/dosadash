@@ -231,6 +231,7 @@ class Order(TimestampMixin, Base):
         pg_enum(OrderState, "order_state"), default=OrderState.PLACED, index=True
     )
     subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    discount: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0"))
     gst: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     total: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     coupon_id: Mapped[int | None] = mapped_column(ForeignKey("coupons.id"))
@@ -278,13 +279,22 @@ class Coupon(TimestampMixin, Base):
     __tablename__ = "coupons"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    code: Mapped[str] = mapped_column(String(40), unique=True)
+    code: Mapped[str] = mapped_column(String(40), unique=True)  # stored UPPERCASE
     type: Mapped[CouponType] = mapped_column(pg_enum(CouponType, "coupon_type"))
     value: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    description: Mapped[str | None] = mapped_column(String(200))
     segment: Mapped[str | None] = mapped_column(String(60))
     valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     usage_limit: Mapped[int | None] = mapped_column()
+    # Phase 7 engine fields: guardrails + activation + provenance.
+    min_subtotal: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    max_discount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))  # PCT cap
+    per_user_limit: Mapped[int | None] = mapped_column()
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    source: Mapped[str] = mapped_column(
+        Enum("MANUAL", "AI_SUGGESTED", name="coupon_source"), default="MANUAL"
+    )
 
 
 class CouponRedemption(Base):

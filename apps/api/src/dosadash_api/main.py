@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from dosadash_api.routers.admin_combos import router as admin_combos_router
 from dosadash_api.routers.admin_copilot import router as admin_copilot_router
 from dosadash_api.routers.admin_costs import router as admin_costs_router
+from dosadash_api.routers.admin_coupons import router as admin_coupons_router
 from dosadash_api.routers.admin_crm import router as admin_crm_router
 from dosadash_api.routers.admin_evals import router as admin_evals_router
 from dosadash_api.routers.admin_ingredients import router as admin_ingredients_router
@@ -19,6 +20,7 @@ from dosadash_api.routers.admin_suppliers import router as admin_suppliers_route
 from dosadash_api.routers.admin_wastage import router as admin_wastage_router
 from dosadash_api.routers.auth import router as auth_router
 from dosadash_api.routers.chat import router as chat_router
+from dosadash_api.routers.coupons import router as coupons_router
 from dosadash_api.routers.internal_mcp import router as internal_mcp_router
 from dosadash_api.routers.menu import router as menu_router
 from dosadash_api.routers.orders import router as orders_router
@@ -33,6 +35,7 @@ app.include_router(auth_router)
 app.include_router(admin_combos_router)
 app.include_router(admin_copilot_router)
 app.include_router(admin_costs_router)
+app.include_router(admin_coupons_router)
 app.include_router(admin_crm_router)
 app.include_router(admin_evals_router)
 app.include_router(admin_ingredients_router)
@@ -46,6 +49,7 @@ app.include_router(admin_reports_router)
 app.include_router(admin_suppliers_router)
 app.include_router(admin_wastage_router)
 app.include_router(chat_router)
+app.include_router(coupons_router)
 app.include_router(internal_mcp_router)
 app.include_router(menu_router)
 app.include_router(orders_router)
