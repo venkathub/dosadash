@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api, type MenuItem } from "../../lib/api";
+import { Chip, Eyebrow, cx } from "./ui";
 
 type Rec = { item_id: number; name: string; price: string; is_veg: boolean; score: number };
 type RecsResponse = { items: Rec[]; source: string; model_version: string | null };
@@ -48,28 +49,39 @@ export default function Recommendations({
   if (items.length === 0) return null;
 
   return (
-    <section className="mt-4 rounded-lg border border-amber-300 bg-amber-100/60 p-3">
-      <h2 className="text-sm font-bold text-amber-900">
-        ✨ You might like{" "}
-        <span className="font-normal text-amber-700">
+    <section className="mt-4">
+      <Eyebrow>
+        <span className="text-brass-600">✨ You might like</span>{" "}
+        <span className="normal-case tracking-normal text-ink-400">
           · {SOURCE_LABEL[recs.source] ?? "Suggestions"}
         </span>
-      </h2>
+      </Eyebrow>
       <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
         {items.map((r) => (
-          <button
+          <Chip
             key={r.item_id}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-sm hover:bg-amber-50"
+            surface="light"
+            className="flex shrink-0 items-center gap-2 py-1.5 text-sm shadow-card"
             onClick={() => onAdd(byId.get(r.item_id)!)}
             title="Add to cart"
           >
-            <span className={r.is_veg ? "text-green-600" : "text-red-600"}>
-              {r.is_veg ? "🟢" : "🔴"}
+            <span
+              className={cx(
+                "inline-flex h-3 w-3 items-center justify-center rounded-[3px] border",
+                r.is_veg ? "border-veg-500" : "border-chili-500",
+              )}
+            >
+              <span
+                className={cx(
+                  "h-1 w-1 rounded-full",
+                  r.is_veg ? "bg-veg-500" : "bg-chili-500",
+                )}
+              />
             </span>
             <span className="font-semibold">{r.name}</span>
-            <span className="text-stone-500">₹{parseFloat(r.price).toFixed(0)}</span>
-            <span className="font-bold text-amber-600">+</span>
-          </button>
+            <span className="tnum text-ink-600">₹{parseFloat(r.price).toFixed(0)}</span>
+            <span className="font-bold text-brass-600">+</span>
+          </Chip>
         ))}
       </div>
     </section>

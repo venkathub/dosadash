@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { ApiError, api } from "../../lib/api";
+import { Btn, Textarea, cx } from "../components/ui";
 
 type Review = {
   id: number;
@@ -53,11 +54,11 @@ export function ReviewBox({ orderId }: { orderId: number }) {
 
   if (review) {
     return (
-      <div className="mt-2 rounded bg-amber-50 p-2 text-xs">
-        <span className="text-amber-500">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
-        {review.text && <span className="ml-2 text-stone-600">“{review.text}”</span>}
+      <div className="mt-2 rounded-lg bg-cream-100 p-2 text-xs">
+        <span className="text-brass-500">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+        {review.text && <span className="ml-2 text-ink-600">“{review.text}”</span>}
         {review.owner_reply && (
-          <p className="mt-1 text-stone-600">
+          <p className="mt-1 text-ink-600">
             <b>DosaDash:</b> {review.owner_reply}
           </p>
         )}
@@ -67,43 +68,49 @@ export function ReviewBox({ orderId }: { orderId: number }) {
 
   if (!open) {
     return (
-      <button className="mt-2 text-xs text-amber-600 underline" onClick={() => setOpen(true)}>
+      <button
+        className="mt-2 text-xs font-semibold text-brass-600 underline underline-offset-4 transition-colors duration-150 hover:text-brass-500"
+        onClick={() => setOpen(true)}
+      >
         ★ Rate this order
       </button>
     );
   }
 
   return (
-    <div className="mt-2 rounded bg-amber-50 p-2">
-      <div className="flex items-center gap-1 text-lg">
+    <div className="mt-2 rounded-lg bg-cream-100 p-2">
+      <div className="flex items-center gap-1 text-2xl">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
             key={n}
             aria-label={`${n} star`}
-            className={n <= rating ? "text-amber-500" : "text-stone-300"}
+            className={cx(
+              "transition-colors duration-150",
+              n <= rating ? "text-brass-500" : "text-cream-300 hover:text-brass-400",
+            )}
             onClick={() => setRating(n)}
           >
             ★
           </button>
         ))}
       </div>
-      <textarea
-        className="mt-1 w-full rounded border border-amber-200 p-2 text-xs"
+      <Textarea
+        tone="light"
+        className="mt-1 w-full text-xs"
         rows={2}
         placeholder="How was it? (optional)"
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
-      {error && <p className="text-xs text-red-600">{error}</p>}
-      <div className="mt-1 flex gap-2">
-        <button
-          className="rounded bg-amber-500 px-3 py-1 text-xs font-bold disabled:opacity-40"
-          disabled={!rating || busy}
-          onClick={submit}
-        >
+      {error && <p className="text-xs text-chili-600">{error}</p>}
+      <div className="mt-1 flex items-center gap-2">
+        <Btn size="sm" disabled={!rating || busy} onClick={submit}>
           Submit
-        </button>
-        <button className="text-xs text-stone-500 underline" onClick={() => setOpen(false)}>
+        </Btn>
+        <button
+          className="text-xs text-ink-400 underline underline-offset-4 transition-colors duration-150 hover:text-ink-600"
+          onClick={() => setOpen(false)}
+        >
           Cancel
         </button>
       </div>
