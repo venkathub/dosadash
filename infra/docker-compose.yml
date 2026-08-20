@@ -2,7 +2,8 @@ name: dosadash
 
 # Memory budget (4 GB VPS, docs/02): postgres ~512M, redis ~128M,
 # api ~384M, ai ~768M (Phase 8: +INT8 DistilBERT sentiment champion,
-# ~150 MB loaded), web ~256M, caddy ~64M, bot ~128M,
+# ~150 MB loaded), web ~256M, caddy ~64M, bot ~192M (Phase 9 hotfix:
+# measured ~151 MiB after the lockfile-refresh rebuild),
 # worker ~320M + redis-celery ~48M (Phase 5) — total limits ≈ 2.6 GB.
 
 services:
@@ -198,7 +199,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128M
+          # Phase 9 hotfix: the Phase-9 image rebuild (refreshed uv.lock)
+          # grew the bot's steady-state RSS to ~151 MiB → OOM crash-loop at
+          # the old 128M. Measured before raising (docs/02 headroom ~1.2 GB).
+          memory: 192M
 
   caddy:
     image: caddy:2-alpine
