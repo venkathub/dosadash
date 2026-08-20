@@ -18,9 +18,57 @@ from dosadash_shared import Diet
 # ------------------------------------------------------------------ menu seed
 
 
-def test_menu_has_about_50_items():
-    assert 48 <= len(MENU_ITEMS) <= 56
-    assert len(MENU_ITEMS) == 52
+def test_menu_has_about_60_items():
+    # Phase 11 highway rebuild: 48 classics + 12 dishes researched from
+    # 99 KM Coffee (millet veg) and Manna Mess (non-veg) on NH-45.
+    assert 56 <= len(MENU_ITEMS) <= 64
+    assert len(MENU_ITEMS) == 60
+
+
+def test_every_scheduled_item_parses_and_meal_periods_match():
+    """Hard windows must be well-formed and coherent with soft meal_periods."""
+    from dosadash_shared import availability
+
+    for item in MENU_ITEMS:
+        if item.schedule is None:
+            continue
+        for day, entry in item.schedule.items():
+            assert day in availability.WEEKDAYS, f"{item.name}: bad day {day}"
+            for w in entry if isinstance(entry, list) else [entry]:
+                availability._parse(w["start"]), availability._parse(w["end"])
+
+
+def test_highway_signature_dishes_present():
+    names = {i.name for i in MENU_ITEMS}
+    # 99 KM Coffee (veg millet kitchen)
+    assert {"Ragi Dosa", "Kuzhi Paniyaram (7 pcs)", "Thinai Pongal", "Mini Tiffin"} <= names
+    # Manna Mess (non-veg highway mess)
+    assert {
+        "Mutton Chukka",
+        "Nattu Kozhi Kuzhambu",
+        "Karuvadu Thokku",
+        "Non-Veg Mess Meals",
+    } <= names
+    mess = [i for i in MENU_ITEMS if i.category == "Mess Specials"]
+    assert mess and all(not i.is_veg for i in mess)
+    millet = [i for i in MENU_ITEMS if i.category == "Millet Specials"]
+    assert millet and all(i.is_veg for i in millet)
+
+
+def test_dosa_not_available_at_lunch():
+    """The feature's namesake: every Dosa-category dish is off-schedule at
+    1 PM IST but on-schedule at breakfast and dinner."""
+    from datetime import datetime
+
+    from dosadash_shared.availability import IST, item_on_schedule
+
+    lunch = datetime(2026, 8, 20, 13, 0, tzinfo=IST)
+    breakfast = datetime(2026, 8, 20, 8, 0, tzinfo=IST)
+    dinner = datetime(2026, 8, 20, 19, 30, tzinfo=IST)
+    for dosa in (i for i in MENU_ITEMS if i.category == "Dosa"):
+        assert not item_on_schedule(dosa.schedule, lunch), f"{dosa.name} served at lunch"
+        assert item_on_schedule(dosa.schedule, breakfast)
+        assert item_on_schedule(dosa.schedule, dinner)
 
 
 def test_menu_ingredients_all_defined():
