@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     otp_max_attempts: int = 5
     otp_resend_cooldown_seconds: int = 45
 
+    # Rate limiting (Phase 9 hardening) — fixed 60s windows, per-tier caps.
+    # Fail-open on Redis outage; internal-token traffic exempt (see ratelimit.py).
+    rate_limit_enabled: bool = True
+    rate_limit_chat_per_minute: int = 20
+    rate_limit_auth_per_minute: int = 10
+    rate_limit_write_per_minute: int = 60
+    rate_limit_read_per_minute: int = 240
+
     # Payments (Hard Rule 9: Razorpay TEST keys only)
     # "auto" → razorpay when TEST keys are present, else mock
     payment_provider: str = "auto"  # auto | mock | razorpay
