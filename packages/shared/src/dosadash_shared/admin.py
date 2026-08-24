@@ -65,18 +65,26 @@ class ScheduleWindow(BaseModel):
         return v
 
 
+DayWindows = ScheduleWindow | list[ScheduleWindow]
+"""A weekday entry: one window (legacy) or an ordered list of windows (Phase 11
+multi-window days — e.g. dosa at breakfast AND dinner but not lunch)."""
+
+
 class ScheduleIn(BaseModel):
     """Per-weekday serving windows; null clears the schedule (always on)."""
 
-    schedule: dict[str, ScheduleWindow] | None = None
+    schedule: dict[str, DayWindows] | None = None
 
     @field_validator("schedule")
     @classmethod
-    def _known_days(cls, v: dict[str, ScheduleWindow] | None) -> dict[str, ScheduleWindow] | None:
+    def _known_days(cls, v: dict[str, DayWindows] | None) -> dict[str, DayWindows] | None:
         if v is not None:
             unknown = set(v) - set(WEEKDAYS)
             if unknown:
                 raise ValueError(f"unknown day keys: {sorted(unknown)} (use {WEEKDAYS})")
+            for day, entry in v.items():
+                if isinstance(entry, list) and not (1 <= len(entry) <= 4):
+                    raise ValueError(f"{day}: between 1 and 4 windows per day")
         return v
 
 
