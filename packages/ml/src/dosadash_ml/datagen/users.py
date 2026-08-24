@@ -88,7 +88,7 @@ PERSONAS: tuple[Persona, ...] = (
     Persona(
         "spice_lover",
         Diet.NONVEG,
-        {"Chettinad Curry": 4, "Biryani": 3, "Dosa": 2, "Snacks": 2},
+        {"Chettinad Curry": 3, "Mess Specials": 3, "Biryani": 2, "Dosa": 2, "Snacks": 2},
         orders_per_week=1.2,
         spice_level=3,
     ),
@@ -109,7 +109,7 @@ PERSONAS: tuple[Persona, ...] = (
     Persona(
         "vegan_health",
         Diet.VEGAN,
-        {"Dosa": 3, "Idli & Vada": 2, "Rice & Pongal": 2, "Uttapam": 2},
+        {"Dosa": 3, "Millet Specials": 3, "Idli & Vada": 2, "Rice & Pongal": 2, "Uttapam": 1},
         orders_per_week=1.0,
         spice_level=1,
         allergens=("milk", "curd", "ghee"),
@@ -152,6 +152,8 @@ PERSONAS: tuple[Persona, ...] = (
             "Biryani": 2,
             "Rice & Pongal": 2,
             "Chettinad Curry": 1,
+            "Mess Specials": 1,
+            "Millet Specials": 1,
             "Snacks": 1,
             "Beverages": 1,
             "Sweets": 1,
