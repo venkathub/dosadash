@@ -1,26 +1,26 @@
-/* DosaDash "Heritage Luxe" design system — see docs/12-ui-premium-design.md */
+/* DosaDash "Madras Pop" design system — see docs/13-ui-madras-pop-design.md
+   Normative token source: design/madras-pop/tokens.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ---------- Self-hosted variable fonts (no build-time network fetch) ---------- */
 @font-face {
-  font-family: "Fraunces";
+  font-family: "Space Grotesk";
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url("/fonts/fraunces-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+  src: url("/fonts/space-grotesk.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2122;
 }
 @font-face {
-  font-family: "Fraunces";
+  /* latin-ext subset REQUIRED — ₹ (U+20B9) lives here */
+  font-family: "Space Grotesk";
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url("/fonts/fraunces-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
-    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F;
+  src: url("/fonts/space-grotesk-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+1E00-1E9F, U+20A0-20C0;
 }
 @font-face {
   font-family: "Inter";
@@ -49,68 +49,198 @@
   unicode-range: U+0964-0965, U+0B82-0BFA, U+200C-200D, U+20B9, U+25CC;
 }
 
-/* ---------- Design tokens ---------- */
+/* ---------- Design tokens (kept in sync with tailwind.config.js — literal hex
+   there so opacity modifiers work; CSS vars here feed the component layer) ---------- */
 :root {
-  /* banana-leaf greens */
-  --leaf-950: #0b1f1a;
-  --leaf-900: #10291f;
-  --leaf-800: #14342b;
-  --leaf-700: #1c4436;
-  --leaf-600: #2a5a47;
-  --leaf-500: #3e7258;
-  --leaf-200: #bfd6c8;
-  --leaf-100: #dce9df;
-  /* brass / gold */
-  --brass-600: #a88434;
-  --brass-500: #c8a24b;
-  --brass-400: #ddbc6e;
-  --brass-300: #ebd49a;
-  /* cream surfaces */
-  --cream-50: #fdfbf5;
-  --cream-100: #fbf6ec;
-  --cream-200: #f3ead7;
-  --cream-300: #e7d9be;
-  /* ink text-on-light */
-  --ink-900: #1f2421;
-  --ink-600: #55605a;
-  --ink-400: #8a948d;
+  /* ink / indigo */
+  --indigo-950: #12122b;
+  --indigo-900: #1b1b3a;
+  --indigo-800: #232347;
+  --indigo-700: #2e2e5c;
+  --indigo-600: #3d3d73;
+  --indigo-300: #8b8bc0;
+  --indigo-200: #b9b6d9;
+  --indigo-100: #edeaf6;
+  /* kanchipuram magenta */
+  --magenta-700: #a81848;
+  --magenta-600: #c21f58;
+  --magenta-500: #d6336c;
+  --magenta-400: #e85d8a;
+  --magenta-100: #fbe3ed;
+  /* turmeric */
+  --turmeric-600: #d9a404;
+  --turmeric-500: #f2b705;
+  --turmeric-400: #ffcb2e;
+  --turmeric-100: #fceec5;
+  /* paper / sand */
+  --offwhite: #faf7f0;
+  --paper: #ffffff;
+  --sand-200: #f1ead8;
+  --sand-300: #e5dcc8;
+  /* text on light */
+  --ink: #1b1b3a;
+  --muted: #5a5a78;
+  --faint: #8e8ea8;
   /* semantic */
-  --chili-600: #b3372b;
-  --chili-500: #d0483a;
-  --chili-200: #f3c4be;
-  --veg-600: #256c43;
-  --veg-500: #2f8a56;
-  --veg-200: #c4e3d1;
-  --turmeric-500: #d99a2b;
-  --turmeric-200: #f4dfb4;
-  --info-500: #3e7cb1;
-  --info-200: #c3daec;
+  --veg: #1e8a5a;
+  --veg-100: #d7f0e3;
+  --chili: #d64545;
+  --chili-100: #fadede;
+  --sky: #3e7cb1;
+  --sky-100: #dceaf5;
+  --warn: #d9a404;
+  --warn-100: #fceec5;
 }
 
 @layer components {
-  /* gold CTA — the one true primary button surface */
+  /* ---------- Madras Pop signatures ---------- */
+
+  /* Kanchipuram zari stripe (temple-border triangles over a magenta rail).
+     Use <Zari/> from ui.tsx, or .kolam on a heading for the ::after variant. */
+  .zari {
+    height: 8px;
+    background:
+      linear-gradient(135deg, var(--turmeric-500) 25%, transparent 25%) 0 0 / 8px 8px,
+      linear-gradient(225deg, var(--turmeric-500) 25%, transparent 25%) 0 0 / 8px 8px,
+      linear-gradient(0deg, var(--magenta-500) 0 3px, transparent 3px);
+    background-repeat: repeat-x;
+    width: 120px;
+  }
+  .zari-wide {
+    width: 100%;
+    opacity: 0.9;
+  }
+  .zari-on-dark {
+    background:
+      linear-gradient(135deg, var(--turmeric-400) 25%, transparent 25%) 0 0 / 8px 8px,
+      linear-gradient(225deg, var(--turmeric-400) 25%, transparent 25%) 0 0 / 8px 8px,
+      linear-gradient(0deg, var(--magenta-500) 0 3px, transparent 3px);
+    background-repeat: repeat-x;
+  }
+  /* heading variant: zari rendered as an ::after underline (replaces the old kolam dots) */
+  .kolam::after {
+    content: "";
+    display: block;
+    height: 8px;
+    width: 120px;
+    margin-top: 6px;
+    background:
+      linear-gradient(135deg, var(--turmeric-500) 25%, transparent 25%) 0 0 / 8px 8px,
+      linear-gradient(225deg, var(--turmeric-500) 25%, transparent 25%) 0 0 / 8px 8px,
+      linear-gradient(0deg, var(--magenta-500) 0 3px, transparent 3px);
+    background-repeat: repeat-x;
+  }
+
+  /* Ticker strip (decorative static text — deliberately NOT animated; if ever
+     animated, gate on prefers-reduced-motion) */
+  .ticker {
+    background: var(--indigo-900);
+    color: var(--turmeric-400);
+    font-family: "Space Grotesk", "Noto Sans Tamil", system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 6px 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  /* Poster block (color-blocked section header) */
+  .poster-block {
+    display: inline-block;
+    font-family: "Space Grotesk", "Noto Sans Tamil", system-ui, sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--magenta-500);
+    color: #fff;
+    border: 2px solid var(--indigo-900);
+    box-shadow: 3px 3px 0 var(--indigo-900);
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 15px;
+  }
+  .poster-block-turmeric {
+    background: var(--turmeric-500);
+    color: var(--indigo-900);
+  }
+  .poster-block-indigo {
+    background: var(--indigo-900);
+    color: var(--turmeric-400);
+  }
+  /* Tamil script: uppercase/tracking are Latin affordances — drop them */
+  .poster-block-tamil {
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* FSSAI-style veg / non-veg mark */
+  .fssai {
+    width: 15px;
+    height: 15px;
+    border: 2px solid;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .fssai::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+  .fssai-veg {
+    border-color: var(--veg);
+  }
+  .fssai-veg::after {
+    background: var(--veg);
+  }
+  .fssai-nonveg {
+    border-color: var(--chili);
+  }
+  .fssai-nonveg::after {
+    background: var(--chili);
+  }
+
+  /* AI provenance chip — the portfolio story, deliberate everywhere.
+     NOTE: no ::before 🤖 here (unlike the mockup css) — call sites already
+     render the emoji inline; a pseudo-element would double it. */
+  .ai-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "Space Grotesk", "Noto Sans Tamil", system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 3px 10px;
+    background: var(--indigo-800);
+    color: var(--turmeric-400);
+    border: 1.5px solid var(--indigo-600);
+  }
+  .ai-meta-light {
+    background: var(--indigo-100);
+    color: var(--indigo-700);
+    border-color: var(--indigo-300);
+  }
+
+  /* transitional alias (Heritage Luxe call sites; migrate to <Btn> in PRs 2–4):
+     gold CTA → turmeric CTA */
   .btn-gold {
-    background-image: linear-gradient(180deg, var(--brass-400), var(--brass-500));
-    border: 1px solid var(--brass-600);
-    color: var(--leaf-900);
+    background: var(--turmeric-500);
+    border: 2px solid var(--indigo-900);
+    color: var(--indigo-900);
+    box-shadow: 3px 3px 0 var(--indigo-900);
+    font-family: "Space Grotesk", "Noto Sans Tamil", system-ui, sans-serif;
+    font-weight: 700;
   }
   .btn-gold:hover:not(:disabled) {
-    background-image: linear-gradient(180deg, #e6cc8b, var(--brass-400));
+    background: var(--turmeric-400);
   }
-  /* kolam dot divider */
-  .kolam::after {
-    content: "\00B7 \2219 \2022 \2219 \00B7";
-    display: block;
-    margin-top: 0.125rem;
-    letter-spacing: 0.35em;
-    font-size: 0.75rem;
-    line-height: 1;
-    color: color-mix(in srgb, var(--brass-400) 60%, transparent);
-  }
-  /* AI provenance chip */
-  .ai-meta {
-    @apply inline-flex items-center gap-1 rounded-full bg-leaf-700 px-2 py-0.5 text-[11px] text-brass-300;
-  }
+
   /* tabular numerals for prices/tables */
   .tnum {
     font-feature-settings: "tnum";
