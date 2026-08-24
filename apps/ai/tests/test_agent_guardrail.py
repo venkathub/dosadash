@@ -255,3 +255,29 @@ def test_reply_draft_contradictions_substitution_signature():
         )
         == []
     )
+
+
+def test_contradictions_and_drops_are_alias_aware():
+    """Post-deploy hotfix: Tamil alias mentions must count as naming the
+    dish — for the self-correction trigger AND for drop_substitutions'
+    unnamed-drop rule."""
+    from dosadash_ai.agent.guardrail import (
+        drop_substitutions,
+        reply_draft_contradictions,
+    )
+    from dosadash_shared import AgentTurn
+
+    chukka = MenuItemCtx(**{**_item(1, "Mutton Chukka", "280").__dict__, "aliases": ("மட்டன் சுக்கா",)})
+    pongal = MenuItemCtx(**{**_item(2, "Thinai Pongal", "120", available=False).__dict__})
+    ctx = AgentContext(items={1: chukka, 2: pongal, 3: _item(3, "Filter Coffee", "60")})
+
+    # Tamil refusal of an orderable dish named by alias → trigger fires
+    refused = AgentTurn(reply="மன்னிக்கவும், 'மட்டன் சுக்கா' இப்போது கிடைக்கவில்லை.", draft_items=[])
+    assert reply_draft_contradictions(ctx, "ஒரு மட்டன் சுக்கா வேணும்", refused) == ["Mutton Chukka"]
+
+    # alias-named drafted dish survives the unnamed-drop rule even when a
+    # non-orderable dish (Thinai Pongal) is also requested
+    draft, _ = validate_draft(ctx, [DraftItemIn(item_id=1, qty=1)])
+    kept, warnings = drop_substitutions(ctx, "ஒரு மட்டன் சுக்கா மற்றும் ஒரு thinai pongal", draft)
+    assert [i.name for i in kept.items] == ["Mutton Chukka"]
+    assert warnings == []

@@ -147,12 +147,18 @@ def drop_substitutions(
             continue
         last_word = line_base.split()[-1]
         partially_named = len(last_word) >= 4 and _named_in(text, last_word)
+        alias_named = any(
+            _named_in(text, a.casefold())
+            for a in (ctx.items[line.item_id].aliases if line.item_id in ctx.items else ())
+        )
         if (
             not consolation_ok
             and line.item_id not in prior_ids
             and not _named_in(text, line_base)
-            # partial references count: "a coffee" keeps Filter Coffee
+            # partial references count: "a coffee" keeps Filter Coffee;
+            # approved translated aliases count too ("மட்டன் சுக்கா")
             and not partially_named
+            and not alias_named
         ):
             warnings.append(f"Removed {line.name} — it wasn't part of your request.")
             continue
@@ -212,6 +218,8 @@ _REFUSAL_PHRASES = (
     "not on our menu",
     "nahi hai",
     "illa",
+    "கிடைக்கவில்லை",
+    "கிடைக்காது",
     "couldn't find",
     "could not find",
     "can't find",
@@ -273,7 +281,16 @@ def reply_draft_contradictions(ctx: AgentContext, message: str, turn: Any) -> li
     the same category was drafted — the silent-substitution signature
     ('mutton chukka' → drafts Nattu Kozhi Kuzhambu). Suppressed when the
     message carries removal/replacement intent, where a named-but-absent
-    dish is the CORRECT outcome."""
+    dish is the CORRECT outcome.
+
+    Dish mentions match the canonical name OR any approved translated
+    alias (post-deploy hotfix: a Tamil 'மட்டன் சுக்கா' order was refused
+    ~50% of turns and the trigger never fired because it only knew the
+    English name)."""
+
+    def _keys(item: Any) -> list[str]:
+        return [item.name.split(" (")[0].casefold(), *(a.casefold() for a in item.aliases)]
+
     text = message.casefold()
     reply = turn.reply.casefold()
     removal_intent = any(w in text for w in _REMOVAL_WORDS)
@@ -281,17 +298,17 @@ def reply_draft_contradictions(ctx: AgentContext, message: str, turn: Any) -> li
     drafted_unrequested_categories = {
         ctx.items[i].category
         for i in drafted_ids
-        if i in ctx.items and not _named_in(text, ctx.items[i].name.split(" (")[0].casefold())
+        if i in ctx.items and not any(_named_in(text, k) for k in _keys(ctx.items[i]) if k)
     }
     phrase_mode = any(p in reply for p in _REFUSAL_PHRASES + _UNKEPT_PROMISE_PHRASES)
     wrongly_refused = []
     for item in ctx.items.values():
         if not item.orderable or item.id in drafted_ids:
             continue
-        base = item.name.split(" (")[0].casefold()
-        if not base or not _named_in(text, base):
+        keys = [k for k in _keys(item) if k]
+        if not any(_named_in(text, k) for k in keys):
             continue
-        if phrase_mode and base in reply:
+        if phrase_mode and any(k in reply for k in keys):
             wrongly_refused.append(item.name)
         elif not removal_intent and item.category in drafted_unrequested_categories:
             wrongly_refused.append(item.name)  # substitution signature
