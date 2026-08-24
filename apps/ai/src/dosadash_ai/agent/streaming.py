@@ -32,6 +32,7 @@ from dosadash_ai.agent.graph import (
     build_messages,
     build_response,
 )
+from dosadash_ai.agent.guardrail import reply_draft_contradictions
 from dosadash_ai.config import get_settings
 from dosadash_ai.llm.client import LLMError, stream_text_completion, structured_completion
 from dosadash_shared import ORDER_AGENT_PROMPT_VERSION, AgentChatRequest, AgentTurn
@@ -149,5 +150,41 @@ async def stream_turn(
             yield {"type": "error", "detail": f"LLM chain failed: {exc}"}
             return
 
-    response = build_response(state["ctx"], turn, model)
+    # Same one-round self-correction as the non-streaming graph (Phase 11):
+    # the streamed deltas are display-only, the final event is authoritative.
+    contradicted = reply_draft_contradictions(state["ctx"], request.message, turn)
+    if contradicted:
+        logger.info("agent stream: self-correcting wrongly-refused dishes %s", contradicted)
+        names = ", ".join(contradicted)
+        try:
+            retry_turn, retry_model = await structured_completion(
+                messages=[
+                    *messages,
+                    {"role": "assistant", "content": turn.model_dump_json()},
+                    {
+                        "role": "system",
+                        "content": (
+                            f"CORRECTION: {names} IS on the menu and being served "
+                            "right now — your reply wrongly treated it as "
+                            "unavailable or left it out of draft_items. Redo this "
+                            "turn: add the customer's requested menu dishes to "
+                            "draft_items and answer accordingly."
+                        ),
+                    },
+                ],
+                response_model=AgentTurn,
+                trace_name="agent.turn.self_correct",
+                prompt_version=ORDER_AGENT_PROMPT_VERSION,
+                session_id=request.session_id,
+                user_id=str(request.user_id) if request.user_id is not None else None,
+                max_tokens=900,
+            )
+        except LLMError:
+            logger.warning("agent stream: self-correction retry failed, keeping original turn")
+        else:
+            if not reply_draft_contradictions(state["ctx"], request.message, retry_turn):
+                turn, model = retry_turn, retry_model
+
+    prior = frozenset(i.item_id for i in request.draft.items) if request.draft else frozenset()
+    response = build_response(state["ctx"], turn, model, request.message, prior)
     yield {"type": "final", "data": response.model_dump(mode="json")}

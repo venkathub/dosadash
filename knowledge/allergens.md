@@ -12,7 +12,7 @@ generated_by: python -m dosadash_ml.datagen.knowledge
 
 ## How to read this guide
 
-- **Allergen groups** used on this menu: dairy, egg, gluten, mustard, peanut, tree nut (cashew).
+- **Allergen groups** used on this menu: dairy, egg, fish, gluten, mustard, peanut, shellfish, tree nut (cashew).
 - **Diet**: `vegan` items contain no meat, egg, or dairy; `veg` items are
   vegetarian but contain dairy; `non-veg` items contain meat or egg.
 - **Jain-friendly** items are vegetarian AND prepared without onion or garlic.
@@ -53,7 +53,15 @@ generated_by: python -m dosadash_ml.datagen.knowledge
 |---|---|---|---|---|
 | Onion Uttapam | vegan | no | mild | none |
 | Tomato Onion Uttapam | vegan | no | mild | none |
-| Podi Uttapam | vegan | no | medium | none |
+
+## Millet Specials
+
+| Item | Diet | Jain-friendly | Spice | Allergens |
+|---|---|---|---|---|
+| Ragi Millet Dosa | vegan | yes | mild | none |
+| Kambu Idli (2 pcs) | vegan | yes | mild | none |
+| Thinai Pongal | veg | yes | mild | dairy, tree nut (cashew) |
+| Kuzhi Paniyaram (7 pcs) | vegan | no | mild | none |
 
 ## Rice & Pongal
 
@@ -84,6 +92,16 @@ generated_by: python -m dosadash_ml.datagen.knowledge
 | Kara Kuzhambu | vegan | no | hot | none |
 | Paneer Chettinad | veg | no | medium | dairy |
 
+## Mess Specials
+
+| Item | Diet | Jain-friendly | Spice | Allergens |
+|---|---|---|---|---|
+| Mutton Chukka | non-veg | no | hot | none |
+| Nattu Kozhi Kuzhambu | non-veg | no | hot | none |
+| Karuvadu Thokku | non-veg | no | hot | fish |
+| Nandu Pepper Fry | non-veg | no | hot | shellfish |
+| Prawn Thokku | non-veg | no | medium | shellfish |
+
 ## Snacks
 
 | Item | Diet | Jain-friendly | Spice | Allergens |
@@ -109,6 +127,7 @@ generated_by: python -m dosadash_ml.datagen.knowledge
 | Masala Chai | veg | yes | no spice | dairy |
 | Neer Mor | veg | yes | no spice | dairy |
 | Rose Milk | veg | yes | no spice | dairy |
+| Sukku Coffee | vegan | yes | no spice | none |
 
 ## Tiffin
 
@@ -116,15 +135,14 @@ generated_by: python -m dosadash_ml.datagen.knowledge
 |---|---|---|---|---|
 | Idiyappam (3 pcs) | vegan | yes | no spice | none |
 | Appam | vegan | yes | no spice | none |
-| Poori Masala (2 pcs) | vegan | no | mild | gluten |
 | Adai Avial | veg | no | medium | dairy |
-| Lemon Sevai | vegan | yes | mild | mustard, peanut |
 | Rava Kitchadi | veg | no | mild | dairy, gluten |
+| Mini Tiffin | veg | no | mild | dairy, gluten |
 
 ## Meals
 
 | Item | Diet | Jain-friendly | Spice | Allergens |
 |---|---|---|---|---|
 | South Indian Veg Meals | veg | no | mild | dairy |
-| Vatha Kuzhambu Rice | vegan | no | medium | none |
+| Non-Veg Mess Meals | non-veg | no | medium | none |
 

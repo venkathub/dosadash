@@ -41,6 +41,5 @@ async def test_payload_is_byte_stable_without_translations(agent_session):
             "jain_friendly",
             "spice",
             "allergens",
-            "meal_periods",
             "available",
         }

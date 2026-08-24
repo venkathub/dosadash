@@ -225,7 +225,10 @@ async def set_schedule(
     """Set per-weekday serving windows; null clears (always available)."""
     item = await _get_item(session, item_id)
     item.schedule = (
-        {day: window.model_dump() for day, window in body.schedule.items()}
+        {
+            day: [w.model_dump() for w in entry] if isinstance(entry, list) else entry.model_dump()
+            for day, entry in body.schedule.items()
+        }
         if body.schedule is not None
         else None
     )

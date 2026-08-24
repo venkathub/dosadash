@@ -1,13 +1,15 @@
 ---
 title: Idli, Vada & Uttapam Guide
 doc_type: menu_guide
-tags: [idli, vada, uttapam, tiffin, menu]
+tags: [idli, vada, uttapam, tiffin, menu, timing]
 ---
 
 # Idli, Vada & Uttapam Guide
 
 Steamed and griddled tiffin classics. Idlis are steamed fresh through the
 day; vadas are fried to order. All are served with sambar and chutneys.
+
+The menu always shows exactly what is being served right now.
 
 ## Idli (2 pcs) — ₹80
 
@@ -54,13 +56,11 @@ chilli. Vegan. Softer and more filling than a dosa.
 
 Uttapam with a tangy tomato-onion topping. Vegan. Mild.
 
-## Podi Uttapam — ₹130
-
-Uttapam finished with roasted gunpowder podi. Medium heat. Vegan.
-
 ## Pairing notes
 
 - Classic breakfast: Idli (2 pcs) + Medu Vada + Filter Coffee.
 - Lightest meal: Idli or Set Dosa with extra sambar.
 - Gluten-free: everything here EXCEPT Rava Idli.
-- Vegan: Idli, Podi Idli, Medu Vada, and all uttapams.
+- Vegan: Idli, Podi Idli, Medu Vada, and both uttapams.
+- Millet route: the Kambu Idli (2 pcs) in the Millet Specials guide is the
+  pearl-millet cousin of the classic idli, on the same serving windows.

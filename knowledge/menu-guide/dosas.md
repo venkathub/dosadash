@@ -1,7 +1,7 @@
 ---
 title: Dosa Guide
 doc_type: menu_guide
-tags: [dosa, menu, pairing, spice]
+tags: [dosa, menu, pairing, spice, timing]
 ---
 
 # Dosa Guide
@@ -9,6 +9,8 @@ tags: [dosa, menu, pairing, spice]
 Every dosa is made to order from batter fermented in-house overnight (rice +
 urad dal, stone-ground). All dosas are served with coconut chutney, tomato
 chutney, and sambar unless noted. Typical prep time is 15–20 minutes.
+
+The menu always shows exactly what is being served right now.
 
 ## Plain Dosa — ₹90
 
@@ -69,7 +71,8 @@ Contains dairy (cheese, butter). Jain-friendly. Mild.
 
 Thick, soft, street-style griddle dosa — chewy edges, spongy centre. Vegan
 and Jain-friendly. Traditionally paired with a spicy curry: try it with
-Kara Kuzhambu or Chicken Chettinad.
+Kara Kuzhambu or Chicken Chettinad in the evening window, when both the
+griddle and the curry pots are running.
 
 ## Pairing notes
 
@@ -77,3 +80,5 @@ Kara Kuzhambu or Chicken Chettinad.
 - Spice-seeking: Mysore Masala Dosa, Podi Dosa + Kara Kuzhambu on the side.
 - Vegan orders: any dosa EXCEPT Ghee Roast Dosa and Cheese Dosa.
 - Gluten-free: every dosa EXCEPT Rava Dosa (all others are rice-lentil).
+- Millet lovers: see the Ragi Millet Dosa in the Millet Specials guide — same
+  tiffin-centre serving windows as the dosas here.

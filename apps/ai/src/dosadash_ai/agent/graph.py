@@ -32,7 +32,13 @@ from dosadash_ai.agent.context import (
     menu_payload,
     prefs_payload,
 )
-from dosadash_ai.agent.guardrail import gate_ready, validate_draft
+from dosadash_ai.agent.guardrail import (
+    drop_substitutions,
+    gate_ready,
+    reply_draft_contradictions,
+    serving_notes,
+    validate_draft,
+)
 from dosadash_ai.llm.client import LLMError, embed_texts, structured_completion
 from dosadash_ai.prompts import load_prompt
 from dosadash_ai.rag.search import hybrid_search
@@ -91,6 +97,11 @@ def build_messages(state: AgentState) -> list[dict[str, str]]:
     """
     request = state["request"]
     ctx = state["ctx"]
+    # ORDERABLE dishes only (Phase 11): every prompt variant that exposed
+    # off-window items or serving-hours text to gpt-4o-mini caused
+    # hallucinated refusals of on-menu dishes (measured in the live gate).
+    # The serving-window story is appended deterministically in
+    # build_response (guardrail.serving_notes) instead.
     menu_json = json.dumps({"menu": menu_payload(ctx)}, ensure_ascii=False, sort_keys=True)
     state_payload = {
         "kitchen": {"open": ctx.kitchen_open, "paused": ctx.kitchen_paused},
@@ -113,8 +124,9 @@ def build_messages(state: AgentState) -> list[dict[str, str]]:
 
 async def _llm_turn(state: AgentState) -> dict[str, Any]:
     request = state["request"]
+    messages = build_messages(state)
     turn, model = await structured_completion(
-        messages=build_messages(state),
+        messages=messages,
         response_model=AgentTurn,
         trace_name="agent.turn",
         prompt_version=ORDER_AGENT_PROMPT_VERSION,
@@ -122,16 +134,69 @@ async def _llm_turn(state: AgentState) -> dict[str, Any]:
         user_id=str(request.user_id) if request.user_id is not None else None,
         max_tokens=900,
     )
+    # One-round self-correction (copilot precedent): if the reply refused —
+    # or promised but didn't draft — an ORDERABLE dish the customer asked
+    # for by name, tell the model exactly which dishes ARE on the menu and
+    # let it redo the turn once. Deterministic detection, narrow trigger;
+    # a failed retry keeps the original turn (never a 5xx).
+    contradicted = reply_draft_contradictions(state["ctx"], request.message, turn)
+    if contradicted:
+        logger.info("agent: self-correcting wrongly-refused dishes %s", contradicted)
+        names = ", ".join(contradicted)
+        try:
+            retry_turn, retry_model = await structured_completion(
+                messages=[
+                    *messages,
+                    {"role": "assistant", "content": turn.model_dump_json()},
+                    {
+                        "role": "system",
+                        "content": (
+                            f"CORRECTION: {names} IS on the menu and being served "
+                            "right now — your reply wrongly treated it as "
+                            "unavailable or left it out of draft_items. Redo this "
+                            "turn: add the customer's requested menu dishes to "
+                            "draft_items and answer accordingly."
+                        ),
+                    },
+                ],
+                response_model=AgentTurn,
+                trace_name="agent.turn.self_correct",
+                prompt_version=ORDER_AGENT_PROMPT_VERSION,
+                session_id=request.session_id,
+                user_id=str(request.user_id) if request.user_id is not None else None,
+                max_tokens=900,
+            )
+        except LLMError:
+            logger.warning("agent: self-correction retry failed, keeping original turn")
+        else:
+            if not reply_draft_contradictions(state["ctx"], request.message, retry_turn):
+                turn, model = retry_turn, retry_model
     return {"turn": turn, "model": model}
 
 
-def build_response(ctx: AgentContext, turn: AgentTurn, model: str) -> AgentChatResponse:
+def build_response(
+    ctx: AgentContext,
+    turn: AgentTurn,
+    model: str,
+    user_message: str = "",
+    prior_ids: frozenset[int] = frozenset(),
+) -> AgentChatResponse:
     """Guardrail + response assembly — shared by the graph and the SSE path."""
     draft, warnings = validate_draft(ctx, turn.draft_items)
+    draft, substitution_warnings = drop_substitutions(ctx, user_message, draft, prior_ids)
+    warnings.extend(substitution_warnings)
+    attempted = tuple(line.item_id for line in turn.draft_items)
+    notes = serving_notes(ctx, user_message, attempted)
+    reply = turn.reply
+    if notes:
+        # deterministic availability verdicts (Phase 11) — appended AFTER the
+        # model's text so the serving-hours story is always present, always
+        # true, and never the model's to hallucinate
+        reply = (reply.rstrip() + " " if reply.strip() else "") + " ".join(notes)
     if not ctx.kitchen_open:
         warnings.append("The kitchen is currently closed — orders cannot be placed.")
     return AgentChatResponse(
-        reply=turn.reply,
+        reply=reply,
         draft=draft,
         ready_to_place=gate_ready(ctx, draft, turn.ready_to_place),
         warnings=warnings,
@@ -141,7 +206,13 @@ def build_response(ctx: AgentContext, turn: AgentTurn, model: str) -> AgentChatR
 
 
 async def _validate_draft(state: AgentState) -> dict[str, Any]:
-    return {"response": build_response(state["ctx"], state["turn"], state["model"])}
+    request = state["request"]
+    prior = frozenset(i.item_id for i in request.draft.items) if request.draft else frozenset()
+    return {
+        "response": build_response(
+            state["ctx"], state["turn"], state["model"], request.message, prior
+        )
+    }
 
 
 @lru_cache

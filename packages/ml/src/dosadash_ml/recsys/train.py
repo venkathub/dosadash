@@ -138,7 +138,7 @@ def _current_champion_recall(client: MlflowClient) -> float | None:
 
 
 def register_and_maybe_promote(
-    metrics: dict[str, float], *, params: dict[str, object]
+    metrics: dict[str, float], *, params: dict[str, object], force: bool = False
 ) -> tuple[str, bool]:
     client = MlflowClient()
     with mlflow.start_run(run_name=f"recsys-{datetime.now(UTC):%Y%m%d-%H%M}") as run:
@@ -154,7 +154,10 @@ def register_and_maybe_promote(
     key = f"recall_at_{EVAL_K}"
     client.set_model_version_tag(MODEL_NAME, version, key, f"{metrics[key]:.6f}")
     incumbent = _current_champion_recall(client)
-    promote = incumbent is None or metrics[key] >= incumbent
+    # --force-promote exists for catalog changes: the incumbent's recall was
+    # measured on a different item set, so the comparison is meaningless AND
+    # its exported factors can no longer serve the live menu.
+    promote = force or incumbent is None or metrics[key] >= incumbent
     if promote:
         client.set_registered_model_alias(MODEL_NAME, CHAMPION, version)
     return str(version), promote
@@ -212,6 +215,11 @@ def main() -> None:
     parser.add_argument("--alpha", type=float, default=5.0)
     parser.add_argument("--iterations", type=int, default=30)
     parser.add_argument("--count-scale", choices=("log1p", "raw"), default="log1p")
+    parser.add_argument(
+        "--force-promote",
+        action="store_true",
+        help="promote regardless of incumbent recall — required after catalog changes",
+    )
     parser.add_argument("--tracking-uri", default="sqlite:///packages/ml/mlflow.db")
     parser.add_argument("--export-dir", default="packages/ml/artifacts")
     args = parser.parse_args()
@@ -247,7 +255,7 @@ def main() -> None:
         "iterations": args.iterations,
         "count_scale": args.count_scale,
     }
-    version, promoted = register_and_maybe_promote(metrics, params=params)
+    version, promoted = register_and_maybe_promote(metrics, params=params, force=args.force_promote)
     k = EVAL_K
     print(
         f"v{version} promoted={promoted} "

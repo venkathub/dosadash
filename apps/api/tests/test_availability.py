@@ -39,6 +39,40 @@ def test_overnight_window_spans_midnight():
     assert not availability.item_on_schedule(late, SAT_LUNCH)
 
 
+TIFFIN = {  # dosa-style: breakfast AND dinner, never lunch — Phase 11 multi-window
+    d: [{"start": "06:00", "end": "11:30"}, {"start": "17:00", "end": "22:00"}]
+    for d in availability.WEEKDAYS
+}
+
+
+def test_multi_window_day_breakfast_and_dinner_not_lunch():
+    sat_breakfast = datetime(2026, 8, 22, 8, 0, tzinfo=IST)
+    sat_dinner = datetime(2026, 8, 22, 19, 30, tzinfo=IST)
+    assert availability.item_on_schedule(TIFFIN, sat_breakfast)
+    assert availability.item_on_schedule(TIFFIN, sat_dinner)
+    assert not availability.item_on_schedule(TIFFIN, SAT_LUNCH)  # dosa not at lunch
+    assert not availability.item_on_schedule(TIFFIN, SAT_NIGHT)
+
+
+def test_serving_windows_text_humanizes():
+    assert availability.serving_windows_text(None) is None
+    assert availability.serving_windows_text(TIFFIN) == "6–11:30 AM & 5–10 PM"
+    lunch_only = {d: {"start": "11:30", "end": "16:00"} for d in availability.WEEKDAYS}
+    assert availability.serving_windows_text(lunch_only) == "11:30 AM–4 PM"
+    weekend = {"sat": {"start": "11:30", "end": "16:00"}}
+    assert availability.serving_windows_text(weekend, SAT_LUNCH) == "today 11:30 AM–4 PM"
+    assert availability.serving_windows_text(weekend, SUN_LUNCH) == "not served today"
+
+
+def test_env_clock_override_pins_now_ist(monkeypatch):
+    monkeypatch.setenv("DOSADASH_NOW_IST", "2026-08-22T13:00:00")
+    pinned = availability.now_ist()
+    assert (pinned.year, pinned.hour, pinned.tzinfo) == (2026, 13, IST)
+    assert not availability.item_on_schedule(TIFFIN)  # lunch → dosa off-schedule
+    monkeypatch.delenv("DOSADASH_NOW_IST")
+    assert abs((availability.now_ist() - datetime.now(IST)).total_seconds()) < 5
+
+
 # ----------------------------------------------------------- integration level
 
 
@@ -87,7 +121,7 @@ async def test_checkout_blocked_outside_business_hours(client, db_session, monke
     assert resp.status_code == 201
 
 
-async def test_scheduled_item_hidden_and_unorderable_off_window(
+async def test_scheduled_item_annotated_and_unorderable_off_window(
     client, db_session, frozen_saturday_lunch, monkeypatch
 ):
     admin = await _admin(db_session)
@@ -102,19 +136,23 @@ async def test_scheduled_item_hidden_and_unorderable_off_window(
         json={"schedule": {"sat": {"start": "18:00", "end": "23:00"}}},
     )
 
-    names = [i["name"] for i in (await client.get("/api/v1/menu")).json()]
-    assert "Chicken Biryani" not in names  # 13:00 — off window
+    # 13:00 — off window: stays VISIBLE but annotated (Phase 11), still blocked
+    by_name = {i["name"]: i for i in (await client.get("/api/v1/menu")).json()}
+    biryani = by_name["Chicken Biryani"]
+    assert biryani["available_now"] is False
+    assert biryani["serving_windows"] == "today 6–11 PM"
     resp = await client.post(
         "/api/v1/orders", headers=customer, json={"items": [{"item_id": biryani_id, "qty": 1}]}
     )
     assert resp.status_code == 409
     assert "Chicken Biryani" in resp.json()["detail"]
+    assert "served" in resp.json()["detail"]  # tells the customer WHEN
 
-    # 20:00 the same evening — visible and orderable
+    # 20:00 the same evening — available and orderable
     evening = datetime(2026, 8, 22, 20, 0, tzinfo=IST)
     monkeypatch.setattr(availability, "now_ist", lambda: evening)
-    names = [i["name"] for i in (await client.get("/api/v1/menu")).json()]
-    assert "Chicken Biryani" in names
+    by_name = {i["name"]: i for i in (await client.get("/api/v1/menu")).json()}
+    assert by_name["Chicken Biryani"]["available_now"] is True
     resp = await client.post(
         "/api/v1/orders", headers=customer, json={"items": [{"item_id": biryani_id, "qty": 1}]}
     )

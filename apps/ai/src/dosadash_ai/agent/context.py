@@ -213,9 +213,16 @@ async def load_memory(session: AsyncSession, user_id: int) -> UserMemoryCtx:
 
 
 def menu_payload(ctx: AgentContext) -> list[dict[str, Any]]:
-    """Compact menu JSON for the prompt. Sold-out / off-schedule items are
-    included but flagged, so the agent can say "sold out" instead of
-    pretending the dish doesn't exist.
+    """Compact menu JSON for the prompt — ORDERABLE dishes only (Phase 11).
+
+    Presence = orderability. Every live-gate experiment that exposed
+    off-window dishes or serving-hours text to the model (flagged entries,
+    a separate not_serving_now list, timing text in knowledge) made
+    gpt-4o-mini hallucinate refusals of dishes that WERE on the menu. So
+    the model sees a clean "this is what we serve right now" world, and
+    the serving-window story is computed deterministically in
+    `guardrail.serving_notes` (dish-QC philosophy: the model observes,
+    the verdict is computed).
 
     `aliases` (approved translated names, Phase 7) appears ONLY when an item
     has any — a menu with no approved translations serializes byte-identically
@@ -231,11 +238,15 @@ def menu_payload(ctx: AgentContext) -> list[dict[str, Any]]:
             "jain_friendly": item.is_veg and not item.contains_onion_garlic,
             "spice": item.spice_level,
             "allergens": list(item.allergens),
-            "meal_periods": list(item.meal_periods),
-            "available": item.orderable,
+            # meal_periods deliberately NOT serialized since v5: the hard
+            # serving windows already keep the orderable menu time-
+            # appropriate, and the model misread any meal-list field as an
+            # availability schedule
+            "available": True,
             **({"aliases": list(item.aliases)} if item.aliases else {}),
         }
         for item in ctx.items.values()
+        if item.orderable
     ]
 
 

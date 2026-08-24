@@ -100,9 +100,11 @@ async def test_context_carries_menu_prefs_and_draft(agent_session, fake_llm):
     )
     payload = _context_payload(fake_llm)
     names = {m["name"] for m in payload["menu"]}
-    assert {"Masala Dosa", "Mysore Pak", "Filter Coffee"} <= names
-    sold_out = next(m for m in payload["menu"] if m["name"] == "Mysore Pak")
-    assert sold_out["available"] is False  # flagged, not hidden
+    assert {"Masala Dosa", "Filter Coffee"} <= names
+    # Phase 11 contract: non-orderable dishes are absent from the model's
+    # world entirely (serving_notes computes the story deterministically)
+    assert "Mysore Pak" not in names
+    assert "not_serving_now" not in payload
     assert next(m for m in payload["menu"] if m["name"] == "Cheese Dosa")["jain_friendly"] is True
     assert next(m for m in payload["menu"] if m["name"] == "Masala Dosa")["jain_friendly"] is False
     assert payload["preferences"]["allergens"] == ["milk"]

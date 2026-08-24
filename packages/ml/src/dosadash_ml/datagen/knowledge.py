@@ -29,6 +29,9 @@ ALLERGEN_GROUPS: dict[str, str] = {
     "cashew": "tree nut (cashew)",
     "mustard seeds": "mustard",
     "egg": "egg",
+    "dry fish (karuvadu)": "fish",
+    "crab": "shellfish",
+    "prawn": "shellfish",
 }
 
 _ANIMAL_PRODUCTS = {name for name, group in ALLERGEN_GROUPS.items() if group in ("dairy", "egg")}
