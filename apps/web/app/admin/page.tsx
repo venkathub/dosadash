@@ -13,6 +13,7 @@ import {
 import { clearAdminToken, getAdminToken, saveAdminToken } from "./adminApi";
 import { CopilotTab } from "./copilotTab";
 import { CouponsTab } from "./couponsTab";
+import { FeedbackTab } from "./feedbackTab";
 import { ImagesTab } from "./imagesTab";
 import { InventoryTab } from "./inventoryTab";
 import { CrmTab, ReportsTab } from "./reportsTabs";
@@ -25,10 +26,10 @@ const TAB_GROUPS = [
   { label: "Operations", tabs: ["Menu", "Orders", "Inventory", "Support", "Reviews"] },
   { label: "Growth", tabs: ["Coupons", "Combos", "CRM", "Reports"] },
   { label: "AI Studio", tabs: ["Copilot", "Nutrition", "Translations", "Images", "Evals", "Costs"] },
-  { label: "System", tabs: ["Settings", "Audit"] },
+  { label: "System", tabs: ["Feedback", "Settings", "Audit"] },
 ] as const;
 
-const TABS = ["Menu", "Orders", "Inventory", "Support", "Reviews", "Coupons", "Combos", "CRM", "Reports", "Copilot", "Nutrition", "Translations", "Images", "Evals", "Costs", "Settings", "Audit"] as const;
+const TABS = ["Menu", "Orders", "Inventory", "Support", "Reviews", "Coupons", "Combos", "CRM", "Reports", "Copilot", "Nutrition", "Translations", "Images", "Evals", "Costs", "Feedback", "Settings", "Audit"] as const;
 type Tab = (typeof TABS)[number];
 
 /** Sidebar icons — the product's emoji icon language (docs/13 §4). */
@@ -48,6 +49,7 @@ const TAB_ICON: Record<Tab, string> = {
   Images: "🖼️",
   Evals: "🎯",
   Costs: "💸",
+  Feedback: "🐞",
   Settings: "⚙️",
   Audit: "📜",
 };
@@ -203,6 +205,7 @@ export default function Admin() {
           {tab === "Images" && <ImagesTab />}
           {tab === "Evals" && <EvalsTab />}
           {tab === "Costs" && <CostsTab />}
+          {tab === "Feedback" && <FeedbackTab />}
           {tab === "Settings" && <SettingsTab />}
           {tab === "Audit" && <AuditTab />}
         </Card>
