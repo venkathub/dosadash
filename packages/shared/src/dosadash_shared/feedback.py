@@ -14,6 +14,7 @@ Trust model:
 
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -142,3 +143,51 @@ class AdminFeedbackListOut(BaseModel):
     reports: list[AdminFeedbackOut]
     total: int
     github_repo: str  # "" when the integration is disabled
+
+
+# ------------------------------------------------------------------- triage
+# Inventory-agent pattern: the LLM only OBSERVES (TriageAssessment); the
+# verdict is COMPUTED by a deterministic policy (dish-QC philosophy). A
+# report can therefore never talk its way into ai:auto-fix — the policy
+# requires user-filed BUG ∧ model-read BUG ∧ effort S ∧ risk LOW.
+
+
+class TriageVerdict(StrEnum):
+    AUTO_FIX = "AUTO_FIX"  # small low-risk bug — fixer may auto-merge
+    NEEDS_APPROVAL = "NEEDS_APPROVAL"  # human decides before the fixer runs
+    DISMISS = "DISMISS"  # not actionable (rant/spam/unclear)
+
+
+class TriageAssessment(BaseModel):
+    """Structured LLM output for one report (Hard Rule 3). Observations
+    only — the deterministic policy owns the verdict."""
+
+    actionable: bool
+    type: FeedbackType  # the model's read (a feature disguised as a bug)
+    severity: Literal["LOW", "MEDIUM", "HIGH"]
+    effort: Literal["S", "M", "L"]
+    risk: Literal["LOW", "HIGH"]
+    area: str = Field(default="", max_length=120)  # guessed code area
+    summary: str = Field(min_length=1, max_length=300)
+
+
+class FeedbackTriageRequest(BaseModel):
+    """api/worker → ai: one report (text already redacted api-side; the ai
+    redacts again defensively before the LLM — Rule 8 twice over)."""
+
+    report_id: int
+    type: FeedbackType
+    title: str = Field(max_length=120)
+    description: str = Field(max_length=2000)
+    reporter_tier: ReporterTier
+
+
+class FeedbackTriageResponse(BaseModel):
+    report_id: int
+    verdict: TriageVerdict
+    assessment: TriageAssessment | None = None  # None → LLM chain fell back
+    labels: list[str] = []  # GitHub labels the caller should apply
+    fallback: bool = False
+    violations: list[str] = []
+    model: str | None = None
+    prompt_version: str = FEEDBACK_TRIAGE_PROMPT_VERSION
