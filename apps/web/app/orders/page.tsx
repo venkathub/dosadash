@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApiError, api, getUser, type Order } from "../../lib/api";
+import FeedbackButton from "../components/FeedbackButton";
 import { ReviewBox } from "./reviewBox";
 import { SupportBox } from "./supportBox";
 import { Badge, Btn, Card, EmptyState, statusBadgeTone } from "../components/ui";
@@ -143,6 +144,7 @@ export default function Orders() {
           ))}
         </div>
         {getUser() && <SupportBox />}
+        <FeedbackButton />
       </div>
     </main>
   );

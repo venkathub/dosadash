@@ -133,3 +133,12 @@ class AdminFeedbackOut(BaseModel):
     triage: dict | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class AdminFeedbackListOut(BaseModel):
+    """List wrapper: `github_repo` lets the admin tab deep-link issues
+    without shipping the token-bearing client config to the browser."""
+
+    reports: list[AdminFeedbackOut]
+    total: int
+    github_repo: str  # "" when the integration is disabled
