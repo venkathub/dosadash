@@ -99,7 +99,20 @@ issues labeled `ai:fixed` without `ai:verified`; if any, a Haiku run probes
 the fix **live on public surfaces only** (curl `/api/v1`, page HTML),
 comments `## Prod verification` with evidence and a verdict, then labels
 `ai:verified` — or **reopens the issue** when not verifiable (unverifiable
-≠ verified). Read-only by construction: toolset excludes Edit/Write (gated).
+≠ verified). Read-only by construction: toolset excludes Edit/Write AND all
+filesystem tools (gated — the first live run burned its budget reading the
+repo instead of probing prod; verification is `gh` + `curl` only).
+
+### Pre-merge browser gate (`ui-smoke.yml`)
+
+Compile-grade checks can't see runtime browser errors — issue #120 (React
+#418 hydration) passed every pre-merge check. The **UI smoke** required
+check boots the built app in headless Chromium with a fake logged-in
+session, walks `/ /orders /kds /demo /admin`, and fails on uncaught page
+errors / React hydration signatures. Deterministic, $0 LLM cost;
+regression-validated by re-introducing the #120 bug (exit 1 on /orders).
+The fixer also runs it locally before pushing web changes. Same
+skip-as-satisfied `changes` pattern as the live gate.
 
 ## 7. Ops runbook
 
