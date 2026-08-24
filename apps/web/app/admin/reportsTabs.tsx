@@ -30,7 +30,7 @@ const inr = (v: number) => `₹${v.toLocaleString("en-IN", { maximumFractionDigi
 
 function ReportHeading({ children }: { children: React.ReactNode }) {
   return (
-    <SectionHeading as="h3" kolam={false} className="text-base text-leaf-100">
+    <SectionHeading as="h3" kolam={false} className="text-base text-indigo-100">
       {children}
     </SectionHeading>
   );
@@ -91,8 +91,8 @@ export function ReportsTab() {
         <ErrorBar msg={sales.error} />
         {sales.data && (
           <>
-            <p className="tnum mb-2 text-sm text-leaf-200">
-              <span className="font-display text-brass-300">{inr(sales.data.total_revenue)}</span> revenue ·{" "}
+            <p className="tnum mb-2 text-sm text-indigo-200">
+              <span className="font-display text-turmeric-400">{inr(sales.data.total_revenue)}</span> revenue ·{" "}
               {sales.data.total_orders} orders · {inr(sales.data.total_gst)} GST (last{" "}
               {sales.data.days}d)
             </p>
@@ -103,9 +103,9 @@ export function ReportsTab() {
               <tbody>
                 {sales.data.buckets.slice(-12).reverse().map((b) => (
                   <tr key={b.period} className={trCls}>
-                    <td className={`${tdCls} text-leaf-200/70`}>{b.period}</td>
+                    <td className={`${tdCls} text-indigo-200/70`}>{b.period}</td>
                     <td className={`${tdCls} text-right`}>{b.orders}</td>
-                    <td className={`${tdCls} text-right text-brass-300`}>{inr(b.revenue)}</td>
+                    <td className={`${tdCls} text-right text-turmeric-400`}>{inr(b.revenue)}</td>
                     <td className={`${tdCls} text-right`}>{inr(b.gst)}</td>
                     <td className={`${tdCls} text-right`}>{inr(b.aov)}</td>
                   </tr>
@@ -132,10 +132,10 @@ export function ReportsTab() {
         )}
         {forecast.data && forecast.data.dish_anomalies.length > 0 && (
           <div className="mt-3">
-            <Eyebrow className="mb-1 text-chili-200">Anomalies</Eyebrow>
+            <Eyebrow className="mb-1 text-[#FF8B8B]">Anomalies</Eyebrow>
             {forecast.data.dish_anomalies.map((a) => (
-              <p key={`${a.item_id}-${a.date}`} className="tnum text-xs text-leaf-200">
-                <span className="text-chili-200">⚑</span> {a.date} — {a.name}: forecast{" "}
+              <p key={`${a.item_id}-${a.date}`} className="tnum text-xs text-indigo-200">
+                <span className="text-[#FF8B8B]">⚑</span> {a.date} — {a.name}: forecast{" "}
                 {a.forecast_qty}, actual {a.actual_qty} ({a.deviation_pct}% off)
               </p>
             ))}
@@ -160,19 +160,19 @@ export function ReportsTab() {
               {pnl.data.rows.slice(0, 20).map((r) => (
                 <tr key={r.item_id} className={trCls}>
                   <td className={tdCls}>
-                    {r.name} <span className="text-leaf-200/60">{r.category}</span>
+                    {r.name} <span className="text-indigo-200/60">{r.category}</span>
                   </td>
                   <td className={`${tdCls} text-right`}>{r.qty}</td>
-                  <td className={`${tdCls} text-right text-brass-300`}>{inr(r.revenue)}</td>
+                  <td className={`${tdCls} text-right text-turmeric-400`}>{inr(r.revenue)}</td>
                   <td className={`${tdCls} text-right`}>
                     {inr(r.ingredient_cost)}{" "}
                     {r.cost_source === "estimated" && (
-                      <span title="No priced recipe — 35% food-cost estimate" className="text-leaf-200/60">
+                      <span title="No priced recipe — 35% food-cost estimate" className="text-indigo-200/60">
                         est.
                       </span>
                     )}
                   </td>
-                  <td className={`${tdCls} text-right ${r.margin >= 0 ? "text-veg-200" : "text-chili-200"}`}>{inr(r.margin)}</td>
+                  <td className={`${tdCls} text-right ${r.margin >= 0 ? "text-[#5BD69B]" : "text-[#FF8B8B]"}`}>{inr(r.margin)}</td>
                   <td className={`${tdCls} text-right`}>{r.margin_pct}%</td>
                 </tr>
               ))}
@@ -214,9 +214,9 @@ function ForecastChart({ report }: { report: ForecastReport }) {
     .join(" ");
   const barW = Math.max(3, (W - 2 * pad) / points.length - 6);
   /* Token hex literals for SVG paint (Tailwind arbitrary fills are unreliable
-     with CSS-var tokens): #C8A24B = brass-500, #BFD6C8 = leaf-200, #D0483A = chili-500. */
+     with CSS-var tokens): #F2B705 = turmeric-500, #B9B6D9 = indigo-200, #D64545 = chili. */
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-3xl rounded-lg bg-leaf-950/60">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-3xl rounded-lg bg-indigo-950/60">
       <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="rgba(255,255,255,0.05)" />
       {points.map((p, i) =>
         p.actual_qty === null ? null : (
@@ -226,20 +226,20 @@ function ForecastChart({ report }: { report: ForecastReport }) {
             y={y(p.actual_qty)}
             width={barW}
             height={H - pad - y(p.actual_qty)}
-            fill="#C8A24B"
+            fill="#F2B705"
             fillOpacity={0.8}
           />
         ),
       )}
-      <polyline points={line} fill="none" strokeWidth={2} stroke="#BFD6C8" />
+      <polyline points={line} fill="none" strokeWidth={2} stroke="#B9B6D9" />
       {points.map((p, i) =>
         p.anomaly && p.actual_qty !== null ? (
-          <circle key={`a-${p.date}`} cx={x(i)} cy={y(p.actual_qty)} r={4} fill="#D0483A">
+          <circle key={`a-${p.date}`} cx={x(i)} cy={y(p.actual_qty)} r={4} fill="#D64545">
             <title>{`${p.date}: forecast ${p.forecast_qty}, actual ${p.actual_qty}`}</title>
           </circle>
         ) : null,
       )}
-      <text x={pad} y={12} fill="#BFD6C8" className="text-[10px]">
+      <text x={pad} y={12} fill="#B9B6D9" className="text-[10px]">
         ▬ actual · ─ forecast · ● anomaly (max {Math.round(max)}/day)
       </text>
     </svg>
@@ -268,7 +268,7 @@ export function CrmTab() {
       <div className="mb-2 flex items-center gap-3">
         <ReportHeading>Segments</ReportHeading>
         {data?.computed_at && (
-          <span className="text-xs text-leaf-200/60">
+          <span className="text-xs text-indigo-200/60">
             scored {new Date(data.computed_at).toLocaleString()}
           </span>
         )}
@@ -276,10 +276,10 @@ export function CrmTab() {
       </div>
       <div className="mb-6 flex flex-wrap gap-3">
         {tiers.map((t) => (
-          <div key={t.tier} className="rounded-lg bg-leaf-800 px-4 py-3">
+          <div key={t.tier} className="rounded-lg bg-indigo-800 px-4 py-3">
             <Eyebrow>{t.tier}</Eyebrow>
-            <p className="tnum font-display text-lg font-semibold text-brass-300">{t.users}</p>
-            <p className="tnum text-xs text-leaf-200/70">
+            <p className="tnum font-display text-lg font-semibold text-turmeric-400">{t.users}</p>
+            <p className="tnum text-xs text-indigo-200/70">
               LTV {inr(t.total_ltv)} · churn {(t.avg_churn_risk * 100).toFixed(0)}%
             </p>
           </div>
@@ -287,7 +287,7 @@ export function CrmTab() {
       </div>
       <div className="mb-2">
         <ReportHeading>
-          Win-back targets <span className="font-sans text-xs font-normal text-leaf-200/60">(high LTV × churn risk)</span>
+          Win-back targets <span className="font-sans text-xs font-normal text-indigo-200/60">(high LTV × churn risk)</span>
         </ReportHeading>
       </div>
       <table className={tableCls}>
@@ -298,10 +298,10 @@ export function CrmTab() {
           {(data?.at_risk ?? []).map((u) => (
             <tr key={u.user_id} className={trCls}>
               <td className={tdCls}>
-                {u.name ?? "—"} <span className="font-mono text-leaf-200/60">{u.phone}</span>
+                {u.name ?? "—"} <span className="font-mono text-indigo-200/60">{u.phone}</span>
               </td>
               <td className={tdCls}>{u.rfm_tier}</td>
-              <td className={`${tdCls} text-right ${u.churn_risk >= 0.8 ? "text-chili-200" : "text-brass-300"}`}>
+              <td className={`${tdCls} text-right ${u.churn_risk >= 0.8 ? "text-[#FF8B8B]" : "text-turmeric-400"}`}>
                 {(u.churn_risk * 100).toFixed(0)}%
               </td>
               <td className={`${tdCls} text-right`}>{inr(u.ltv)}</td>

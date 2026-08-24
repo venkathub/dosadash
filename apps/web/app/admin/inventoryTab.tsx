@@ -119,17 +119,17 @@ export function InventoryTab() {
 
       <div className="space-y-2">
         {(pos ?? []).map((po) => (
-          <div key={po.id} className="rounded-lg bg-leaf-800 p-3 text-sm">
+          <div key={po.id} className="rounded-lg bg-indigo-800 p-3 text-sm">
             <div className="flex flex-wrap items-center gap-3">
-              <button className="font-mono text-brass-300 transition-colors duration-150 hover:text-brass-400" onClick={() => toggle(po.id)}>
+              <button className="font-mono text-turmeric-400 transition-colors duration-150 hover:text-turmeric-400" onClick={() => toggle(po.id)}>
                 {open[po.id] ? "▾" : "▸"} PO #{po.id}
               </button>
               <Badge tone={statusBadgeTone(po.status)}>{po.status}</Badge>
-              <span className="text-leaf-200">{po.supplier_name ?? "Unassigned supplier"}</span>
+              <span className="text-indigo-200">{po.supplier_name ?? "Unassigned supplier"}</span>
               {po.source === "AGENT" ? (
                 <span className="ai-meta">🤖 {po.model ?? "agent"} · {po.prompt_version ?? ""} · {po.coverage_days}d cover</span>
               ) : (
-                <span className="text-xs text-leaf-200/70">manual · {po.coverage_days}d cover</span>
+                <span className="text-xs text-indigo-200/70">manual · {po.coverage_days}d cover</span>
               )}
               {po.expected_cost && <span className="tnum ml-auto font-display font-semibold">≈ ₹{Number(po.expected_cost).toFixed(0)}</span>}
               {po.status === "PENDING_APPROVAL" && (
@@ -161,7 +161,7 @@ export function InventoryTab() {
               <div className="mt-3 border-t border-white/5 pt-3">
                 {po.rationale && <p className="mb-2"><span className="ai-meta">🤖 {open[po.id].rationale}</span></p>}
                 <table className="tnum w-full text-left text-xs">
-                  <thead className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brass-300/70">
+                  <thead className="text-[11px] font-semibold uppercase tracking-[0.14em] text-turmeric-400/70">
                     <tr>
                       <th className="py-1">ingredient</th>
                       <th className="text-right">qty</th>
@@ -192,7 +192,7 @@ export function InventoryTab() {
                           )}
                         </td>
                         <td className="text-right">{item.unit_cost ? `₹${item.unit_cost}` : "—"}</td>
-                        <td className="text-leaf-200/70">{item.reason}</td>
+                        <td className="text-indigo-200/70">{item.reason}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -270,12 +270,12 @@ function InvoiceSection({ onStockChanged }: { onStockChanged: () => void }) {
     <div>
       <div className="mb-2">
         <Eyebrow>Inventory</Eyebrow>
-        <SectionHeading as="h3" kolam={false} className="text-base text-leaf-100">
+        <SectionHeading as="h3" kolam={false} className="text-base text-indigo-100">
           🧾 Supplier invoices (OCR)
         </SectionHeading>
       </div>
       <ErrorBar msg={error} />
-      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-leaf-600 px-2.5 py-1 text-xs font-semibold text-leaf-200 transition-colors duration-150 hover:border-brass-400 hover:text-brass-300">
+      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-600 px-2.5 py-1 text-xs font-semibold text-indigo-200 transition-colors duration-150 hover:border-turmeric-400 hover:text-turmeric-400">
         {busy ? "🔍 reading invoice…" : "📷 Upload invoice photo"}
         <input
           type="file"
@@ -287,16 +287,16 @@ function InvoiceSection({ onStockChanged }: { onStockChanged: () => void }) {
       </label>
       <div className="mt-3 space-y-2">
         {(invoices ?? []).map((inv) => (
-          <div key={inv.id} className="rounded-lg bg-leaf-800 p-3 text-sm">
+          <div key={inv.id} className="rounded-lg bg-indigo-800 p-3 text-sm">
             <div className="flex flex-wrap items-center gap-3">
-              <span className="font-mono text-brass-300">INV #{inv.id}</span>
+              <span className="font-mono text-turmeric-400">INV #{inv.id}</span>
               <Badge tone={statusBadgeTone(inv.status)}>{inv.status}</Badge>
-              <span className="text-leaf-200">{inv.extraction?.supplier_name ?? "unknown supplier"}</span>
+              <span className="text-indigo-200">{inv.extraction?.supplier_name ?? "unknown supplier"}</span>
               <span className="ai-meta">🤖 {inv.model ?? "vision"}</span>
               <Badge tone={inv.confidence >= 0.8 ? "success" : "danger"}>
                 confidence {(inv.confidence * 100).toFixed(0)}%
               </Badge>
-              {inv.po_id && <span className="text-xs text-leaf-200/70">→ PO #{inv.po_id}</span>}
+              {inv.po_id && <span className="text-xs text-indigo-200/70">→ PO #{inv.po_id}</span>}
               {(inv.status === "MATCHED" || inv.status === "PENDING_REVIEW") && (
                 <span className="ml-auto flex gap-2">
                   <Btn variant="gold" size="sm" disabled={!inv.po_id} onClick={() => decide(inv.id, "approve")}>
@@ -309,7 +309,7 @@ function InvoiceSection({ onStockChanged }: { onStockChanged: () => void }) {
               )}
             </div>
             {inv.match && (
-              <div className="mt-2 text-xs text-leaf-200/70">
+              <div className="mt-2 text-xs text-indigo-200/70">
                 {inv.match.line_matches.map((m, i) => (
                   <div key={i}>
                     {m.invoice_name
@@ -318,7 +318,7 @@ function InvoiceSection({ onStockChanged }: { onStockChanged: () => void }) {
                   </div>
                 ))}
                 {inv.match.extra_invoice_lines.length > 0 && (
-                  <div className="text-chili-200">⚠ billed but not ordered: {inv.match.extra_invoice_lines.join(", ")}</div>
+                  <div className="text-[#FF8B8B]">⚠ billed but not ordered: {inv.match.extra_invoice_lines.join(", ")}</div>
                 )}
               </div>
             )}
@@ -335,7 +335,7 @@ function QtyEditor({ value, unit, onSave }: { value: string; unit: string; onSav
   return (
     <span className="inline-flex items-center gap-1">
       <Input tone="dark" className="w-20 px-2 py-1 text-right" value={qty} onChange={(e) => setQty(e.target.value)} />
-      <span className="text-leaf-200/70">{unit}</span>
+      <span className="text-indigo-200/70">{unit}</span>
       {qty !== value && (
         <Btn variant="gold" size="sm" onClick={() => onSave(qty)}>
           save
@@ -379,7 +379,7 @@ function WastageSection() {
     <div>
       <div className="mb-2">
         <Eyebrow>Inventory</Eyebrow>
-        <SectionHeading as="h3" kolam={false} className="text-base text-leaf-100">
+        <SectionHeading as="h3" kolam={false} className="text-base text-indigo-100">
           🗑 Wastage log
         </SectionHeading>
       </div>
@@ -410,14 +410,14 @@ function WastageSection() {
       </form>
       <div className="space-y-1">
         {(data?.entries ?? []).map((w) => (
-          <div key={w.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-leaf-800 px-3 py-2 text-xs">
-            <span className="text-leaf-200/70">{new Date(w.at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</span>
-            <span className="tnum font-semibold text-leaf-100">
+          <div key={w.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-indigo-800 px-3 py-2 text-xs">
+            <span className="text-indigo-200/70">{new Date(w.at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</span>
+            <span className="tnum font-semibold text-indigo-100">
               {w.qty} {w.unit} {w.ingredient_name}
             </span>
             <Badge tone="neutral">{w.reason}</Badge>
-            {w.note && <span className="text-leaf-200/70">{w.note}</span>}
-            <span className="tnum ml-auto text-leaf-200/70">stock → {w.stock_after}</span>
+            {w.note && <span className="text-indigo-200/70">{w.note}</span>}
+            <span className="tnum ml-auto text-indigo-200/70">stock → {w.stock_after}</span>
           </div>
         ))}
       </div>

@@ -53,7 +53,7 @@ export function ImagesTab() {
   return (
     <div>
       <ErrorBar msg={error} />
-      <p className="mb-3 text-xs text-leaf-200/70">
+      <p className="mb-3 text-xs text-indigo-200/70">
         🎨 The image model drafts a photo from the dish facts — nothing is published without your
         approval, and every approved photo carries a customer-visible ✨ AI label.
       </p>
@@ -61,7 +61,7 @@ export function ImagesTab() {
         {items.map((item) => {
           const d = data?.byItem.get(item.id);
           return (
-            <div key={item.id} className="rounded-lg bg-leaf-800 p-3 text-sm">
+            <div key={item.id} className="rounded-lg bg-indigo-800 p-3 text-sm">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <span className="font-semibold">{item.name}</span>
                 {d && <Badge tone={statusBadgeTone(d.status)}>{d.status}</Badge>}
@@ -70,7 +70,7 @@ export function ImagesTab() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={d.url} alt={item.name} className="mb-2 h-40 w-full rounded-lg object-cover" />
               ) : (
-                <div className="mb-2 flex h-40 w-full items-center justify-center rounded-lg bg-leaf-950/60 text-xs text-leaf-500">
+                <div className="mb-2 flex h-40 w-full items-center justify-center rounded-lg bg-indigo-950/60 text-xs text-indigo-300">
                   {d?.status === "REJECTED" ? "rejected — file deleted" : "no AI photo yet"}
                 </div>
               )}

@@ -43,7 +43,7 @@ type AspectTrend = { aspect: string; points: TrendPoint[]; alert: boolean; top_d
 type Trends = { weeks: number; aspects: AspectTrend[] };
 
 function Stars({ n }: { n: number }) {
-  return <span className="text-brass-400">{"★".repeat(n)}{"☆".repeat(5 - n)}</span>;
+  return <span className="text-turmeric-400">{"★".repeat(n)}{"☆".repeat(5 - n)}</span>;
 }
 
 function AspectChips({ aspects }: { aspects: AspectTag[] | null }) {
@@ -93,7 +93,7 @@ function ReviewCard({
     act(() => adminApi(`/admin/reviews/${review.id}/reply`, { method: "POST", body: { reply } }));
 
   return (
-    <div className="rounded-lg bg-leaf-800 p-3 text-sm">
+    <div className="rounded-lg bg-indigo-800 p-3 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <Stars n={review.rating} />
         {review.sentiment ? (
@@ -102,15 +102,15 @@ function ReviewCard({
           <Badge tone="neutral">unscored</Badge>
         )}
         <AspectChips aspects={review.aspects} />
-        <span className="ml-auto text-xs text-leaf-200/70">
+        <span className="ml-auto text-xs text-indigo-200/70">
           order #{review.order_id} · {review.dishes.join(", ")}
           {review.created_at && ` · ${new Date(review.created_at).toLocaleDateString("en-IN")}`}
         </span>
       </div>
-      {review.text && <p className="mt-2 text-leaf-200">“{review.text}”</p>}
+      {review.text && <p className="mt-2 text-indigo-200">“{review.text}”</p>}
       {review.owner_reply ? (
-        <p className="mt-2 rounded-lg bg-leaf-700/60 p-2 text-xs text-leaf-200">
-          <span className="text-veg-200">✔ replied ({review.reply_source}):</span> {review.owner_reply}
+        <p className="mt-2 rounded-lg bg-indigo-700/60 p-2 text-xs text-indigo-200">
+          <span className="text-[#5BD69B]">✔ replied ({review.reply_source}):</span> {review.owner_reply}
         </p>
       ) : (
         review.text && (
@@ -148,17 +148,17 @@ function TrendsPanel() {
   const alerts = data.aspects.filter((a) => a.alert);
   const max = Math.max(1, ...data.aspects.flatMap((a) => a.points.map((p) => p.count)));
   return (
-    <div className="mb-4 rounded-lg bg-leaf-800 p-3">
+    <div className="mb-4 rounded-lg bg-indigo-800 p-3">
       <div className="mb-2">
         <Eyebrow>Reviews</Eyebrow>
-        <SectionHeading as="h3" kolam={false} className="text-base text-leaf-100">
-          Complaint trends <span className="font-sans text-xs font-normal text-leaf-200/70">(negative mentions / week, {data.weeks}w)</span>
+        <SectionHeading as="h3" kolam={false} className="text-base text-indigo-100">
+          Complaint trends <span className="font-sans text-xs font-normal text-indigo-200/70">(negative mentions / week, {data.weeks}w)</span>
         </SectionHeading>
       </div>
       {alerts.length > 0 && (
         <div className="mb-2 space-y-1">
           {alerts.map((a) => (
-            <p key={a.aspect} className="rounded-lg border border-chili-500/40 bg-chili-600/20 px-2 py-1 text-xs text-chili-200">
+            <p key={a.aspect} className="rounded-lg border border-chili/40 bg-chili/15 px-2 py-1 text-xs text-[#FF8B8B]">
               ⚠ {a.aspect} complaints spiking ↑{a.top_dishes.length > 0 && <> — {a.top_dishes.join(", ")}</>}
             </p>
           ))}
@@ -168,14 +168,14 @@ function TrendsPanel() {
         {data.aspects
           .filter((a) => a.points.some((p) => p.count > 0))
           .map((a) => (
-            <div key={a.aspect} className="text-xs text-leaf-200/70">
-              <span className={a.alert ? "text-chili-200" : ""}>{a.aspect}</span>
-              <div className="mt-1 flex h-8 items-end gap-0.5 rounded bg-leaf-950/60 px-0.5 pt-0.5">
+            <div key={a.aspect} className="text-xs text-indigo-200/70">
+              <span className={a.alert ? "text-[#FF8B8B]" : ""}>{a.aspect}</span>
+              <div className="mt-1 flex h-8 items-end gap-0.5 rounded bg-indigo-950/60 px-0.5 pt-0.5">
                 {a.points.map((p) => (
                   <span
                     key={p.week_start}
                     title={`${p.week_start}: ${p.count}`}
-                    className={`w-2 rounded-t ${a.alert ? "bg-chili-500/80" : "bg-brass-500/60"}`}
+                    className={`w-2 rounded-t ${a.alert ? "bg-chili/80" : "bg-turmeric-500/60"}`}
                     style={{ height: `${Math.max(8, (p.count / max) * 100)}%`, opacity: p.count === 0 ? 0.15 : 1 }}
                   />
                 ))}
@@ -227,7 +227,7 @@ export function ReviewsTab() {
           {scoring ? "scoring…" : `🤖 score ${data?.unscored ?? 0} pending`}
         </Btn>
         <Btn variant="ghost" size="sm" onClick={refresh}>↻ refresh</Btn>
-        {data && <span className="text-xs text-leaf-200/70">{data.total} review(s)</span>}
+        {data && <span className="text-xs text-indigo-200/70">{data.total} review(s)</span>}
       </div>
       <div className="space-y-2">
         {(data?.reviews ?? []).map((r) => (
