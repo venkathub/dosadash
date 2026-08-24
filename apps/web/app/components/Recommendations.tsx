@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api, type MenuItem } from "../../lib/api";
-import { Chip, Eyebrow, cx } from "./ui";
+import { FssaiMark, PosterBlock, Zari } from "./ui";
 
 type Rec = { item_id: number; name: string; price: string; is_veg: boolean; score: number };
 type RecsResponse = { items: Rec[]; source: string; model_version: string | null };
@@ -49,39 +49,32 @@ export default function Recommendations({
   if (items.length === 0) return null;
 
   return (
-    <section className="mt-4">
-      <Eyebrow>
-        <span className="text-brass-600">✨ You might like</span>{" "}
-        <span className="normal-case tracking-normal text-ink-400">
-          · {SOURCE_LABEL[recs.source] ?? "Suggestions"}
+    <section className="mt-6">
+      <div className="mb-1 flex flex-wrap items-center gap-2.5">
+        <PosterBlock tone="turmeric">✨ You might like</PosterBlock>
+        <span className="ai-meta ai-meta-light">
+          🤖 recsys · {recs.model_version ?? recs.source}
         </span>
-      </Eyebrow>
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+        <span className="text-[11.5px] text-muted">
+          {SOURCE_LABEL[recs.source] ?? "Suggestions"}
+        </span>
+      </div>
+      <Zari className="mb-3" />
+      <div className="flex gap-2 overflow-x-auto pb-1.5">
         {items.map((r) => (
-          <Chip
+          <button
             key={r.item_id}
-            surface="light"
-            className="flex shrink-0 items-center gap-2 py-1.5 text-sm shadow-card"
+            className="flex shrink-0 items-center gap-2 rounded-xl border-2 border-indigo-900 bg-paper px-3 py-1.5 text-sm shadow-pop-sm transition-colors duration-150 hover:bg-turmeric-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
             onClick={() => onAdd(byId.get(r.item_id)!)}
             title="Add to cart"
           >
-            <span
-              className={cx(
-                "inline-flex h-3 w-3 items-center justify-center rounded-[3px] border",
-                r.is_veg ? "border-veg-500" : "border-chili-500",
-              )}
-            >
-              <span
-                className={cx(
-                  "h-1 w-1 rounded-full",
-                  r.is_veg ? "bg-veg-500" : "bg-chili-500",
-                )}
-              />
+            <FssaiMark veg={r.is_veg} />
+            <span className="font-semibold text-ink">{r.name}</span>
+            <span className="tnum font-display font-bold text-ink">
+              ₹{parseFloat(r.price).toFixed(0)}
             </span>
-            <span className="font-semibold">{r.name}</span>
-            <span className="tnum text-ink-600">₹{parseFloat(r.price).toFixed(0)}</span>
-            <span className="font-bold text-brass-600">+</span>
-          </Chip>
+            <span className="font-display font-bold text-magenta-600">+</span>
+          </button>
         ))}
       </div>
     </section>

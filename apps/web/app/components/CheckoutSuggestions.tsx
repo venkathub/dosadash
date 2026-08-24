@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api, type MenuItem } from "../../lib/api";
-import { Chip } from "./ui";
 
 type Suggestion = {
   item_id: number;
@@ -53,18 +52,17 @@ export default function CheckoutSuggestions({
   return (
     <div className="mx-auto mb-2 flex max-w-4xl flex-wrap gap-2">
       {visible.map((s) => (
-        <Chip
+        <button
           key={s.item_id}
-          surface="dark"
-          className="flex items-center gap-1.5"
+          className="flex shrink-0 items-center gap-1.5 rounded-full border-2 border-indigo-600 bg-indigo-800 px-3 py-1 text-[11.5px] font-semibold text-[#FFE9A8] transition-colors duration-150 hover:border-turmeric-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
           onClick={() => onAdd(byId.get(s.item_id)!)}
         >
           <span>{s.kind === "combo" ? "🧩" : "✨"}</span>
-          <span className="font-semibold text-brass-300">
-            + {s.name} <span className="tnum">₹{parseFloat(s.price).toFixed(0)}</span>
+          <span>
+            + {s.name} <span className="tnum font-display">₹{parseFloat(s.price).toFixed(0)}</span>
           </span>
-          <span className="text-leaf-200">· {s.reason}</span>
-        </Chip>
+          <span className="font-normal text-indigo-200">· {s.reason}</span>
+        </button>
       ))}
     </div>
   );
