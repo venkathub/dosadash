@@ -25,7 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _harness import fetch_menu_snapshot, load_cases, run_all  # noqa: E402
+from _harness import fetch_menu_snapshot, load_cases, pin_eval_clock, run_all  # noqa: E402
 from guardrail_bypass_eval import SAFETY_TAGS, find_bypasses  # noqa: E402
 from order_agent_eval import score_case  # noqa: E402
 from tone_judge_eval import judge_reply, select_tone_cases  # noqa: E402
@@ -43,6 +43,7 @@ LANGUAGE_GATES = {"ta": float(os.environ.get("TA_ACCURACY_GATE", "0.8"))}
 
 
 async def run(with_tone: bool) -> tuple[int, dict]:
+    pin_eval_clock()  # Phase 11: deterministic serving windows for the gate
     cases = load_cases()
     async with get_sessionmaker()() as session:
         menu = await fetch_menu_snapshot(session)

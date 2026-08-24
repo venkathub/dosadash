@@ -41,7 +41,7 @@ def test_every_scheduled_item_parses_and_meal_periods_match():
 def test_highway_signature_dishes_present():
     names = {i.name for i in MENU_ITEMS}
     # 99 KM Coffee (veg millet kitchen)
-    assert {"Ragi Dosa", "Kuzhi Paniyaram (7 pcs)", "Thinai Pongal", "Mini Tiffin"} <= names
+    assert {"Ragi Millet Dosa", "Kuzhi Paniyaram (7 pcs)", "Thinai Pongal", "Mini Tiffin"} <= names
     # Manna Mess (non-veg highway mess)
     assert {
         "Mutton Chukka",

@@ -58,7 +58,7 @@ generated_by: python -m dosadash_ml.datagen.knowledge
 
 | Item | Diet | Jain-friendly | Spice | Allergens |
 |---|---|---|---|---|
-| Ragi Dosa | vegan | yes | mild | none |
+| Ragi Millet Dosa | vegan | yes | mild | none |
 | Kambu Idli (2 pcs) | vegan | yes | mild | none |
 | Thinai Pongal | veg | yes | mild | dairy, tree nut (cashew) |
 | Kuzhi Paniyaram (7 pcs) | vegan | no | mild | none |

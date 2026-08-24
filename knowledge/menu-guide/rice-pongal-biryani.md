@@ -6,11 +6,9 @@ tags: [rice, pongal, biryani, menu, festival, timing]
 
 # Rice, Pongal & Biryani Guide
 
-This page straddles the kitchen's two shifts. The pongal pots are a morning
-affair — both pongals serve only from 6:00 AM to 12:00 noon IST, like at any
-roadside tiffin centre. The rice varieties and biryanis are the afternoon
-and evening backbone: they serve from 11:30 AM to 10:00 PM IST, every day,
-taking over exactly when the breakfast griddle winds down.
+This page straddles the kitchen's two shifts: pongal pots in the morning,
+rice plates and biryani from lunch onwards (see the Serving Hours guide);
+the app always shows live availability per dish.
 
 ## Rice & Pongal
 
@@ -35,25 +33,21 @@ Serving window: mornings only, 6 AM–12 noon IST.
 Cooling curd rice with a mustard-curry leaf tempering and pomegranate.
 Contains dairy and mustard. Jain-friendly, no spice. The traditional last
 course — and the best order for an upset stomach or a hot afternoon.
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ### Lemon Rice — ₹100
 
 Zesty turmeric-lemon rice with roasted peanuts. Contains peanut and
 mustard. Vegan and Jain-friendly. Travels exceptionally well.
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ### Tamarind Rice (Puliyodarai) — ₹110
 
 Tangy, temple-style tamarind rice with roasted peanuts and red chillies.
 Contains peanut. Vegan, Jain-friendly, medium heat.
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ### Sambar Rice — ₹120
 
 Hearty one-pot sambar sadam with okra, finished with ghee. Contains dairy
 (ghee). A full meal in a bowl.
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ## Biryani
 
@@ -68,26 +62,22 @@ biryanis serve 11:30 AM–10 PM IST (lunch and dinner).
 
 The flagship. Seeraga samba rice, curd marinade, Chettinad masala. Contains
 dairy (curd).
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ### Mutton Biryani — ₹280
 
 Slow-cooked mutton, richest and heaviest of the biryanis. Contains dairy
 (curd). 35-minute prep — worth it.
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ### Egg Biryani — ₹190
 
 Masala-tossed boiled eggs over fragrant biryani rice. Contains egg (no
 dairy). The budget non-veg pick.
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ### Veg Biryani — ₹180
 
 Seasonal vegetables on basmati (the one biryani NOT on seeraga samba), with
 mint raita. Contains dairy (curd). Vegetarian but not vegan and not
 Jain-friendly (contains onion).
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ## Pairing notes
 

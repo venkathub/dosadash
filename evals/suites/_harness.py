@@ -12,6 +12,7 @@ Mutates settings/menu rows for paused/86'd cases and ALWAYS restores them.
 """
 
 import json
+import os
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -30,6 +31,21 @@ from dosadash_shared import (
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "order_conversations.jsonl"
 EVAL_USER_PHONE = "+919999900042"  # dedicated eval user, upserted per run
+
+# Phase 11: every dish now carries a hard serving window, so the live gate
+# pins the availability clock to a canonical instant instead of banning
+# scheduled dishes from expectations. 19:30 IST = tiffin + lunch-dinner +
+# snack windows are ALL open; morning-only (pongal, Mini Tiffin) and
+# lunch-only (Non-Veg Mess Meals) dishes are deterministically OFF — the
+# serving_window golden cases rely on exactly that. The asset gate
+# (test_no_time_dependent_expectations) verifies every expected dish is
+# on-schedule at this instant. Only the availability clock is pinned
+# (dosadash_shared.availability.now_ist); nothing else reads the env var.
+EVAL_CLOCK_IST = "2026-08-20T19:30:00"
+
+
+def pin_eval_clock() -> None:
+    os.environ.setdefault("DOSADASH_NOW_IST", EVAL_CLOCK_IST)
 
 
 @dataclass(frozen=True)

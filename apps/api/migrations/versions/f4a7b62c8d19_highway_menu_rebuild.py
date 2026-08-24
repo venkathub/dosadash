@@ -51,17 +51,20 @@ def upgrade() -> None:
             )
         )
 
-    # 2a. new ingredients (idempotent by name)
+    # 2a. new ingredients (idempotent by name; skipped on fresh DBs — see 2b)
     for ing in INGREDIENTS:
         op.execute(
             sa.text(
                 "INSERT INTO ingredients (name, unit, is_allergen, stock_qty, reorder_point) "
                 "SELECT :name, :unit, :is_allergen, 0, 0 "
-                "WHERE NOT EXISTS (SELECT 1 FROM ingredients WHERE name = :name)"
+                "WHERE EXISTS (SELECT 1 FROM brands) "
+                "AND NOT EXISTS (SELECT 1 FROM ingredients WHERE name = :name)"
             ).bindparams(name=ing.name, unit=ing.unit, is_allergen=ing.is_allergen)
         )
 
-    # 2b. new dishes + recipe rows (idempotent by name; brand = the one brand)
+    # 2b. new dishes + recipe rows (idempotent by name; brand = the one brand;
+    #     skipped entirely on a FRESH/empty DB — no brands row yet means the
+    #     seeder owns catalog creation, this migration only upgrades prod data)
     for m in MENU_ITEMS:
         op.execute(
             sa.text(
@@ -71,7 +74,8 @@ def upgrade() -> None:
                 "SELECT (SELECT id FROM brands ORDER BY id LIMIT 1), :name, :description, "
                 ":price, :category, :is_veg, :cog, :spice, :prep, CAST(:periods AS jsonb), "
                 "5.00, TRUE, CAST(:schedule AS jsonb), FALSE "
-                "WHERE NOT EXISTS (SELECT 1 FROM menu_items WHERE name = :name)"
+                "WHERE EXISTS (SELECT 1 FROM brands) "
+                "AND NOT EXISTS (SELECT 1 FROM menu_items WHERE name = :name)"
             ).bindparams(
                 name=m.name,
                 description=m.description,
@@ -113,7 +117,7 @@ def downgrade() -> None:
     from dosadash_ml.datagen.menu import RETIRED_DISH_NAMES
 
     new_names = (
-        "Ragi Dosa",
+        "Ragi Millet Dosa",
         "Kambu Idli (2 pcs)",
         "Thinai Pongal",
         "Kuzhi Paniyaram (7 pcs)",
