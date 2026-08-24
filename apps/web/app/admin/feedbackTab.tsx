@@ -66,6 +66,17 @@ export function FeedbackTab() {
   );
   const { data, error, refresh } = useLoad(load);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [triaging, setTriaging] = useState(false);
+
+  const triageNow = async () => {
+    setTriaging(true);
+    try {
+      await adminApi("/admin/feedback/triage-now", { method: "POST" });
+      refresh();
+    } finally {
+      setTriaging(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -80,6 +91,9 @@ export function FeedbackTab() {
             </option>
           ))}
         </Select>
+        <Btn variant="magenta" size="sm" onClick={triageNow} disabled={triaging}>
+          {triaging ? "Triaging…" : "🤖 Triage now"}
+        </Btn>
         <Btn variant="ghost" size="sm" onClick={refresh}>
           ↻
         </Btn>

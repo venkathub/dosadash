@@ -120,8 +120,12 @@ from dosadash_shared.feedback import (
     FeedbackCreateIn,
     FeedbackOut,
     FeedbackStatus,
+    FeedbackTriageRequest,
+    FeedbackTriageResponse,
     FeedbackType,
     ReporterTier,
+    TriageAssessment,
+    TriageVerdict,
 )
 from dosadash_shared.imagegen import (
     MENU_IMAGE_PROMPT_VERSION,
@@ -566,8 +570,12 @@ __all__ = [
     "FeedbackCreateIn",
     "FeedbackOut",
     "FeedbackStatus",
+    "FeedbackTriageRequest",
+    "FeedbackTriageResponse",
     "FeedbackType",
     "ReporterTier",
+    "TriageAssessment",
+    "TriageVerdict",
     "REDACTED",
     "redact_phones",
 ]

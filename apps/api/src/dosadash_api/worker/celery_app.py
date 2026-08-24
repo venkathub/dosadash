@@ -66,4 +66,11 @@ app.conf.beat_schedule = {
         "task": "reviews.batch_poll",
         "schedule": crontab(minute=20),
     },
+    # Phase 13: triage new feedback reports every 15 min — LLM assessment
+    # + deterministic verdict, GitHub labels applied (the fixer workflow
+    # triggers on them). Cheap when the queue is empty.
+    "feedback-triage": {
+        "task": "feedback.triage_pending",
+        "schedule": crontab(minute="*/15"),
+    },
 }

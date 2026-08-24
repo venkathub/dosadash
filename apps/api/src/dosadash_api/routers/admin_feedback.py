@@ -1,8 +1,8 @@
-"""Admin feedback inbox (Phase 13 slice 2): the backoffice view of the
-self-healing loop. Read-only in this slice — triage/approval mutations
-arrive with slices 3–4 and are audited there."""
+"""Admin feedback inbox (Phase 13): the backoffice view of the
+self-healing loop, plus an on-demand triage trigger (the nightly beat runs
+the same runner)."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
@@ -12,6 +12,9 @@ from dosadash_api.auth.deps import require_role
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import FeedbackReport, User
 from dosadash_api.db.session import get_session
+from dosadash_api.services import audit, feedback_triage_runner
+from dosadash_api.services.ai_client import AIClient, get_ai_client
+from dosadash_api.services.github_client import GitHubClient, get_github_client
 from dosadash_shared import (
     AdminFeedbackListOut,
     AdminFeedbackOut,
@@ -58,3 +61,20 @@ async def list_feedback(
         total=total,
         github_repo=get_settings().github_repo,
     )
+
+
+@router.post("/triage-now")
+async def triage_now(
+    session: SessionDep,
+    ai: Annotated[AIClient, Depends(get_ai_client)],
+    github: Annotated[GitHubClient, Depends(get_github_client)],
+    admin: User = AdminUser,
+) -> dict[str, Any]:
+    """Run the triage runner on demand (same code path as the beat).
+    ai-unreachable reports are skipped, never lost — re-run later."""
+    summary = await feedback_triage_runner.triage_pending(session, ai, github)
+    audit.record(
+        session, actor=admin, action="feedback.triage_now", entity="feedback", detail=summary
+    )
+    await session.commit()
+    return summary
