@@ -34,6 +34,7 @@ LABEL_AI_NEEDS_APPROVAL = "ai:needs-approval"
 LABEL_AI_APPROVED = "ai:approved"
 LABEL_AI_REJECTED = "ai:rejected"
 LABEL_AI_FIXED = "ai:fixed"
+LABEL_AI_VERIFIED = "ai:verified"
 
 # name -> (color hex without '#', description)
 GITHUB_LABELS: dict[str, tuple[str, str]] = {
@@ -45,6 +46,7 @@ GITHUB_LABELS: dict[str, tuple[str, str]] = {
     LABEL_AI_APPROVED: ("2DA44E", "Admin approved via Telegram/backoffice — fixer may run"),
     LABEL_AI_REJECTED: ("6E7781", "Admin rejected — fixer must not run"),
     LABEL_AI_FIXED: ("8250DF", "Fixer PR merged"),
+    LABEL_AI_VERIFIED: ("0E8A16", "Fix verified live in production by the verifier agent"),
 }
 
 # The fixer workflow may only trigger on these two labels. Kept here so the

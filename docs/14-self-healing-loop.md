@@ -1,7 +1,9 @@
 # 14 — Self-Healing Loop (Phase 13): GUI feedback → GitHub → Cloud Agent → merged fix
 
-Status: **implemented** (`phase/13-self-healing`, PRs #112–#117).
-Groomed 2026-08-24 from web research + four explicit product decisions.
+Status: **deployed + proven in prod** (`phase/13-self-healing`, PRs #112–#119;
+first real loop closed 2026-08-24: issues #120/#121 → agent PRs #122/#123,
+both merged + deployed; post-deploy verifier + cost pinning added same day).
+Groomed from web research + four explicit product decisions.
 
 ## 1. The use case
 
@@ -75,7 +77,31 @@ GitHub Actions.
    collapses repeats onto the open report, GitHub mirror is never on the
    reporter's critical path.
 
-## 5. Ops runbook
+## 5. Cost model (measured, then pinned)
+
+First two real fixes ran on the action's **default `claude-opus-5` @ 1M
+context**: **$3.12** (bug #120 → PR #122) and **$4.49** (feature #121 →
+PR #123). Controls now in place, each enforced by an eval gate:
+
+| lever | setting | gate |
+| --- | --- | --- |
+| fixer model | pinned `claude-sonnet-4-6` (200k ctx — same coding class, ≈⅕ Opus price → est. $0.6–1.0/fix) | `test_fixer_model_pinned_and_not_opus` |
+| fixer turns | 80 → 60 (both real fixes finished well under 30) | `test_turn_budget_bounded` |
+| verifier model | `claude-haiku-4-5`, ≤30 turns, read-only tools | `test_verifier_is_cheap_and_read_only` |
+| zero-cost idle | verifier's Claude step is conditional on a free `gh` query — empty queue = no tokens | same gate |
+| upstream filters | triage (gpt-4o-mini, ~₹0.1/report) + label gate + single-flight already cap how often Claude runs at all | — |
+| hard ceiling | per-key monthly spend limit on the Console key | (provider-side) |
+
+## 6. Prod verification stage (`claude-fix-verify.yml`)
+
+Every **successful Deploy** triggers the verifier: a free `gh` query finds
+issues labeled `ai:fixed` without `ai:verified`; if any, a Haiku run probes
+the fix **live on public surfaces only** (curl `/api/v1`, page HTML),
+comments `## Prod verification` with evidence and a verdict, then labels
+`ai:verified` — or **reopens the issue** when not verifiable (unverifiable
+≠ verified). Read-only by construction: toolset excludes Edit/Write (gated).
+
+## 7. Ops runbook
 
 **Arm the loop** (until then it is inert — the kill switch defaults off):
 1. Fine-grained PAT scoped to this repo, RW on contents + pull requests +
@@ -98,7 +124,7 @@ decisions audited (`feedback.approve/reject/triage_now`).
 **Disarm**: set `CLAUDE_FIX_ENABLED=false` (one click, takes effect on the
 next label event).
 
-## 6. Files
+## 8. Files
 
 api `routers/feedback.py` · `routers/admin_feedback.py` (+`internal_router`)
 · `services/{github_client,feedback_service,feedback_triage_runner,feedback_notify}.py`

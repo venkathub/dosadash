@@ -28,6 +28,15 @@
 #                         opened with the default GITHUB_TOKEN never
 #                         trigger CI, which would starve auto-merge.
 #   vars.CLAUDE_FIX_ENABLED — 'true' to arm the loop.
+#
+# Cost control (measured 2026-08-24): the action's default model was
+# claude-opus-5 @ 1M context — $3.12 and $4.49 for the first two fixes.
+# Model is now PINNED to Sonnet (standard 200k context): same coding
+# quality class at roughly a fifth of the price; turn cap tightened 80→60
+# (both real fixes finished well under 30 turns). The gate suite asserts a
+# model stays pinned so a silent default-bump can never re-inflate spend.
+# Prod verification after deploy runs separately on Haiku for pennies
+# (claude-fix-verify.yml).
 
 name: Claude issue fix
 
@@ -66,7 +75,8 @@ jobs:
           github_token: ${{ secrets.CLAUDE_FIX_GH_TOKEN }}
           track_progress: true
           claude_args: |
-            --max-turns 80
+            --model claude-sonnet-4-6
+            --max-turns 60
             --allowedTools "Edit,Write,Read,Glob,Grep,Bash(uv run:*),Bash(uv sync:*),Bash(git:*),Bash(gh:*),Bash(npm run:*),Bash(npm ci:*),Bash(docker run:*),Bash(ls:*),Bash(mkdir:*)"
           prompt: |
             You are the DosaDash self-healing fixer working on issue #${{ github.event.issue.number }}.
