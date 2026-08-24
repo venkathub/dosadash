@@ -14,6 +14,7 @@ from dosadash_api.routers.admin_costs import router as admin_costs_router
 from dosadash_api.routers.admin_coupons import router as admin_coupons_router
 from dosadash_api.routers.admin_crm import router as admin_crm_router
 from dosadash_api.routers.admin_evals import router as admin_evals_router
+from dosadash_api.routers.admin_feedback import internal_router as feedback_internal_router
 from dosadash_api.routers.admin_feedback import router as admin_feedback_router
 from dosadash_api.routers.admin_ingredients import router as admin_ingredients_router
 from dosadash_api.routers.admin_inventory import router as admin_inventory_router
@@ -74,6 +75,7 @@ app.include_router(admin_wastage_router)
 app.include_router(chat_router)
 app.include_router(coupons_router)
 app.include_router(feedback_router)
+app.include_router(feedback_internal_router)
 app.include_router(internal_mcp_router)
 app.include_router(menu_router)
 app.include_router(orders_router)

@@ -78,6 +78,11 @@ export function FeedbackTab() {
     }
   };
 
+  const decideWeb = async (id: number, action: "approve" | "reject") => {
+    await adminApi(`/admin/feedback/${id}/decision`, { method: "POST", body: { action } });
+    refresh();
+  };
+
   return (
     <div className="space-y-4">
       <ErrorBar msg={error} />
@@ -177,6 +182,24 @@ export function FeedbackTab() {
                           <span className="ai-meta">
                             🤖 {r.triage.model} · {r.triage.prompt_version}
                           </span>
+                        )}
+                        {r.status === "NEEDS_APPROVAL" && (
+                          <div className="flex gap-2 pt-1">
+                            <Btn
+                              variant="veg"
+                              size="sm"
+                              onClick={() => decideWeb(r.id, "approve")}
+                            >
+                              ✅ Approve fixer run
+                            </Btn>
+                            <Btn
+                              variant="danger"
+                              size="sm"
+                              onClick={() => decideWeb(r.id, "reject")}
+                            >
+                              🚫 Reject
+                            </Btn>
+                          </div>
                         )}
                       </div>
                     </td>

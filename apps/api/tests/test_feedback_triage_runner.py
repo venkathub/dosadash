@@ -83,7 +83,13 @@ async def test_auto_fix_verdict_persisted_and_labeled(db_session: AsyncSession) 
 
     summary = await feedback_triage_runner.triage_pending(db_session, ai, github)
 
-    assert summary == {"examined": 1, "triaged": 1, "skipped": 0, "label_failures": 0}
+    assert summary == {
+        "examined": 1,
+        "triaged": 1,
+        "skipped": 0,
+        "label_failures": 0,
+        "notified": 0,  # no bot configured in tests
+    }
     row = (await db_session.execute(select(FeedbackReport))).scalar_one()
     assert row.status == "AUTO_FIX"
     assert row.triage["verdict"] == "AUTO_FIX"

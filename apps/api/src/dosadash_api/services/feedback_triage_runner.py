@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.db.models import FeedbackReport
+from dosadash_api.services import feedback_notify
 from dosadash_api.services.ai_client import AIClient, AIServiceError
 from dosadash_api.services.github_client import GitHubClient, GitHubError
 from dosadash_shared import (
@@ -64,6 +65,7 @@ async def triage_pending(
     triaged = 0
     skipped = 0
     label_failures = 0
+    notified = 0
     for report in rows:
         try:
             result = await ai.triage_feedback(
@@ -104,9 +106,14 @@ async def triage_pending(
 
         await session.commit()  # per report — done work survives a crash
         triaged += 1
+        if result.verdict == TriageVerdict.NEEDS_APPROVAL:
+            # Telegram decision cards (Phase 6 PO pattern) — best-effort,
+            # after commit; the admin web tab is always the fallback.
+            notified += await feedback_notify.notify_admins_feedback(session, report)
     return {
         "examined": len(rows),
         "triaged": triaged,
         "skipped": skipped,
         "label_failures": label_failures,
+        "notified": notified,
     }
