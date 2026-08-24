@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Audit Log — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+
+  /* ── page: audit ── */
+  .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 18px 0 20px; }
+  .toolbar .f { width: 200px; }
+  .toolbar .f.date { width: 240px; }
+  .toolbar .spacer { flex: 1; }
+  .action-tag { font-family: var(--font-display); font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 2px 8px; background: var(--indigo-800); color: var(--turmeric-400); border: 1.5px solid var(--indigo-600); white-space: nowrap; }
+  .action-tag.danger { color: #FF8B8B; border-color: rgba(214,69,69,.6); }
+  .action-tag.ai { color: var(--magenta-400); border-color: var(--magenta-700); }
+  .diff { font-size: 12.5px; color: var(--indigo-200); }
+  .diff b { color: var(--turmeric-400); font-weight: 700; }
+  .actor-agent { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .agent-chip { font-size: 11px; font-weight: 600; border: 1.5px solid var(--magenta-500); border-radius: var(--r-pill); padding: 1px 9px; color: var(--magenta-400); background: rgba(214,51,108,.12); white-space: nowrap; }
+  .footer-strip { margin-top: 20px; padding: 12px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill on">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Audit Log</h1>
+    <span class="badge badge-dk-neutral">append-only</span>
+  </div>
+  <div class="meta">Every admin mutation — human or agent — lands here with actor, action and a diff.</div>
+  <div class="zari on-dark"></div>
+
+  <!-- toolbar -->
+  <div class="toolbar">
+    <input class="input f" placeholder="Actor — owner / admin / agent…">
+    <input class="input f" placeholder="Action — menu.update, po.approve…">
+    <input class="input f date" placeholder="📅 2026-08-23 → 2026-08-24">
+    <span class="spacer"></span>
+    <span class="meta tnum">2,418 entries · newest first</span>
+  </div>
+
+  <!-- table -->
+  <div class="card-panel-dark" style="padding: 6px 8px 10px;">
+    <table class="tbl">
+      <thead>
+        <tr><th>Timestamp IST</th><th>Actor</th><th>Action</th><th>Target</th><th>Detail</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="tnum">2026-08-24 19:14</td><td><span class="badge badge-dk-magenta">owner</span></td>
+          <td><span class="action-tag">menu.update</span></td><td>Ghee Roast</td>
+          <td class="diff">description edited · “paper-thin” → “paper-thin, extra ghee”</td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-24 19:14</td><td><span class="badge badge-dk-neutral">system</span></td>
+          <td><span class="action-tag ai">translation.reset</span></td><td>Ghee Roast · ta</td>
+          <td class="diff">reset→DRAFT (staleness) — stale Tamil never serves</td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-24 18:47</td><td><span class="badge badge-dk-magenta">owner</span></td>
+          <td><span class="action-tag">translation.approve</span></td><td>Idli (2 pcs) · ta</td>
+          <td class="diff">இட்லி (2 pcs) · APPROVED · numerals verbatim</td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-24 18:20</td><td><span class="badge badge-dk-magenta">owner</span></td>
+          <td><span class="action-tag">image.publish</span></td><td>Masala Dosa</td>
+          <td class="diff">AI photo published · image_ai=true · ✨ label visible to customers</td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-24 17:32</td><td><span class="badge badge-dk-info">admin</span></td>
+          <td><span class="action-tag">menu.update</span></td><td>Masala Dosa</td>
+          <td class="diff">price <b>₹120→₹130</b></td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-24 16:05</td><td><span class="badge badge-dk-info">admin</span></td>
+          <td><span class="action-tag">coupon.create</span></td><td>PONGAL10</td>
+          <td class="diff">PCT 10% · cap ₹60 · min ₹250 · born INACTIVE</td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-24 15:41</td><td><span class="badge badge-dk-magenta">owner</span></td>
+          <td><span class="action-tag danger">refund.execute</span></td><td>order #40611</td>
+          <td class="diff"><b>₹184</b> refunded via provider · escalation #7 resolved</td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-24 14:05</td><td><span class="badge badge-dk-magenta">owner</span></td>
+          <td><span class="action-tag danger">settings.pause</span></td><td>kitchen</td>
+          <td class="diff">paused until 17:00 · “deep-clean before dinner rush” · event bus notified</td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-24 11:58</td><td><span class="badge badge-dk-info">admin</span></td>
+          <td><span class="action-tag">menu.update</span></td><td>Sukku Coffee</td>
+          <td class="diff">spice 🌶→none · windows unchanged · no translation reset (name/desc untouched)</td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-24 09:12</td><td><span class="badge badge-dk-magenta">owner</span></td>
+          <td><span class="action-tag">po.approve</span></td><td>PO #18 · Koyambedu Wholesale</td>
+          <td class="diff">14 lines · <b>₹6,240</b> · approved via Telegram card</td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-24 02:30</td>
+          <td><span class="actor-agent">🤖 inventory agent (nightly)<span class="agent-chip">agent actions audited like humans</span></span></td>
+          <td><span class="action-tag ai">po.draft</span></td><td>PO #18 · Koyambedu Wholesale</td>
+          <td class="diff">42 needs → 14 lines drafted · inventory_agent_v1 · guardrail clamped 2 qtys</td>
+        </tr>
+        <tr>
+          <td class="tnum">2026-08-23 22:16</td><td><span class="badge badge-dk-info">admin</span></td>
+          <td><span class="action-tag">menu.update</span></td><td>Mutton Chukka</td>
+          <td class="diff">86'd for today · stock 0 · agent stops offering next turn</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- footer -->
+  <div class="card-panel-dark footer-strip">
+    <span class="meta">append-only · every admin mutation lands here</span>
+  </div>
+
+</main>
+</body>
+</html>

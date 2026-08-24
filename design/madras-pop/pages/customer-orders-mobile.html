@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>DosaDash — My Orders (Mobile) — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  body { max-width: 390px; margin: 0 auto; }
+
+  .header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--indigo-900); color: var(--indigo-100);
+    border-bottom: 3px solid var(--turmeric-500);
+  }
+  .header-in { padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: #fff; display: flex; align-items: center; gap: 6px; }
+  .wordmark .tail { color: var(--turmeric-400); }
+  .icon-btn { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--indigo-600); border-radius: var(--r-sm); background: var(--indigo-950); font-size: 16px; color: var(--indigo-100); text-decoration: none; font-family: var(--font-display); font-weight: 700; }
+
+  .main { padding: 18px 14px 40px; display: flex; flex-direction: column; gap: 16px; }
+
+  .order { padding: 13px 15px; }
+  .order .top { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .order .oid { font-family: var(--font-display); font-weight: 700; font-size: 15.5px; }
+  .order .sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .order .amt { font-family: var(--font-display); font-weight: 700; font-size: 15px; margin-left: auto; }
+  .order .foot { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+
+  /* review box */
+  .review { border-top: 2px dashed var(--sand-300); margin-top: 12px; padding-top: 12px; }
+  .stars { font-size: 24px; letter-spacing: 4px; }
+  .stars .on { color: var(--turmeric-500); text-shadow: 1px 1px 0 var(--indigo-900); }
+  .stars .off { color: var(--sand-300); -webkit-text-stroke: 1px var(--faint); }
+  .aspects { display: flex; gap: 7px; margin: 10px 0; flex-wrap: wrap; }
+  .aspects .chip { font-size: 11.5px; padding: 3px 10px; }
+  .aspects .up { background: var(--veg-100); border-color: var(--veg); color: var(--veg); }
+  .aspects .down { background: var(--chili-100); border-color: var(--chili); color: var(--chili); }
+  .review .textarea { min-height: 62px; font-size: 13px; resize: none; }
+  .review .actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+  /* submitted review + owner reply */
+  .submitted { display: flex; align-items: center; gap: 9px; }
+  .submitted .s { font-size: 17px; letter-spacing: 2px; color: var(--turmeric-500); text-shadow: 1px 1px 0 var(--indigo-900); }
+  .reply { background: var(--sand-200); border-left: 4px solid var(--magenta-500); border-radius: 0 var(--r-sm) var(--r-sm) 0; padding: 9px 12px; margin-top: 10px; font-size: 13px; }
+  .reply .by { font-size: 11.5px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .refund-note { font-size: 12.5px; font-weight: 600; color: var(--veg); background: var(--veg-100); border: 1.5px solid var(--veg); border-radius: var(--r-sm); padding: 6px 10px; margin-top: 10px; }
+
+  .tg-foot { align-self: center; }
+</style>
+</head>
+<body>
+
+<!-- ══ Header ══ -->
+<div class="header">
+  <div class="header-in">
+    <a class="icon-btn" aria-label="Back">←</a>
+    <div class="wordmark">🥞 DOSA<span class="tail">DASH</span></div>
+    <span style="margin-left:auto"></span>
+    <a class="icon-btn" aria-label="Search">🔎</a>
+    <a class="icon-btn" aria-label="Cart">🛒</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <div>
+    <h1 class="h1">My orders</h1>
+    <div class="zari"></div>
+  </div>
+
+  <!-- ══ Active order ══ -->
+  <div class="card order">
+    <div class="top">
+      <span class="oid">#40638</span>
+      <span class="badge badge-warning">COOKING</span>
+      <span class="amt tnum">₹166</span>
+    </div>
+    <div class="sub">2 items · Masala Dosa, Filter Coffee · today 7:02 PM</div>
+    <div class="foot">
+      <span class="meta">🤖 arriving ~7:41 PM</span>
+      <span style="margin-left:auto"></span>
+      <a class="btn btn-magenta btn-sm">Track →</a>
+    </div>
+  </div>
+
+  <!-- ══ Delivered — review pending ══ -->
+  <div class="card order">
+    <div class="top">
+      <span class="oid">#40632</span>
+      <span class="badge badge-success">DELIVERED</span>
+      <span class="amt tnum">₹346</span>
+    </div>
+    <div class="sub">3 items · 2× Masala Dosa, Ghee Roast, Filter Coffee · yesterday 8:14 PM</div>
+
+    <div class="review">
+      <div class="eyebrow" style="margin-bottom:5px">Rate this order</div>
+      <div class="stars"><span class="on">★</span><span class="on">★</span><span class="on">★</span><span class="on">★</span><span class="off">★</span></div>
+      <div class="aspects">
+        <span class="chip up">taste ▲</span>
+        <span class="chip down">delivery ▼</span>
+        <span class="chip">packaging</span>
+        <span class="chip">portion</span>
+      </div>
+      <textarea class="textarea" placeholder="How was it?"></textarea>
+      <div class="actions"><a class="btn btn-turmeric btn-sm">Submit review</a></div>
+    </div>
+  </div>
+
+  <!-- ══ Delivered — already reviewed ══ -->
+  <div class="card order">
+    <div class="top">
+      <span class="oid">#40617</span>
+      <span class="badge badge-success">DELIVERED</span>
+      <span class="amt tnum">₹230</span>
+    </div>
+    <div class="sub">2 items · Ragi Millet Dosa, Kesari · Mon 12:40 PM</div>
+
+    <div class="review">
+      <div class="submitted">
+        <span class="s">★★★★★</span>
+        <span class="meta">"Crisp ragi dosa, kesari was perfect!"</span>
+      </div>
+      <div class="reply">
+        "Thank you! So glad the millet dosa hit the spot — see you again soon. 🙏 — DosaDash"
+        <div class="by">Owner reply · <span class="ai-meta light">AI-drafted reply · review_reply_v1</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Cancelled ══ -->
+  <div class="card order">
+    <div class="top">
+      <span class="oid">#40598</span>
+      <span class="badge badge-danger">CANCELLED</span>
+      <span class="amt tnum">₹120</span>
+    </div>
+    <div class="sub">1 item · Masala Dosa · last Fri 9:48 PM</div>
+    <div class="refund-note">✓ REFUNDED — ₹120 returned to UPI in 2 days</div>
+  </div>
+
+  <span class="badge badge-info tg-foot">📨 Telegram linked · order updates ON</span>
+
+</div>
+
+</body>
+</html>

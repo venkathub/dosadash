@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Kitchen Staff Sign-in — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  body { min-width: 1280px; }
+  .stage { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; padding: 48px 24px; }
+
+  /* faint oversized emoji poster backdrop */
+  .bg-em { position: absolute; font-size: 260px; line-height: 1; opacity: 0.05; user-select: none; pointer-events: none; }
+  .bg-em.e1 { top: -60px; left: -40px; transform: rotate(-12deg); }
+  .bg-em.e2 { bottom: -70px; right: -30px; transform: rotate(10deg); }
+  .bg-em.e3 { top: 40%; left: 68%; font-size: 190px; transform: rotate(-6deg); }
+  .bg-em.e4 { top: 30%; left: 6%; font-size: 170px; transform: rotate(8deg); }
+
+  .gate {
+    width: 100%; max-width: 420px; position: relative; z-index: 1;
+    background: var(--indigo-900); border: 2px solid var(--indigo-600);
+    border-radius: var(--r-lg); box-shadow: 8px 8px 0 #0C0C1F;
+    padding: 30px 30px 28px; text-align: center;
+  }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: #fff; }
+  .wordmark .tail { color: var(--turmeric-400); }
+  .gate .poster-block { margin: 14px 0 4px; }
+  .gate .zari { margin: 12px auto 18px; }
+  .copy { font-size: 13.5px; color: var(--indigo-200); margin-bottom: 20px; }
+  .copy code { font-family: var(--font-display); font-weight: 700; font-size: 12.5px; color: var(--turmeric-400); }
+
+  .phone-row { display: flex; gap: 0; margin-bottom: 14px; text-align: left; }
+  .prefix {
+    flex: none; display: flex; align-items: center; padding: 0 14px;
+    font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--indigo-100);
+    background: var(--indigo-800); border: 2px solid var(--indigo-600); border-right: none;
+    border-radius: var(--r-sm) 0 0 var(--r-sm);
+  }
+  .phone-row .input { border-radius: 0 var(--r-sm) var(--r-sm) 0; font-size: 16px; padding: 12px 14px; }
+
+  .send-otp { width: 100%; min-height: 48px; font-size: 16px; }
+  .otp-meta { margin-top: 12px; font-size: 12.5px; color: var(--indigo-200); }
+  .rbac { margin-top: 18px; }
+</style>
+</head>
+<body class="dark">
+
+<div class="stage">
+  <span class="bg-em e1">🥞</span>
+  <span class="bg-em e2">🔥</span>
+  <span class="bg-em e3">☕</span>
+  <span class="bg-em e4">🫓</span>
+
+  <div class="gate on-dark">
+    <div class="wordmark">🥞 DOSA<span class="tail">DASH</span></div>
+    <div class="poster-block indigo">Kitchen Display</div>
+    <div class="zari on-dark"></div>
+
+    <p class="copy">Staff sign-in — <code>kitchen_staff</code> or <code>admin</code> role required.</p>
+
+    <div class="phone-row">
+      <span class="prefix">🇮🇳 +91</span>
+      <input class="input tnum" placeholder="90••• •••11">
+    </div>
+
+    <a class="btn btn-turmeric send-otp">📲 Send OTP</a>
+
+    <div class="otp-meta">OTP via SMS or Telegram DM</div>
+
+    <div class="rbac">
+      <span class="badge badge-dk-neutral">🔐 RBAC: role checked server-side on every request</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

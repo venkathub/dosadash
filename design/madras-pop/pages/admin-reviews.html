@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Reviews — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+</style>
+<style>
+  /* page content */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 14px 0 18px; }
+  .stat { background: var(--indigo-900); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 15px 17px; }
+  .stat .big { font-family: var(--font-display); font-weight: 700; font-size: 26px; color: #fff; line-height: 1.15; }
+  .stat.chili { border-color: var(--chili); background: rgba(214,69,69,.10); }
+  .stat.chili .big { color: #FF8B8B; font-size: 17px; }
+  .chip-dk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--indigo-600); border-radius: var(--r-pill); padding: 3px 11px; background: var(--indigo-800); color: var(--indigo-100); white-space: nowrap; }
+  .chip-chili { border-color: var(--chili); color: #FF8B8B; background: rgba(214,69,69,.14); }
+  .chip-veg { border-color: #2FA36B; color: #5BD69B; background: rgba(30,138,90,.14); }
+  .btn-chili-ghost { border: 2px solid var(--chili) !important; color: #FF8B8B !important; background: transparent; box-shadow: none !important; }
+  .aspect-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+  .aspect-row .lbl { width: 118px; flex: none; font-size: 12.5px; font-weight: 600; color: var(--indigo-100); }
+  .aspect-row .track { flex: 1; height: 14px; background: var(--indigo-800); border-radius: 4px; overflow: hidden; }
+  .aspect-row .bar { height: 100%; background: var(--turmeric-500); border-radius: 4px 0 0 4px; }
+  .aspect-row .bar.chili { background: var(--chili); }
+  .aspect-row .n { width: 26px; text-align: right; font-family: var(--font-display); font-weight: 700; font-size: 12.5px; }
+  .review-card { background: var(--indigo-800); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 15px 17px; margin-top: 12px; }
+  .review-card .head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .stars { font-size: 14px; letter-spacing: 2px; color: var(--turmeric-400); font-family: var(--font-display); }
+  .rtext { font-size: 13.5px; margin-top: 8px; color: var(--indigo-100); }
+  .draft { margin-top: 12px; background: var(--indigo-950); border: 2px solid var(--indigo-600); border-radius: var(--r-sm); padding: 11px 13px; font-size: 13.5px; color: var(--indigo-100); }
+  .draft .cap { font-family: var(--font-display); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--turmeric-400); margin-bottom: 5px; }
+  .cols { display: grid; grid-template-columns: 1fr 1.5fr; gap: 18px; align-items: start; margin-top: 18px; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill on">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Reviews</h1>
+    <span class="meta">local INT8 model first · LLM only when unconfident · rating-only = zero LLM calls</span>
+  </div>
+  <div class="zari on-dark"></div>
+
+  <!-- ══ Stat cards ══ -->
+  <div class="stats">
+    <div class="stat">
+      <div class="eyebrow">Score pending</div>
+      <div class="big tnum">4</div>
+      <div class="meta">nightly 03:30 IST via Batch API · on-demand scores now</div>
+    </div>
+    <div class="stat">
+      <div class="eyebrow">This week</div>
+      <div class="big tnum">★ 4.3</div>
+      <div class="meta">31 reviews · 24 with text · 7 rating-only</div>
+    </div>
+    <div class="stat chili">
+      <div class="eyebrow" style="color:#FF8B8B">Trend alert</div>
+      <div class="big">⚠ SPIKE: "oily" negative mentions ×3 this week</div>
+      <div class="meta">latest ≥3 and ≥2× trailing mean · top offender: Medu Vada</div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <!-- ══ Aspect trends ══ -->
+    <div class="card-panel-dark" style="padding:18px">
+      <div class="eyebrow">Aspect trends</div>
+      <h3 class="h3" style="color:#fff;margin:2px 0 8px">Weekly negative mentions</h3>
+      <div class="aspect-row"><span class="lbl">taste <span style="color:#FF8B8B">("oily")</span></span><div class="track"><div class="bar chili" style="width:90%"></div></div><span class="n tnum" style="color:#FF8B8B">9</span></div>
+      <div style="display:flex;gap:8px;margin:2px 0 6px 128px"><span class="chip-dk chip-chili">⚠ alert</span><span class="meta">top offender: Medu Vada</span></div>
+      <div class="aspect-row"><span class="lbl">delivery</span><div class="track"><div class="bar" style="width:50%"></div></div><span class="n tnum">5</span></div>
+      <div class="aspect-row"><span class="lbl">temperature</span><div class="track"><div class="bar" style="width:40%"></div></div><span class="n tnum">4</span></div>
+      <div class="aspect-row"><span class="lbl">freshness</span><div class="track"><div class="bar" style="width:20%"></div></div><span class="n tnum">2</span></div>
+      <div class="aspect-row"><span class="lbl">portion</span><div class="track"><div class="bar" style="width:20%"></div></div><span class="n tnum">2</span></div>
+      <div class="aspect-row"><span class="lbl">packaging</span><div class="track"><div class="bar" style="width:10%"></div></div><span class="n tnum">1</span></div>
+      <div class="aspect-row"><span class="lbl">value</span><div class="track"><div class="bar" style="width:10%"></div></div><span class="n tnum">1</span></div>
+      <div class="aspect-row"><span class="lbl">service</span><div class="track"><div class="bar" style="width:0%"></div></div><span class="n tnum">0</span></div>
+      <div class="meta" style="margin-top:10px">8-aspect registry is the single source of truth — datagen labels, guardrail, fine-tune label space all coherence-gated against it</div>
+    </div>
+
+    <!-- ══ Reviews list ══ -->
+    <div class="card-panel-dark" style="padding:18px">
+      <div class="eyebrow">Inbox</div>
+      <h3 class="h3" style="color:#fff;margin:2px 0 2px">Latest reviews</h3>
+
+      <!-- card 1: negative w/ PII -->
+      <div class="review-card">
+        <div class="head">
+          <span class="stars">★★☆☆☆</span>
+          <span class="badge badge-dk-danger">NEGATIVE</span>
+          <span class="chip-dk tnum">order #40620</span>
+          <span class="meta" style="margin-left:auto">today · 1:12 PM</span>
+        </div>
+        <div class="rtext">"dosa was oily and cold, call me back on +91 98••• •••42"</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:9px">
+          <span class="chip-dk">📵 PII redacted before any model call</span>
+          <span class="chip-dk chip-chili">taste ▼</span>
+          <span class="chip-dk chip-chili">temperature ▼</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px">
+          <span class="ai-meta">local:dosadash-sentiment/v2-int8 · ₹0 · 57ms</span>
+          <span class="meta">unconfident cases escalate to LLM</span>
+        </div>
+        <div class="draft">
+          <div class="cap">AI reply draft</div>
+          So sorry about that — an oily, cold dosa is not the DosaDash standard. We've flagged this batch to the kitchen and would love another chance to get it right. Thank you for telling us.
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px">
+          <a class="btn btn-turmeric btn-sm">Publish reply</a>
+          <a class="btn btn-ghost btn-sm">Edit first</a>
+          <span class="meta">published verbatim → reply_source=AI_DRAFT; one edited char → MANUAL</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">
+          <span class="ai-meta">review_reply_v1 · gpt-4o-mini</span>
+          <span class="chip-dk chip-veg">guardrail: no compensation promises</span>
+        </div>
+      </div>
+
+      <!-- card 2: positive, batch scored -->
+      <div class="review-card">
+        <div class="head">
+          <span class="stars">★★★★★</span>
+          <span class="badge badge-dk-success">POSITIVE</span>
+          <span class="chip-dk tnum">order #40618</span>
+          <span class="meta" style="margin-left:auto">yesterday · 9:04 PM</span>
+        </div>
+        <div class="rtext">"ghee roast was insanely crispy, filter coffee strong just like my paati makes. semma!"</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:9px">
+          <span class="chip-dk chip-veg">taste ▲</span>
+          <span class="chip-dk chip-veg">freshness ▲</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px">
+          <span class="ai-meta">batch:gpt-4o-mini (nightly Batch API)</span>
+          <span class="meta">Tanglish slang deferred by local model → scored overnight at 50% token cost</span>
+        </div>
+      </div>
+
+      <!-- card 3: rating only -->
+      <div class="review-card">
+        <div class="head">
+          <span class="stars">★★★★☆</span>
+          <span class="badge badge-dk-neutral">RATING ONLY</span>
+          <span class="chip-dk tnum">order #40615</span>
+          <span class="meta" style="margin-left:auto">yesterday · 2:31 PM</span>
+        </div>
+        <div class="rtext" style="color:var(--indigo-300);font-style:italic">No text left — sentiment derived from stars.</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px">
+          <span class="ai-meta">deterministic:rating — zero LLM calls</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>

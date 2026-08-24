@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Settings — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+
+  /* ── page: settings ── */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+  .panel { padding: 16px 18px; }
+  .panel h2 { font-size: 15px; color: #fff; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .pause-box { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: rgba(242,183,5,.10); border: 2px solid var(--turmeric-600); border-radius: var(--r-sm); }
+  .toggle { flex: none; width: 42px; height: 23px; border-radius: 999px; background: var(--turmeric-500); position: relative; }
+  .toggle::after { content: ""; position: absolute; top: 3px; right: 4px; width: 17px; height: 17px; border-radius: 50%; background: var(--indigo-950); }
+  .toggle.off { background: var(--indigo-600); }
+  .toggle.off::after { right: auto; left: 4px; background: #fff; }
+  .toggle.chili { background: var(--chili); }
+  .hours-row { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--indigo-800); font-size: 13px; }
+  .hours-row:last-of-type { border-bottom: none; }
+  .hours-row .day { font-family: var(--font-display); font-weight: 700; font-size: 12px; color: var(--indigo-200); }
+  .hours-row .win { display: flex; gap: 8px; flex-wrap: wrap; }
+  .win .chip { border-color: var(--indigo-600); background: var(--indigo-800); color: var(--indigo-100); font-size: 12px; padding: 3px 10px; }
+  .limits { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .limits .chip { border-color: var(--indigo-600); background: var(--indigo-800); color: var(--indigo-100); }
+  .limits .chip b { color: var(--turmeric-400); }
+  .danger-card { border: 2px solid var(--chili); border-radius: var(--r-md); background: var(--indigo-900); color: var(--indigo-100); padding: 16px 18px; }
+  .danger-card h2 { color: #FF8B8B; }
+  .danger-row { display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: rgba(214,69,69,.10); border: 1.5px solid rgba(214,69,69,.5); border-radius: var(--r-sm); }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill on">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Kitchen Settings</h1>
+    <span class="badge badge-dk-warning">Kitchen paused</span>
+  </div>
+  <div class="meta">Operational switches — every change is audited and published to the event bus so the AI layer stays in sync.</div>
+  <div class="zari on-dark"></div>
+
+  <div class="settings-grid">
+
+    <!-- (a) kitchen pause -->
+    <div class="card-panel-dark panel">
+      <h2>🍳 Kitchen</h2>
+      <div class="pause-box">
+        <span class="toggle"></span>
+        <div>
+          <div style="font-family:var(--font-display);font-weight:700;color:var(--turmeric-400)">⏸ PAUSED until 5:00 PM</div>
+          <div class="meta" style="margin-top:2px">customers see a banner; agent stops taking orders</div>
+        </div>
+        <a class="btn btn-veg btn-sm" style="margin-left:auto">Resume now</a>
+      </div>
+      <div class="meta" style="margin-top:10px">paused by owner · 2026-08-24 14:05 IST · reason: “deep-clean before dinner rush”</div>
+    </div>
+
+    <!-- (d) rate limits -->
+    <div class="card-panel-dark panel">
+      <h2>🚦 Rate limits</h2>
+      <div class="limits">
+        <span class="chip">read <b class="tnum">240/min</b></span>
+        <span class="chip">write <b class="tnum">60/min</b></span>
+        <span class="chip">chat <b class="tnum">20/min</b></span>
+        <span class="chip">auth <b class="tnum">10/min</b></span>
+      </div>
+      <div class="meta">fixed 60s windows on Redis · identity = JWT user id, else first X-Forwarded-For hop · fail-open on Redis outage</div>
+    </div>
+
+    <!-- (b) hours -->
+    <div class="card-panel-dark panel">
+      <h2>🕐 Hours</h2>
+      <div class="hours-row"><span class="day">Mon</span><span class="win"><span class="chip tnum">06:00–11:30</span><span class="chip tnum">17:00–22:00</span></span></div>
+      <div class="hours-row"><span class="day">Tue</span><span class="win"><span class="chip tnum">06:00–11:30</span><span class="chip tnum">17:00–22:00</span></span></div>
+      <div class="hours-row"><span class="day">Wed</span><span class="win"><span class="chip tnum">06:00–11:30</span><span class="chip tnum">17:00–22:00</span></span></div>
+      <div class="hours-row"><span class="day">Thu</span><span class="win"><span class="chip tnum">06:00–11:30</span><span class="chip tnum">17:00–22:00</span></span></div>
+      <div class="hours-row"><span class="day">Fri</span><span class="win"><span class="chip tnum">06:00–11:30</span><span class="chip tnum">17:00–23:00</span></span></div>
+      <div class="hours-row"><span class="day">Sat</span><span class="win"><span class="chip tnum">06:00–23:00</span></span></div>
+      <div class="hours-row"><span class="day">Sun</span><span class="win"><span class="chip tnum">06:00–11:30</span><span class="chip tnum">11:30–15:00</span><span class="chip tnum">17:00–22:00</span></span></div>
+      <div class="meta" style="margin-top:10px">windows enforce per-dish serving schedules — off-window dishes grey out on the menu and 409 at checkout</div>
+    </div>
+
+    <!-- (c) staff & roles -->
+    <div class="card-panel-dark panel">
+      <h2>👥 Staff &amp; roles</h2>
+      <table class="tbl">
+        <thead><tr><th>Name</th><th>Phone</th><th>Role</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>Meenakshi S.</td><td class="tnum">+91 90000 000••</td><td><span class="badge badge-dk-magenta">owner</span></td><td class="num"><a class="btn btn-ghost btn-sm disabled" style="background:transparent">Change role</a></td></tr>
+          <tr><td>Arjun R.</td><td class="tnum">+91 98400 112••</td><td><span class="badge badge-dk-info">admin</span></td><td class="num"><a class="btn btn-ghost btn-sm">Change role</a></td></tr>
+          <tr><td>Kumar V.</td><td class="tnum">+91 97910 448••</td><td><span class="badge badge-dk-neutral">kitchen_staff</span></td><td class="num"><a class="btn btn-ghost btn-sm">Change role</a></td></tr>
+          <tr><td>Lakshmi P.</td><td class="tnum">+91 96001 776••</td><td><span class="badge badge-dk-neutral">kitchen_staff</span></td><td class="num"><a class="btn btn-ghost btn-sm">Change role</a></td></tr>
+        </tbody>
+      </table>
+      <div class="meta" style="margin-top:10px">RBAC enforced per-route via JWT claims · phones redacted in logs &amp; LLM calls</div>
+    </div>
+
+    <!-- (e) danger zone -->
+    <div class="danger-card" style="grid-column: 1 / -1;">
+      <h2 style="font-size:15px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">⚠ Danger zone</h2>
+      <div class="danger-row">
+        <span class="toggle off chili" style="background:var(--indigo-600)"></span>
+        <div>
+          <div style="font-family:var(--font-display);font-weight:700;color:#fff">86 all non-veg</div>
+          <div class="meta" style="margin-top:2px">instantly sold-out every non-veg dish — Mess Specials, biryani, mess meals — until toggled back</div>
+        </div>
+        <a class="btn btn-sm" style="margin-left:auto;background:var(--chili);color:#fff;border-color:#0C0C1F">86 non-veg now</a>
+      </div>
+      <div class="meta" style="margin-top:10px">all changes audited + published to the event bus (AI layer stays in sync) — agent stops offering 86'd dishes on the very next turn</div>
+    </div>
+
+  </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Combos — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+
+  /* page */
+  .toolbar { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .combo-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .combo-card { padding: 16px 18px; display: flex; flex-direction: column; gap: 11px; }
+  .combo-head { display: flex; align-items: center; gap: 10px; }
+  .combo-name { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: #fff; }
+  .parts { display: flex; flex-direction: column; gap: 6px; background: var(--indigo-950); border: 1.5px solid var(--indigo-700); border-radius: var(--r-sm); padding: 10px 12px; }
+  .part { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .part .p-price { margin-left: auto; font-family: var(--font-display); font-weight: 600; }
+  .price-row { display: flex; align-items: baseline; gap: 10px; }
+  .strike { color: var(--indigo-300); text-decoration: line-through; font-size: 14px; }
+  .combo-price { font-family: var(--font-display); font-weight: 700; font-size: 22px; color: var(--turmeric-400); }
+  .save-chip { font-size: 12px; font-weight: 700; font-family: var(--font-display); color: #5BD69B; background: rgba(30,138,90,.18); border: 1.5px solid #2FA36B; border-radius: var(--r-pill); padding: 2px 9px; }
+  .window-chip { font-size: 11.5px; font-weight: 600; color: var(--turmeric-400); background: rgba(242,183,5,.14); border: 1.5px solid var(--turmeric-600); border-radius: var(--r-pill); padding: 2px 9px; white-space: nowrap; }
+  .combo-foot { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 4px; }
+  .meta-strip { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--indigo-900); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 12px 16px; }
+  .strip-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--indigo-200); }
+  .strip-sep { color: var(--indigo-600); }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill on">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Combos</h1>
+    <span class="meta tnum">3 combos · 2 approved · 1 AI draft awaiting review</span>
+    <div class="toolbar">
+      <a class="btn btn-turmeric">+ New combo</a>
+    </div>
+  </div>
+  <div class="zari on-dark"></div>
+
+  <!-- ══ Combo cards ══ -->
+  <div class="combo-grid">
+
+    <div class="card-panel-dark combo-card">
+      <div class="combo-head">
+        <span class="combo-name">Morning Tiffin Set</span>
+        <span class="badge badge-dk-success" style="margin-left:auto">Approved</span>
+      </div>
+      <div class="parts">
+        <div class="part"><span class="fssai veg"></span> 1× Masala Dosa <span class="p-price tnum">₹120</span></div>
+        <div class="part"><span class="fssai veg"></span> 1× Filter Coffee <span class="p-price tnum">₹40</span></div>
+      </div>
+      <div class="price-row">
+        <span class="strike tnum">parts ₹160</span>
+        <span class="combo-price tnum">₹145</span>
+        <span class="save-chip tnum">−9%</span>
+      </div>
+      <div class="meta">MANUAL · live since 14 Jul · attached to 🧩 suggester</div>
+      <div class="combo-foot">
+        <a class="btn btn-ghost btn-sm">Edit</a>
+        <a class="btn btn-ghost btn-sm">Unpublish</a>
+        <span class="meta tnum" style="margin-left:auto">318 sold / 90d</span>
+      </div>
+    </div>
+
+    <div class="card-panel-dark combo-card" style="border-color:var(--turmeric-600)">
+      <div class="combo-head">
+        <span class="combo-name">Millet Power Combo</span>
+        <span class="badge badge-dk-warning" style="margin-left:auto">Draft</span>
+      </div>
+      <div class="parts">
+        <div class="part"><span class="fssai veg"></span> 1× Ragi Millet Dosa <span class="p-price tnum">₹110</span></div>
+        <div class="part"><span class="fssai veg"></span> 1× Kambu Idli (2 pcs) <span class="p-price tnum">₹70</span></div>
+        <div class="part"><span class="fssai veg"></span> 1× Sukku Coffee <span class="p-price tnum">₹45</span></div>
+      </div>
+      <div class="price-row">
+        <span class="strike tnum">parts ₹225</span>
+        <span class="combo-price tnum">₹205</span>
+        <span class="save-chip tnum">−9%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="badge badge-dk-magenta">AI_Suggested</span>
+        <span class="ai-meta">promo_agent_v1 · gpt-4o-mini</span>
+      </div>
+      <div class="meta">mined pairing: co-ordered in 54 orders / 90d · price inside [85%, 97%] × parts ✓</div>
+      <div class="combo-foot">
+        <a class="btn btn-veg btn-sm">Approve</a>
+        <a class="btn btn-danger btn-sm">Reject</a>
+        <span class="meta" style="margin-left:auto">drafted 24 Aug 02:35 IST</span>
+      </div>
+    </div>
+
+    <div class="card-panel-dark combo-card">
+      <div class="combo-head">
+        <span class="combo-name">Mess Lunch Set</span>
+        <span class="badge badge-dk-success" style="margin-left:auto">Approved</span>
+      </div>
+      <div class="parts">
+        <div class="part"><span class="fssai nonveg"></span> 1× Non-Veg Mess Meals <span class="p-price tnum">₹220</span></div>
+        <div class="part"><span class="fssai nonveg"></span> 1× Mutton Chukka (half) <span class="p-price tnum">₹140</span></div>
+      </div>
+      <div class="price-row">
+        <span class="strike tnum">parts ₹360</span>
+        <span class="combo-price tnum">₹330</span>
+        <span class="save-chip tnum">−8%</span>
+        <span class="window-chip" style="margin-left:auto">⏰ Lunch only · 11:30–3</span>
+      </div>
+      <div class="meta">MANUAL · serving window inherited from parts — checkout enforces it</div>
+      <div class="combo-foot">
+        <a class="btn btn-ghost btn-sm">Edit</a>
+        <a class="btn btn-ghost btn-sm">Unpublish</a>
+        <span class="meta tnum" style="margin-left:auto">142 sold / 90d</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Guardrail meta strip ══ -->
+  <div class="meta-strip">
+    <span class="badge badge-dk-magenta">Guardrail</span>
+    <span class="strip-item">combo price clamped to [85%, 97%] of parts — guardrail-enforced, drafts outside the band never reach this screen</span>
+    <span class="strip-sep">·</span>
+    <span class="strip-item">🧩 approved combos feed the checkout suggester (combo-completion outranks pairing gaps)</span>
+    <span class="strip-sep">·</span>
+    <span class="strip-item meta">every approve / reject is audited</span>
+  </div>
+
+</main>
+
+</body>
+</html>

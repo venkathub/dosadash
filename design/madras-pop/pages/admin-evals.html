@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Evals — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+
+  /* ── page: evals ── */
+  .gate-banner { margin: 16px 0 20px; padding: 12px 18px; background: var(--indigo-900); border: 2px solid var(--turmeric-600); border-radius: var(--r-md); display: flex; align-items: center; gap: 14px; }
+  .gate-banner .eyebrow { font-size: 12px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+  .stat { padding: 16px 18px; }
+  .stat .lbl { font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--indigo-300); }
+  .stat .val { font-family: var(--font-display); font-weight: 700; font-size: 32px; line-height: 1.1; margin-top: 6px; color: #fff; }
+  .stat .val.green { color: #5BD69B; }
+  .stat .sub { font-size: 12px; color: var(--indigo-200); margin-top: 4px; }
+  .two-col { display: grid; grid-template-columns: 480px 1fr; gap: 18px; align-items: start; }
+  .panel { padding: 16px 18px; }
+  .panel h2 { font-size: 15px; color: #fff; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+  .lang-row { display: grid; grid-template-columns: 74px 1fr 52px 84px; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .lang-row .lg { font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--indigo-100); }
+  .lang-row .track { height: 14px; background: rgba(255,255,255,.06); border-radius: 4px; overflow: hidden; position: relative; }
+  .lang-row .fill { height: 100%; background: var(--turmeric-500); }
+  .lang-row .track .gate-mark { position: absolute; left: 80%; top: -2px; bottom: -2px; width: 2px; background: var(--magenta-500); }
+  .lang-row .sc { font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--turmeric-400); text-align: right; }
+  .lang-row .cases { font-size: 11.5px; color: var(--indigo-300); text-align: right; }
+  .gate-line { font-size: 11.5px; color: var(--indigo-300); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .gate-line .tick { width: 10px; height: 2px; background: var(--magenta-500); display: inline-block; }
+  .suites { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+  .suites .chip { border-color: var(--indigo-600); background: var(--indigo-800); color: var(--indigo-200); }
+  .suites .chip.optin { border-style: dashed; color: var(--indigo-300); }
+  .footer-strip { margin-top: 20px; padding: 12px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill on">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Eval Scoreboard</h1>
+    <span class="ai-meta">order_agent_v5 · 174 golden cases</span>
+  </div>
+  <div class="meta">Live eval runs on the production agent path — every prompt/agent/RAG change must pass before merge.</div>
+  <div class="zari on-dark"></div>
+
+  <!-- pinned gate banner -->
+  <div class="gate-banner">
+    <span class="eyebrow">Merge Gate</span>
+    <span style="font-family:var(--font-display);font-weight:700;color:#fff">order_accuracy ≥ 0.95 · enforced in CI — a failing eval blocks the merge</span>
+    <span class="badge badge-dk-success" style="margin-left:auto">gate live</span>
+  </div>
+
+  <!-- stat cards -->
+  <div class="stat-grid">
+    <div class="card-dark stat">
+      <div class="lbl">Latest run</div>
+      <div class="val green">96.55%</div>
+      <div class="sub">order_accuracy · run #36 · <span class="badge badge-dk-success">Pass</span></div>
+    </div>
+    <div class="card-panel-dark stat">
+      <div class="lbl">tool_correctness</div>
+      <div class="val">100%</div>
+      <div class="sub">every tool call valid against the DB</div>
+    </div>
+    <div class="card-panel-dark stat">
+      <div class="lbl">Guardrail bypasses</div>
+      <div class="val">0</div>
+      <div class="sub">injections &amp; hallucinated items — all refused</div>
+    </div>
+    <div class="card-panel-dark stat">
+      <div class="lbl">Golden cases</div>
+      <div class="val tnum">174</div>
+      <div class="sub">en · hinglish · tanglish · தமிழ் · voice · serving-window</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+
+    <!-- per-language -->
+    <div class="card-panel-dark panel">
+      <h2>Per-language accuracy</h2>
+      <div class="lang-row">
+        <span class="lg">ta தமிழ்</span>
+        <span class="track"><span class="fill" style="width:100%"></span><span class="gate-mark"></span></span>
+        <span class="sc tnum">1.00</span><span class="cases tnum">11 cases</span>
+      </div>
+      <div class="lang-row">
+        <span class="lg">en</span>
+        <span class="track"><span class="fill" style="width:97%"></span><span class="gate-mark"></span></span>
+        <span class="sc tnum">0.970</span><span class="cases tnum">101 cases</span>
+      </div>
+      <div class="lang-row">
+        <span class="lg">hinglish</span>
+        <span class="track"><span class="fill" style="width:96.8%"></span><span class="gate-mark"></span></span>
+        <span class="sc tnum">0.968</span><span class="cases tnum">31 cases</span>
+      </div>
+      <div class="lang-row">
+        <span class="lg">tanglish</span>
+        <span class="track"><span class="fill" style="width:93.5%"></span><span class="gate-mark"></span></span>
+        <span class="sc tnum">0.935</span><span class="cases tnum">31 cases</span>
+      </div>
+      <div class="gate-line"><span class="tick"></span> gate: ta floor ≥ 0.80 — a broken language fails the merge even when the aggregate passes</div>
+    </div>
+
+    <!-- run history -->
+    <div class="card-panel-dark panel">
+      <h2>Run history</h2>
+      <table class="tbl">
+        <thead>
+          <tr><th>Run</th><th>Date (IST)</th><th>Prompt</th><th class="num">Cases</th><th class="num">order_accuracy</th><th class="num">Tool</th><th class="num">Bypasses</th><th>Verdict</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tnum">#36</td><td class="tnum">2026-08-24 21:40</td><td>order_agent_v5</td><td class="num tnum">174</td><td class="num tnum" style="color:#5BD69B;font-weight:700">96.55%</td><td class="num tnum">100%</td><td class="num tnum">0</td><td><span class="badge badge-dk-success">Pass</span></td>
+          </tr>
+          <tr>
+            <td class="tnum">#35</td><td class="tnum">2026-08-24 20:55</td><td>order_agent_v5</td><td class="num tnum">174</td><td class="num tnum" style="color:#FF8B8B;font-weight:700">94.64%</td><td class="num tnum">100%</td><td class="num tnum">0</td><td><span class="badge badge-dk-danger">Fail</span><div class="meta" style="font-size:11px;margin-top:3px">documented flaky set — clean on re-run #36</div></td>
+          </tr>
+          <tr>
+            <td class="tnum">#34</td><td class="tnum">2026-08-24 15:12</td><td>order_agent_v5</td><td class="num tnum">174</td><td class="num tnum">95.40%</td><td class="num tnum">100%</td><td class="num tnum">0</td><td><span class="badge badge-dk-success">Pass</span></td>
+          </tr>
+          <tr>
+            <td class="tnum">#14</td><td class="tnum">2026-08-14 18:30</td><td>order_agent_v3</td><td class="num tnum">150</td><td class="num tnum">96.67%</td><td class="num tnum">100%</td><td class="num tnum">0</td><td><span class="badge badge-dk-success">Pass</span><div class="meta" style="font-size:11px;margin-top:3px">after data calibration + name-fidelity fixes</div></td>
+          </tr>
+          <tr>
+            <td class="tnum">#12</td><td class="tnum">2026-08-13 22:05</td><td>order_agent_v2</td><td class="num tnum">150</td><td class="num tnum" style="color:#FF8B8B">92.67%</td><td class="num tnum">100%</td><td class="num tnum">0</td><td><span class="badge badge-dk-danger">Fail</span><div class="meta" style="font-size:11px;margin-top:3px">cross-lingual numerals · removal semantics</div></td>
+          </tr>
+          <tr>
+            <td class="tnum">#11</td><td class="tnum">2026-08-13 11:47</td><td>order_agent_v2</td><td class="num tnum">150</td><td class="num tnum" style="color:#FF8B8B">85.00%</td><td class="num tnum">98%</td><td class="num tnum">0</td><td><span class="badge badge-dk-danger">Fail</span><div class="meta" style="font-size:11px;margin-top:3px">real regression caught pre-merge</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- suites strip -->
+  <div class="suites">
+    <span class="chip">order_accuracy</span>
+    <span class="chip">tool_correctness</span>
+    <span class="chip">guardrail_bypass</span>
+    <span class="chip">retrieval</span>
+    <span class="chip">RAG faithfulness</span>
+    <span class="chip optin">tone (opt-in)</span>
+  </div>
+
+  <!-- footer -->
+  <div class="card-panel-dark footer-strip">
+    <span class="ai-meta">tone judged by LLM rubric tone_v1</span>
+    <span class="meta">results ingested from CI → eval_runs table</span>
+  </div>
+
+</main>
+</body>
+</html>

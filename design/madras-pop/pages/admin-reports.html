@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Reports — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+
+  /* page */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .stat { padding: 16px 18px; }
+  .stat .label { font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--indigo-300); }
+  .stat .val { font-family: var(--font-display); font-weight: 700; font-size: 27px; color: #fff; margin-top: 4px; }
+  .stat .sub { font-size: 12.5px; color: var(--indigo-200); margin-top: 2px; }
+  .stat .row { display: flex; align-items: center; gap: 10px; }
+  .panel { padding: 16px 18px; margin-top: 20px; }
+  .panel-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .legend { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .lg-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 2px 10px; white-space: nowrap; }
+  .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .chart-wrap { background: var(--indigo-950); border: 1.5px solid var(--indigo-700); border-radius: var(--r-sm); padding: 10px 8px 4px; }
+  .chart-wrap svg { display: block; width: 100%; height: auto; }
+  .flag-chip { font-size: 11px; font-weight: 600; color: var(--turmeric-400); background: rgba(242,183,5,.14); border: 1.5px solid var(--turmeric-600); border-radius: var(--r-pill); padding: 1px 8px; white-space: nowrap; }
+  .spike-chip { font-size: 11px; font-weight: 600; color: var(--magenta-400); background: rgba(214,51,108,.16); border: 1.5px solid var(--magenta-500); border-radius: var(--r-pill); padding: 1px 8px; white-space: nowrap; }
+  .dish-name { font-family: var(--font-display); font-weight: 700; color: #fff; }
+  .foot-meta { margin-top: 18px; display: flex; align-items: center; gap: 10px; background: var(--indigo-900); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 11px 16px; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill on">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Reports</h1>
+    <span class="meta tnum">sales rollups in IST · forecast refreshed nightly 02:00</span>
+  </div>
+  <div class="zari on-dark"></div>
+
+  <!-- ══ Stat cards ══ -->
+  <div class="stat-grid">
+    <div class="card-panel-dark stat">
+      <div class="label">Today</div>
+      <div class="val tnum">₹18,240</div>
+      <div class="sub tnum">61 orders · vs forecast ₹17,090 (+6.7%)</div>
+    </div>
+    <div class="card-panel-dark stat">
+      <div class="label">AOV</div>
+      <div class="val tnum">₹299</div>
+      <div class="sub tnum">7-day median ₹312 · combos lift attach 15.6%</div>
+    </div>
+    <div class="card-panel-dark stat">
+      <div class="label">GST collected</div>
+      <div class="row">
+        <span class="val tnum">₹912</span>
+        <a class="btn btn-ghost btn-sm" style="margin-left:auto">⬇ gst.csv</a>
+      </div>
+      <div class="sub tnum">5% on food · computed on discounted amount, pro-rata</div>
+    </div>
+  </div>
+
+  <!-- ══ Forecast vs actual ══ -->
+  <div class="card-panel-dark panel">
+    <div class="panel-head">
+      <span class="eyebrow">Forecast vs Actual</span>
+      <span class="ai-meta">xgboost · dosadash-forecast champion · WAPE 0.421 vs naive 0.555</span>
+      <span class="meta">saved view · Pongal fortnight 6–19 Jan</span>
+      <div class="legend">
+        <span class="lg-chip"><span class="sw" style="background:#F2B705;opacity:.8"></span> actual ₹/day</span>
+        <span class="lg-chip"><span class="sw" style="background:#B9B6D9;height:3px;border-radius:2px"></span> forecast (step)</span>
+        <span class="lg-chip"><span class="sw" style="background:#D6336C;border-radius:50%"></span> anomaly</span>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <svg viewBox="0 0 1100 260" role="img" aria-label="Daily revenue: actual bars vs forecast step line, 14 days">
+        <!-- grid -->
+        <line x1="40" y1="20"  x2="1080" y2="20"  stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+        <line x1="40" y1="70"  x2="1080" y2="70"  stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+        <line x1="40" y1="120" x2="1080" y2="120" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+        <line x1="40" y1="170" x2="1080" y2="170" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+        <line x1="40" y1="220" x2="1080" y2="220" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+        <text x="34" y="24"  fill="#8B8BC0" font-size="10" text-anchor="end" font-family="Inter,sans-serif">40k</text>
+        <text x="34" y="74"  fill="#8B8BC0" font-size="10" text-anchor="end" font-family="Inter,sans-serif">30k</text>
+        <text x="34" y="124" fill="#8B8BC0" font-size="10" text-anchor="end" font-family="Inter,sans-serif">20k</text>
+        <text x="34" y="174" fill="#8B8BC0" font-size="10" text-anchor="end" font-family="Inter,sans-serif">10k</text>
+        <text x="34" y="224" fill="#8B8BC0" font-size="10" text-anchor="end" font-family="Inter,sans-serif">0</text>
+        <!-- actual bars (turmeric @80%) -->
+        <g fill="#F2B705" opacity="0.8">
+          <rect x="48"  y="149"   width="44" height="71"/>
+          <rect x="122" y="141"   width="44" height="79"/>
+          <rect x="196" y="154.5" width="44" height="65.5"/>
+          <rect x="270" y="138"   width="44" height="82"/>
+          <rect x="344" y="125.5" width="44" height="94.5"/>
+          <rect x="418" y="98.5"  width="44" height="121.5"/>
+          <rect x="492" y="89.5"  width="44" height="130.5"/>
+          <rect x="566" y="144"   width="44" height="76"/>
+          <rect x="640" y="146.5" width="44" height="73.5"/>
+          <rect x="714" y="28"    width="44" height="192"/>
+          <rect x="788" y="107"   width="44" height="113"/>
+          <rect x="862" y="139.5" width="44" height="80.5"/>
+          <rect x="936" y="133"   width="44" height="87"/>
+          <rect x="1010" y="129"  width="44" height="91"/>
+        </g>
+        <!-- forecast step line (indigo-200) -->
+        <path d="M44 150.5 H118 V144 H192 V151 H266 V140.5 H340 V129.5 H414 V95 H488 V93 H562 V146 H636 V144.5 H710 V122.5 H784 V111 H858 V137.5 H932 V135 H1006 V127 H1080"
+              fill="none" stroke="#B9B6D9" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- anomaly dots -->
+        <circle cx="218" cy="154.5" r="5.5" fill="#D6336C" stroke="#12122B" stroke-width="2"/>
+        <text x="218" y="140" fill="#E85D8A" font-size="11" font-weight="600" text-anchor="middle" font-family="Inter,sans-serif">⚠ −18% vs forecast (NE monsoon rain)</text>
+        <circle cx="736" cy="28" r="5.5" fill="#D6336C" stroke="#12122B" stroke-width="2"/>
+        <text x="736" y="14" fill="#E85D8A" font-size="11" font-weight="600" text-anchor="middle" font-family="Inter,sans-serif">⚠ Pongal spike +212% idli</text>
+        <!-- day labels -->
+        <text x="70"   y="240" fill="#8B8BC0" font-size="10" text-anchor="middle" font-family="Inter,sans-serif">Jan 6</text>
+        <text x="292"  y="240" fill="#8B8BC0" font-size="10" text-anchor="middle" font-family="Inter,sans-serif">Jan 9</text>
+        <text x="514"  y="240" fill="#8B8BC0" font-size="10" text-anchor="middle" font-family="Inter,sans-serif">Jan 12</text>
+        <text x="736"  y="240" fill="#8B8BC0" font-size="10" text-anchor="middle" font-family="Inter,sans-serif">Jan 15 · Pongal</text>
+        <text x="1032" y="240" fill="#8B8BC0" font-size="10" text-anchor="middle" font-family="Inter,sans-serif">Jan 19</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ══ Dish P&L ══ -->
+  <div class="card-panel-dark panel">
+    <div class="panel-head">
+      <span class="eyebrow">Dish P&amp;L — last 7 days</span>
+      <span class="meta" style="margin-left:auto">ingredient cost from recipe costing where a recipe exists</span>
+    </div>
+    <table class="tbl">
+      <thead>
+        <tr><th>Dish</th><th class="num">Sold</th><th class="num">Revenue ₹</th><th class="num">Ingredient cost ₹</th><th class="num">Margin %</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="dish-name">Masala Dosa</span></td>
+          <td class="num tnum">179</td><td class="num tnum">21,480</td><td class="num tnum">8,377</td><td class="num tnum">61%</td><td></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Chicken Biryani</span></td>
+          <td class="num tnum">84</td><td class="num tnum">20,160</td><td class="num tnum">9,475</td><td class="num tnum">53%</td>
+          <td><span class="spike-chip">weekend spike</span></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Ghee Roast</span></td>
+          <td class="num tnum">96</td><td class="num tnum">14,400</td><td class="num tnum">6,048</td><td class="num tnum">58%</td><td></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Mutton Chukka</span></td>
+          <td class="num tnum">42</td><td class="num tnum">10,920</td><td class="num tnum">4,914</td><td class="num tnum">55%</td><td></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Idli (2 pcs)</span></td>
+          <td class="num tnum">210</td><td class="num tnum">10,500</td><td class="num tnum">3,675</td><td class="num tnum">65%</td><td></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Filter Coffee</span></td>
+          <td class="num tnum">240</td><td class="num tnum">9,600</td><td class="num tnum">3,264</td><td class="num tnum">66%</td><td></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Nandu Pepper Fry</span></td>
+          <td class="num tnum">18</td><td class="num tnum">5,760</td><td class="num tnum">2,016</td><td class="num tnum">65%</td>
+          <td><span class="flag-chip">cost = labeled 35% fallback (no recipe costing)</span></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Kuzhi Paniyaram</span></td>
+          <td class="num tnum">57</td><td class="num tnum">5,130</td><td class="num tnum">2,001</td><td class="num tnum">61%</td><td></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="foot-meta">
+    <span class="badge badge-dk-info">Rollups</span>
+    <span class="meta">IST rollups · nightly 02:00 · forecast upserts 14-day recursive horizon per dish · anomalies flagged per day and per dish</span>
+  </div>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — My Orders + Support (Desktop) — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--indigo-900); color: var(--indigo-100);
+    border-bottom: 3px solid var(--turmeric-500);
+  }
+  .header-in { max-width: 1120px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 18px; }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: 0.02em; color: #fff; display: flex; align-items: center; gap: 9px; }
+  .wordmark .tail { color: var(--turmeric-400); }
+  .search { flex: 1; max-width: 420px; display: flex; align-items: center; gap: 8px; background: var(--indigo-950); border: 2px solid var(--indigo-600); border-radius: var(--r-pill); padding: 8px 16px; color: var(--indigo-300); font-size: 14px; }
+  .lang-toggle { display: flex; border: 2px solid var(--indigo-600); border-radius: var(--r-pill); overflow: hidden; font-family: var(--font-display); font-weight: 700; font-size: 13px; }
+  .lang-toggle span { padding: 5px 12px; }
+  .lang-toggle .on { background: var(--turmeric-500); color: var(--indigo-900); }
+  .lang-toggle .off { color: var(--indigo-200); }
+
+  .main { max-width: 1120px; margin: 0 auto; padding: 26px 24px 60px; }
+  .cols { display: grid; grid-template-columns: 1.15fr 1fr; gap: 26px; align-items: start; }
+
+  .order { padding: 14px 17px; }
+  .order .top { display: flex; align-items: center; gap: 10px; }
+  .order .oid { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+  .order .sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .order .amt { font-family: var(--font-display); font-weight: 700; font-size: 16px; margin-left: auto; }
+  .order .foot { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .orders-list { display: flex; flex-direction: column; gap: 18px; }
+
+  .review { border-top: 2px dashed var(--sand-300); margin-top: 12px; padding-top: 12px; }
+  .stars { font-size: 23px; letter-spacing: 4px; }
+  .stars .on { color: var(--turmeric-500); text-shadow: 1px 1px 0 var(--indigo-900); }
+  .stars .off { color: var(--sand-300); -webkit-text-stroke: 1px var(--faint); }
+  .aspects { display: flex; gap: 7px; margin: 10px 0; flex-wrap: wrap; }
+  .aspects .chip { font-size: 11.5px; padding: 3px 10px; }
+  .aspects .up { background: var(--veg-100); border-color: var(--veg); color: var(--veg); }
+  .aspects .down { background: var(--chili-100); border-color: var(--chili); color: var(--chili); }
+  .review .textarea { min-height: 56px; font-size: 13px; resize: none; }
+  .review .actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+  .submitted { display: flex; align-items: center; gap: 9px; }
+  .submitted .s { font-size: 17px; letter-spacing: 2px; color: var(--turmeric-500); text-shadow: 1px 1px 0 var(--indigo-900); }
+  .reply { background: var(--sand-200); border-left: 4px solid var(--magenta-500); border-radius: 0 var(--r-sm) var(--r-sm) 0; padding: 9px 12px; margin-top: 10px; font-size: 13px; }
+  .reply .by { font-size: 11.5px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 8px; }
+  .refund-note { font-size: 12.5px; font-weight: 600; color: var(--veg); background: var(--veg-100); border: 1.5px solid var(--veg); border-radius: var(--r-sm); padding: 6px 10px; margin-top: 10px; }
+
+  /* support panel */
+  .support { position: sticky; top: 96px; overflow: hidden; }
+  .support .s-head { background: var(--indigo-900); color: var(--indigo-100); padding: 13px 17px; display: flex; align-items: center; gap: 10px; border-bottom: 3px solid var(--turmeric-500); }
+  .support .s-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: #fff; }
+  .s-thread { padding: 18px 17px; display: flex; flex-direction: column; gap: 13px; background: var(--offwhite); }
+  .s-msg { max-width: 88%; }
+  .s-msg.user { align-self: flex-end; }
+  .s-msg.ai { align-self: flex-start; }
+  .s-bubble { border: var(--border-ink); border-radius: var(--r-md); padding: 10px 13px; font-size: 13.5px; }
+  .user .s-bubble { background: var(--indigo-900); color: var(--indigo-100); box-shadow: 3px 3px 0 var(--magenta-600); border-bottom-right-radius: 4px; }
+  .ai .s-bubble { background: var(--paper); box-shadow: var(--shadow-pop-sm); border-bottom-left-radius: 4px; }
+  .s-msg .who { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .user .who { text-align: right; }
+  .s-msg .after { margin-top: 6px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .ticket { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 700; font-size: 12px; background: var(--turmeric-100); border: 1.5px solid #D9A404; border-radius: var(--r-sm); padding: 3px 9px; margin-top: 8px; }
+  .trust-line { align-self: center; font-size: 11px; color: var(--muted); background: var(--paper); border: 1.5px solid var(--sand-300); border-radius: var(--r-pill); padding: 3px 12px; }
+  .s-input { display: flex; gap: 9px; padding: 13px 17px; border-top: 2px solid var(--indigo-900); background: var(--paper); }
+  .s-input .input { flex: 1; }
+  .s-send { flex: none; width: 44px; height: 42px; display: inline-flex; align-items: center; justify-content: center; border: var(--border-ink); border-radius: var(--r-sm); background: var(--turmeric-500); box-shadow: var(--shadow-pop-sm); font-size: 16px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- ══ Header ══ -->
+<div class="header">
+  <div class="header-in">
+    <div class="wordmark">🥞 DOSA<span class="tail">DASH</span></div>
+    <div class="search">🔎 Search dosa, idli, biryani…</div>
+    <div class="lang-toggle"><span class="on">EN</span><span class="off">தமிழ்</span></div>
+    <a class="btn btn-turmeric btn-sm">🍽 Menu</a>
+    <a class="btn btn-ghost btn-sm" style="color:var(--indigo-100)">🛒 Cart · 0</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <h1 class="h1">My orders</h1>
+  <div class="zari"></div>
+
+  <div class="cols">
+
+    <!-- ══ Left: orders list ══ -->
+    <div class="orders-list">
+
+      <div class="card order">
+        <div class="top">
+          <span class="oid">#40638</span>
+          <span class="badge badge-warning">COOKING</span>
+          <span class="amt tnum">₹166</span>
+        </div>
+        <div class="sub">2 items · Masala Dosa, Filter Coffee · today 7:02 PM</div>
+        <div class="foot">
+          <span class="meta">🤖 arriving ~7:41 PM</span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-magenta btn-sm">Track →</a>
+        </div>
+      </div>
+
+      <div class="card order">
+        <div class="top">
+          <span class="oid">#40632</span>
+          <span class="badge badge-success">DELIVERED</span>
+          <span class="amt tnum">₹346</span>
+        </div>
+        <div class="sub">3 items · 2× Masala Dosa, Ghee Roast, Filter Coffee · yesterday 8:14 PM</div>
+        <div class="review">
+          <div class="eyebrow" style="margin-bottom:5px">Rate this order</div>
+          <div class="stars"><span class="on">★</span><span class="on">★</span><span class="on">★</span><span class="on">★</span><span class="off">★</span></div>
+          <div class="aspects">
+            <span class="chip up">taste ▲</span>
+            <span class="chip down">delivery ▼</span>
+            <span class="chip">packaging</span>
+            <span class="chip">portion</span>
+          </div>
+          <textarea class="textarea" placeholder="How was it?"></textarea>
+          <div class="actions"><a class="btn btn-turmeric btn-sm">Submit review</a></div>
+        </div>
+      </div>
+
+      <div class="card order">
+        <div class="top">
+          <span class="oid">#40617</span>
+          <span class="badge badge-success">DELIVERED</span>
+          <span class="amt tnum">₹230</span>
+        </div>
+        <div class="sub">2 items · Ragi Millet Dosa, Kesari · Mon 12:40 PM</div>
+        <div class="review">
+          <div class="submitted">
+            <span class="s">★★★★★</span>
+            <span class="meta">"Crisp ragi dosa, kesari was perfect!"</span>
+          </div>
+          <div class="reply">
+            "Thank you! So glad the millet dosa hit the spot — see you again soon. 🙏 — DosaDash"
+            <div class="by">Owner reply · <span class="ai-meta light">AI-drafted reply · review_reply_v1</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card order">
+        <div class="top">
+          <span class="oid">#40598</span>
+          <span class="badge badge-danger">CANCELLED</span>
+          <span class="amt tnum">₹120</span>
+        </div>
+        <div class="sub">1 item · Masala Dosa · last Fri 9:48 PM</div>
+        <div class="refund-note">✓ REFUNDED — ₹120 returned to UPI in 2 days</div>
+      </div>
+
+      <span class="badge badge-info" style="align-self:center">📨 Telegram linked · order updates ON</span>
+    </div>
+
+    <!-- ══ Right: support chat panel ══ -->
+    <div class="card support">
+      <div class="s-head">
+        <span style="font-size:19px">🛟</span>
+        <div>
+          <div class="s-title">Order help</div>
+          <div class="meta" style="color:var(--indigo-200)"><span class="dot-live"></span> support agent online · re: #40632</div>
+        </div>
+        <span style="margin-left:auto"></span>
+        <span class="badge badge-dk-warning">ESCALATED</span>
+      </div>
+
+      <div class="s-thread">
+        <div class="trust-line">🔒 refunds are never auto-executed by AI</div>
+
+        <div class="s-msg user">
+          <div class="who">You · 8:41 PM</div>
+          <div class="s-bubble">my dosa arrived cold, want refund</div>
+        </div>
+
+        <div class="s-msg ai">
+          <div class="who">🛟 Support agent</div>
+          <div class="s-bubble">
+            So sorry about that — a cold dosa is no dosa at all. 😔 I can see order <b>#40632</b> was delivered at 8:14 PM.
+            I've escalated this to the owner — <b>refunds are always human-approved</b>. Ticket <b>#1</b> created; you'll hear back within 30 minutes, usually much faster.
+            <div class="ticket">🎫 Ticket #1 · refund request · #40632 · ₹346</div>
+          </div>
+          <div class="after">
+            <span class="ai-meta">support agent · gpt-4o-mini</span>
+            <span class="badge badge-warning">ESCALATED</span>
+          </div>
+        </div>
+
+        <div class="s-msg ai">
+          <div class="who">🛟 Support agent</div>
+          <div class="s-bubble">Anything else while you wait? I can check order status or help you reorder — fresh and hot this time. 🔥</div>
+        </div>
+      </div>
+
+      <div class="s-input">
+        <input class="input" placeholder="Type a reply…">
+        <span class="s-send">➤</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

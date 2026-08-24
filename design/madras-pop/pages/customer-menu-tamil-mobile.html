@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>DosaDash — மெனு (Tamil Mobile) — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  body { max-width: 390px; margin: 0 auto; }
+
+  .header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--indigo-900); color: var(--indigo-100);
+    border-bottom: 3px solid var(--turmeric-500);
+  }
+  .header-in { padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: 0.02em; color: #fff; display: flex; align-items: center; gap: 6px; }
+  .wordmark .tail { color: var(--turmeric-400); }
+  .icon-btn { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--indigo-600); border-radius: var(--r-sm); background: var(--indigo-950); font-size: 16px; text-decoration: none; }
+  .lang-toggle { display: flex; border: 2px solid var(--indigo-600); border-radius: var(--r-pill); overflow: hidden; font-family: var(--font-display); font-weight: 700; font-size: 11.5px; }
+  .lang-toggle span { padding: 4px 8px; }
+  .lang-toggle .on { background: var(--turmeric-500); color: var(--indigo-900); }
+  .lang-toggle .off { color: var(--indigo-200); }
+  .cart-btn { position: relative; }
+  .cart-btn .n { position: absolute; top: -6px; right: -6px; background: var(--magenta-500); color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 10.5px; border-radius: var(--r-pill); padding: 0 5px; border: 1.5px solid var(--indigo-950); }
+
+  .main { padding: 16px 14px 190px; }
+  .lang-note { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+
+  .hero { background: var(--magenta-500); border: var(--border-ink); border-radius: var(--r-lg); box-shadow: 5px 5px 0 var(--indigo-900); padding: 20px 18px; color: #fff; position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; right: -46px; top: -46px; width: 160px; height: 160px; border-radius: 50%; background: var(--magenta-400); opacity: .5; }
+  .hero .art { position: absolute; right: 10px; bottom: 8px; font-size: 52px; line-height: 1; z-index: 1; filter: drop-shadow(3px 3px 0 var(--indigo-900)); }
+  .hero .big { font-family: var(--font-display); font-weight: 700; font-size: 25px; line-height: 1.25; }
+  .meal-pills { display: flex; gap: 7px; margin-top: 14px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .meal-pills .chip { border-color: #fff; background: transparent; color: #fff; font-size: 11.5px; padding: 3px 10px; }
+  .meal-pills .chip.now { background: var(--turmeric-500); color: var(--indigo-900); border-color: var(--indigo-900); box-shadow: 2px 2px 0 var(--indigo-900); }
+
+  .dish-col { display: flex; flex-direction: column; gap: 16px; }
+  .dish { display: flex; gap: 12px; padding: 12px; }
+  .dish .photo { flex: none; width: 88px; height: 88px; border: var(--border-ink); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 40px; position: relative; }
+  .aibadge { position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%); font-size: 10px; font-family: var(--font-display); font-weight: 700; background: var(--indigo-900); color: var(--turmeric-400); border-radius: var(--r-pill); padding: 2px 8px; letter-spacing: .06em; white-space: nowrap; }
+  .dish .body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .dish .name-row { display: flex; align-items: center; gap: 7px; }
+  .dish .name { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+  .price { font-family: var(--font-display); font-weight: 700; font-size: 15.5px; margin-left: auto; white-space: nowrap; }
+  .canon { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+  .desc { font-size: 12.5px; color: var(--muted); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .dish .foot { margin-top: auto; padding-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tagline { font-size: 11.5px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+  .stepper { display: inline-flex; align-items: center; border: var(--border-ink); border-radius: var(--r-sm); overflow: hidden; font-family: var(--font-display); font-weight: 700; box-shadow: var(--shadow-pop-sm); background: var(--paper); }
+  .stepper button { all: unset; width: 34px; height: 34px; text-align: center; cursor: pointer; background: var(--turmeric-500); font-weight: 700; }
+  .stepper .qty { width: 32px; text-align: center; font-size: 14px; }
+  .dish.off { background: var(--sand-200); }
+  .dish.off .photo, .dish.off .name, .dish.off .price, .dish.off .desc, .dish.off .canon { opacity: .45; }
+  .window-chip { font-size: 11px; font-weight: 600; color: #8A6A03; background: var(--warn-100); border: 1.5px solid #D9A404; border-radius: var(--r-pill); padding: 2px 8px; }
+
+  .section-head { display: flex; align-items: baseline; gap: 10px; margin: 26px 0 4px; flex-wrap: wrap; }
+  .section-head .count { font-size: 11.5px; color: var(--muted); }
+  .poster-block.tamil { text-transform: none; letter-spacing: 0; }
+
+  .dock { position: fixed; left: 50%; transform: translateX(-50%); width: 390px; bottom: 0; z-index: 20; background: var(--indigo-900); border-top: 3px solid var(--turmeric-500); color: var(--indigo-100); }
+  .dock-in { padding: 10px 14px 14px; }
+  .dock .sugg { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; }
+  .dock .sugg .chip { background: var(--indigo-800); color: #FFE9A8; border-color: var(--indigo-600); flex: none; font-size: 11.5px; }
+  .dock-row { display: flex; align-items: center; gap: 12px; }
+  .totals .items { font-size: 11.5px; color: var(--indigo-200); }
+  .totals .amt { font-family: var(--font-display); font-weight: 700; font-size: 21px; color: #fff; }
+  .dock-row .btn-magenta { margin-left: auto; }
+</style>
+</head>
+<body>
+
+<!-- ══ Header (Tamil active) ══ -->
+<div class="header">
+  <div class="header-in">
+    <div class="wordmark">🥞 DOSA<span class="tail">DASH</span></div>
+    <span style="margin-left:auto"></span>
+    <a class="icon-btn" aria-label="தேடு">🔎</a>
+    <div class="lang-toggle"><span class="off">EN</span><span class="on">தமிழ்</span></div>
+    <a class="icon-btn cart-btn" aria-label="வண்டி">🛒<span class="n tnum">3</span></a>
+  </div>
+</div>
+<div class="ticker">&nbsp;&nbsp;சூடான தவா ✦ நெய் ரோஸ்ட் ₹150 ✦ ஃபில்டர் காபி ₹40 ✦ 99KM தினை சிறப்புகள் ✦ ஆச்சரப்பாக்கம் மெஸ் சிறப்புகள் ✦ சூடான தவா ✦</div>
+
+<div class="main">
+
+  <div class="lang-note">
+    <span class="meta">மொழி: தமிழ் · translations human-approved</span>
+    <span class="ai-meta light">menu_translation_v1</span>
+  </div>
+
+  <!-- ══ Hero ══ -->
+  <div class="hero">
+    <div style="position:relative;z-index:1">
+      <div class="eyebrow" style="color:var(--turmeric-400)">மாலை வணக்கம் · சென்னை</div>
+      <div class="big" style="margin-top:6px">இரவு உணவு<br>தயார் 🔥</div>
+      <div class="meal-pills">
+        <span class="chip">காலை 6–11:30</span>
+        <span class="chip">மதியம் 11:30–3</span>
+        <span class="chip">சிற்றுண்டி</span>
+        <span class="chip now">● இரவு — இப்போது</span>
+      </div>
+    </div>
+    <div class="art">🥞</div>
+  </div>
+
+  <!-- ══ பானங்கள் ══ -->
+  <div class="section-head">
+    <span class="poster-block turmeric tamil">பானங்கள்</span>
+    <span class="count">Beverages · all day</span>
+  </div>
+  <div class="zari"></div>
+  <div class="dish-col">
+    <div class="card dish">
+      <div class="photo" style="background:linear-gradient(135deg,var(--turmeric-100),var(--sand-200))">☕</div>
+      <div class="body">
+        <div class="name-row"><span class="fssai veg"></span><span class="name">சுக்கு காபி</span><span class="price tnum">₹40</span></div>
+        <div class="canon">Sukku Coffee</div>
+        <div class="desc">99 KM பாணி உலர் இஞ்சி காபி — வெல்லம் சேர்த்து.</div>
+        <div class="foot">
+          <span class="tagline">🌱 வீகன்</span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-turmeric btn-sm">சேர் +</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ தோசைகள் ══ -->
+  <div class="section-head">
+    <span class="poster-block tamil">தோசைகள்</span>
+    <span class="count">Dosas · 6–11:30 AM &amp; 5–10 PM</span>
+  </div>
+  <div class="zari"></div>
+  <div class="dish-col">
+
+    <div class="card dish">
+      <div class="photo" style="background:linear-gradient(135deg,var(--turmeric-100),var(--turmeric-400))">🥞<span class="aibadge">✨ AI</span></div>
+      <div class="body">
+        <div class="name-row"><span class="fssai veg"></span><span class="name">மசாலா தோசை</span><span class="price tnum">₹120</span></div>
+        <div class="canon">Masala Dosa</div>
+        <div class="desc">மொறுமொறு தோசை, உருளை மசாலா, சாம்பார் &amp; இரண்டு சட்னிகள்.</div>
+        <div class="foot">
+          <span class="tagline"><span class="spice">🌶🌶</span> · ⚠ கடலை</span>
+          <span style="margin-left:auto"></span>
+          <span class="stepper"><button aria-label="குறை">−</button><span class="qty tnum">2</span><button aria-label="சேர்">+</button></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card dish">
+      <div class="photo" style="background:linear-gradient(135deg,var(--magenta-100),var(--turmeric-100))">🧈</div>
+      <div class="body">
+        <div class="name-row"><span class="fssai veg"></span><span class="name">நெய் ரோஸ்ட்</span><span class="price tnum">₹150</span></div>
+        <div class="canon">Ghee Roast</div>
+        <div class="desc">மெல்லிய நெய் ரோஸ்ட், மெட்ராஸ் பாணியில் உயரமாக மடிக்கப்பட்டது.</div>
+        <div class="foot">
+          <span class="tagline"><span class="spice">🌶</span> · பால்</span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-turmeric btn-sm">சேர் +</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card dish">
+      <div class="photo" style="background:linear-gradient(135deg,var(--veg-100),var(--turmeric-100))">🌾</div>
+      <div class="body">
+        <div class="name-row"><span class="fssai veg"></span><span class="name">ராகி தினை தோசை</span><span class="price tnum">₹110</span></div>
+        <div class="canon">Ragi Millet Dosa</div>
+        <div class="desc">99 KM பாணி ராகி தோசை — மண்வாசனை, மொறுமொறு, ஆரோக்கியம்.</div>
+        <div class="foot">
+          <span class="tagline">🌱 வீகன் · <span class="spice">🌶</span></span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-turmeric btn-sm">சேர் +</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ மெஸ் சிறப்புகள் ══ -->
+  <div class="section-head">
+    <span class="poster-block indigo tamil">மெஸ் சிறப்புகள்</span>
+    <span class="count">Mess Specials · Acharapakkam</span>
+  </div>
+  <div class="zari"></div>
+  <div class="dish-col">
+    <div class="card dish">
+      <div class="photo" style="background:linear-gradient(135deg,var(--chili-100),var(--magenta-100))">🍖</div>
+      <div class="body">
+        <div class="name-row"><span class="fssai nonveg"></span><span class="name">மட்டன் சுக்கா</span><span class="price tnum">₹260</span></div>
+        <div class="canon">Mutton Chukka</div>
+        <div class="desc">மிளகு, கறிவேப்பிலை, சின்ன வெங்காயத்துடன் வறுத்த மட்டன்.</div>
+        <div class="foot">
+          <span class="tagline"><span class="spice">🌶🌶🌶</span></span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-turmeric btn-sm">சேர் +</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- off-window case -->
+    <div class="card-flat dish off">
+      <div class="photo" style="background:var(--sand-200)">🍛</div>
+      <div class="body">
+        <div class="name-row"><span class="fssai nonveg"></span><span class="name">அசைவ மெஸ் சாப்பாடு</span><span class="price tnum">₹220</span></div>
+        <div class="canon">Non-Veg Mess Meals</div>
+        <div class="desc">முழு மெஸ் சாப்பாடு — குழம்பு, பொரியல், ரசம், அப்பளம்.</div>
+        <div class="foot">
+          <span class="window-chip">⏰ மதியம் மட்டும் · 11:30 AM – 3 PM</span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-sm disabled">சேர் +</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ Checkout dock ══ -->
+<div class="dock on-dark">
+  <div class="dock-in">
+    <div class="sugg">
+      <span class="chip">🧩 காம்போ முடிக்க — ஃபில்டர் காபி ₹40</span>
+      <span class="chip">✨ இனிப்பு? கேசரி ₹60</span>
+    </div>
+    <div class="dock-row">
+      <div class="totals">
+        <div class="items">3 பொருட்கள் · GST உள்ளடக்கம்</div>
+        <div class="amt tnum">₹346</div>
+      </div>
+      <a class="btn btn-magenta btn-lg">செக்அவுட் →</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

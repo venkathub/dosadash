@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Menu — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+</style>
+<style>
+  /* page content */
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 18px; }
+  .toolbar .input { width: 260px; }
+  .chip-dk { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; border: 1.5px solid var(--indigo-600); border-radius: var(--r-pill); padding: 4px 12px; background: var(--indigo-800); color: var(--indigo-100); white-space: nowrap; }
+  .chip-dk.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .thumb { width: 36px; height: 36px; border-radius: var(--r-sm); border: 1.5px solid var(--indigo-600); display: inline-flex; align-items: center; justify-content: center; font-size: 19px; flex: none; }
+  .dish-cell { display: flex; align-items: center; gap: 11px; }
+  .dish-cell .nm { font-weight: 700; color: #fff; line-height: 1.25; }
+  .btn-chili-ghost { border: 2px solid var(--chili) !important; color: #FF8B8B !important; background: transparent; box-shadow: none !important; }
+  .safety-strip { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .safety-strip .chip-dk { font-size: 12px; }
+  .win-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--indigo-800); }
+  .win-row .input { width: 92px; flex: none; text-align: center; padding: 6px 8px; }
+  .win-row .days { font-size: 12.5px; color: var(--indigo-200); }
+  .cols { display: grid; grid-template-columns: 1.55fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill on">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Menu</h1>
+    <span class="meta">60 dishes · 9 categories · serving windows enforced end-to-end</span>
+  </div>
+  <div class="zari on-dark"></div>
+
+  <!-- ══ Toolbar ══ -->
+  <div class="toolbar">
+    <input class="input" style="flex:none" placeholder="🔎 Search dish, Tamil alias, ingredient…">
+    <span class="chip-dk on">All</span>
+    <span class="chip-dk">Dosas</span>
+    <span class="chip-dk">Tiffin</span>
+    <span class="chip-dk">Millet Specials</span>
+    <span class="chip-dk">Mess Specials</span>
+    <span class="chip-dk">Beverages</span>
+    <span style="flex:1"></span>
+    <a class="btn btn-turmeric btn-sm">+ New dish</a>
+    <a class="btn btn-ghost btn-sm">⏰ Edit serving windows</a>
+  </div>
+
+  <!-- ══ Dish table ══ -->
+  <div class="card-panel-dark" style="padding:18px">
+    <div class="eyebrow">Catalog</div>
+    <h3 class="h3" style="color:#fff;margin:2px 0 8px">Dishes</h3>
+    <table class="tbl">
+      <thead>
+        <tr><th></th><th>Name</th><th>Category</th><th class="num">₹ Price</th><th>Veg</th><th>🌶</th><th>Serving windows</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="width:46px"><span class="thumb" style="background:linear-gradient(135deg,var(--turmeric-100),var(--turmeric-400))">🥞</span></td>
+          <td><div class="dish-cell"><div><div class="nm">Masala Dosa</div><div class="meta">மசாலா தோசை</div></div></div></td>
+          <td>Dosas</td><td class="num">₹120</td>
+          <td><span class="fssai veg"></span></td>
+          <td><span class="spice">🌶🌶</span></td>
+          <td>6–11:30 AM &amp; 5–10 PM</td>
+          <td><span class="badge badge-dk-success">LIVE</span></td>
+          <td style="white-space:nowrap"><a class="btn btn-turmeric btn-sm">Edit</a> <a class="btn btn-ghost btn-sm btn-chili-ghost">86</a></td>
+        </tr>
+        <tr>
+          <td><span class="thumb" style="background:linear-gradient(135deg,var(--magenta-100),var(--turmeric-100))">🧈</span></td>
+          <td><div class="dish-cell"><div><div class="nm">Ghee Roast</div><div class="meta">நெய் ரோஸ்ட்</div></div></div></td>
+          <td>Dosas</td><td class="num">₹150</td>
+          <td><span class="fssai veg"></span></td>
+          <td><span class="spice">🌶</span></td>
+          <td>6–11:30 AM &amp; 5–10 PM</td>
+          <td><span class="badge badge-dk-success">LIVE</span></td>
+          <td style="white-space:nowrap"><a class="btn btn-turmeric btn-sm">Edit</a> <a class="btn btn-ghost btn-sm btn-chili-ghost">86</a></td>
+        </tr>
+        <tr>
+          <td><span class="thumb" style="background:linear-gradient(135deg,var(--chili-100),var(--magenta-100))">🥞</span></td>
+          <td><div class="dish-cell"><div><div class="nm">Mysore Masala Dosa</div><div class="meta">மைசூர் மசாலா தோசை</div></div></div></td>
+          <td>Dosas</td><td class="num">₹140</td>
+          <td><span class="fssai veg"></span></td>
+          <td><span class="spice">🌶🌶🌶</span></td>
+          <td>6–11:30 AM &amp; 5–10 PM</td>
+          <td><span class="badge badge-dk-danger">86'd TODAY</span></td>
+          <td style="white-space:nowrap"><a class="btn btn-turmeric btn-sm">Edit</a> <a class="btn btn-ghost btn-sm">Un-86</a></td>
+        </tr>
+        <tr>
+          <td><span class="thumb" style="background:linear-gradient(135deg,var(--veg-100),var(--turmeric-100))">🌾</span></td>
+          <td><div class="dish-cell"><div><div class="nm">Ragi Millet Dosa</div><div class="meta">ராகி தோசை</div></div></div></td>
+          <td>Millet Specials</td><td class="num">₹110</td>
+          <td><span class="fssai veg"></span></td>
+          <td><span class="spice">🌶</span></td>
+          <td>6–11:30 AM &amp; 5–10 PM</td>
+          <td><span class="badge badge-dk-success">LIVE</span></td>
+          <td style="white-space:nowrap"><a class="btn btn-turmeric btn-sm">Edit</a> <a class="btn btn-ghost btn-sm btn-chili-ghost">86</a></td>
+        </tr>
+        <tr>
+          <td><span class="thumb" style="background:linear-gradient(135deg,var(--sand-200),var(--turmeric-100))">🍥</span></td>
+          <td><div class="dish-cell"><div><div class="nm">Idli (2 pcs)</div><div class="meta">இட்லி</div></div></div></td>
+          <td>Tiffin</td><td class="num">₹50</td>
+          <td><span class="fssai veg"></span></td>
+          <td><span class="spice">—</span></td>
+          <td>6–11:30 AM &amp; 5–10 PM</td>
+          <td><span class="badge badge-dk-success">LIVE</span></td>
+          <td style="white-space:nowrap"><a class="btn btn-turmeric btn-sm">Edit</a> <a class="btn btn-ghost btn-sm btn-chili-ghost">86</a></td>
+        </tr>
+        <tr>
+          <td><span class="thumb" style="background:linear-gradient(135deg,var(--sky-100),var(--sand-200))">🍽️</span></td>
+          <td><div class="dish-cell"><div><div class="nm">Mini Tiffin</div><div class="meta">மினி திஃபின்</div></div></div></td>
+          <td>Tiffin</td><td class="num">₹130</td>
+          <td><span class="fssai veg"></span></td>
+          <td><span class="spice">🌶</span></td>
+          <td>6–11:30 AM only</td>
+          <td><span class="badge badge-dk-warning">OFF-WINDOW</span></td>
+          <td style="white-space:nowrap"><a class="btn btn-turmeric btn-sm">Edit</a> <a class="btn btn-ghost btn-sm btn-chili-ghost">86</a></td>
+        </tr>
+        <tr>
+          <td><span class="thumb" style="background:linear-gradient(135deg,var(--chili-100),var(--sand-200))">🍖</span></td>
+          <td><div class="dish-cell"><div><div class="nm">Mutton Chukka</div><div class="meta">மட்டன் சுக்கா</div></div></div></td>
+          <td>Mess Specials</td><td class="num">₹260</td>
+          <td><span class="fssai nonveg"></span></td>
+          <td><span class="spice">🌶🌶🌶</span></td>
+          <td>Lunch only 11:30–3</td>
+          <td><span class="badge badge-dk-success">LIVE</span></td>
+          <td style="white-space:nowrap"><a class="btn btn-turmeric btn-sm">Edit</a> <a class="btn btn-ghost btn-sm btn-chili-ghost">86</a></td>
+        </tr>
+        <tr>
+          <td><span class="thumb" style="background:linear-gradient(135deg,var(--turmeric-100),var(--sand-200))">☕</span></td>
+          <td><div class="dish-cell"><div><div class="nm">Filter Coffee</div><div class="meta">ஃபில்டர் காபி</div></div></div></td>
+          <td>Beverages</td><td class="num">₹40</td>
+          <td><span class="fssai veg"></span></td>
+          <td><span class="spice">—</span></td>
+          <td>All day 6 AM – 10 PM</td>
+          <td><span class="badge badge-dk-success">LIVE</span></td>
+          <td style="white-space:nowrap"><a class="btn btn-turmeric btn-sm">Edit</a> <a class="btn btn-ghost btn-sm btn-chili-ghost">86</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cols">
+    <!-- ══ Bulk & safety ══ -->
+    <div class="card-panel-dark" style="padding:18px">
+      <div class="eyebrow">Bulk &amp; safety</div>
+      <h3 class="h3" style="color:#fff;margin:2px 0 4px">Event cascade guarantees</h3>
+      <div class="safety-strip">
+        <span class="chip-dk">🚫 86'd items are hidden from the agent automatically</span>
+        <span class="chip-dk">🔁 menu edits re-embed RAG via event cascade</span>
+        <span class="chip-dk">🈳 editing name/description resets approved Tamil translations to DRAFT (staleness guard)</span>
+      </div>
+      <div class="meta" style="margin-top:12px">All mutations publish to <span class="tnum">pubsub:menu</span> — the AI layer never drifts from business state. Price &amp; spice edits do <b>not</b> reset translations.</div>
+    </div>
+
+    <!-- ══ Serving windows editor ══ -->
+    <div class="card-panel-dark" style="padding:18px">
+      <div class="eyebrow">Serving windows editor</div>
+      <h3 class="h3" style="color:#fff;margin:2px 0 4px">Mini Tiffin <span class="meta" style="font-weight:400">· மினி திஃபின்</span></h3>
+      <div class="win-row">
+        <input class="input tnum" value="06:00">
+        <span class="meta">→</span>
+        <input class="input tnum" value="11:30">
+        <span class="days">Mon – Fri</span>
+        <a class="btn btn-ghost btn-sm btn-chili-ghost" style="margin-left:auto">✕</a>
+      </div>
+      <div class="win-row">
+        <input class="input tnum" value="06:00">
+        <span class="meta">→</span>
+        <input class="input tnum" value="12:30">
+        <span class="days">Sat – Sun</span>
+        <a class="btn btn-ghost btn-sm btn-chili-ghost" style="margin-left:auto">✕</a>
+      </div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+        <a class="btn btn-ghost btn-sm">+ add window</a>
+        <span class="meta">checkout returns 409 with the window text when off-schedule</span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>
