@@ -77,7 +77,7 @@ jobs:
           claude_args: |
             --model claude-sonnet-4-6
             --max-turns 60
-            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(uv run:*),Bash(uv sync:*),Bash(git:*),Bash(gh:*),Bash(npm run:*),Bash(npm ci:*),Bash(docker run:*),Bash(ls:*),Bash(mkdir:*)"
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(uv run:*),Bash(uv sync:*),Bash(git:*),Bash(gh:*),Bash(npm run:*),Bash(npm ci:*),Bash(npx playwright:*),Bash(docker run:*),Bash(ls:*),Bash(mkdir:*)"
           prompt: |
             You are the DosaDash self-healing fixer working on issue #${{ github.event.issue.number }}.
             TRIGGER_LABEL: ${{ github.event.label.name }}
@@ -111,7 +111,12 @@ jobs:
             4. VERIFY LOCALLY before pushing: run `uv run ruff check .` and
                the test files relevant to your change with
                `uv run pytest <paths> -q`; for `apps/web` changes run
-               `npm ci --no-audit --no-fund && npm run build` in apps/web.
+               `npm ci --no-audit --no-fund && npm run build` in apps/web,
+               then ALSO the browser gate: `npx playwright install chromium`,
+               start the built app (`npm run start &`, wait for :3000),
+               and `npm run ui-smoke` — the identical check is a REQUIRED
+               PR gate ("UI smoke"), so a local pass saves a CI round-trip
+               and a local failure means your fix is not done.
                Add or extend a test that fails without your fix when
                practical.
             5. Push the branch and open a PR to the default branch titled

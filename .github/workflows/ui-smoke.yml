@@ -1,0 +1,75 @@
+# UI smoke merge gate (Phase 13 follow-up, docs/14).
+#
+# Compile-grade checks cannot see runtime browser errors: issue #120
+# (React #418 hydration mismatch on /orders) passed every pre-merge check
+# and was only observable in a live console. This gate boots the BUILT
+# app in headless Chromium with a fake logged-in session and fails on
+# uncaught page errors / React hydration signatures — deterministic,
+# zero LLM cost, and it demonstrably catches the #120 bug class
+# (validated by re-introducing that bug locally: exit 1 on /orders).
+#
+# Required-check pattern (same as live-evals): runs on every PR; a free
+# `changes` job skips the browser work when apps/web is untouched
+# (skipped counts as satisfied), so no PR is ever starved.
+
+name: UI smoke
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ui-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect web changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      relevant: ${{ steps.diff.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+              | grep -E '^(apps/web/|\.github/workflows/ui-smoke\.yml)'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "No web changes — UI smoke skipped (counts as pass)."
+          fi
+
+  ui-smoke:
+    name: UI smoke (browser console gate)
+    needs: changes
+    if: >-
+      always() &&
+      (github.event_name == 'workflow_dispatch' || needs.changes.outputs.relevant == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Start server and run smoke
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:3000/ && break
+            sleep 1
+          done
+          npm run ui-smoke
