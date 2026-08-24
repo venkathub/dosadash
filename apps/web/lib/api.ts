@@ -16,6 +16,7 @@ export type MenuItem = {
   category_label: string | null; // localized section heading
   available_now: boolean; // false = outside this dish's serving windows right now
   serving_windows: string | null; // server-built human text (e.g. "6–11:30 AM & 5–10 PM"); null = always available
+  protein_g: number | null; // per serving, owner-approved estimate; null = not scored yet (never claim a number)
 };
 
 export type OrderItem = { item_id: number; name: string; qty: number; unit_price: string };

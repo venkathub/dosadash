@@ -9,6 +9,10 @@ Localization (Phase 7): `?lang=ta` overlays owner-APPROVED translations
 per field (name/description/category label) with canonical fallback —
 drafts never serve, prices/allergens/flags always come from the canonical
 row, and `category` stays the canonical key.
+
+Nutrition: summaries carry `protein_g` (owner-APPROVED estimates only) so the
+customer menu can offer a high-protein filter; the full estimate stays on the
+item-detail response.
 """
 
 from typing import Annotated
@@ -78,11 +82,45 @@ def _allergens(item: MenuItem) -> list[str]:
     return sorted(ri.ingredient.name for ri in item.recipe if ri.ingredient.is_allergen)
 
 
-def _summary(item: MenuItem, trans: MenuItemTranslation | None = None) -> MenuItemSummary:
+def _protein_g(estimate: dict | None) -> float | None:
+    """Protein per serving out of a nutrition estimate — never guessed.
+
+    The estimate is JSONB written by the Phase 2 enrichment flow; a missing
+    or non-numeric value means "unknown", which the UI must render as no
+    claim at all rather than as zero grams.
+    """
+    if not estimate:
+        return None
+    value = estimate.get("protein_g")
+    return float(value) if isinstance(value, int | float) else None
+
+
+async def _approved_protein(session: AsyncSession, item_ids: list[int]) -> dict[int, float]:
+    """Batch-load protein for the listed dishes — owner-APPROVED rows only."""
+    if not item_ids:
+        return {}
+    rows = (
+        await session.scalars(
+            select(NutritionEstimateRecord).where(
+                NutritionEstimateRecord.item_id.in_(item_ids),
+                NutritionEstimateRecord.status == "APPROVED",
+            )
+        )
+    ).all()
+    protein = {r.item_id: _protein_g(r.estimate) for r in rows}
+    return {item_id: g for item_id, g in protein.items() if g is not None}
+
+
+def _summary(
+    item: MenuItem,
+    trans: MenuItemTranslation | None = None,
+    protein_g: float | None = None,
+) -> MenuItemSummary:
     out = MenuItemSummary.model_validate(item)
     out.allergens = _allergens(item)
     out.available_now = availability.item_on_schedule(item.schedule)
     out.serving_windows = availability.serving_windows_text(item.schedule)
+    out.protein_g = protein_g
     _localize(out, item, trans)
     return out
 
@@ -123,9 +161,10 @@ async def list_menu(
     stmt = stmt.order_by(MenuItem.category, MenuItem.name)
     items = (await session.scalars(stmt)).all()
     translations = await _approved_translations(session, lang)
+    protein = await _approved_protein(session, [i.id for i in items])
     # Off-window dishes stay visible but annotated (available_now=False +
     # serving_windows text) — checkout and the agent still hard-block them.
-    return [_summary(i, translations.get(i.id)) for i in items]
+    return [_summary(i, translations.get(i.id), protein.get(i.id)) for i in items]
 
 
 @router.get("/categories", response_model=list[CategoryOut])
@@ -188,4 +227,5 @@ async def get_item(item_id: int, session: SessionDep, lang: str | None = None) -
     nutrition = await session.get(NutritionEstimateRecord, item_id)
     if nutrition is not None and nutrition.status == "APPROVED":
         out.nutrition = nutrition.estimate  # owner-verified only (never drafts)
+        out.protein_g = _protein_g(nutrition.estimate)  # same number the list serves
     return out
