@@ -54,12 +54,12 @@ export function ReviewBox({ orderId }: { orderId: number }) {
 
   if (review) {
     return (
-      <div className="mt-2 rounded-lg bg-cream-100 p-2 text-xs">
-        <span className="text-brass-500">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
-        {review.text && <span className="ml-2 text-ink-600">“{review.text}”</span>}
+      <div className="mt-2 rounded-lg border-[1.5px] border-sand-300 bg-offwhite p-2 text-xs">
+        <span className="text-turmeric-600">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+        {review.text && <span className="ml-2 text-muted">“{review.text}”</span>}
         {review.owner_reply && (
-          <p className="mt-1 text-ink-600">
-            <b>DosaDash:</b> {review.owner_reply}
+          <p className="mt-1 text-muted">
+            <b className="text-ink">DosaDash:</b> {review.owner_reply}
           </p>
         )}
       </div>
@@ -69,7 +69,7 @@ export function ReviewBox({ orderId }: { orderId: number }) {
   if (!open) {
     return (
       <button
-        className="mt-2 text-xs font-semibold text-brass-600 underline underline-offset-4 transition-colors duration-150 hover:text-brass-500"
+        className="mt-2 font-display text-xs font-bold text-magenta-600 underline underline-offset-4 transition-colors duration-150 hover:text-magenta-500"
         onClick={() => setOpen(true)}
       >
         ★ Rate this order
@@ -78,7 +78,7 @@ export function ReviewBox({ orderId }: { orderId: number }) {
   }
 
   return (
-    <div className="mt-2 rounded-lg bg-cream-100 p-2">
+    <div className="mt-2 rounded-lg border-[1.5px] border-sand-300 bg-offwhite p-2">
       <div className="flex items-center gap-1 text-2xl">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
@@ -86,7 +86,7 @@ export function ReviewBox({ orderId }: { orderId: number }) {
             aria-label={`${n} star`}
             className={cx(
               "transition-colors duration-150",
-              n <= rating ? "text-brass-500" : "text-cream-300 hover:text-brass-400",
+              n <= rating ? "text-turmeric-500" : "text-sand-300 hover:text-turmeric-400",
             )}
             onClick={() => setRating(n)}
           >
@@ -102,13 +102,13 @@ export function ReviewBox({ orderId }: { orderId: number }) {
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
-      {error && <p className="text-xs text-chili-600">{error}</p>}
+      {error && <p className="text-xs font-semibold text-chili">{error}</p>}
       <div className="mt-1 flex items-center gap-2">
-        <Btn size="sm" disabled={!rating || busy} onClick={submit}>
+        <Btn variant="magenta" size="sm" disabled={!rating || busy} onClick={submit}>
           Submit
         </Btn>
         <button
-          className="text-xs text-ink-400 underline underline-offset-4 transition-colors duration-150 hover:text-ink-600"
+          className="text-xs text-faint underline underline-offset-4 transition-colors duration-150 hover:text-muted"
           onClick={() => setOpen(false)}
         >
           Cancel

@@ -56,7 +56,7 @@ export default function LoginModal({
 
   return (
     <Modal tone="light" onClose={onClose} className="w-80 space-y-3 p-6">
-      <SectionHeading as="h2" className="text-lg text-leaf-800">
+      <SectionHeading as="h2" className="text-lg text-ink">
         🥞 Login to order
       </SectionHeading>
       <Input
@@ -67,17 +67,22 @@ export default function LoginModal({
         onChange={(e) => setPhone(e.target.value)}
       />
       {!requested ? (
-        <Btn className="w-full" disabled={busy || phone.length < 10} onClick={requestOtp}>
+        <Btn
+          variant="magenta"
+          className="w-full"
+          disabled={busy || phone.length < 10}
+          onClick={requestOtp}
+        >
           Send OTP
         </Btn>
       ) : (
         <>
           {demoOtp !== null ? (
-            <p className="rounded-lg border border-brass-500/40 bg-cream-200 px-3 py-2 text-sm text-ink-900">
-              📟 Demo mode — your OTP is <b>{demoOtp}</b>
+            <p className="rounded-lg border-2 border-indigo-900 bg-turmeric-100 px-3 py-2 text-sm text-ink">
+              📟 Demo mode — your OTP is <b className="font-display">{demoOtp}</b>
             </p>
           ) : (
-            <p className="rounded-lg border border-info-500/30 bg-info-200 px-3 py-2 text-sm text-ink-900">
+            <p className="rounded-lg border-[1.5px] border-sky bg-sky-100 px-3 py-2 text-sm text-ink">
               ✈️ OTP sent to your linked <b>Telegram</b> — check your DMs
             </p>
           )}
@@ -88,12 +93,17 @@ export default function LoginModal({
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
           />
-          <Btn className="w-full" disabled={busy || otp.length !== 6} onClick={verify}>
+          <Btn
+            variant="magenta"
+            className="w-full"
+            disabled={busy || otp.length !== 6}
+            onClick={verify}
+          >
             Verify & continue
           </Btn>
         </>
       )}
-      {error && <p className="text-sm text-chili-600">{error}</p>}
+      {error && <p className="text-sm font-semibold text-chili">{error}</p>}
     </Modal>
   );
 }
