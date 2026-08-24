@@ -23,6 +23,13 @@ type CartLine = { item: MenuItem; qty: number };
 
 const SPICE = ["", "🌶", "🌶🌶", "🌶🌶🌶"];
 
+// Grams of protein per serving at (or above) which a dish counts as
+// "high protein". Tuned to this catalog: tiffin items (idli/dosa) sit around
+// 4–10 g, while the curries, mess specials and paneer/egg dishes clear this
+// line. Dishes with no approved estimate are never counted — an unknown is
+// not a claim.
+const HIGH_PROTEIN_G = 12;
+
 type MealPeriod = "breakfast" | "lunch" | "snacks" | "dinner";
 
 const HERO: Record<MealPeriod, { eyebrow: string; heading: string; art: string }> = {
@@ -45,6 +52,7 @@ function currentMealPeriod(date = new Date()): MealPeriod {
 export default function Home() {
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [vegOnly, setVegOnly] = useState(false);
+  const [highProtein, setHighProtein] = useState(false);
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<Record<number, CartLine>>({});
   const [user, setUser] = useState<User | null>(null);
@@ -85,16 +93,21 @@ export default function Home() {
   const inPeriod = (m: MenuItem) =>
     m.meal_periods.length === 0 || m.meal_periods.includes(period);
 
+  // The kitchen only scores some dishes, so the protein filter is offered
+  // only when there is real data behind it (no data → no chip, no claim).
+  const hasProteinData = useMemo(() => menu.some((m) => m.protein_g != null), [menu]);
+
   const visible = useMemo(
     () =>
       menu.filter(
         (m) =>
           (!vegOnly || m.is_veg) &&
+          (!highProtein || (m.protein_g ?? 0) >= HIGH_PROTEIN_G) &&
           (search.length < 2 ||
             m.name.toLowerCase().includes(search.toLowerCase()) ||
             (m.canonical_name ?? "").toLowerCase().includes(search.toLowerCase()))
       ),
-    [menu, vegOnly, search]
+    [menu, vegOnly, highProtein, search]
   );
   // Current meal period's categories first; within a category, matching items first.
   const categories = useMemo(() => {
@@ -244,6 +257,23 @@ export default function Home() {
               />
               <span>Veg</span>
             </label>
+            {hasProteinData && (
+              <button
+                type="button"
+                aria-pressed={highProtein}
+                title={`Show only dishes with ${HIGH_PROTEIN_G} g protein or more per serving`}
+                className={cx(
+                  "flex items-center gap-1.5 rounded-full border-2 px-2.5 py-0.5 text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500",
+                  highProtein
+                    ? "border-indigo-900 bg-turmeric-500 text-indigo-900"
+                    : "border-indigo-600 text-indigo-100 hover:border-turmeric-400",
+                )}
+                onClick={() => setHighProtein((on) => !on)}
+              >
+                <span aria-hidden="true">💪</span>
+                <span>High protein</span>
+              </button>
+            )}
             <Link
               href="/orders"
               className="text-indigo-100 underline decoration-turmeric-500/60 underline-offset-4 transition-colors duration-150 hover:text-turmeric-400"
@@ -338,7 +368,11 @@ export default function Home() {
             <Zari className="mb-4" />
             <div className="grid gap-4 md:grid-cols-2">
               {inCat
-                .sort((a, b) => Number(inPeriod(b)) - Number(inPeriod(a)))
+                .sort((a, b) =>
+                  highProtein
+                    ? (b.protein_g ?? 0) - (a.protein_g ?? 0)
+                    : Number(inPeriod(b)) - Number(inPeriod(a)),
+                )
                 .map((m) => {
                   const off = m.available_now === false;
                   return (
@@ -392,12 +426,25 @@ export default function Home() {
                       >
                         {m.description}
                       </p>
-                      {(m.spice_level > 0 || m.allergens.length > 0) && (
+                      {(m.spice_level > 0 || m.allergens.length > 0 || m.protein_g != null) && (
                         <p className={cx("mt-1 flex flex-wrap items-center gap-1.5 text-[11.5px] text-muted", off && "opacity-60")}>
                           {m.spice_level > 0 && (
                             <span className="tracking-widest text-chili">{SPICE[m.spice_level]}</span>
                           )}
                           {m.allergens.length > 0 && <span>· ⚠ {m.allergens.join(", ")}</span>}
+                          {m.protein_g != null && (
+                            <span
+                              className={cx(
+                                "tnum rounded-full border-[1.5px] border-indigo-900 px-1.5 py-0.5 text-[10.5px] font-semibold",
+                                m.protein_g >= HIGH_PROTEIN_G
+                                  ? "bg-turmeric-500 text-indigo-900"
+                                  : "bg-sand-200 text-ink",
+                              )}
+                              title="Protein per serving — AI-estimated, approved by the kitchen"
+                            >
+                              💪 {m.protein_g.toFixed(0)} g protein
+                            </span>
+                          )}
                         </p>
                       )}
                       {/* Serving-window chip (server-built text, stays English by design) */}
@@ -461,6 +508,12 @@ export default function Home() {
           </section>
           );
         })}
+        {highProtein && visible.length === 0 && (
+          <p className="mt-8 rounded-xl border-2 border-indigo-900 bg-sand-200 p-4 text-sm text-muted">
+            No dish on today&apos;s menu is scored at {HIGH_PROTEIN_G} g protein or more
+            {vegOnly && " among the veg dishes"}. Switch the 💪 filter off to see everything.
+          </p>
+        )}
       </div>
 
       {cartLines.length > 0 && (

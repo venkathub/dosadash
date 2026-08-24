@@ -41,6 +41,10 @@ class MenuItemSummary(BaseModel):
     # the menu but are not orderable ("Dosa is not available in Lunch").
     available_now: bool = True
     serving_windows: str | None = None  # human text, e.g. "6–11:30 AM & 5–10 PM"
+    # Protein per serving, lifted out of the owner-APPROVED nutrition estimate
+    # so the customer menu can filter/sort on it (drafts never surface).
+    # None = this dish has no approved estimate yet — never claim a number.
+    protein_g: float | None = None
 
 
 class MenuItemDetail(MenuItemSummary):
