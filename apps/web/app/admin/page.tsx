@@ -62,10 +62,46 @@ function roleFromToken(token: string): string | null {
   }
 }
 
+/** The one grouped vertical nav — desktop sidebar and mobile drawer both render this. */
+function GroupedNav({ tab, onSelect }: { tab: Tab; onSelect: (t: Tab) => void }) {
+  return (
+    <nav aria-label="Backoffice sections">
+      {TAB_GROUPS.map((group) => (
+        <div key={group.label} className="mb-4">
+          <div className="mb-1.5 px-2.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-300">
+            {group.label}
+          </div>
+          <div className="space-y-1">
+            {group.tabs.map((t) => (
+              <button
+                key={t}
+                onClick={() => onSelect(t)}
+                aria-current={tab === t ? "page" : undefined}
+                className={cx(
+                  "flex w-full items-center gap-2 rounded-lg border-[1.5px] px-2.5 py-1.5 text-left font-display text-[13px] transition-colors duration-150",
+                  tab === t
+                    ? "border-turmeric-500 bg-turmeric-500 font-bold text-indigo-950"
+                    : "border-transparent font-semibold text-indigo-200 hover:bg-indigo-800 hover:text-turmeric-400",
+                )}
+              >
+                <span aria-hidden className="w-5 text-center">
+                  {TAB_ICON[t]}
+                </span>
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
 export default function Admin() {
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [tab, setTab] = useState<Tab>("Menu");
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     setToken(getAdminToken());
@@ -81,6 +117,13 @@ export default function Admin() {
   return (
     <main className="min-h-screen bg-indigo-950 text-indigo-100">
       <header className="flex items-center gap-3 border-b-[3px] border-magenta-500 bg-indigo-900 px-4 py-3">
+        <button
+          aria-label="Open sections"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border-[1.5px] border-indigo-600 bg-indigo-950 text-lg text-indigo-100 lg:hidden"
+          onClick={() => setNavOpen(true)}
+        >
+          ☰
+        </button>
         <h1 className="font-display text-lg font-bold tracking-wide text-white">
           🥞 DOSADASH <span className="text-magenta-400">BACKOFFICE</span>
         </h1>
@@ -98,81 +141,53 @@ export default function Admin() {
           </Btn>
         </span>
       </header>
+
+      {/* Small screens: the same grouped nav as a left drawer */}
+      {navOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-indigo-950/70 lg:hidden"
+          onClick={() => setNavOpen(false)}
+        >
+          <div
+            className="animate-fade-up h-full w-64 overflow-y-auto border-r-2 border-indigo-700 bg-indigo-950 px-3 py-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between px-2.5">
+              <span className="font-display text-sm font-bold text-white">Sections</span>
+              <button
+                aria-label="Close sections"
+                className="text-indigo-200 transition-colors duration-150 hover:text-turmeric-400"
+                onClick={() => setNavOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <GroupedNav
+              tab={tab}
+              onSelect={(t) => {
+                setTab(t);
+                setNavOpen(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto flex max-w-[1380px] items-start">
         {/* Desktop: vertical grouped sidebar */}
         <aside className="sticky top-0 hidden max-h-screen w-56 shrink-0 overflow-y-auto border-r border-indigo-800 px-3 py-4 lg:block">
-          <nav aria-label="Backoffice sections">
-            {TAB_GROUPS.map((group) => (
-              <div key={group.label} className="mb-4">
-                <div className="mb-1.5 px-2.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-300">
-                  {group.label}
-                </div>
-                <div className="space-y-1">
-                  {group.tabs.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTab(t)}
-                      aria-current={tab === t ? "page" : undefined}
-                      className={cx(
-                        "flex w-full items-center gap-2 rounded-lg border-[1.5px] px-2.5 py-1.5 text-left font-display text-[13px] transition-colors duration-150",
-                        tab === t
-                          ? "border-turmeric-500 bg-turmeric-500 font-bold text-indigo-950"
-                          : "border-transparent font-semibold text-indigo-200 hover:bg-indigo-800 hover:text-turmeric-400",
-                      )}
-                    >
-                      <span aria-hidden className="w-5 text-center">
-                        {TAB_ICON[t]}
-                      </span>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </nav>
+          <GroupedNav tab={tab} onSelect={setTab} />
         </aside>
 
         <div className="min-w-0 flex-1">
-          {/* Small screens: horizontal rail fallback */}
-          <nav
-            aria-label="Backoffice sections"
-            className="flex items-center gap-2 overflow-x-auto whitespace-nowrap border-b border-indigo-800 bg-indigo-950 px-4 py-3 lg:hidden"
-          >
-            {TAB_GROUPS.map((group, gi) => (
-              <span key={group.label} className="flex flex-none items-center gap-2">
-                <span
-                  className={cx(
-                    "flex-none font-display text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-300",
-                    gi > 0 && "ml-2.5",
-                  )}
-                >
-                  {group.label}
-                </span>
-                {group.tabs.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTab(t)}
-                    className={
-                      tab === t
-                        ? "flex-none rounded-full border-[1.5px] border-turmeric-500 bg-turmeric-500 px-3 py-1 font-display text-xs font-bold text-indigo-950"
-                        : "flex-none rounded-full border-[1.5px] border-indigo-700 px-3 py-1 font-display text-xs font-semibold text-indigo-200 transition-colors duration-150 hover:border-turmeric-400 hover:text-turmeric-400"
-                    }
-                  >
-                    {t}
-                  </button>
-                ))}
-              </span>
-            ))}
-          </nav>
-
           <section className="p-4 sm:px-6" key={tab}>
-        <div className="mb-3">
-          {activeGroup && <Eyebrow>{activeGroup.label}</Eyebrow>}
-          <SectionHeading as="h2" className="inline-block text-xl text-white">
-            {tab}
-          </SectionHeading>
-        </div>
-        <Card tone="dark" className="p-4 sm:p-5">
+            <div className="mb-3">
+              {activeGroup && <Eyebrow>{activeGroup.label}</Eyebrow>}
+              <SectionHeading as="h2" className="inline-block text-xl text-white">
+                {tab}
+              </SectionHeading>
+            </div>
+            <Card tone="dark" className="p-4 sm:p-5">
           {tab === "Menu" && <MenuTab />}
           {tab === "Orders" && <OrdersTab />}
           {tab === "Inventory" && <InventoryTab />}
