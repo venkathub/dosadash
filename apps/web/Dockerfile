@@ -17,6 +17,11 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=builder --chown=app:app /app/.next/standalone ./
 COPY --from=builder --chown=app:app /app/.next/static ./.next/static
+# Next standalone does NOT bundle public/ — without this line every
+# /fonts/*.woff2 (Phase 10 self-hosted Heritage Luxe fonts) 404'd in prod
+# since 6659749; CSS font-family fallbacks masked it visually, the Phase 11
+# post-deploy smoke's console check caught it.
+COPY --from=builder --chown=app:app /app/public ./public
 USER app
 EXPOSE 3000
 ENV PORT=3000 HOSTNAME=0.0.0.0
