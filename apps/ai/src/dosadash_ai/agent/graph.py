@@ -175,11 +175,15 @@ async def _llm_turn(state: AgentState) -> dict[str, Any]:
 
 
 def build_response(
-    ctx: AgentContext, turn: AgentTurn, model: str, user_message: str = ""
+    ctx: AgentContext,
+    turn: AgentTurn,
+    model: str,
+    user_message: str = "",
+    prior_ids: frozenset[int] = frozenset(),
 ) -> AgentChatResponse:
     """Guardrail + response assembly — shared by the graph and the SSE path."""
     draft, warnings = validate_draft(ctx, turn.draft_items)
-    draft, substitution_warnings = drop_substitutions(ctx, user_message, draft)
+    draft, substitution_warnings = drop_substitutions(ctx, user_message, draft, prior_ids)
     warnings.extend(substitution_warnings)
     attempted = tuple(line.item_id for line in turn.draft_items)
     notes = serving_notes(ctx, user_message, attempted)
@@ -202,9 +206,11 @@ def build_response(
 
 
 async def _validate_draft(state: AgentState) -> dict[str, Any]:
+    request = state["request"]
+    prior = frozenset(i.item_id for i in request.draft.items) if request.draft else frozenset()
     return {
         "response": build_response(
-            state["ctx"], state["turn"], state["model"], state["request"].message
+            state["ctx"], state["turn"], state["model"], request.message, prior
         )
     }
 

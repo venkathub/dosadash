@@ -185,5 +185,6 @@ async def stream_turn(
             if not reply_draft_contradictions(state["ctx"], request.message, retry_turn):
                 turn, model = retry_turn, retry_model
 
-    response = build_response(state["ctx"], turn, model, request.message)
+    prior = frozenset(i.item_id for i in request.draft.items) if request.draft else frozenset()
+    response = build_response(state["ctx"], turn, model, request.message, prior)
     yield {"type": "final", "data": response.model_dump(mode="json")}

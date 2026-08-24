@@ -67,10 +67,31 @@ def gate_ready(ctx: AgentContext, draft: OrderDraft, model_says_ready: bool) -> 
     return bool(model_says_ready and draft.items and ctx.kitchen_open)
 
 
+def _normalize(text: str) -> str:
+    """Collapse repeated letters for typo-tolerant name matching
+    ('meddu vadai' → 'medu vadai', which contains 'medu vada')."""
+    out: list[str] = []
+    for ch in text:
+        if not out or out[-1] != ch:
+            out.append(ch)
+    return "".join(out)
+
+
+def _named_in(text: str, base: str) -> bool:
+    return base in text or base in _normalize(text)
+
+
 def _non_orderable_hits(ctx: AgentContext, text: str) -> dict[int, tuple[str, str]]:
     """item_id -> (matched key, canonical name) for every non-orderable dish
     the customer's message names (canonical name minus pack-size, or an
-    approved alias)."""
+    approved alias). A key that only occurs inside a LONGER orderable dish
+    mention is not a hit — '2 mysore masala dosas' names Mysore Masala
+    Dosa, not the 86'd Masala Dosa."""
+    orderable_mentions = [
+        base
+        for item in ctx.items.values()
+        if item.orderable and (base := item.name.split(" (")[0].casefold()) and base in text
+    ]
     hits: dict[int, tuple[str, str]] = {}
     for item in ctx.items.values():
         if item.orderable:
@@ -78,25 +99,38 @@ def _non_orderable_hits(ctx: AgentContext, text: str) -> dict[int, tuple[str, st
         base = item.name.split(" (")[0].casefold()
         keys = {base} | {a.casefold() for a in item.aliases}
         matched = next((k for k in sorted(keys, key=len, reverse=True) if k and k in text), None)
+        if matched and any(matched != m and matched in m for m in orderable_mentions):
+            continue  # shadowed by a longer orderable-dish mention
         if matched:
             hits[item.id] = (matched, item.name)
     return hits
 
 
 def drop_substitutions(
-    ctx: AgentContext, message: str, draft: OrderDraft
+    ctx: AgentContext,
+    message: str,
+    draft: OrderDraft,
+    prior_ids: frozenset[int] = frozenset(),
 ) -> tuple[OrderDraft, list[str]]:
     """Anti-substitution guard (Phase 11): when the customer named a dish
     that is off-window/86'd, the model — which only sees orderable dishes —
     sometimes 'resolves' the name onto a similar-sounding sibling (86'd
-    Masala Dosa → drafts Mysore Masala Dosa). Deterministic rule: drop any
-    drafted dish whose name contains a non-orderable dish's matched key,
-    unless the customer actually named the drafted dish too."""
+    Masala Dosa → drafts Mysore Masala Dosa), or invents an unrequested
+    consolation dish ('oru filter coffee venum' while 86'd → drafts Plain
+    Dosa). Deterministic rules, active ONLY when the message names a
+    non-orderable dish:
+
+    1. drop any drafted dish whose name contains the non-orderable dish's
+       matched key, unless the customer actually named it too
+    2. drop any drafted dish the customer neither named (typo-normalized)
+       nor already had in the incoming draft — suppressed on usual/memory
+       and suggest-for-me turns, where unnamed additions are legitimate."""
     text = message.casefold()
     hits = _non_orderable_hits(ctx, text)
     if not hits:
         return draft, []
     keys = {key for key, _ in hits.values()}
+    consolation_ok = any(w in text for w in _UNNAMED_DRAFT_OK_WORDS)
     kept: list[OrderDraftItem] = []
     warnings: list[str] = []
     for line in draft.items:
@@ -110,6 +144,17 @@ def drop_substitutions(
             warnings.append(
                 f"Removed {line.name} — you asked for {wanted}, which isn't served right now."
             )
+            continue
+        last_word = line_base.split()[-1]
+        partially_named = len(last_word) >= 4 and _named_in(text, last_word)
+        if (
+            not consolation_ok
+            and line.item_id not in prior_ids
+            and not _named_in(text, line_base)
+            # partial references count: "a coffee" keeps Filter Coffee
+            and not partially_named
+        ):
+            warnings.append(f"Removed {line.name} — it wasn't part of your request.")
             continue
         kept.append(line)
     if not warnings:
@@ -167,6 +212,10 @@ _REFUSAL_PHRASES = (
     "not on our menu",
     "nahi hai",
     "illa",
+    "couldn't find",
+    "could not find",
+    "can't find",
+    "cannot find",
 )
 _UNKEPT_PROMISE_PHRASES = (
     "i can add",
@@ -189,6 +238,23 @@ _REMOVAL_WORDS = (
     "no more",
     "rehne do",
     "instead",
+)
+
+# Turns where an unnamed drafted dish is legitimate (model chooses for the
+# customer, or long-term memory supplies the items).
+_UNNAMED_DRAFT_OK_WORDS = (
+    "usual",
+    "same as",
+    "last time",
+    "hamesha",
+    "vazhakkam",
+    "suggest",
+    "recommend",
+    "surprise",
+    "your choice",
+    "pick",
+    "kuch bhi",
+    "anything",
 )
 
 
@@ -215,7 +281,7 @@ def reply_draft_contradictions(ctx: AgentContext, message: str, turn: Any) -> li
     drafted_unrequested_categories = {
         ctx.items[i].category
         for i in drafted_ids
-        if i in ctx.items and ctx.items[i].name.split(" (")[0].casefold() not in text
+        if i in ctx.items and not _named_in(text, ctx.items[i].name.split(" (")[0].casefold())
     }
     phrase_mode = any(p in reply for p in _REFUSAL_PHRASES + _UNKEPT_PROMISE_PHRASES)
     wrongly_refused = []
@@ -223,7 +289,7 @@ def reply_draft_contradictions(ctx: AgentContext, message: str, turn: Any) -> li
         if not item.orderable or item.id in drafted_ids:
             continue
         base = item.name.split(" (")[0].casefold()
-        if not base or base not in text:
+        if not base or not _named_in(text, base):
             continue
         if phrase_mode and base in reply:
             wrongly_refused.append(item.name)

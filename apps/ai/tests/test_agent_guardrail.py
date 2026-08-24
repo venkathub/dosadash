@@ -172,9 +172,16 @@ def test_drop_substitutions_guards_sold_out_siblings():
     draft, _ = validate_draft(ctx, [DraftItemIn(item_id=2, qty=2), DraftItemIn(item_id=3, qty=1)])
 
     kept, warnings = drop_substitutions(ctx, "2 masala dosas please", draft)
-    assert [i.name for i in kept.items] == ["Filter Coffee"]  # substitute dropped
-    assert kept.subtotal == Decimal("60")
+    # sibling substitute dropped AND the never-requested coffee dropped too
+    assert [i.name for i in kept.items] == []
     assert any("Mysore Masala Dosa" in w and "Masala Dosa" in w for w in warnings)
+    assert any("Filter Coffee" in w and "wasn't part" in w for w in warnings)
+    # partial reference keeps a dish: "a coffee" counts as Filter Coffee
+    kept_c, _ = drop_substitutions(ctx, "2 masala dosas and a coffee", draft)
+    assert [i.name for i in kept_c.items] == ["Filter Coffee"]
+    # prior-draft items always survive (carried from earlier turns)
+    kept_p, _ = drop_substitutions(ctx, "2 masala dosas please", draft, frozenset({3}))
+    assert [i.name for i in kept_p.items] == ["Filter Coffee"]
 
     # customer explicitly named the sibling → it stays
     kept2, warnings2 = drop_substitutions(ctx, "one mysore masala dosa please", draft)
