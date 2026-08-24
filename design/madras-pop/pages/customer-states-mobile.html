@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>DosaDash — Edge States (Mobile) — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  body { max-width: 390px; margin: 0 auto; }
+
+  .header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--indigo-900); color: var(--indigo-100);
+    border-bottom: 3px solid var(--turmeric-500);
+  }
+  .header-in { padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: #fff; display: flex; align-items: center; gap: 6px; }
+  .wordmark .tail { color: var(--turmeric-400); }
+
+  .main { padding: 20px 14px 50px; display: flex; flex-direction: column; gap: 30px; }
+  .state { display: flex; flex-direction: column; gap: 10px; }
+  .state .eyebrow { letter-spacing: .18em; }
+
+  /* (a) search no results */
+  .noresults { padding: 22px 18px; text-align: center; }
+  .noresults .big { font-size: 42px; }
+  .noresults .t { font-family: var(--font-display); font-weight: 700; font-size: 17px; margin-top: 8px; }
+  .noresults .zari { margin: 12px auto 14px; }
+
+  /* (b) kitchen paused */
+  .paused { background: var(--indigo-900); color: var(--indigo-100); border: var(--border-dark); border-radius: var(--r-md); box-shadow: var(--shadow-pop-dark); padding: 15px 17px; display: flex; align-items: flex-start; gap: 12px; }
+  .paused .ico { font-size: 26px; }
+  .paused .t { font-family: var(--font-display); font-weight: 700; font-size: 15.5px; color: #fff; }
+  .paused .s { font-size: 12.5px; color: var(--indigo-200); margin-top: 2px; }
+
+  /* (c) rate limited toast */
+  .toast { background: var(--chili); color: #fff; border: var(--border-ink); border-radius: var(--r-md); box-shadow: var(--shadow-pop); padding: 12px 16px; font-weight: 600; font-size: 13.5px; display: flex; align-items: center; gap: 10px; }
+
+  /* (d) offline banner */
+  .offline { background: var(--sand-200); border: 2px solid var(--sand-300); border-left: 5px solid var(--turmeric-500); border-radius: var(--r-sm); padding: 11px 14px; font-size: 13.5px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+
+  /* (e) empty cart dock */
+  .dock { background: var(--indigo-900); border: var(--border-dark); border-top: 3px solid var(--turmeric-500); border-radius: var(--r-md); color: var(--indigo-100); padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-pop-dark); }
+  .dock .leaf { font-size: 26px; }
+  .dock .t { font-size: 13.5px; font-weight: 600; }
+  .dock .btn { margin-left: auto; }
+
+  /* (f) payment failed */
+  .payfail { background: var(--chili-100); border: 2px solid var(--chili); border-radius: var(--r-md); box-shadow: 4px 4px 0 var(--chili); padding: 16px; }
+  .payfail .t { font-family: var(--font-display); font-weight: 700; font-size: 15.5px; color: var(--chili); display: flex; gap: 9px; align-items: center; }
+  .payfail .s { font-size: 12.5px; color: var(--muted); margin: 5px 0 12px; }
+</style>
+</head>
+<body>
+
+<!-- ══ Header ══ -->
+<div class="header">
+  <div class="header-in">
+    <div class="wordmark">🥞 DOSA<span class="tail">DASH</span></div>
+    <span style="margin-left:auto"></span>
+    <span class="meta" style="color:var(--indigo-200)">Edge states — design reference</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- (a) search no results -->
+  <div class="state">
+    <span class="eyebrow">Search — no results</span>
+    <div class="card noresults">
+      <div class="big">🔎</div>
+      <div class="t">No dishes match "pizza"</div>
+      <div class="zari"></div>
+      <div class="meta">Try dosa, idli, biryani</div>
+      <div style="margin-top:14px"><a class="btn btn-turmeric btn-sm">Clear search</a></div>
+    </div>
+  </div>
+
+  <!-- (b) kitchen paused -->
+  <div class="state">
+    <span class="eyebrow">Kitchen paused</span>
+    <div class="paused on-dark">
+      <span class="ico">⏸</span>
+      <div>
+        <div class="t">Kitchen is taking a breather — back at 5:00 PM.</div>
+        <div class="s">Browsing stays open. Your cart will be waiting.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- (c) rate limited -->
+  <div class="state">
+    <span class="eyebrow">Rate limited</span>
+    <div class="toast">🐢 Whoa, slow down! Try again in 42s <span style="margin-left:auto;opacity:.75;font-family:var(--font-display)" class="tnum">(429)</span></div>
+  </div>
+
+  <!-- (d) offline -->
+  <div class="state">
+    <span class="eyebrow">Offline</span>
+    <div class="offline">📡 You're offline — cart is saved locally</div>
+  </div>
+
+  <!-- (e) empty cart dock -->
+  <div class="state">
+    <span class="eyebrow">Empty cart — dock state</span>
+    <div class="dock on-dark">
+      <span class="leaf">🍃</span>
+      <span class="t">Your banana leaf is empty — add something tasty</span>
+      <a class="btn btn-turmeric btn-sm">Browse menu</a>
+    </div>
+  </div>
+
+  <!-- (f) payment failed -->
+  <div class="state">
+    <span class="eyebrow">Payment failed</span>
+    <div class="payfail">
+      <div class="t">⚠ Payment didn't go through</div>
+      <div class="s">Nothing was charged. Your order #40638 is on hold for 10 minutes — retry to keep your spot in the kitchen queue.</div>
+      <a class="btn btn-magenta">Retry payment</a>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

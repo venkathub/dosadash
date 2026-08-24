@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Coupons — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+
+  /* page */
+  .toolbar { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .coupon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .coupon-card { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .code-row { display: flex; align-items: center; gap: 10px; }
+  .code { font-family: var(--font-display); font-weight: 700; font-size: 21px; letter-spacing: 0.06em; color: #fff; }
+  .terms { display: flex; flex-wrap: wrap; gap: 7px; }
+  .term { font-size: 12px; font-weight: 600; color: var(--indigo-100); background: var(--indigo-800); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 3px 10px; white-space: nowrap; }
+  .term b { color: var(--turmeric-400); }
+  .usage { display: flex; align-items: center; gap: 10px; }
+  .usage .track { flex: 1; height: 8px; border-radius: 999px; background: var(--indigo-950); border: 1px solid var(--indigo-700); overflow: hidden; }
+  .usage .fill { height: 100%; background: var(--turmeric-500); opacity: .85; }
+  .card-foot { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .locked { border-style: dashed; }
+  .draft-panel { margin-top: 26px; padding: 18px 20px; }
+  .panel-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+  .draft-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+  .draft-card { background: var(--indigo-950); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; }
+  .copy { font-size: 13px; color: var(--indigo-200); font-style: italic; }
+  .bands { display: flex; flex-wrap: wrap; gap: 6px; }
+  .band { font-size: 11.5px; font-weight: 600; color: #5BD69B; background: rgba(30,138,90,.14); border: 1.5px solid #2FA36B; border-radius: var(--r-pill); padding: 2px 9px; white-space: nowrap; }
+  .skipped { margin-top: 12px; display: flex; align-items: center; gap: 10px; background: var(--indigo-950); border: 2px dashed var(--indigo-700); border-radius: var(--r-md); padding: 10px 14px; }
+  .guardrail-banner { margin-top: 14px; display: flex; align-items: center; gap: 10px; background: rgba(214,51,108,.10); border: 1.5px solid var(--magenta-700); border-radius: var(--r-sm); padding: 9px 14px; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill on">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Coupons</h1>
+    <span class="meta tnum">4 codes · 2 active · guardrails: PCT ≤ 50% + mandatory cap · FLAT ≤ ₹300</span>
+    <div class="toolbar">
+      <span class="ai-meta">promo agent · promo_agent_v1</span>
+      <a class="btn btn-magenta">🤖 Suggest promos</a>
+      <a class="btn btn-turmeric">+ New coupon</a>
+    </div>
+  </div>
+  <div class="zari on-dark"></div>
+
+  <!-- ══ Coupon cards ══ -->
+  <div class="coupon-grid">
+
+    <div class="card-panel-dark coupon-card">
+      <div class="code-row">
+        <span class="code">PONGAL10</span>
+        <span class="badge badge-dk-success">Active</span>
+        <span class="meta" style="margin-left:auto">MANUAL · created 12 Jan</span>
+      </div>
+      <div class="terms">
+        <span class="term"><b>10%</b> off</span>
+        <span class="term">cap <b class="tnum">₹80</b></span>
+        <span class="term">min subtotal <b class="tnum">₹200</b></span>
+        <span class="term">per-user limit <b class="tnum">1</b></span>
+      </div>
+      <div class="usage">
+        <span class="meta tnum">used 42 / 500</span>
+        <span class="track"><span class="fill" style="width:8.4%"></span></span>
+        <span class="meta tnum">8.4%</span>
+      </div>
+      <div class="card-foot">
+        <a class="btn btn-ghost btn-sm">Edit</a>
+        <a class="btn btn-ghost btn-sm">Deactivate</a>
+        <span class="meta" style="margin-left:auto">window: 10 Jan – 20 Jan · IST</span>
+      </div>
+    </div>
+
+    <div class="card-panel-dark coupon-card">
+      <div class="code-row">
+        <span class="code" style="color:var(--indigo-200)">FILTER20</span>
+        <span class="badge badge-dk-neutral">Inactive</span>
+        <span class="meta" style="margin-left:auto">MANUAL · created 18 Aug</span>
+      </div>
+      <div class="terms">
+        <span class="term"><b>20%</b> off</span>
+        <span class="term">cap <b class="tnum">₹60</b></span>
+        <span class="term">min subtotal <b class="tnum">₹150</b></span>
+        <span class="term">beverages nudge</span>
+      </div>
+      <div class="usage">
+        <span class="meta tnum">used 0 / 300</span>
+        <span class="track"><span class="fill" style="width:0%"></span></span>
+        <span class="meta tnum">0%</span>
+      </div>
+      <div class="card-foot">
+        <a class="btn btn-turmeric btn-sm">Activate</a>
+        <a class="btn btn-ghost btn-sm">Edit</a>
+        <span class="meta" style="margin-left:auto">coupons are born inactive — activate deliberately</span>
+      </div>
+    </div>
+
+    <div class="card-panel-dark coupon-card">
+      <div class="code-row">
+        <span class="code">MEALS50</span>
+        <span class="badge badge-dk-success">Active</span>
+        <span class="meta" style="margin-left:auto">MANUAL · created 2 Aug</span>
+      </div>
+      <div class="terms">
+        <span class="term">flat <b class="tnum">₹50</b> off</span>
+        <span class="term">min subtotal <b class="tnum">₹500</b></span>
+        <span class="term">per-user limit <b class="tnum">2</b></span>
+      </div>
+      <div class="usage">
+        <span class="meta tnum">used 118 / 1,000</span>
+        <span class="track"><span class="fill" style="width:11.8%"></span></span>
+        <span class="meta tnum">11.8%</span>
+      </div>
+      <div class="card-foot">
+        <a class="btn btn-ghost btn-sm">Edit</a>
+        <a class="btn btn-ghost btn-sm">Deactivate</a>
+        <span class="meta" style="margin-left:auto">FLAT requires min ≥ 2× — no free food</span>
+      </div>
+    </div>
+
+    <div class="card-panel-dark coupon-card locked">
+      <div class="code-row">
+        <span class="code" style="color:var(--indigo-200)">WELCOME25</span>
+        <span class="badge badge-dk-warning">Redeemed · locked</span>
+        <span class="meta" style="margin-left:auto">MANUAL · created 3 Jul</span>
+      </div>
+      <div class="terms">
+        <span class="term"><b>25%</b> off</span>
+        <span class="term">cap <b class="tnum">₹100</b></span>
+        <span class="term">min subtotal <b class="tnum">₹250</b></span>
+        <span class="term">first order only</span>
+      </div>
+      <div class="usage">
+        <span class="meta tnum">used 231 / 231</span>
+        <span class="track"><span class="fill" style="width:100%"></span></span>
+        <span class="meta tnum">100%</span>
+      </div>
+      <div class="card-foot">
+        <a class="btn btn-sm disabled">Edit 🔒</a>
+        <a class="btn btn-ghost btn-sm">Deactivate</a>
+        <span class="meta" style="margin-left:auto">redeemed coupons can only be deactivated, never edited</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ AI-suggested drafts ══ -->
+  <div class="card-panel-dark draft-panel">
+    <div class="panel-head">
+      <span class="eyebrow">AI-Suggested Drafts</span>
+      <span class="ai-meta">promo agent · promo_agent_v1 · gpt-4o-mini</span>
+      <span class="meta" style="margin-left:auto">mined from 90d co-ordered pairs ≥ 3 orders · run 24 Aug 02:35 IST</span>
+    </div>
+    <div class="zari on-dark" style="width:88px;margin:4px 0 2px"></div>
+
+    <div class="draft-grid">
+      <div class="draft-card">
+        <div class="code-row">
+          <span class="code" style="font-size:18px">TAWA15</span>
+          <span class="badge badge-dk-warning">Draft</span>
+          <span class="meta" style="margin-left:auto">pairing: Masala Dosa + Filter Coffee</span>
+        </div>
+        <div class="copy">“Hot off the tawa, hotter with coffee — 15% off when your dosa meets its filter kaapi. ☕🥞”</div>
+        <div class="bands">
+          <span class="band">PCT 5–30% ✓</span>
+          <span class="band">cap defaulted from median AOV ₹312</span>
+          <span class="band">min subtotal ₹200 ✓</span>
+        </div>
+        <div class="card-foot">
+          <a class="btn btn-veg btn-sm">Approve</a>
+          <a class="btn btn-ghost btn-sm">Skip</a>
+          <span class="meta tnum" style="margin-left:auto">pair seen in 87 orders / 90d</span>
+        </div>
+      </div>
+
+      <div class="draft-card">
+        <div class="code-row">
+          <span class="code" style="font-size:18px">MILLETWED</span>
+          <span class="badge badge-dk-warning">Draft</span>
+          <span class="meta" style="margin-left:auto">slow weekday: Wednesday 3–6 PM IST</span>
+        </div>
+        <div class="copy">“Midweek millets — 12% off Ragi Millet Dosa &amp; Kambu Idli every Wednesday evening. 🌾”</div>
+        <div class="bands">
+          <span class="band">PCT 5–30% ✓</span>
+          <span class="band">cap defaulted from median AOV ₹312</span>
+          <span class="band">min subtotal ₹150 ✓</span>
+        </div>
+        <div class="card-foot">
+          <a class="btn btn-veg btn-sm">Approve</a>
+          <a class="btn btn-ghost btn-sm">Skip</a>
+          <span class="meta tnum" style="margin-left:auto">Wed 3–6 PM runs at 41% of median hourly sales</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="skipped">
+      <span class="badge badge-dk-neutral">Skipped</span>
+      <span style="font-family:var(--font-display);font-weight:700;letter-spacing:.04em">KAAPI20</span>
+      <span class="meta">reason: code collides with existing FILTER20 (same beverages segment, overlapping window)</span>
+    </div>
+
+    <div class="guardrail-banner">
+      <span class="badge badge-dk-magenta">Guardrail</span>
+      <span class="meta">hallucinated pairings dropped · price clamped [85%, 97%] × parts · re-validated by the same rules humans face (validate_coupon_values)</span>
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>

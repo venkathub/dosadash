@@ -1,0 +1,296 @@
+/* ============================================================
+   MADRAS POP — DosaDash design system (mockup token layer)
+   Chennai street-poster energy, disciplined into a clean grid.
+   Palette: indigo ink · kanchipuram magenta · turmeric · off-white
+   ============================================================ */
+
+/* ---------- Fonts (self-hosted, mirrors prod strategy) ---------- */
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("../fonts/space-grotesk.woff2") format("woff2");
+  font-weight: 400 700; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("../fonts/space-grotesk-ext.woff2") format("woff2");
+  font-weight: 400 700; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+1E00-1E9F, U+20A0-20C0;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/inter-latin.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+2000-206F, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/inter-latin-ext.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+1E00-1E9F, U+20A0-20C0;
+}
+@font-face {
+  font-family: "Noto Sans Tamil";
+  src: url("../fonts/noto-tamil.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0B82-0BFA, U+200C-200D, U+25CC;
+}
+
+/* ---------- Tokens ---------- */
+:root {
+  /* ink / indigo */
+  --indigo-950: #12122B;
+  --indigo-900: #1B1B3A;
+  --indigo-800: #232347;
+  --indigo-700: #2E2E5C;
+  --indigo-600: #3D3D73;
+  --indigo-300: #8B8BC0;
+  --indigo-200: #B9B6D9;
+  --indigo-100: #EDEAF6;
+
+  /* kanchipuram magenta */
+  --magenta-700: #A81848;
+  --magenta-600: #C21F58;
+  --magenta-500: #D6336C;
+  --magenta-400: #E85D8A;
+  --magenta-100: #FBE3ED;
+
+  /* turmeric */
+  --turmeric-600: #D9A404;
+  --turmeric-500: #F2B705;
+  --turmeric-400: #FFCB2E;
+  --turmeric-100: #FCEEC5;
+
+  /* paper / sand */
+  --offwhite: #FAF7F0;
+  --paper: #FFFFFF;
+  --sand-200: #F1EAD8;
+  --sand-300: #E5DCC8;
+
+  /* text on light */
+  --ink: #1B1B3A;
+  --muted: #5A5A78;
+  --faint: #8E8EA8;
+
+  /* semantic */
+  --veg: #1E8A5A;      --veg-100: #D7F0E3;
+  --chili: #D64545;    --chili-100: #FADEDE;
+  --sky: #3E7CB1;      --sky-100: #DCEAF5;
+  --warn: #D9A404;     --warn-100: #FCEEC5;
+
+  --font-display: "Space Grotesk", "Noto Sans Tamil", system-ui, sans-serif;
+  --font-sans: "Inter", "Noto Sans Tamil", system-ui, sans-serif;
+
+  /* the Madras Pop signature: hard offset shadows, 2px ink borders */
+  --border-ink: 2px solid var(--indigo-900);
+  --shadow-pop: 4px 4px 0 var(--indigo-900);
+  --shadow-pop-sm: 3px 3px 0 var(--indigo-900);
+  --shadow-pop-magenta: 4px 4px 0 var(--magenta-600);
+  --shadow-pop-turmeric: 4px 4px 0 var(--turmeric-500);
+  /* dark-surface flavor */
+  --border-dark: 2px solid #0C0C1F;
+  --shadow-pop-dark: 4px 4px 0 #0C0C1F;
+
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-pill: 999px;
+}
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+body {
+  font-family: var(--font-sans);
+  font-size: 15px; line-height: 1.5;
+  color: var(--ink); background: var(--offwhite);
+}
+body.dark { background: var(--indigo-950); color: var(--indigo-100); }
+
+h1, h2, h3, h4, .display { font-family: var(--font-display); letter-spacing: -0.01em; }
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* Eyebrow label — 11px caps */
+.eyebrow {
+  font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.16em; color: var(--magenta-600);
+}
+.dark .eyebrow, .on-dark .eyebrow { color: var(--turmeric-400); }
+
+/* Big poster headings */
+.h-display { font-size: 34px; font-weight: 700; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.01em; }
+.h1 { font-size: 26px; font-weight: 700; line-height: 1.15; }
+.h2 { font-size: 20px; font-weight: 700; }
+.h3 { font-size: 16px; font-weight: 700; }
+.body-sm { font-size: 13.5px; }
+.meta { font-size: 12px; color: var(--muted); }
+.dark .meta, .on-dark .meta { color: var(--indigo-200); }
+
+/* ---------- Kanchipuram border motif (temple zari stripe) ----------
+   Use as section divider: <div class="zari"></div>                    */
+.zari {
+  height: 8px; margin: 6px 0 14px;
+  background:
+    linear-gradient(135deg, var(--turmeric-500) 25%, transparent 25%) 0 0 / 8px 8px,
+    linear-gradient(225deg, var(--turmeric-500) 25%, transparent 25%) 0 0 / 8px 8px,
+    linear-gradient(0deg, var(--magenta-500) 0 3px, transparent 3px);
+  background-repeat: repeat-x;
+  width: 120px;
+}
+.zari.wide { width: 100%; opacity: .9; }
+.zari.on-dark {
+  background:
+    linear-gradient(135deg, var(--turmeric-400) 25%, transparent 25%) 0 0 / 8px 8px,
+    linear-gradient(225deg, var(--turmeric-400) 25%, transparent 25%) 0 0 / 8px 8px,
+    linear-gradient(0deg, var(--magenta-500) 0 3px, transparent 3px);
+  background-repeat: repeat-x;
+}
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--paper); border: var(--border-ink);
+  border-radius: var(--r-md); box-shadow: var(--shadow-pop);
+}
+.card-flat { background: var(--paper); border: var(--border-ink); border-radius: var(--r-md); }
+.card-dark {
+  background: var(--indigo-900); border: var(--border-dark);
+  border-radius: var(--r-md); box-shadow: var(--shadow-pop-dark);
+  color: var(--indigo-100);
+}
+.card-panel-dark { /* calmer admin panel: no shadow */
+  background: var(--indigo-900); border: 2px solid var(--indigo-700);
+  border-radius: var(--r-md); color: var(--indigo-100);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px;
+  border: var(--border-ink); border-radius: var(--r-sm);
+  padding: 9px 16px; cursor: pointer; text-decoration: none; color: var(--ink);
+  background: var(--paper); box-shadow: var(--shadow-pop-sm);
+  white-space: nowrap;
+}
+.btn-lg { padding: 13px 24px; font-size: 16px; box-shadow: var(--shadow-pop); }
+.btn-sm { padding: 5px 12px; font-size: 12.5px; box-shadow: 2px 2px 0 var(--indigo-900); }
+.btn-magenta { background: var(--magenta-500); color: #fff; }
+.btn-turmeric { background: var(--turmeric-500); color: var(--indigo-900); }
+.btn-indigo  { background: var(--indigo-900); color: #fff; }
+.btn-ghost   { background: transparent; box-shadow: none; }
+.btn-danger  { background: var(--chili); color: #fff; }
+.btn-veg     { background: var(--veg); color: #fff; }
+.btn[disabled], .btn.disabled { background: var(--sand-300); color: var(--faint); box-shadow: none; border-color: var(--faint); cursor: not-allowed; }
+/* dark-surface buttons */
+.on-dark .btn, .dark .btn { border: var(--border-dark); box-shadow: var(--shadow-pop-dark); }
+.on-dark .btn-ghost, .dark .btn-ghost { border: 2px solid var(--indigo-600); box-shadow: none; color: var(--indigo-100); background: transparent; }
+
+/* ---------- Chips / badges ---------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 600;
+  border: 2px solid var(--indigo-900); border-radius: var(--r-pill);
+  padding: 4px 12px; background: var(--paper); color: var(--ink);
+  white-space: nowrap;
+}
+.chip-active { background: var(--indigo-900); color: var(--turmeric-400); }
+.chip-magenta { background: var(--magenta-100); }
+.chip-turmeric { background: var(--turmeric-100); }
+.chip-sand { background: var(--sand-200); }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  border-radius: 6px; padding: 3px 9px; border: 1.5px solid currentColor;
+}
+.badge-success { color: var(--veg); background: var(--veg-100); }
+.badge-danger  { color: var(--chili); background: var(--chili-100); }
+.badge-warning { color: #8A6A03; background: var(--warn-100); }
+.badge-info    { color: var(--sky); background: var(--sky-100); }
+.badge-magenta { color: var(--magenta-600); background: var(--magenta-100); }
+.badge-neutral { color: var(--muted); background: var(--sand-200); }
+/* on dark panels */
+.badge-dk-success { color: #5BD69B; background: rgba(30,138,90,.22); border-color: #2FA36B; }
+.badge-dk-danger  { color: #FF8B8B; background: rgba(214,69,69,.20); border-color: #D64545; }
+.badge-dk-warning { color: var(--turmeric-400); background: rgba(242,183,5,.16); border-color: var(--turmeric-600); }
+.badge-dk-info    { color: #8FC1E9; background: rgba(62,124,177,.22); border-color: var(--sky); }
+.badge-dk-neutral { color: var(--indigo-200); background: rgba(185,182,217,.12); border-color: var(--indigo-600); }
+.badge-dk-magenta { color: var(--magenta-400); background: rgba(214,51,108,.18); border-color: var(--magenta-500); }
+
+/* AI provenance chip — the portfolio story, deliberate everywhere */
+.ai-meta {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-display); font-size: 11px; font-weight: 600;
+  border-radius: var(--r-pill); padding: 3px 10px;
+  background: var(--indigo-800); color: var(--turmeric-400);
+  border: 1.5px solid var(--indigo-600);
+}
+.ai-meta::before { content: "🤖"; font-size: 11px; }
+.ai-meta.light { background: var(--indigo-100); color: var(--indigo-700); border-color: var(--indigo-300); }
+
+/* FSSAI-style veg / non-veg mark */
+.fssai { width: 15px; height: 15px; border: 2px solid; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.fssai::after { content: ""; width: 7px; height: 7px; border-radius: 50%; }
+.fssai.veg  { border-color: var(--veg); }  .fssai.veg::after  { background: var(--veg); }
+.fssai.nonveg { border-color: var(--chili); } .fssai.nonveg::after { background: var(--chili); }
+
+/* ---------- Inputs ---------- */
+.input, .select, .textarea {
+  font-family: var(--font-sans); font-size: 14px; color: var(--ink);
+  background: var(--paper); border: var(--border-ink); border-radius: var(--r-sm);
+  padding: 9px 13px; outline: none; width: 100%;
+}
+.input::placeholder { color: var(--faint); }
+.input:focus { box-shadow: 3px 3px 0 var(--magenta-500); }
+.dark .input, .on-dark .input, .dark .select, .on-dark .select, .dark .textarea, .on-dark .textarea {
+  background: var(--indigo-950); color: var(--indigo-100); border: 2px solid var(--indigo-600);
+}
+
+/* ---------- Tables (admin) ---------- */
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th {
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em; color: var(--turmeric-400);
+  text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--indigo-700);
+}
+.tbl td { padding: 9px 12px; border-bottom: 1px solid var(--indigo-800); font-variant-numeric: tabular-nums; }
+.tbl tr:nth-child(odd) td { background: rgba(255,255,255,.02); }
+.tbl tr:hover td { background: rgba(255,255,255,.05); }
+.tbl .num { text-align: right; }
+
+/* light table variant */
+table.tbl-light { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl-light th {
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em; color: var(--magenta-600);
+  text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--indigo-900);
+}
+.tbl-light td { padding: 9px 12px; border-bottom: 1px solid var(--sand-300); font-variant-numeric: tabular-nums; }
+.tbl-light .num { text-align: right; }
+
+/* ---------- Poster block (color-blocked section header) ---------- */
+.poster-block {
+  display: inline-block; font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  background: var(--magenta-500); color: #fff;
+  border: var(--border-ink); box-shadow: var(--shadow-pop-sm);
+  padding: 5px 14px; border-radius: 6px; font-size: 15px;
+}
+.poster-block.turmeric { background: var(--turmeric-500); color: var(--indigo-900); }
+.poster-block.indigo { background: var(--indigo-900); color: var(--turmeric-400); }
+
+/* ---------- Ticker strip (marquee-look accent) ---------- */
+.ticker {
+  background: var(--indigo-900); color: var(--turmeric-400);
+  font-family: var(--font-display); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 6px 0; overflow: hidden; white-space: nowrap;
+}
+
+/* ---------- Misc ---------- */
+.dot-live { width: 8px; height: 8px; border-radius: 50%; background: var(--veg); box-shadow: 0 0 0 3px rgba(30,138,90,.25); display: inline-block; }
+.dot-live.gold { background: var(--turmeric-500); box-shadow: 0 0 0 3px rgba(242,183,5,.25); }
+.hr-ink { border: none; border-top: 2px solid var(--indigo-900); }
+.hr-dark { border: none; border-top: 1px solid var(--indigo-700); }
+.scroll-x { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+.spice { color: var(--chili); font-size: 12px; letter-spacing: 1px; }
+
+/* screenshot hygiene */
+::-webkit-scrollbar { display: none; }

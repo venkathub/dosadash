@@ -54,7 +54,7 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
         order_id: order.payment?.provider_order_id,
         name: "DosaDash",
         description: `Order #${order.id}`,
-        theme: { color: "#14342B" },
+        theme: { color: "#1B1B3A" },
         handler: async (resp: { razorpay_payment_id: string; razorpay_signature: string }) => {
           try {
             await api<Order>(`/orders/${order.id}/pay`, {
@@ -88,38 +88,38 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
   return (
     <Modal tone="light" onClose={onClose} className="w-96 space-y-4 p-6">
       <div className="flex items-center justify-between">
-        <SectionHeading as="h2" className="text-lg text-leaf-800">
+        <SectionHeading as="h2" className="text-lg text-ink">
           Order #{order.id}
         </SectionHeading>
-        <span className="text-sm text-ink-600">
-          live <span className="animate-pulse-soft text-veg-500">●</span>
+        <span className="text-sm text-muted">
+          live <span className="animate-pulse-soft text-veg">●</span>
         </span>
       </div>
-      <ul className="text-sm text-ink-600">
+      <ul className="text-sm text-muted">
         {order.items.map((i) => (
           <li key={i.item_id}>
             {i.qty}× {i.name}
           </li>
         ))}
       </ul>
-      <p className="tnum text-sm text-ink-900">
+      <p className="tnum text-sm text-ink">
         ₹{order.subtotal}
         {order.discount && parseFloat(order.discount) > 0 ? (
-          <span className="text-veg-600"> − ₹{order.discount}{order.coupon_code ? ` (${order.coupon_code})` : ""}</span>
+          <span className="text-veg"> − ₹{order.discount}{order.coupon_code ? ` (${order.coupon_code})` : ""}</span>
         ) : null}{" "}
         + GST ₹{order.gst} = <b className="font-display">₹{order.total}</b>
       </p>
       {!paid ? (
-        <Btn className="w-full" onClick={pay}>
+        <Btn variant="magenta" className="w-full" onClick={pay}>
           {payLabel}
         </Btn>
       ) : (
-        <p className="rounded-lg border border-veg-500/30 bg-veg-200 px-3 py-1 text-sm text-veg-600">
+        <p className="rounded-lg border-[1.5px] border-veg bg-veg-100 px-3 py-1 text-sm font-semibold text-veg">
           ✓ Payment captured
         </p>
       )}
       {cancelled ? (
-        <p className="rounded-lg border border-chili-500/30 bg-chili-200 px-3 py-2 text-sm text-chili-600">
+        <p className="rounded-lg border-[1.5px] border-chili bg-chili-100 px-3 py-2 text-sm font-semibold text-chili">
           Order {status.toLowerCase()}
         </p>
       ) : (
@@ -130,20 +130,20 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
               className={cx(
                 "flex items-center gap-2 text-sm",
                 i < stepIdx
-                  ? "text-ink-900"
+                  ? "text-ink"
                   : i === stepIdx
-                    ? "font-semibold text-ink-900"
-                    : "text-ink-400",
+                    ? "font-display font-bold text-ink"
+                    : "text-faint",
               )}
             >
               <span
                 className={cx(
-                  "inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold",
+                  "inline-flex h-5 w-5 items-center justify-center rounded-full border-2 text-[10px] font-bold",
                   i < stepIdx
-                    ? "border-veg-500 bg-veg-500 text-cream-50"
+                    ? "border-veg bg-veg text-white"
                     : i === stepIdx
-                      ? "animate-pulse-soft border-brass-500 bg-brass-500 text-leaf-900"
-                      : "border-cream-300 bg-cream-100 text-ink-400",
+                      ? "animate-pulse-soft border-indigo-900 bg-turmeric-500 text-indigo-900"
+                      : "border-sand-300 bg-offwhite text-faint",
                 )}
               >
                 {i < stepIdx ? "✓" : "●"}
@@ -153,13 +153,10 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
           ))}
         </ol>
       )}
-      {error && <p className="text-sm text-chili-600">{error}</p>}
-      <button
-        className="w-full rounded-lg border border-leaf-600 py-2 text-sm font-semibold text-leaf-800 transition-colors duration-150 hover:border-brass-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass-500"
-        onClick={onClose}
-      >
+      {error && <p className="text-sm font-semibold text-chili">{error}</p>}
+      <Btn variant="paper" className="w-full" onClick={onClose}>
         Close
-      </button>
+      </Btn>
     </Modal>
   );
 }

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Translations — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+
+  /* ── page: translations ── */
+  .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 18px 0 20px; }
+  .toolbar .spacer { flex: 1; }
+  .lang-chip { border-color: var(--indigo-600); background: var(--indigo-800); color: var(--indigo-200); }
+  .lang-chip.active { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); }
+  .trow { padding: 16px 18px; margin-bottom: 14px; display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+  .trow .pair { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .trow .en-name { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: #fff; }
+  .trow .arrow { color: var(--indigo-300); font-size: 15px; }
+  .trow .ta-name { font-family: var(--font-sans); font-weight: 700; font-size: 17px; color: var(--turmeric-400); }
+  .trow .desc-line { font-size: 13px; margin-top: 7px; display: flex; gap: 8px; align-items: baseline; }
+  .trow .desc-line .lg { flex: none; font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--indigo-300); text-transform: uppercase; width: 22px; }
+  .trow .desc-line .txt { color: var(--indigo-200); }
+  .trow .desc-line .txt.ta { color: var(--indigo-100); }
+  .trow .side { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .trow .actions { display: flex; gap: 8px; }
+  .trow.stale { border-color: var(--turmeric-600); }
+  .footer-strip { margin-top: 22px; padding: 12px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill on">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Menu Translations</h1>
+    <span class="badge badge-dk-warning">47 drafts pending</span>
+  </div>
+  <div class="meta">Tamil-first menu localization — only APPROVED rows ever serve to customers via <span class="tnum">?lang=ta</span>.</div>
+  <div class="zari on-dark"></div>
+
+  <!-- ── toolbar ── -->
+  <div class="toolbar">
+    <span class="chip lang-chip active">தமிழ் Tamil</span>
+    <span class="chip lang-chip">+ Add language</span>
+    <span class="spacer"></span>
+    <span class="meta">gap-fill never resets human-reviewed rows</span>
+    <a class="btn btn-turmeric">🤖 Draft missing (gap-fill)</a>
+    <span class="ai-meta">menu_translation_v1 · gpt-4o-mini</span>
+  </div>
+
+  <!-- (a) approved -->
+  <div class="card-panel-dark trow">
+    <div>
+      <div class="pair">
+        <span class="en-name">Masala Dosa</span>
+        <span class="arrow">→</span>
+        <span class="ta-name" lang="ta">மசாலா தோசை</span>
+      </div>
+      <div class="desc-line"><span class="lg">EN</span><span class="txt">Crisp golden dosa wrapped around spiced potato masala, served with sambar &amp; two chutneys.</span></div>
+      <div class="desc-line"><span class="lg">TA</span><span class="txt ta" lang="ta">காரமான உருளைக்கிழங்கு மசாலாவுடன் மொறுமொறுப்பான தோசை — சாம்பார் மற்றும் இரண்டு சட்னிகளுடன்.</span></div>
+    </div>
+    <div class="side">
+      <span class="badge badge-dk-success">Approved</span>
+      <div class="actions"><a class="btn btn-ghost btn-sm">Edit</a></div>
+      <span class="meta">reviewed by owner · 2026-08-24 18:42 IST</span>
+    </div>
+  </div>
+
+  <!-- (b) draft w/ approve/reject -->
+  <div class="card-panel-dark trow">
+    <div>
+      <div class="pair">
+        <span class="en-name">Mutton Chukka</span>
+        <span class="arrow">→</span>
+        <span class="ta-name" lang="ta">மட்டன் சுக்கா</span>
+      </div>
+      <div class="desc-line"><span class="lg">EN</span><span class="txt">Dry-roasted mutton tossed with black pepper, curry leaves and shallots — Acharapakkam mess style.</span></div>
+      <div class="desc-line"><span class="lg">TA</span><span class="txt ta" lang="ta">கருப்பு மிளகு, கறிவேப்பிலை மற்றும் சின்ன வெங்காயத்துடன் வறுத்த மட்டன் — அச்சரப்பாக்கம் மெஸ் பாணி.</span></div>
+    </div>
+    <div class="side">
+      <span class="badge badge-dk-warning">Draft</span>
+      <div class="actions">
+        <a class="btn btn-veg btn-sm">✓ Approve</a>
+        <a class="btn btn-ghost btn-sm" style="border-color:var(--chili);color:#FF8B8B">✗ Reject</a>
+        <a class="btn btn-ghost btn-sm">Edit</a>
+      </div>
+      <span class="meta">edit resets to DRAFT · drafted 2026-08-24 17:58 IST</span>
+    </div>
+  </div>
+
+  <!-- (c) draft -->
+  <div class="card-panel-dark trow">
+    <div>
+      <div class="pair">
+        <span class="en-name">Sukku Coffee</span>
+        <span class="arrow">→</span>
+        <span class="ta-name" lang="ta">சுக்கு காபி</span>
+      </div>
+      <div class="desc-line"><span class="lg">EN</span><span class="txt">Dry-ginger and palm-jaggery brew from the 99 KM highway kitchen — caffeine-free, warming.</span></div>
+      <div class="desc-line"><span class="lg">TA</span><span class="txt ta" lang="ta">சுக்கு மற்றும் கருப்பட்டியில் காய்ச்சிய 99 KM நெடுஞ்சாலை பாணி காபி — காஃபின் இல்லாதது.</span></div>
+    </div>
+    <div class="side">
+      <span class="badge badge-dk-warning">Draft</span>
+      <div class="actions">
+        <a class="btn btn-veg btn-sm">✓ Approve</a>
+        <a class="btn btn-ghost btn-sm" style="border-color:var(--chili);color:#FF8B8B">✗ Reject</a>
+        <a class="btn btn-ghost btn-sm">Edit</a>
+      </div>
+      <span class="meta">drafted 2026-08-24 17:58 IST · gap-fill batch #6</span>
+    </div>
+  </div>
+
+  <!-- (d) approved + numeral guardrail chip -->
+  <div class="card-panel-dark trow">
+    <div>
+      <div class="pair">
+        <span class="en-name">Idli (2 pcs)</span>
+        <span class="arrow">→</span>
+        <span class="ta-name" lang="ta">இட்லி (2 pcs)</span>
+        <span class="chip lang-chip" style="font-size:11.5px">numerals survive verbatim — guardrail</span>
+      </div>
+      <div class="desc-line"><span class="lg">EN</span><span class="txt">Steamed soft rice cakes, two per plate, with sambar and coconut chutney.</span></div>
+      <div class="desc-line"><span class="lg">TA</span><span class="txt ta" lang="ta">மென்மையான ஆவியில் வெந்த இட்லிகள் — சாம்பார் மற்றும் தேங்காய் சட்னியுடன்.</span></div>
+    </div>
+    <div class="side">
+      <span class="badge badge-dk-success">Approved</span>
+      <div class="actions"><a class="btn btn-ghost btn-sm">Edit</a></div>
+      <span class="meta">reviewed by owner · 2026-08-24 18:47 IST</span>
+    </div>
+  </div>
+
+  <!-- (e) stale reset -->
+  <div class="card-panel-dark trow stale">
+    <div>
+      <div class="pair">
+        <span class="en-name">Ghee Roast</span>
+        <span class="arrow">→</span>
+        <span class="ta-name" lang="ta">நெய் ரோஸ்ட்</span>
+      </div>
+      <div class="desc-line"><span class="lg">EN</span><span class="txt">Paper-thin, ghee-laden roast, folded tall the Madras way. Jain option available. <b style="color:var(--turmeric-400)">(edited 19:12 IST)</b></span></div>
+      <div class="desc-line"><span class="lg">TA</span><span class="txt ta" lang="ta">நெய்யில் வறுத்த மெல்லிய ரோஸ்ட் — மெட்ராஸ் பாணியில் உயரமாக மடிக்கப்பட்டது.</span></div>
+      <div class="meta" style="margin-top:8px">⚠ English description edited → translation auto-reset to DRAFT (staleness guard) — stale Tamil never serves</div>
+    </div>
+    <div class="side">
+      <span class="badge badge-dk-warning">Draft · stale-reset</span>
+      <div class="actions">
+        <a class="btn btn-turmeric btn-sm">↺ Re-draft</a>
+        <a class="btn btn-ghost btn-sm">Edit</a>
+      </div>
+      <span class="meta">was APPROVED · reset 2026-08-24 19:12 IST</span>
+    </div>
+  </div>
+
+  <!-- footer meta strip -->
+  <div class="card-panel-dark footer-strip">
+    <span class="ai-meta">menu_translation_v1 · gpt-4o-mini</span>
+    <span class="meta">guardrail: target-script enforced · invented digits/₹ refused · only APPROVED rows ever serve to customers · 47 drafts pending review</span>
+  </div>
+
+</main>
+</body>
+</html>

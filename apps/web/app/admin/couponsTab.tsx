@@ -76,13 +76,13 @@ export function CouponsTab() {
     <div>
       <ErrorBar msg={error} />
       <div className="mb-3 flex items-center gap-3">
-        <Btn variant="gold" size="sm" disabled={suggesting} onClick={suggest}>
+        <Btn variant="turmeric" size="sm" disabled={suggesting} onClick={suggest}>
           {suggesting ? "🤖 Thinking…" : "🤖 Suggest promos"}
         </Btn>
         {suggestNote && <span className="ai-meta">{suggestNote}</span>}
       </div>
       <form
-        className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-leaf-800 p-3"
+        className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-indigo-800 p-3"
         onSubmit={(e) => {
           e.preventDefault();
           act(() =>
@@ -116,25 +116,25 @@ export function CouponsTab() {
         <Input tone="dark" className="w-20 px-2 py-1" placeholder="uses" value={form.usage_limit} onChange={set("usage_limit")} />
         <Input tone="dark" className="w-20 px-2 py-1" placeholder="per user" value={form.per_user_limit} onChange={set("per_user_limit")} />
         <Input tone="dark" className="w-44 px-2 py-1" placeholder="Description" value={form.description} onChange={set("description")} />
-        <Btn variant="gold" size="sm">Create (inactive)</Btn>
+        <Btn variant="turmeric" size="sm">Create (inactive)</Btn>
       </form>
 
       <div className="space-y-2">
         {(coupons ?? []).map((c) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-leaf-800 p-3 text-sm">
-            <span className="font-mono font-bold text-brass-300">{c.code}</span>
+          <div key={c.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-indigo-800 p-3 text-sm">
+            <span className="font-mono font-bold text-turmeric-400">{c.code}</span>
             <span className="tnum">{c.type === "PCT" ? `${parseFloat(c.value)}% off${c.max_discount ? ` (max ₹${parseFloat(c.max_discount)})` : ""}` : `₹${parseFloat(c.value)} off`}</span>
-            {c.min_subtotal && <span className="tnum text-leaf-200/70">min ₹{parseFloat(c.min_subtotal)}</span>}
-            <span className="tnum text-leaf-200/70">
+            {c.min_subtotal && <span className="tnum text-indigo-200/70">min ₹{parseFloat(c.min_subtotal)}</span>}
+            <span className="tnum text-indigo-200/70">
               used {c.times_used}
               {c.usage_limit ? `/${c.usage_limit}` : ""}
             </span>
-            {c.description && <span className="text-xs text-leaf-200/60">{c.description}</span>}
+            {c.description && <span className="text-xs text-indigo-200/60">{c.description}</span>}
             <Badge tone={c.is_active ? "success" : "danger"}>{c.is_active ? "ACTIVE" : "INACTIVE"}</Badge>
             {c.source === "AI_SUGGESTED" && <span className="ai-meta">🤖 AI</span>}
             <span className="ml-auto flex gap-2">
               <Btn
-                variant={c.is_active ? "ghost" : "gold"}
+                variant={c.is_active ? "ghost" : "turmeric"}
                 size="sm"
                 onClick={() => act(() => adminApi(`/admin/coupons/${c.id}`, { method: "PATCH", body: { is_active: !c.is_active } }))}
               >

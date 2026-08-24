@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Try the Demo — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .header {
+    background: var(--indigo-900); color: var(--indigo-100);
+    border-bottom: 3px solid var(--turmeric-500);
+  }
+  .header-in { max-width: 1040px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 14px; }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: 0.02em; color: #fff; display: flex; align-items: center; gap: 9px; }
+  .wordmark .tail { color: var(--turmeric-400); }
+  .demo-chip { font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: 0.1em; background: var(--turmeric-500); color: var(--indigo-900); border: 2px solid var(--indigo-950); border-radius: var(--r-pill); padding: 3px 12px; }
+  .main { max-width: 1040px; margin: 0 auto; padding: 26px 24px 60px; }
+
+  .hero {
+    background: var(--magenta-500); border: var(--border-ink); border-radius: var(--r-lg);
+    box-shadow: 6px 6px 0 var(--indigo-900); padding: 28px 30px; color: #fff;
+    position: relative; overflow: hidden;
+  }
+  .hero::after { content: ""; position: absolute; right: -50px; top: -50px; width: 220px; height: 220px; border-radius: 50%; background: var(--magenta-400); opacity: .5; }
+  .hero .h-display { position: relative; z-index: 1; }
+  .hero p { position: relative; z-index: 1; margin-top: 8px; font-size: 15px; max-width: 560px; }
+
+  .surfaces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 22px; }
+  .surface { display: block; text-decoration: none; color: var(--ink); padding: 18px; transition: transform .12s ease, box-shadow .12s ease; }
+  .surface:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--indigo-900); }
+  .surface .em { font-size: 42px; line-height: 1; }
+  .surface .t { font-family: var(--font-display); font-weight: 700; font-size: 18px; margin-top: 10px; }
+  .surface .d { font-size: 13px; color: var(--muted); margin-top: 4px; min-height: 40px; }
+  .surface .url { display: inline-block; margin-top: 10px; font-family: var(--font-display); font-weight: 700; font-size: 12.5px; color: var(--magenta-600); background: var(--magenta-100); border: 1.5px solid var(--magenta-500); border-radius: var(--r-pill); padding: 3px 11px; }
+
+  .section-head { display: flex; align-items: center; gap: 14px; margin: 34px 0 4px; flex-wrap: wrap; }
+  .tbl-card { padding: 6px 10px 4px; }
+
+  .checklist { padding: 18px 22px; }
+  .checklist ul { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+  .checklist li { display: flex; align-items: center; gap: 11px; font-size: 14.5px; font-weight: 600; }
+  .tick { flex: none; width: 22px; height: 22px; border: 2px solid var(--indigo-900); border-radius: 6px; background: var(--paper); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+  .tick.done { background: var(--turmeric-500); }
+  .tamil { font-family: var(--font-sans); }
+
+  .foot-meta { margin-top: 36px; padding-top: 14px; border-top: 2px solid var(--indigo-900); display: flex; align-items: center; gap: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ══ Header ══ -->
+<div class="header">
+  <div class="header-in">
+    <div class="wordmark">🥞 DOSA<span class="tail">DASH</span></div>
+    <span class="demo-chip">DEMO</span>
+    <span style="margin-left:auto" class="meta" >AI-native cloud kitchen · Chennai</span>
+    <a class="btn btn-turmeric btn-sm">🍽 Open the app</a>
+  </div>
+</div>
+<div class="ticker">&nbsp;&nbsp;TRY DOSADASH ✦ THREE SURFACES, ONE PLATFORM ✦ ORDER IN TAMIL ✦ WATCH THE KITCHEN LIVE ✦ RUN THE ADMIN COPILOT ✦ TRY DOSADASH ✦ THREE SURFACES, ONE PLATFORM ✦ ORDER IN TAMIL</div>
+
+<div class="main">
+
+  <!-- ══ Hero ══ -->
+  <div class="hero">
+    <div class="eyebrow" style="color:var(--turmeric-400)">Live demo · everything is real except the money</div>
+    <div class="h-display" style="margin-top:6px">Poke the whole kitchen 🍳<br>Three surfaces, one platform</div>
+    <p>Customer app, kitchen display and backoffice all run against the same production stack — LangGraph agents, live WebSockets, Razorpay TEST payments.</p>
+  </div>
+  <div class="zari" style="margin-top:16px"></div>
+
+  <!-- ══ Surfaces ══ -->
+  <div class="surfaces">
+    <a class="card surface" href="#customer">
+      <span class="em">🍽</span>
+      <div class="t">Customer</div>
+      <div class="d">Browse the menu, chat with Dosa Genie, place a real order.</div>
+      <span class="url">dosadash.app →</span>
+    </a>
+    <a class="card surface" href="#kds">
+      <span class="em">🔥</span>
+      <div class="t">Kitchen</div>
+      <div class="d">Live board, advance orders through the state machine, QC photos.</div>
+      <span class="url">/kds →</span>
+    </a>
+    <a class="card surface" href="#admin">
+      <span class="em">🎛</span>
+      <div class="t">Backoffice</div>
+      <div class="d">17 tabs of ops + AI studio — copilot, evals, costs, approvals.</div>
+      <span class="url">/admin →</span>
+    </a>
+  </div>
+
+  <!-- ══ Demo credentials ══ -->
+  <div class="section-head">
+    <span class="poster-block">🔑 Demo credentials</span>
+    <span class="chip chip-turmeric">owner has no public credential — by design</span>
+  </div>
+  <div class="zari"></div>
+  <div class="card tbl-card">
+    <table class="tbl-light">
+      <thead>
+        <tr><th>Role</th><th>Phone</th><th>OTP</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>🍽 Customer</td>
+          <td class="tnum">any +91 phone</td>
+          <td>OTP shown on screen (DEMO channel)</td>
+        </tr>
+        <tr>
+          <td>🔥 Kitchen staff</td>
+          <td class="tnum">+91 90000 000•• (11)</td>
+          <td>OTP shown on screen (DEMO channel)</td>
+        </tr>
+        <tr>
+          <td>🎛 Admin</td>
+          <td class="tnum">+91 90000 000•• (12)</td>
+          <td>OTP shown on screen (DEMO channel)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ Test payments ══ -->
+  <div class="section-head">
+    <span class="poster-block indigo">💳 Test payments</span>
+    <span class="badge badge-warning">Razorpay TEST mode — no real money moves</span>
+  </div>
+  <div class="zari"></div>
+  <div class="card tbl-card">
+    <table class="tbl-light">
+      <thead>
+        <tr><th>Method</th><th>Number</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Visa</td>
+          <td class="tnum">4386 2894 0766 0153</td>
+          <td rowspan="2">any future expiry · any CVV · choose <b>Success</b> at the mock bank page</td>
+        </tr>
+        <tr>
+          <td>Mastercard</td>
+          <td class="tnum">2305 3242 5784 8228</td>
+        </tr>
+        <tr>
+          <td>UPI</td>
+          <td class="tnum">success@razorpay</td>
+          <td>instant success in TEST mode</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ What to try ══ -->
+  <div class="section-head">
+    <span class="poster-block turmeric">✅ What to try</span>
+    <span class="ai-meta light">order agent · order_agent_v5</span>
+  </div>
+  <div class="zari"></div>
+  <div class="card checklist">
+    <ul>
+      <li><span class="tick done">✓</span> Order in Tamil — <span class="tamil">“மசாலா தோசை”</span> — Dosa Genie drafts it against the real menu</li>
+      <li><span class="tick"></span> Voice-order on Telegram 🎤 — Whisper STT feeds the same agent graph</li>
+      <li><span class="tick"></span> Watch the KDS light up live the moment your order lands 🔥</li>
+      <li><span class="tick"></span> Run the admin Copilot — ask “top 5 dishes by revenue this week” 🎛</li>
+      <li><span class="tick"></span> Approve an AI-generated dish photo and see the ✨ AI badge go live</li>
+    </ul>
+  </div>
+
+  <!-- ══ Footer ══ -->
+  <div class="foot-meta">
+    <span class="meta">All AI calls traced in Langfuse · evals gate every merge</span>
+    <span style="margin-left:auto"></span>
+    <span class="ai-meta light">langfuse · litellm</span>
+  </div>
+
+</div>
+
+</body>
+</html>

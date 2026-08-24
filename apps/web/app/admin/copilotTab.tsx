@@ -75,7 +75,7 @@ export function CopilotTab() {
           placeholder="Ask about sales, dishes, forecasts, customers…"
           className="flex-1 px-3 py-2"
         />
-        <Btn variant="gold" size="md" disabled={busy || question.trim().length < 3}>
+        <Btn variant="turmeric" size="md" disabled={busy || question.trim().length < 3}>
           {busy ? "Thinking…" : "Ask"}
         </Btn>
       </form>
@@ -96,14 +96,14 @@ export function CopilotTab() {
       <ErrorBar msg={error} />
 
       {answer?.error && (
-        <p className="rounded-lg border border-chili-500/40 bg-chili-600/20 px-3 py-2 text-sm text-chili-200">
+        <p className="rounded-lg border border-chili/40 bg-chili/15 px-3 py-2 text-sm text-[#FF8B8B]">
           ⚠ {answer.error} (after {answer.attempts} attempt{answer.attempts > 1 ? "s" : ""})
         </p>
       )}
 
       {answer && !answer.error && (
         <div className="space-y-4">
-          <p className="text-sm text-leaf-200">
+          <p className="text-sm text-indigo-200">
             {answer.explanation}{" "}
             <span className="ai-meta">
               🤖 {answer.model} · attempt {answer.attempts} · {answer.row_count} row{answer.row_count === 1 ? "" : "s"}
@@ -117,14 +117,14 @@ export function CopilotTab() {
 
           <div className="max-h-96 overflow-auto rounded-lg border border-white/5">
             <table className={tableCls}>
-              <thead className={`${theadCls} sticky top-0 bg-leaf-800`}>
+              <thead className={`${theadCls} sticky top-0 bg-indigo-800`}>
                 <tr>{answer.columns.map((c) => <th key={c} className={thCls}>{c}</th>)}</tr>
               </thead>
               <tbody>
                 {answer.rows.map((row, i) => (
                   <tr key={i} className={trCls}>
                     {row.map((cell, j) => (
-                      <td key={j} className={`${tdCls} text-leaf-200 ${typeof cell === "number" ? "text-right" : ""}`}>{cell === null ? "—" : String(cell)}</td>
+                      <td key={j} className={`${tdCls} text-indigo-200 ${typeof cell === "number" ? "text-right" : ""}`}>{cell === null ? "—" : String(cell)}</td>
                     ))}
                   </tr>
                 ))}
@@ -132,9 +132,9 @@ export function CopilotTab() {
             </table>
           </div>
 
-          <details className="text-xs text-leaf-200/70">
-            <summary className="cursor-pointer transition-colors duration-150 hover:text-brass-300">Show SQL</summary>
-            <pre className="mt-2 overflow-auto rounded-lg bg-leaf-950/60 p-3 font-mono text-leaf-200">{answer.sql}</pre>
+          <details className="text-xs text-indigo-200/70">
+            <summary className="cursor-pointer transition-colors duration-150 hover:text-turmeric-400">Show SQL</summary>
+            <pre className="mt-2 overflow-auto rounded-lg bg-indigo-950/60 p-3 font-mono text-indigo-200">{answer.sql}</pre>
           </details>
         </div>
       )}
@@ -160,13 +160,13 @@ function CopilotChart({ answer }: { answer: Answer }) {
   const barW = Math.max(3, (W - 2 * pad) / points.length - 4);
 
   /* Token hex literals for SVG paint (Tailwind arbitrary fills are unreliable
-     with CSS-var tokens): #C8A24B = brass-500, #BFD6C8 = leaf-200. */
+     with CSS-var tokens): #F2B705 = turmeric-500, #B9B6D9 = indigo-200. */
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-lg bg-leaf-950/60">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-lg bg-indigo-950/60">
       <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="rgba(255,255,255,0.05)" />
       {answer.chart.type === "bar" ? (
         points.map((p, i) => (
-          <rect key={i} x={x(i) - barW / 2} y={y(p.y)} width={barW} height={H - pad - y(p.y)} fill="#C8A24B" fillOpacity={0.8}>
+          <rect key={i} x={x(i) - barW / 2} y={y(p.y)} width={barW} height={H - pad - y(p.y)} fill="#F2B705" fillOpacity={0.8}>
             <title>{`${p.x}: ${p.y}`}</title>
           </rect>
         ))
@@ -175,14 +175,14 @@ function CopilotChart({ answer }: { answer: Answer }) {
           points={points.map((p, i) => `${x(i)},${y(p.y)}`).join(" ")}
           fill="none"
           strokeWidth={2}
-          stroke="#BFD6C8"
+          stroke="#B9B6D9"
         />
       )}
-      <text x={pad} y={14} fill="#BFD6C8" className="text-[10px]">
+      <text x={pad} y={14} fill="#B9B6D9" className="text-[10px]">
         {answer.chart.y} by {answer.chart.x || "row"} (max {max.toLocaleString()})
       </text>
-      <text x={pad} y={H - 8} fill="#BFD6C8" fillOpacity={0.6} className="text-[9px]">{points[0]?.x}</text>
-      <text x={W - pad} y={H - 8} textAnchor="end" fill="#BFD6C8" fillOpacity={0.6} className="text-[9px]">
+      <text x={pad} y={H - 8} fill="#B9B6D9" fillOpacity={0.6} className="text-[9px]">{points[0]?.x}</text>
+      <text x={W - pad} y={H - 8} textAnchor="end" fill="#B9B6D9" fillOpacity={0.6} className="text-[9px]">
         {points[points.length - 1]?.x}
       </text>
     </svg>

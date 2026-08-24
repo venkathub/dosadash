@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Nutrition — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+
+  /* page */
+  .toolbar { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .panel { padding: 16px 18px; margin-top: 16px; }
+  .panel-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .dish-name { font-family: var(--font-display); font-weight: 700; color: #fff; }
+  .alg { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; border-radius: var(--r-pill); padding: 1px 8px; white-space: nowrap; margin-right: 4px; }
+  .alg-peanut { color: var(--turmeric-400); background: rgba(242,183,5,.14); border: 1.5px solid var(--turmeric-600); }
+  .alg-dairy  { color: #8FC1E9; background: rgba(62,124,177,.20); border: 1.5px solid var(--sky); }
+  .alg-gluten { color: var(--magenta-400); background: rgba(214,51,108,.16); border: 1.5px solid var(--magenta-500); }
+  .alg-fish   { color: #5BD69B; background: rgba(30,138,90,.16); border: 1.5px solid #2FA36B; }
+  .alg-shell  { color: #FF8B8B; background: rgba(214,69,69,.16); border: 1.5px solid var(--chili); }
+  .jain-y { color: #5BD69B; font-weight: 700; }
+  .jain-n { color: var(--indigo-300); font-weight: 700; }
+  .conf-chip { display: inline-flex; font-size: 11px; font-weight: 600; color: var(--turmeric-400); background: rgba(242,183,5,.14); border: 1.5px solid var(--turmeric-600); border-radius: var(--r-pill); padding: 1px 8px; white-space: nowrap; margin-top: 3px; }
+  .status-cell { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+  .foot-meta { margin-top: 18px; display: flex; align-items: center; gap: 10px; background: var(--indigo-900); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 11px 16px; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill on">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Nutrition</h1>
+    <span class="meta tnum">60 dishes · 55 published · 3 drafts · 2 missing</span>
+    <div class="toolbar">
+      <span class="ai-meta">nutrition · gpt-4o-mini</span>
+      <span class="meta">estimates reviewed before publish</span>
+      <a class="btn btn-turmeric">🤖 Enrich missing</a>
+    </div>
+  </div>
+  <div class="zari on-dark"></div>
+
+  <!-- ══ Nutrition table ══ -->
+  <div class="card-panel-dark panel">
+    <div class="panel-head">
+      <span class="eyebrow">Per-serving estimates</span>
+      <span class="meta" style="margin-left:auto">allergens feed the order agent’s allergen-checked suggestions</span>
+    </div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Dish</th><th class="num">kcal</th><th class="num">Protein g</th><th class="num">Carbs g</th><th class="num">Fat g</th>
+          <th>Allergens</th><th>Jain</th><th style="text-align:right">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="dish-name">Masala Dosa</span></td>
+          <td class="num tnum">386</td><td class="num tnum">7.8</td><td class="num tnum">52.4</td><td class="num tnum">15.6</td>
+          <td><span class="alg alg-peanut">peanut</span><span class="alg alg-dairy">dairy</span></td>
+          <td><span class="jain-n">✗</span></td>
+          <td><div class="status-cell"><span class="badge badge-dk-success">Published</span></div></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Ghee Roast</span></td>
+          <td class="num tnum">412</td><td class="num tnum">6.9</td><td class="num tnum">49.8</td><td class="num tnum">19.2</td>
+          <td><span class="alg alg-dairy">dairy</span></td>
+          <td><span class="jain-y">✓</span></td>
+          <td><div class="status-cell"><span class="badge badge-dk-success">Published</span></div></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Idli (2 pcs)</span></td>
+          <td class="num tnum">132</td><td class="num tnum">5.2</td><td class="num tnum">26.7</td><td class="num tnum">0.8</td>
+          <td><span class="meta">—</span></td>
+          <td><span class="jain-y">✓</span></td>
+          <td><div class="status-cell"><span class="badge badge-dk-success">Published</span></div></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Filter Coffee</span></td>
+          <td class="num tnum">68</td><td class="num tnum">2.1</td><td class="num tnum">8.9</td><td class="num tnum">2.6</td>
+          <td><span class="alg alg-dairy">dairy</span></td>
+          <td><span class="jain-y">✓</span></td>
+          <td><div class="status-cell"><span class="badge badge-dk-success">Published</span></div></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Parotta (2 pcs)</span></td>
+          <td class="num tnum">470</td><td class="num tnum">8.4</td><td class="num tnum">61.2</td><td class="num tnum">20.1</td>
+          <td><span class="alg alg-gluten">gluten</span><span class="alg alg-dairy">dairy</span></td>
+          <td><span class="jain-y">✓</span></td>
+          <td><div class="status-cell"><span class="badge badge-dk-success">Published</span></div></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Mutton Chukka</span></td>
+          <td class="num tnum">348</td><td class="num tnum">31.6</td><td class="num tnum">6.4</td><td class="num tnum">21.8</td>
+          <td><span class="meta">—</span></td>
+          <td><span class="jain-n">✗</span></td>
+          <td><div class="status-cell"><span class="badge badge-dk-warning">Draft</span><a class="btn btn-veg btn-sm">Approve</a></div></td>
+        </tr>
+        <tr>
+          <td>
+            <span class="dish-name">Karuvadu Thokku</span><br>
+            <span class="conf-chip">⚠ low confidence — check portion size</span>
+          </td>
+          <td class="num tnum">296</td><td class="num tnum">24.3</td><td class="num tnum">9.1</td><td class="num tnum">17.4</td>
+          <td><span class="alg alg-fish">fish</span></td>
+          <td><span class="jain-n">✗</span></td>
+          <td><div class="status-cell"><span class="badge badge-dk-warning">Draft</span><a class="btn btn-veg btn-sm">Approve</a></div></td>
+        </tr>
+        <tr>
+          <td><span class="dish-name">Nandu Pepper Fry</span></td>
+          <td class="num tnum">312</td><td class="num tnum">27.9</td><td class="num tnum">7.6</td><td class="num tnum">18.9</td>
+          <td><span class="alg alg-shell">shellfish</span></td>
+          <td><span class="jain-n">✗</span></td>
+          <td><div class="status-cell"><span class="badge badge-dk-warning">Draft</span><a class="btn btn-veg btn-sm">Approve</a></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="foot-meta">
+    <span class="badge badge-dk-info">Provenance</span>
+    <span class="meta">LLM-enriched estimates, human-approved · per serving · first litellm + Langfuse + eval-gated path in the codebase (Phase 2) · publishing fires the menu event cascade</span>
+  </div>
+
+</main>
+
+</body>
+</html>

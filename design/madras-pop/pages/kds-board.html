@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Kitchen Display Board — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  /* KDS: cheap tablet, read from across the room — big, flat, high contrast */
+  body { min-width: 1280px; }
+  .kds-header {
+    background: var(--indigo-900); border-bottom: 3px solid var(--turmeric-500);
+    padding: 14px 24px; display: flex; align-items: center; gap: 16px;
+  }
+  .kds-title { font-family: var(--font-display); font-weight: 700; font-size: 28px; letter-spacing: 0.02em; color: #fff; display: flex; align-items: center; gap: 10px; }
+  .live { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; font-size: 13px; color: #5BD69B; text-transform: uppercase; letter-spacing: 0.1em; }
+  .dot-pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--veg); animation: pulse 1.6s infinite; }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(30,138,90,.55); }
+    70%  { box-shadow: 0 0 0 9px rgba(30,138,90,0); }
+    100% { box-shadow: 0 0 0 0 rgba(30,138,90,0); }
+  }
+  .clock { font-family: var(--font-display); font-weight: 700; font-size: 22px; color: var(--turmeric-400); }
+  .clock small { font-size: 12px; color: var(--indigo-200); font-weight: 600; margin-left: 4px; }
+  .stations { display: flex; gap: 8px; margin-left: auto; }
+  .stations .chip { border-color: var(--indigo-600); background: var(--indigo-800); color: var(--indigo-100); font-size: 14px; padding: 8px 18px; min-height: 44px; }
+  .stations .chip-active { background: var(--turmeric-500); color: var(--indigo-900); border-color: var(--indigo-950); font-weight: 700; }
+
+  .board { padding: 18px 20px 8px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; }
+  .col { background: var(--indigo-900); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+  .col-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; }
+  .count-pill { font-family: var(--font-display); font-weight: 700; font-size: 15px; background: var(--turmeric-500); color: var(--indigo-900); border-radius: var(--r-pill); padding: 2px 12px; min-width: 34px; text-align: center; }
+
+  .ocard { background: var(--indigo-800); border: 2px solid var(--indigo-600); border-radius: var(--r-sm); padding: 12px 12px 12px 16px; position: relative; overflow: hidden; }
+  .ocard::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+  .ocard.placed::before    { background: var(--sky); }
+  .ocard.confirmed::before { background: var(--magenta-500); }
+  .ocard.cooking::before   { background: var(--turmeric-500); }
+  .ocard.ready::before     { background: var(--veg); }
+
+  .ocard-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .oid { font-family: var(--font-display); font-weight: 700; font-size: 22px; color: #fff; }
+  .chan { font-size: 12px; font-weight: 600; color: var(--indigo-200); background: var(--indigo-950); border: 1.5px solid var(--indigo-600); border-radius: var(--r-pill); padding: 2px 9px; white-space: nowrap; }
+  .timer { margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--indigo-100); background: var(--indigo-950); border: 1.5px solid var(--indigo-600); border-radius: var(--r-pill); padding: 3px 11px; }
+  .timer.late { color: #FF8B8B; border-color: var(--chili); background: rgba(214,69,69,.18); }
+
+  .items { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+  .item { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.35; }
+  .note { font-size: 14px; font-weight: 700; color: var(--turmeric-400); }
+
+  .ocard-foot { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .total { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--turmeric-400); }
+
+  .adv {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 44px; cursor: pointer;
+    font-family: var(--font-display); font-weight: 700; font-size: 16px;
+    background: var(--turmeric-500); color: var(--indigo-900);
+    border: 2px solid var(--indigo-950); border-radius: var(--r-sm);
+    box-shadow: 3px 3px 0 #0C0C1F;
+  }
+  .qc-ghost {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; min-height: 44px; cursor: pointer; margin-bottom: 8px;
+    font-family: var(--font-display); font-weight: 700; font-size: 14px;
+    background: transparent; color: var(--indigo-100);
+    border: 2px solid var(--indigo-600); border-radius: var(--r-sm);
+  }
+
+  .kds-foot { margin: 10px 20px 18px; padding: 10px 16px; border: 2px solid var(--indigo-700); border-radius: var(--r-sm); background: var(--indigo-900); display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--indigo-200); }
+</style>
+</head>
+<body class="dark">
+
+<!-- ══ Header ══ -->
+<div class="kds-header">
+  <div class="kds-title">🔥 KITCHEN</div>
+  <span class="live"><span class="dot-pulse"></span> live</span>
+  <span class="clock tnum">7:12 PM<small>IST</small></span>
+  <div class="stations">
+    <span class="chip chip-active">All</span>
+    <span class="chip">🫓 Tawa</span>
+    <span class="chip">🍤 Fryer</span>
+    <span class="chip">🍛 Meals</span>
+  </div>
+  <a class="btn btn-ghost" style="min-height:44px">🚪 Logout</a>
+</div>
+
+<!-- ══ Board ══ -->
+<div class="board">
+
+  <!-- ── PLACED ── -->
+  <div class="col">
+    <div class="col-head"><span class="eyebrow">Placed</span><span class="count-pill tnum">3</span></div>
+
+    <div class="ocard placed">
+      <div class="ocard-top"><span class="oid tnum">#40636</span><span class="chan">🌐 web</span><span class="timer tnum">0:12</span></div>
+      <div class="items">
+        <div class="item">1× Ghee Roast</div>
+        <div class="item">2× Filter Coffee</div>
+      </div>
+      <div class="ocard-foot"><span class="total tnum">₹230</span></div>
+      <button class="adv">▸ CONFIRM</button>
+    </div>
+
+    <div class="ocard placed">
+      <div class="ocard-top"><span class="oid tnum">#40635</span><span class="chan">🛵 mockswiggy</span><span class="timer tnum">1:58</span></div>
+      <div class="items">
+        <div class="item">2× Onion Uttapam</div>
+        <div class="item">1× Curd Rice</div>
+      </div>
+      <div class="ocard-foot"><span class="total tnum">₹300</span></div>
+      <button class="adv">▸ CONFIRM</button>
+    </div>
+
+    <div class="ocard placed">
+      <div class="ocard-top"><span class="oid tnum">#40634</span><span class="chan">📨 telegram</span><span class="timer tnum">2:45</span></div>
+      <div class="items">
+        <div class="item">1× Ragi Millet Dosa</div>
+        <div class="item">1× Sukku Coffee</div>
+        <div class="note">note · less spice</div>
+      </div>
+      <div class="ocard-foot"><span class="total tnum">₹155</span></div>
+      <button class="adv">▸ CONFIRM</button>
+    </div>
+  </div>
+
+  <!-- ── CONFIRMED ── -->
+  <div class="col">
+    <div class="col-head"><span class="eyebrow">Confirmed</span><span class="count-pill tnum">1</span></div>
+
+    <div class="ocard confirmed">
+      <div class="ocard-top"><span class="oid tnum">#40633</span><span class="chan">🌐 web</span><span class="timer tnum">3:20</span></div>
+      <div class="items">
+        <div class="item">1× Ven Pongal</div>
+        <div class="item">2× Medu Vada (2 pcs)</div>
+        <div class="note">note · extra sambar</div>
+      </div>
+      <div class="ocard-foot"><span class="total tnum">₹210</span></div>
+      <button class="adv">▸ START COOKING</button>
+    </div>
+  </div>
+
+  <!-- ── COOKING ── -->
+  <div class="col">
+    <div class="col-head"><span class="eyebrow">Cooking</span><span class="count-pill tnum">2</span></div>
+
+    <div class="ocard cooking">
+      <div class="ocard-top"><span class="oid tnum">#40632</span><span class="chan">🌐 web</span><span class="timer tnum">4:32</span></div>
+      <div class="items">
+        <div class="item">2× Masala Dosa</div>
+        <div class="item">1× Filter Coffee</div>
+        <div class="note">note · no onion</div>
+      </div>
+      <div class="ocard-foot">
+        <span class="total tnum">₹280</span>
+        <span class="badge badge-dk-warning">CHECK 📷</span>
+        <span class="ai-meta">gpt-4o-mini · dish_qc_v1</span>
+      </div>
+      <button class="adv">▸ MARK READY</button>
+    </div>
+
+    <div class="ocard cooking">
+      <div class="ocard-top"><span class="oid tnum">#40630</span><span class="chan">🌐 web</span><span class="timer late tnum">12:05</span></div>
+      <div class="items">
+        <div class="item">1× Chicken Biryani</div>
+        <div class="item">1× Onion Rava Dosa</div>
+      </div>
+      <div class="ocard-foot"><span class="total tnum">₹390</span></div>
+      <button class="qc-ghost">📷 QC photo</button>
+      <button class="adv">▸ MARK READY</button>
+    </div>
+  </div>
+
+  <!-- ── READY ── -->
+  <div class="col">
+    <div class="col-head"><span class="eyebrow">Ready</span><span class="count-pill tnum">1</span></div>
+
+    <div class="ocard ready">
+      <div class="ocard-top"><span class="oid tnum">#40629</span><span class="chan">🌐 web</span><span class="timer tnum">9:48</span></div>
+      <div class="items">
+        <div class="item">1× Mutton Chukka</div>
+        <div class="item">2× Idli (2 pcs)</div>
+      </div>
+      <div class="ocard-foot">
+        <span class="total tnum">₹340</span>
+        <span class="badge badge-dk-success">PASS 📷</span>
+        <span class="ai-meta">gpt-4o-mini · dish_qc_v1</span>
+      </div>
+      <button class="adv">▸ HAND OFF</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ Footer meta ══ -->
+<div class="kds-foot">
+  <span class="dot-live"></span>
+  <span>orders stream live over WebSocket · sound ON 🔔</span>
+  <span style="margin-left:auto" class="meta tnum">signed in as kitchen · +91 90••• •••11</span>
+</div>
+
+</body>
+</html>

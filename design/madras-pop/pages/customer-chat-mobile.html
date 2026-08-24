@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>DosaDash — Dosa Genie Chat (Mobile) — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  body { max-width: 390px; margin: 0 auto; background: var(--sand-200); }
+
+  /* chat header */
+  .header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--indigo-900); color: var(--indigo-100);
+    border-bottom: 3px solid var(--turmeric-500);
+  }
+  .header-in { padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .genie-name { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: #fff; display: flex; align-items: center; gap: 8px; }
+  .online { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--indigo-200); }
+  .icon-btn { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--indigo-600); border-radius: var(--r-sm); background: var(--indigo-950); font-size: 15px; color: var(--indigo-100); text-decoration: none; font-family: var(--font-display); font-weight: 700; }
+
+  .thread { padding: 16px 14px 110px; display: flex; flex-direction: column; gap: 14px; }
+  .trust { align-self: center; font-size: 11px; color: var(--muted); background: var(--paper); border: 1.5px solid var(--sand-300); border-radius: var(--r-pill); padding: 3px 12px; }
+
+  .msg { max-width: 86%; }
+  .msg.ai { align-self: flex-start; }
+  .msg.user { align-self: flex-end; }
+  .bubble { border: var(--border-ink); border-radius: var(--r-md); padding: 11px 14px; font-size: 14px; }
+  .ai .bubble { background: var(--offwhite); box-shadow: var(--shadow-pop-sm); border-bottom-left-radius: 4px; }
+  .user .bubble { background: var(--indigo-900); color: var(--indigo-100); box-shadow: 3px 3px 0 var(--magenta-600); border-bottom-right-radius: 4px; }
+  .msg .who { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .user .who { justify-content: flex-end; }
+  .msg .after { margin-top: 6px; }
+
+  /* order draft card inside a bubble */
+  .draft { background: var(--paper); border: var(--border-ink); border-radius: var(--r-sm); margin-top: 10px; overflow: hidden; }
+  .draft .head { background: var(--turmeric-500); border-bottom: 2px solid var(--indigo-900); padding: 6px 12px; font-family: var(--font-display); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; }
+  .draft .lines { padding: 10px 12px 4px; }
+  .draft .li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; padding: 3px 0; }
+  .draft .li .amt { margin-left: auto; font-family: var(--font-display); font-weight: 700; }
+  .draft .subtotal { display: flex; align-items: baseline; gap: 8px; padding: 8px 12px 10px; border-top: 2px dashed var(--sand-300); margin-top: 6px; }
+  .draft .subtotal .big { margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: 22px; }
+  .warn-row { margin: 0 12px 10px; font-size: 12px; font-weight: 600; color: #8A6A03; background: var(--warn-100); border: 1.5px solid #D9A404; border-radius: var(--r-sm); padding: 6px 10px; }
+  .veg-row { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--veg); font-weight: 600; margin: 0 12px 10px; }
+  .draft .cta { padding: 0 12px 12px; }
+  .draft .cta .btn { width: 100%; }
+
+  /* voice bubble */
+  .wave { display: inline-flex; align-items: center; gap: 3px; height: 22px; margin-right: 8px; }
+  .wave i { display: inline-block; width: 3px; border-radius: 2px; background: var(--turmeric-400); }
+  .wave i:nth-child(1){height:8px} .wave i:nth-child(2){height:16px} .wave i:nth-child(3){height:10px}
+  .wave i:nth-child(4){height:20px} .wave i:nth-child(5){height:12px} .wave i:nth-child(6){height:18px}
+  .wave i:nth-child(7){height:7px} .wave i:nth-child(8){height:14px} .wave i:nth-child(9){height:9px}
+  .wave i:nth-child(10){height:17px} .wave i:nth-child(11){height:11px} .wave i:nth-child(12){height:6px}
+  .voice-row { display: flex; align-items: center; }
+  .voice-row .t { font-size: 12px; color: var(--indigo-200); }
+
+  /* typing dots */
+  .typing { display: inline-flex; gap: 5px; padding: 4px 2px; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--indigo-300); }
+  .typing i:nth-child(2) { background: var(--magenta-400); }
+  .typing i:nth-child(3) { background: var(--turmeric-500); }
+
+  /* input bar */
+  .composer { position: fixed; left: 50%; transform: translateX(-50%); width: 390px; bottom: 0; z-index: 20; background: var(--indigo-900); border-top: 3px solid var(--turmeric-500); padding: 12px 14px 16px; display: flex; gap: 9px; align-items: center; }
+  .composer .input { flex: 1; background: var(--indigo-950); border: 2px solid var(--indigo-600); color: var(--indigo-100); }
+  .composer .input::placeholder { color: var(--indigo-300); }
+  .round { flex: none; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: var(--border-dark); border-radius: var(--r-sm); font-size: 17px; cursor: pointer; text-decoration: none; }
+  .round.mic { background: var(--indigo-800); color: var(--indigo-100); }
+  .round.send { background: var(--turmeric-500); box-shadow: var(--shadow-pop-dark); color: var(--indigo-900); }
+</style>
+</head>
+<body>
+
+<!-- ══ Header ══ -->
+<div class="header">
+  <div class="header-in">
+    <div>
+      <div class="genie-name">🥞 Dosa Genie</div>
+      <div class="online"><span class="dot-live"></span> online · answers in EN / தமிழ் / Tanglish</div>
+    </div>
+    <span style="margin-left:auto"></span>
+    <a class="icon-btn" aria-label="Close chat">✕</a>
+  </div>
+</div>
+
+<div class="thread">
+
+  <div class="trust">🔒 phone numbers are redacted before the model sees them</div>
+
+  <!-- assistant welcome -->
+  <div class="msg ai">
+    <div class="who">🥞 Dosa Genie</div>
+    <div class="bubble">Vanakkam! 🙏 I'm the Dosa Genie. Tell me what you're craving — type or talk, English or Tamil. I know today's menu, what's sold out, and what's on the tawa right now.</div>
+  </div>
+
+  <!-- user text -->
+  <div class="msg user">
+    <div class="who">You · 7:31 PM</div>
+    <div class="bubble">2 masala dosa and a filter coffee</div>
+  </div>
+
+  <!-- assistant reply w/ order draft -->
+  <div class="msg ai">
+    <div class="who">🥞 Dosa Genie</div>
+    <div class="bubble">
+      Super choice 👌 Here's your draft — everything is on the menu and serving right now:
+      <div class="draft">
+        <div class="head">Order draft</div>
+        <div class="lines">
+          <div class="li"><span class="fssai veg"></span> 2× Masala Dosa <span class="amt tnum">₹240</span></div>
+          <div class="li"><span class="fssai veg"></span> 1× Filter Coffee <span class="amt tnum">₹40</span></div>
+        </div>
+        <div class="subtotal"><span class="meta">Subtotal · incl. GST 5%</span><span class="big tnum">₹294</span></div>
+        <div class="warn-row">⏰ Mini Tiffin is served 6 – 11:30 AM — not added</div>
+        <div class="veg-row">✓ all items vegetarian</div>
+        <div class="cta"><a class="btn btn-magenta">Place order →</a></div>
+      </div>
+    </div>
+    <div class="after"><span class="ai-meta">order agent · order_agent_v5 · gpt-4o-mini</span></div>
+  </div>
+
+  <!-- user voice message -->
+  <div class="msg user">
+    <div class="who">You · 🎤 voice · 7:32 PM</div>
+    <div class="bubble">
+      <div class="voice-row">
+        <span class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="t tnum">0:04</span>
+      </div>
+      <div style="font-size:12px;color:var(--indigo-200);margin-top:4px">"add one kesari also"</div>
+    </div>
+  </div>
+
+  <!-- streaming assistant -->
+  <div class="msg ai">
+    <div class="who">🥞 Dosa Genie · typing…</div>
+    <div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div>
+    <div class="after"><span class="ai-meta light">stt · groq/whisper-large-v3</span></div>
+  </div>
+
+</div>
+
+<!-- ══ Composer ══ -->
+<div class="composer on-dark">
+  <input class="input" placeholder="Type your order…">
+  <a class="round mic" aria-label="Record voice">🎤</a>
+  <a class="round send" aria-label="Send">➤</a>
+</div>
+
+</body>
+</html>

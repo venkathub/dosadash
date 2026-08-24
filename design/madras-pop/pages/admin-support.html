@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Support — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+</style>
+<style>
+  /* page content */
+  .sup-cols { display: grid; grid-template-columns: 370px 1fr; gap: 18px; align-items: start; margin-top: 14px; }
+  .ticket { background: var(--indigo-800); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 13px 15px; margin-top: 10px; }
+  .ticket.on { border-color: var(--turmeric-500); }
+  .ticket .row1 { display: flex; align-items: center; gap: 10px; }
+  .ticket .tid { font-family: var(--font-display); font-weight: 700; color: #fff; }
+  .ticket .sub { font-size: 13px; color: var(--indigo-100); margin-top: 5px; font-weight: 600; }
+  .ticket .row2 { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+  .btn-chili-ghost { border: 2px solid var(--chili) !important; color: #FF8B8B !important; background: transparent; box-shadow: none !important; }
+  .pin-banner { display: flex; align-items: center; gap: 8px; background: rgba(214,69,69,.14); border: 1.5px solid var(--chili); border-radius: var(--r-sm); padding: 8px 12px; font-size: 12.5px; font-weight: 700; color: #FF8B8B; margin: 10px 0 12px; }
+  .convo { display: flex; flex-direction: column; gap: 10px; }
+  .bub { max-width: 78%; border-radius: var(--r-md); padding: 9px 13px; font-size: 13.5px; line-height: 1.45; }
+  .bub.cust { align-self: flex-start; background: var(--indigo-800); border: 1.5px solid var(--indigo-600); border-bottom-left-radius: 4px; }
+  .bub.agent { align-self: flex-end; background: var(--indigo-700); border: 1.5px solid var(--indigo-600); border-bottom-right-radius: 4px; }
+  .bub .who { font-family: var(--font-display); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--indigo-300); margin-bottom: 3px; }
+  .bub.agent .who { color: var(--turmeric-400); }
+  .ctx-line { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--indigo-800); }
+  .ctx-line .lbl { color: var(--indigo-200); width: 96px; flex: none; font-size: 12px; }
+  .chip-dk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--indigo-600); border-radius: var(--r-pill); padding: 3px 11px; background: var(--indigo-800); color: var(--indigo-100); white-space: nowrap; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill on">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Support</h1>
+    <span class="meta">agent handles status &amp; cancels · refunds always escalate to a human</span>
+  </div>
+  <div class="zari on-dark"></div>
+
+  <div class="sup-cols">
+
+    <!-- ══ LEFT: escalations inbox ══ -->
+    <div class="card-panel-dark" style="padding:16px">
+      <div class="eyebrow">Escalations inbox</div>
+      <h3 class="h3" style="color:#fff;margin:2px 0 2px">Tickets</h3>
+
+      <div class="ticket on">
+        <div class="row1">
+          <span class="tid tnum">Ticket #3</span>
+          <span class="badge badge-dk-warning">OPEN</span>
+          <span class="meta" style="margin-left:auto">12 min ago</span>
+        </div>
+        <div class="sub">refund request — cold delivery</div>
+        <div class="row2">
+          <span class="chip-dk tnum">order #40629</span>
+          <span class="chip-dk tnum">₹120</span>
+          <span class="chip-dk">📨 telegram</span>
+        </div>
+      </div>
+
+      <div class="ticket">
+        <div class="row1">
+          <span class="tid tnum">Ticket #2</span>
+          <span class="badge badge-dk-success">RESOLVED</span>
+          <span class="meta" style="margin-left:auto">yesterday</span>
+        </div>
+        <div class="sub">cancel request past PLACED — explained &amp; goodwill coupon</div>
+        <div class="row2">
+          <span class="chip-dk tnum">order #40611</span>
+          <span class="chip-dk">🌐 web</span>
+        </div>
+      </div>
+
+      <div class="ticket">
+        <div class="row1">
+          <span class="tid tnum">Ticket #1</span>
+          <span class="badge badge-dk-neutral">DISMISSED</span>
+          <span class="meta" style="margin-left:auto">19 Aug</span>
+        </div>
+        <div class="sub">asked for someone else's order status — ownership check failed</div>
+        <div class="row2">
+          <span class="chip-dk tnum">order #40598</span>
+          <span class="chip-dk">📨 telegram</span>
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <span class="badge badge-dk-info">guardrail: foreign order-ids downgraded, ownership re-checked server-side</span>
+      </div>
+    </div>
+
+    <!-- ══ RIGHT: open ticket detail ══ -->
+    <div class="card-panel-dark" style="padding:18px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div>
+          <div class="eyebrow">Ticket #3 · open</div>
+          <h3 class="h3" style="color:#fff;margin:2px 0 0">Refund request — cold delivery</h3>
+        </div>
+        <span style="margin-left:auto"></span>
+        <span class="ai-meta">support agent · gpt-4o-mini</span>
+      </div>
+
+      <div class="pin-banner">📌 refunds are NEVER agent-executed — the agent files an escalation; only a human presses Refund.</div>
+
+      <div class="convo">
+        <div class="bub cust"><div class="who">Customer · +91 98••• •••42 · 8:22 PM</div>my uttapam arrived cold and soggy 😞 I want my money back</div>
+        <div class="bub agent"><div class="who">Support agent · 8:22 PM</div>So sorry to hear that! I can see order <b>#40629</b> (Onion Uttapam, ₹120) was delivered at 8:14 PM. That's not the experience we want for you.</div>
+        <div class="bub cust"><div class="who">Customer · 8:23 PM</div>so refund it then</div>
+        <div class="bub agent"><div class="who">Support agent · 8:23 PM</div>I'm not able to issue refunds myself — that always goes to our team for review. I've escalated your request with the order details and delivery timing; someone will resolve it shortly. Anything else I can check for you?</div>
+      </div>
+      <div class="meta" style="margin-top:8px">agent output = SupportTurn structured model · escalation row created atomically · LLM failure also escalates</div>
+
+      <div class="hr-dark" style="margin:16px 0"></div>
+
+      <div class="eyebrow">Order context</div>
+      <div class="ctx-line"><span class="lbl">Order</span> <span class="tnum">#40629</span> · 📨 telegram</div>
+      <div class="ctx-line"><span class="lbl">Items</span> Onion Uttapam ×1 — ₹120</div>
+      <div class="ctx-line"><span class="lbl">Status</span> <span class="badge badge-dk-success">DELIVERED</span> <span class="tnum">8:14 PM</span></div>
+      <div class="ctx-line"><span class="lbl">Payment</span> Razorpay · CAPTURED · paid <span class="tnum">₹120</span></div>
+
+      <div style="margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <a class="btn btn-veg btn-sm">✓ Resolve with refund ₹120</a>
+        <span class="meta">executes real Razorpay refund · audited</span>
+        <a class="btn btn-ghost btn-sm">Dismiss</a>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+</body>
+</html>

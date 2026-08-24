@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>DosaDash — Checkout (Mobile) — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  body { max-width: 390px; margin: 0 auto; }
+
+  .header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--indigo-900); color: var(--indigo-100);
+    border-bottom: 3px solid var(--turmeric-500);
+  }
+  .header-in { padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: 0.02em; color: #fff; display: flex; align-items: center; gap: 6px; }
+  .wordmark .tail { color: var(--turmeric-400); }
+  .icon-btn { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--indigo-600); border-radius: var(--r-sm); background: var(--indigo-950); font-size: 16px; color: var(--indigo-100); text-decoration: none; font-family: var(--font-display); font-weight: 700; }
+
+  .main { padding: 18px 14px 40px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* cart lines */
+  .cart { padding: 4px 14px; }
+  .li { display: flex; align-items: center; gap: 9px; padding: 12px 0; border-bottom: 2px dashed var(--sand-300); }
+  .li:last-child { border-bottom: none; }
+  .li .nm { font-weight: 600; font-size: 14px; }
+  .li .amt { font-family: var(--font-display); font-weight: 700; font-size: 14.5px; white-space: nowrap; }
+  .li .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .stepper { display: inline-flex; align-items: center; border: var(--border-ink); border-radius: var(--r-sm); overflow: hidden; font-family: var(--font-display); font-weight: 700; box-shadow: 2px 2px 0 var(--indigo-900); background: var(--paper); }
+  .stepper button { all: unset; width: 30px; height: 30px; text-align: center; cursor: pointer; background: var(--turmeric-500); }
+  .stepper .qty { width: 28px; text-align: center; font-size: 13px; }
+
+  .sugg { display: flex; gap: 8px; overflow-x: auto; }
+  .sugg .chip { flex: none; font-size: 12px; }
+
+  /* address */
+  .addr { padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px; }
+  .addr .t { font-weight: 700; font-family: var(--font-display); font-size: 14px; }
+  .addr .change { margin-left: auto; font-size: 12.5px; font-weight: 700; color: var(--magenta-600); text-decoration: underline; white-space: nowrap; }
+
+  /* coupons */
+  .coupon-box { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .coupon-row { display: flex; gap: 0; }
+  .coupon-row input { flex: 1; border: var(--border-ink); border-right: none; border-radius: var(--r-sm) 0 0 var(--r-sm); padding: 9px 12px; font-size: 13px; outline: none; font-family: var(--font-sans); }
+  .coupon-row .apply { font-family: var(--font-display); font-weight: 700; font-size: 13px; background: var(--indigo-900); color: var(--turmeric-400); border: var(--border-ink); border-radius: 0 var(--r-sm) var(--r-sm) 0; padding: 9px 16px; cursor: pointer; }
+  .coupon-err { font-size: 12.5px; font-weight: 600; color: var(--chili); background: var(--chili-100); border: 1.5px solid var(--chili); border-radius: var(--r-sm); padding: 7px 11px; }
+
+  /* bill */
+  .bill { padding: 14px; }
+  .bill .row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; }
+  .bill .row .v { font-family: var(--font-display); font-weight: 600; }
+  .bill .row.discount .v { color: var(--veg); }
+  .bill .grand { display: flex; justify-content: space-between; align-items: baseline; border-top: 2px solid var(--indigo-900); margin-top: 8px; padding-top: 10px; }
+  .bill .grand .lbl { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+  .bill .grand .v { font-family: var(--font-display); font-weight: 700; font-size: 28px; }
+
+  /* 409 banner */
+  .banner-409 { background: var(--chili-100); border: 2px solid var(--chili); border-radius: var(--r-md); box-shadow: 4px 4px 0 var(--chili); padding: 11px 14px; font-size: 13px; font-weight: 600; color: var(--chili); display: flex; align-items: center; gap: 10px; }
+  .banner-409 .rm { margin-left: auto; }
+
+  /* ETA */
+  .eta { padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .eta .t { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+
+  .pay .btn { width: 100%; }
+  .pay .meta { text-align: center; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ══ Header ══ -->
+<div class="header">
+  <div class="header-in">
+    <a class="icon-btn" aria-label="Back">←</a>
+    <div class="wordmark">🥞 DOSA<span class="tail">DASH</span></div>
+    <span style="margin-left:auto"></span>
+    <span class="meta" style="color:var(--indigo-200)">🔒 secure checkout</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div>
+    <h1 class="h1">Checkout</h1>
+    <div class="zari"></div>
+  </div>
+
+  <!-- ══ Cart lines ══ -->
+  <div class="card cart">
+    <div class="li">
+      <span class="fssai veg"></span><span class="nm">Masala Dosa</span>
+      <span class="right"><span class="stepper"><button aria-label="Remove one">−</button><span class="qty tnum">2</span><button aria-label="Add one">+</button></span><span class="amt tnum">₹240</span></span>
+    </div>
+    <div class="li">
+      <span class="fssai veg"></span><span class="nm">Filter Coffee</span>
+      <span class="right"><span class="stepper"><button aria-label="Remove one">−</button><span class="qty tnum">1</span><button aria-label="Add one">+</button></span><span class="amt tnum">₹40</span></span>
+    </div>
+    <div class="li">
+      <span class="fssai veg"></span><span class="nm">Kesari</span>
+      <span class="right"><span class="stepper"><button aria-label="Remove one">−</button><span class="qty tnum">1</span><button aria-label="Add one">+</button></span><span class="amt tnum">₹60</span></span>
+    </div>
+  </div>
+
+  <!-- ══ Suggestions ══ -->
+  <div class="sugg">
+    <span class="chip chip-turmeric">🧩 Complete the combo — Medu Vada ₹60</span>
+    <span class="chip chip-magenta">✨ Goes well: Kuzhi Paniyaram ₹90</span>
+  </div>
+
+  <!-- ══ Address ══ -->
+  <div class="card addr">
+    <span style="font-size:20px">🏠</span>
+    <div>
+      <div class="t">Home · Anna Nagar</div>
+      <div class="meta">Plot 14, 3rd Main Rd, Anna Nagar West, Chennai 600040<br>+91 98••• •••42</div>
+    </div>
+    <a class="change">Change</a>
+  </div>
+
+  <!-- ══ Coupons ══ -->
+  <div class="card coupon-box">
+    <div class="eyebrow">Coupons</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="badge badge-success">PONGAL10 −₹34 ✓</span>
+      <a class="meta" style="text-decoration:underline">Remove</a>
+    </div>
+    <div class="coupon-row"><input placeholder="Try another code" value="MEALS50"><button class="apply">APPLY</button></div>
+    <div class="coupon-err">Add ₹60 more to use MEALS50 (min ₹500)</div>
+  </div>
+
+  <!-- ══ Bill ══ -->
+  <div class="card bill">
+    <div class="eyebrow" style="margin-bottom:6px">Bill details</div>
+    <div class="row"><span>Subtotal</span><span class="v tnum">₹340</span></div>
+    <div class="row discount"><span>Coupon PONGAL10</span><span class="v tnum">−₹34</span></div>
+    <div class="row"><span>GST (5%)</span><span class="v tnum">₹15.30</span></div>
+    <div class="row"><span>Delivery</span><span class="v" style="color:var(--veg)">FREE</span></div>
+    <div class="grand"><span class="lbl">Grand total</span><span class="v tnum">₹321</span></div>
+  </div>
+
+  <!-- ══ 409 serving-window error ══ -->
+  <div class="banner-409">
+    <span>⏰ Mini Tiffin is served 6 – 11:30 AM — remove it to continue</span>
+    <a class="btn btn-sm rm" style="border-color:var(--chili);color:var(--chili);box-shadow:2px 2px 0 var(--chili)">Remove</a>
+  </div>
+
+  <!-- ══ ETA ══ -->
+  <div class="card eta">
+    <span class="t">🤖 Arriving in ~38 min</span>
+    <span style="margin-left:auto"></span>
+    <span class="ai-meta light">dosadash-eta/v1</span>
+  </div>
+
+  <!-- ══ Pay ══ -->
+  <div class="pay">
+    <a class="btn btn-magenta btn-lg">Pay ₹321 with Razorpay</a>
+    <div class="meta">UPI · cards · netbanking — test mode</div>
+  </div>
+
+</div>
+
+</body>
+</html>

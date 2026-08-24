@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Orders — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+</style>
+<style>
+  /* page content */
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 18px; }
+  .chip-dk { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; border: 1.5px solid var(--indigo-600); border-radius: var(--r-pill); padding: 4px 12px; background: var(--indigo-800); color: var(--indigo-100); white-space: nowrap; }
+  .chip-dk.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .chip-dk .n { font-family: var(--font-display); font-weight: 700; }
+  .toolbar .input { width: 235px; }
+  .orders { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+  .order-card { background: var(--indigo-800); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 13px 16px; display: flex; align-items: center; gap: 14px; }
+  .order-card .oid { font-family: var(--font-display); font-weight: 700; font-size: 15.5px; color: #fff; width: 78px; flex: none; }
+  .order-card .chan { flex: none; font-size: 12px; font-weight: 600; color: var(--indigo-200); border: 1.5px solid var(--indigo-600); border-radius: var(--r-pill); padding: 2px 10px; background: var(--indigo-900); white-space: nowrap; }
+  .order-card .items { font-size: 13px; color: var(--indigo-200); white-space: nowrap; }
+  .order-card .amt { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: #fff; width: 66px; text-align: right; }
+  .order-card .cust { font-size: 12.5px; color: var(--indigo-300); white-space: nowrap; }
+  .order-card .acts { margin-left: auto; display: flex; gap: 8px; }
+  .btn-chili-ghost { border: 2px solid var(--chili) !important; color: #FF8B8B !important; background: transparent; box-shadow: none !important; }
+  .drawer { background: var(--indigo-900); border: 2px solid var(--indigo-700); border-top: none; border-radius: 0 0 var(--r-md) var(--r-md); margin: -12px 14px 0; padding: 18px 18px 16px; }
+  .order-card.open { border-radius: var(--r-md) var(--r-md) 0 0; border-bottom-color: var(--indigo-800); }
+  .timeline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; }
+  .tl-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; border-radius: var(--r-pill); padding: 3px 11px; background: var(--indigo-800); color: #5BD69B; border: 1.5px solid #2FA36B; white-space: nowrap; }
+  .tl-chip .t { color: var(--indigo-200); font-weight: 600; }
+  .tl-arrow { color: var(--indigo-300); font-size: 12px; }
+  .drawer-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; margin-top: 14px; }
+  .payline { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--indigo-800); }
+  .payline .lbl { color: var(--indigo-200); width: 110px; flex: none; font-size: 12px; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill on">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Orders</h1>
+    <span class="dot-live"></span><span class="meta">live via WebSocket · Tue 24 Aug · 7:48 PM IST</span>
+  </div>
+  <div class="zari on-dark"></div>
+
+  <!-- ══ Toolbar ══ -->
+  <div class="toolbar">
+    <span class="chip-dk on">All <span class="n tnum">128</span></span>
+    <span class="chip-dk">PLACED <span class="n tnum">3</span></span>
+    <span class="chip-dk">COOKING <span class="n tnum">2</span></span>
+    <span class="chip-dk">READY <span class="n tnum">1</span></span>
+    <span class="chip-dk">DELIVERED <span class="n tnum">119</span></span>
+    <span class="chip-dk">CANCELLED <span class="n tnum">3</span></span>
+    <span style="flex:1"></span>
+    <input class="input" style="flex:none" value="18 Aug — 24 Aug 2026">
+    <a class="btn btn-ghost btn-sm">🛵 Simulate aggregator order</a>
+  </div>
+
+  <!-- ══ Order rows ══ -->
+  <div class="card-panel-dark" style="padding:18px 18px 20px">
+    <div class="eyebrow">Live queue</div>
+    <h3 class="h3" style="color:#fff;margin:2px 0 4px">Today's orders</h3>
+
+    <div class="orders">
+
+      <div class="order-card">
+        <span class="oid tnum">#40639</span>
+        <span class="chan">📨 telegram</span>
+        <span class="badge badge-dk-info">PLACED</span>
+        <span class="items">1 item · Ghee Roast</span>
+        <span class="amt tnum">₹158</span>
+        <span class="cust">+91 98••• •••17</span>
+        <div class="acts">
+          <a class="btn btn-turmeric btn-sm">Advance → CONFIRMED</a>
+          <a class="btn btn-ghost btn-sm btn-chili-ghost">Cancel</a>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <span class="oid tnum">#40638</span>
+        <span class="chan">🌐 web</span>
+        <span class="badge badge-dk-warning">COOKING</span>
+        <span class="items">2 items · Masala Dosa, Medu Vada</span>
+        <span class="amt tnum">₹166</span>
+        <span class="cust">+91 98••• •••42</span>
+        <div class="acts">
+          <a class="btn btn-turmeric btn-sm">Advance → READY</a>
+          <a class="btn btn-ghost btn-sm btn-chili-ghost">Cancel</a>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <span class="oid tnum">#40637</span>
+        <span class="chan">🌐 web</span>
+        <span class="badge badge-dk-warning">COOKING</span>
+        <span class="items">3 items · Mutton Chukka, Parotta ×2</span>
+        <span class="amt tnum">₹342</span>
+        <span class="cust">+91 97••• •••81</span>
+        <div class="acts">
+          <a class="btn btn-turmeric btn-sm">Advance → READY</a>
+          <a class="btn btn-ghost btn-sm btn-chili-ghost">Cancel</a>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <span class="oid tnum">#40636</span>
+        <span class="chan">🛵 mockswiggy</span>
+        <span class="badge badge-dk-success">READY</span>
+        <span class="items">2 items · Idli (4 pcs), Filter Coffee</span>
+        <span class="amt tnum">₹120</span>
+        <span class="cust">+91 96••• •••09</span>
+        <div class="acts">
+          <a class="btn btn-turmeric btn-sm">Advance → OUT_FOR_DELIVERY</a>
+          <a class="btn btn-ghost btn-sm btn-chili-ghost">Cancel</a>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <span class="oid tnum">#40634</span>
+        <span class="chan">🛵 mockswiggy</span>
+        <span class="badge badge-dk-success">DELIVERED</span>
+        <span class="chip-dk" style="font-size:11.5px">prepaid</span>
+        <span class="items">2 items · Ragi Millet Dosa, Sukku Coffee</span>
+        <span class="amt tnum">₹152</span>
+        <span class="cust">via aggregator</span>
+        <div class="acts">
+          <a class="btn btn-ghost btn-sm">Receipt</a>
+        </div>
+      </div>
+
+      <!-- expanded order + drawer -->
+      <div class="order-card open">
+        <span class="oid tnum">#40632</span>
+        <span class="chan">🌐 web</span>
+        <span class="badge badge-dk-success">DELIVERED</span>
+        <span class="items">2 items · Masala Dosa, Medu Vada</span>
+        <span class="amt tnum">₹189</span>
+        <span class="cust">+91 98••• •••42</span>
+        <div class="acts">
+          <a class="btn btn-ghost btn-sm">Collapse ▴</a>
+        </div>
+      </div>
+      <div class="drawer">
+        <div class="eyebrow">State machine</div>
+        <div class="timeline">
+          <span class="tl-chip">PLACED <span class="t tnum">7:02</span></span><span class="tl-arrow">→</span>
+          <span class="tl-chip">CONFIRMED <span class="t tnum">7:03</span></span><span class="tl-arrow">→</span>
+          <span class="tl-chip">COOKING <span class="t tnum">7:05</span></span><span class="tl-arrow">→</span>
+          <span class="tl-chip">READY <span class="t tnum">7:19</span></span><span class="tl-arrow">→</span>
+          <span class="tl-chip">OUT_FOR_DELIVERY <span class="t tnum">7:24</span></span><span class="tl-arrow">→</span>
+          <span class="tl-chip">DELIVERED <span class="t tnum">7:41</span></span>
+        </div>
+        <div class="meta">transitions only via order_service state machine · every step audited</div>
+
+        <div class="drawer-grid">
+          <div>
+            <div class="eyebrow">Items</div>
+            <table class="tbl" style="margin-top:6px">
+              <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Total</th></tr></thead>
+              <tbody>
+                <tr><td>Masala Dosa</td><td class="num">1</td><td class="num">₹120</td><td class="num">₹120</td></tr>
+                <tr><td>Medu Vada (2 pcs)</td><td class="num">1</td><td class="num">₹60</td><td class="num">₹60</td></tr>
+                <tr><td style="color:var(--indigo-200)">Subtotal</td><td></td><td></td><td class="num">₹180</td></tr>
+                <tr><td style="color:var(--indigo-200)">GST 5% (food)</td><td></td><td></td><td class="num">₹9</td></tr>
+                <tr><td style="color:#fff;font-weight:700">Grand total</td><td></td><td></td><td class="num" style="color:#fff;font-weight:700">₹189</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div class="eyebrow">Payment</div>
+            <div class="payline"><span class="lbl">Provider</span> Razorpay <span class="badge badge-dk-success">CAPTURED</span></div>
+            <div class="payline"><span class="lbl">Payment ID</span> <span class="tnum">pay_Or8kQ2xT9mV4a</span></div>
+            <div class="payline"><span class="lbl">Method</span> UPI · okhdfcbank</div>
+            <div class="payline"><span class="lbl">GST invoice</span> INV-2026-40632 · 5% incl.</div>
+            <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+              <a class="btn btn-ghost btn-sm btn-chili-ghost">↩ Refund ₹189</a>
+              <span class="meta">audited · owner only</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-card">
+        <span class="oid tnum">#40629</span>
+        <span class="chan">📨 telegram</span>
+        <span class="badge badge-dk-danger">REFUNDED</span>
+        <span class="items">1 item · Onion Uttapam</span>
+        <span class="amt tnum">₹120</span>
+        <span class="cust">+91 98••• •••42</span>
+        <span class="meta" style="white-space:nowrap">refund ₹120 via Razorpay · human-approved</span>
+        <div class="acts">
+          <a class="btn btn-ghost btn-sm">Audit trail</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>

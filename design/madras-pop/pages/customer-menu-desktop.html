@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Customer Menu (Desktop) — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  /* page-specific layout */
+  .header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--indigo-900); color: var(--indigo-100);
+    border-bottom: 3px solid var(--turmeric-500);
+  }
+  .header-in { max-width: 1120px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 18px; }
+  .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: 0.02em; color: #fff; display: flex; align-items: center; gap: 9px; }
+  .wordmark .tail { color: var(--turmeric-400); }
+  .search { flex: 1; max-width: 420px; display: flex; align-items: center; gap: 8px; background: var(--indigo-950); border: 2px solid var(--indigo-600); border-radius: var(--r-pill); padding: 8px 16px; color: var(--indigo-300); font-size: 14px; }
+  .lang-toggle { display: flex; border: 2px solid var(--indigo-600); border-radius: var(--r-pill); overflow: hidden; font-family: var(--font-display); font-weight: 700; font-size: 13px; }
+  .lang-toggle span { padding: 5px 12px; }
+  .lang-toggle .on { background: var(--turmeric-500); color: var(--indigo-900); }
+  .lang-toggle .off { color: var(--indigo-200); }
+  .main { max-width: 1120px; margin: 0 auto; padding: 24px 24px 140px; }
+
+  .hero { background: var(--magenta-500); border: var(--border-ink); border-radius: var(--r-lg); box-shadow: 6px 6px 0 var(--indigo-900); padding: 26px 28px; color: #fff; position: relative; overflow: hidden; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+  .hero::after { content: ""; position: absolute; right: -40px; top: -40px; width: 220px; height: 220px; border-radius: 50%; background: var(--magenta-400); opacity: .5; }
+  .hero .art { font-size: 84px; line-height: 1; z-index: 1; filter: drop-shadow(4px 4px 0 var(--indigo-900)); }
+  .meal-pills { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .meal-pills .chip { border-color: #fff; background: transparent; color: #fff; }
+  .meal-pills .chip.now { background: var(--turmeric-500); color: var(--indigo-900); border-color: var(--indigo-900); box-shadow: 2px 2px 0 var(--indigo-900); }
+
+  .recs-card { flex: none; width: 168px; background: var(--paper); border: var(--border-ink); border-radius: var(--r-md); box-shadow: var(--shadow-pop-sm); overflow: hidden; }
+  .recs-card .ph { height: 84px; display: flex; align-items: center; justify-content: center; font-size: 40px; border-bottom: 2px solid var(--indigo-900); }
+  .recs-card .in { padding: 8px 10px 10px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .dish { display: flex; gap: 14px; padding: 14px; }
+  .dish .photo { flex: none; width: 104px; height: 104px; border: var(--border-ink); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 46px; position: relative; }
+  .aibadge { position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%); font-size: 10px; font-family: var(--font-display); font-weight: 700; background: var(--indigo-900); color: var(--turmeric-400); border-radius: var(--r-pill); padding: 2px 8px; letter-spacing: .06em; }
+  .dish .body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .dish .name-row { display: flex; align-items: center; gap: 8px; }
+  .dish .name { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+  .price { font-family: var(--font-display); font-weight: 700; font-size: 17px; margin-left: auto; white-space: nowrap; }
+  .desc { font-size: 13px; color: var(--muted); margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .dish .foot { margin-top: auto; padding-top: 10px; display: flex; align-items: center; gap: 10px; }
+  .tagline { font-size: 12px; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+  .stepper { display: inline-flex; align-items: center; border: var(--border-ink); border-radius: var(--r-sm); overflow: hidden; font-family: var(--font-display); font-weight: 700; box-shadow: var(--shadow-pop-sm); background: var(--paper); }
+  .stepper button { all: unset; width: 32px; height: 32px; text-align: center; cursor: pointer; background: var(--turmeric-500); font-weight: 700; }
+  .stepper .qty { width: 34px; text-align: center; font-size: 14px; }
+  .dish.off { background: var(--sand-200); }
+  .dish.off .photo, .dish.off .name, .dish.off .price { opacity: .45; }
+  .window-chip { font-size: 11.5px; font-weight: 600; color: #8A6A03; background: var(--warn-100); border: 1.5px solid #D9A404; border-radius: var(--r-pill); padding: 2px 9px; }
+  .soldout-chip { font-size: 11.5px; font-weight: 700; color: var(--chili); background: var(--chili-100); border: 1.5px solid var(--chili); border-radius: var(--r-pill); padding: 2px 9px; text-transform: uppercase; letter-spacing: .05em; font-family: var(--font-display); }
+
+  .section-head { display: flex; align-items: baseline; gap: 14px; margin: 34px 0 4px; }
+  .section-head .count { font-size: 12.5px; color: var(--muted); }
+
+  /* checkout dock */
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--indigo-900); border-top: 3px solid var(--turmeric-500); color: var(--indigo-100); }
+  .dock-in { max-width: 1120px; margin: 0 auto; padding: 12px 24px 16px; }
+  .dock .sugg { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .dock .sugg .chip { background: var(--indigo-800); color: var(--turmeric-300, #FFE9A8); border-color: var(--indigo-600); }
+  .dock-row { display: flex; align-items: center; gap: 14px; }
+  .coupon { display: flex; gap: 0; flex: none; }
+  .coupon input { width: 170px; background: var(--indigo-950); border: 2px solid var(--indigo-600); border-right: none; border-radius: var(--r-sm) 0 0 var(--r-sm); color: var(--indigo-100); font-size: 13px; padding: 8px 12px; outline: none; }
+  .coupon .apply { font-family: var(--font-display); font-weight: 700; font-size: 13px; background: var(--indigo-700); color: var(--turmeric-400); border: 2px solid var(--indigo-600); border-radius: 0 var(--r-sm) var(--r-sm) 0; padding: 8px 14px; cursor: pointer; }
+  .totals { margin-left: auto; text-align: right; }
+  .totals .items { font-size: 12.5px; color: var(--indigo-200); }
+  .totals .amt { font-family: var(--font-display); font-weight: 700; font-size: 22px; color: #fff; }
+  .veg-switch { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--indigo-100); }
+  .veg-switch .track { width: 34px; height: 19px; border-radius: 999px; background: var(--indigo-600); position: relative; }
+  .veg-switch .track::after { content: ""; position: absolute; top: 2.5px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; }
+</style>
+</head>
+<body>
+
+<!-- ══ Header ══ -->
+<div class="header">
+  <div class="header-in">
+    <div class="wordmark">🥞 DOSA<span class="tail">DASH</span></div>
+    <div class="search">🔎 Search dosa, idli, biryani…</div>
+    <div class="lang-toggle"><span class="on">EN</span><span class="off">தமிழ்</span></div>
+    <div class="veg-switch"><span class="track"></span> Veg only</div>
+    <a class="btn btn-ghost btn-sm" style="color:var(--indigo-100)">📦 Orders</a>
+    <a class="btn btn-turmeric btn-sm">Login</a>
+  </div>
+</div>
+<div class="ticker">&nbsp;&nbsp;HOT OFF THE TAWA ✦ GHEE ROAST ₹150 ✦ FILTER COFFEE ₹40 ✦ MILLET SPECIALS FROM 99KM ✦ MESS SPECIALS FROM ACHARAPAKKAM ✦ HOT OFF THE TAWA ✦ GHEE ROAST ₹150 ✦ FILTER COFFEE ₹40 ✦ MILLET SPECIALS</div>
+
+<div class="main">
+
+  <!-- ══ Hero ══ -->
+  <div class="hero">
+    <div style="z-index:1">
+      <div class="eyebrow" style="color:var(--turmeric-400)">Good evening · Chennai</div>
+      <div class="h-display" style="margin-top:6px">Dinner is on<br>the tawa 🔥</div>
+      <div class="meal-pills">
+        <span class="chip">Breakfast 6–11:30</span>
+        <span class="chip">Lunch 11:30–3</span>
+        <span class="chip">Snacks</span>
+        <span class="chip now">● Dinner — now serving</span>
+      </div>
+    </div>
+    <div class="art">🥞</div>
+  </div>
+
+  <!-- ══ Recommendations ══ -->
+  <div class="section-head">
+    <span class="poster-block turmeric">✨ You might like</span>
+    <span class="ai-meta light">recsys · als-v4</span>
+  </div>
+  <div class="zari"></div>
+  <div class="scroll-x">
+    <div class="recs-card"><div class="ph" style="background:var(--turmeric-100)">☕</div><div class="in"><div style="font-weight:700;font-size:13.5px">Filter Coffee</div><div class="tnum" style="font-family:var(--font-display);font-weight:700">₹40</div></div></div>
+    <div class="recs-card"><div class="ph" style="background:var(--magenta-100)">🍮</div><div class="in"><div style="font-weight:700;font-size:13.5px">Kesari</div><div class="tnum" style="font-family:var(--font-display);font-weight:700">₹60</div></div></div>
+    <div class="recs-card"><div class="ph" style="background:var(--sky-100)">🥟</div><div class="in"><div style="font-weight:700;font-size:13.5px">Kuzhi Paniyaram</div><div class="tnum" style="font-family:var(--font-display);font-weight:700">₹90</div></div></div>
+    <div class="recs-card"><div class="ph" style="background:var(--veg-100)">🍚</div><div class="in"><div style="font-weight:700;font-size:13.5px">Curd Rice</div><div class="tnum" style="font-family:var(--font-display);font-weight:700">₹80</div></div></div>
+    <div class="recs-card"><div class="ph" style="background:var(--sand-200)">🫓</div><div class="in"><div style="font-weight:700;font-size:13.5px">Medu Vada (2)</div><div class="tnum" style="font-family:var(--font-display);font-weight:700">₹60</div></div></div>
+    <div class="recs-card"><div class="ph" style="background:var(--turmeric-100)">🌾</div><div class="in"><div style="font-weight:700;font-size:13.5px">Ragi Millet Dosa</div><div class="tnum" style="font-family:var(--font-display);font-weight:700">₹110</div></div></div>
+  </div>
+
+  <!-- ══ Dosas ══ -->
+  <div class="section-head">
+    <span class="poster-block">Dosas</span>
+    <span class="count">12 dishes · served 6–11:30 AM &amp; 5–10 PM</span>
+  </div>
+  <div class="zari"></div>
+  <div class="grid">
+
+    <!-- in-cart item w/ stepper + AI photo -->
+    <div class="card dish">
+      <div class="photo" style="background:linear-gradient(135deg,var(--turmeric-100),var(--turmeric-400))">🥞<span class="aibadge">✨ AI</span></div>
+      <div class="body">
+        <div class="name-row"><span class="fssai veg"></span><span class="name">Masala Dosa</span><span class="price tnum">₹120</span></div>
+        <div class="desc">Crisp golden dosa wrapped around spiced potato masala, served with sambar &amp; two chutneys.</div>
+        <div class="foot">
+          <span class="tagline"><span class="spice">🌶🌶</span> · ⚠ peanut</span>
+          <span style="margin-left:auto"></span>
+          <span class="stepper"><button>−</button><span class="qty tnum">2</span><button>+</button></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card dish">
+      <div class="photo" style="background:linear-gradient(135deg,var(--magenta-100),var(--turmeric-100))">🧈</div>
+      <div class="body">
+        <div class="name-row"><span class="fssai veg"></span><span class="name">Ghee Roast</span><span class="price tnum">₹150</span></div>
+        <div class="desc">Paper-thin, ghee-laden roast, folded tall the Madras way. Jain option available.</div>
+        <div class="foot">
+          <span class="tagline"><span class="spice">🌶</span> · dairy</span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-turmeric btn-sm">ADD +</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 86'd / sold-out case -->
+    <div class="card-flat dish off">
+      <div class="photo" style="background:var(--sand-200)">🥞</div>
+      <div class="body">
+        <div class="name-row"><span class="fssai veg"></span><span class="name">Mysore Masala Dosa</span><span class="price tnum">₹140</span></div>
+        <div class="desc">Fiery red chutney smeared inside, potato masala, extra crisp.</div>
+        <div class="foot">
+          <span class="soldout-chip">Sold out today</span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-sm disabled">ADD +</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card dish">
+      <div class="photo" style="background:linear-gradient(135deg,var(--veg-100),var(--turmeric-100))">🌾</div>
+      <div class="body">
+        <div class="name-row"><span class="fssai veg"></span><span class="name">Ragi Millet Dosa</span><span class="price tnum">₹110</span></div>
+        <div class="desc">99 KM-style ragi millet dosa — earthy, crisp, and good for you. Vegan.</div>
+        <div class="foot">
+          <span class="tagline">🌱 vegan · <span class="spice">🌶</span></span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-turmeric btn-sm">ADD +</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Mess Specials (non-veg + serving-window case) ══ -->
+  <div class="section-head">
+    <span class="poster-block indigo">Mess Specials</span>
+    <span class="count">Acharapakkam style · from 11:30 AM</span>
+  </div>
+  <div class="zari"></div>
+  <div class="grid">
+    <div class="card dish">
+      <div class="photo" style="background:linear-gradient(135deg,var(--chili-100),var(--magenta-100))">🍖</div>
+      <div class="body">
+        <div class="name-row"><span class="fssai nonveg"></span><span class="name">Mutton Chukka</span><span class="price tnum">₹260</span></div>
+        <div class="desc">Dry-roasted mutton tossed with black pepper, curry leaves and shallots.</div>
+        <div class="foot">
+          <span class="tagline"><span class="spice">🌶🌶🌶</span></span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-turmeric btn-sm">ADD +</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- off-window case -->
+    <div class="card-flat dish off">
+      <div class="photo" style="background:var(--sand-200)">🍛</div>
+      <div class="body">
+        <div class="name-row"><span class="fssai nonveg"></span><span class="name">Non-Veg Mess Meals</span><span class="price tnum">₹220</span></div>
+        <div class="desc">Full mess meals — kuzhambu, poriyal, rasam, appalam with chicken curry.</div>
+        <div class="foot">
+          <span class="window-chip">⏰ Lunch only · 11:30 AM – 3 PM</span>
+          <span style="margin-left:auto"></span>
+          <a class="btn btn-sm disabled">ADD +</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ Checkout dock ══ -->
+<div class="dock on-dark">
+  <div class="dock-in">
+    <div class="sugg">
+      <span class="chip">🧩 Complete the combo — add Filter Coffee ₹40</span>
+      <span class="chip">✨ Sweet after? Kesari ₹60</span>
+    </div>
+    <div class="dock-row">
+      <div class="coupon"><input placeholder="Coupon code"><button class="apply">APPLY</button></div>
+      <span class="badge badge-dk-success">PONGAL10 · −₹34</span>
+      <div class="totals">
+        <div class="items">3 items · GST incl.</div>
+        <div class="amt tnum">₹346</div>
+      </div>
+      <a class="btn btn-magenta btn-lg">Checkout →</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

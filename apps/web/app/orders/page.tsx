@@ -9,7 +9,7 @@ import { SupportBox } from "./supportBox";
 import { Badge, Btn, Card, EmptyState, statusBadgeTone } from "../components/ui";
 
 const lightGhostBtn =
-  "rounded-lg border border-leaf-600 px-3 py-1 text-xs font-semibold text-leaf-800 transition-colors duration-150 hover:border-brass-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass-500";
+  "rounded-lg border-2 border-indigo-900 bg-paper px-3 py-1 font-display text-xs font-bold text-ink shadow-pop-xs transition-colors duration-150 hover:bg-turmeric-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500";
 
 export default function Orders() {
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -74,9 +74,9 @@ export default function Orders() {
 
   return (
     <main className="min-h-screen pb-10">
-      <header className="sticky top-0 z-40 border-b border-brass-500/30 bg-leaf-800 px-4 py-3">
+      <header className="sticky top-0 z-40 border-b-[3px] border-turmeric-500 bg-indigo-900 px-4 py-3">
         <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3">
-          <h1 className="font-display text-xl font-semibold tracking-tight text-brass-300">
+          <h1 className="font-display text-xl font-bold tracking-tight text-white">
             🥞 Your orders
           </h1>
           <div className="flex items-center gap-3">
@@ -84,20 +84,20 @@ export default function Orders() {
               <span className="flex items-center gap-2 text-xs">
                 <Badge tone="info">✈️ Telegram linked ✓</Badge>
                 <button
-                  className="text-leaf-200 underline underline-offset-4 transition-colors duration-150 hover:text-brass-300"
+                  className="text-indigo-200 underline underline-offset-4 transition-colors duration-150 hover:text-turmeric-400"
                   onClick={unlinkTelegram}
                 >
                   Unlink
                 </button>
               </span>
             ) : (
-              <Btn variant="leaf" size="sm" onClick={linkTelegram}>
+              <Btn variant="turmeric" size="sm" onClick={linkTelegram}>
                 ✈️ Link Telegram
               </Btn>
             )}
             <Link
               href="/"
-              className="text-sm text-leaf-100 underline decoration-brass-500/50 underline-offset-4 transition-colors duration-150 hover:text-brass-300"
+              className="text-sm text-indigo-100 underline decoration-turmeric-500/60 underline-offset-4 transition-colors duration-150 hover:text-turmeric-400"
             >
               ← Menu
             </Link>
@@ -105,27 +105,27 @@ export default function Orders() {
         </div>
       </header>
       <div className="mx-auto max-w-2xl px-4 py-6">
-        {error && <p className="mb-3 text-sm text-chili-600">{error}</p>}
-        {orders === null && <p className="text-ink-400">Loading…</p>}
+        {error && <p className="mb-3 text-sm font-semibold text-chili">{error}</p>}
+        {orders === null && <p className="text-faint">Loading…</p>}
         {orders?.length === 0 && !error && (
           <EmptyState surface="light">No orders yet — go grab a dosa!</EmptyState>
         )}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {orders?.map((o) => (
             <Card key={o.id} tone="light" className="p-4">
               <div className="flex items-center justify-between">
-                <h2 className="font-display text-lg font-semibold tracking-tight text-leaf-800">
+                <h2 className="font-display text-lg font-bold tracking-tight text-ink">
                   #{o.id}
                 </h2>
                 <Badge surface="light" tone={statusBadgeTone(o.status)}>
                   {o.status}
                 </Badge>
               </div>
-              <p className="my-1 text-sm text-ink-600">
+              <p className="my-1 text-sm text-muted">
                 {o.items.map((i) => `${i.qty}× ${i.name}`).join(", ")}
               </p>
               <div className="flex items-center justify-between">
-                <p className="tnum text-sm text-ink-900">
+                <p className="tnum text-sm text-ink">
                   <b className="font-display">₹{o.total}</b> ·{" "}
                   {new Date(o.placed_at).toLocaleString("en-IN")}
                 </p>

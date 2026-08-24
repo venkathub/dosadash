@@ -16,7 +16,7 @@ import OrderTracker from "./components/OrderTracker";
 import ChatWidget from "./components/ChatWidget";
 import Recommendations from "./components/Recommendations";
 import CheckoutSuggestions from "./components/CheckoutSuggestions";
-import { Btn, Card, Input, SectionHeading, cx } from "./components/ui";
+import { Btn, Card, FssaiMark, Input, PosterBlock, Ticker, Zari, cx } from "./components/ui";
 
 type CartLine = { item: MenuItem; qty: number };
 
@@ -24,11 +24,11 @@ const SPICE = ["", "🌶", "🌶🌶", "🌶🌶🌶"];
 
 type MealPeriod = "breakfast" | "lunch" | "snacks" | "dinner";
 
-const MEAL_GREETING: Record<MealPeriod, string> = {
-  breakfast: "Good morning ☀ — dosas are on the tawa",
-  lunch: "Lunch hour 🍛 — meals are steaming",
-  snacks: "Evening tiffin 🫖 — bajjis & filter coffee",
-  dinner: "Dinner time 🌙 — the tawa is still hot",
+const HERO: Record<MealPeriod, { eyebrow: string; heading: string; art: string }> = {
+  breakfast: { eyebrow: "Good morning · Chennai", heading: "Dosas are on the tawa ☀", art: "🥞" },
+  lunch: { eyebrow: "Lunch hour · Chennai", heading: "Meals are steaming 🍛", art: "🍛" },
+  snacks: { eyebrow: "Evening tiffin · Chennai", heading: "Bajjis & filter coffee 🫖", art: "☕" },
+  dinner: { eyebrow: "Good evening · Chennai", heading: "Dinner is on the tawa 🔥", art: "🥞" },
 };
 
 const MEAL_PERIODS: MealPeriod[] = ["breakfast", "lunch", "snacks", "dinner"];
@@ -39,26 +39,6 @@ function currentMealPeriod(date = new Date()): MealPeriod {
   if (h < 15) return "lunch";
   if (h < 18) return "snacks";
   return "dinner";
-}
-
-/** FSSAI-style veg/non-veg mark: bordered square with a dot. */
-function VegMark({ isVeg }: { isVeg: boolean }) {
-  return (
-    <span
-      className={cx(
-        "inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border",
-        isVeg ? "border-veg-500" : "border-chili-500",
-      )}
-      title={isVeg ? "Veg" : "Non-veg"}
-    >
-      <span
-        className={cx(
-          "h-1.5 w-1.5 rounded-full",
-          isVeg ? "bg-veg-500" : "bg-chili-500",
-        )}
-      />
-    </span>
-  );
 }
 
 export default function Home() {
@@ -133,6 +113,14 @@ export default function Home() {
     .map((l) => menu.find((m) => m.id === l.item.id) ?? l.item)
     .filter((m) => m.available_now === false);
 
+  // Decorative ticker built from the live menu (never hardcode prices — drift).
+  const tickerText = useMemo(() => {
+    if (menu.length === 0) return "";
+    const picks = menu.filter((m) => m.available_now !== false).slice(0, 5);
+    const parts = picks.map((m) => `${m.name} ₹${parseFloat(m.price).toFixed(0)}`);
+    return `  HOT OFF THE TAWA ✦ ${parts.join(" ✦ ")} ✦ HOT OFF THE TAWA ✦`;
+  }, [menu]);
+
   const add = (item: MenuItem, delta: number) => {
     // Off-window dishes can never be ADDED (recs/suggestions funnel through
     // here too) — removing an existing line is always allowed.
@@ -204,13 +192,13 @@ export default function Home() {
 
   return (
     <main className="min-h-screen pb-32">
-      <header className="sticky top-0 z-40 border-b border-brass-500/30 bg-leaf-800/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b-[3px] border-turmeric-500 bg-indigo-900 px-4 py-3">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
-          <h1 className="font-display text-xl font-semibold tracking-tight text-brass-300">
-            🥞 DosaDash
+          <h1 className="flex items-center gap-1.5 font-display text-lg font-bold tracking-wide text-white">
+            🥞 DOSA<span className="-ml-1.5 text-turmeric-400">DASH</span>
           </h1>
           <Input
-            tone="light"
+            tone="dark"
             className="w-40 rounded-full sm:w-64"
             placeholder="Search dishes…"
             value={search}
@@ -218,23 +206,38 @@ export default function Home() {
           />
           <div className="flex items-center gap-3 text-sm">
             <button
-              className="rounded-full border border-cream-300 bg-cream-50 px-2.5 py-0.5 text-xs font-semibold text-leaf-800 transition-colors duration-150 hover:border-brass-500 hover:bg-cream-200"
+              className="flex overflow-hidden rounded-full border-2 border-indigo-600 font-display text-[11.5px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
               title={lang === "ta" ? "Switch to English" : "தமிழில் காட்டு"}
               onClick={() => switchLang(lang === "ta" ? "en" : "ta")}
             >
-              {lang === "ta" ? "EN" : "தமிழ்"}
+              <span
+                className={cx(
+                  "px-2 py-0.5",
+                  lang === "en" ? "bg-turmeric-500 text-indigo-900" : "text-indigo-200",
+                )}
+              >
+                EN
+              </span>
+              <span
+                className={cx(
+                  "px-2 py-0.5",
+                  lang === "ta" ? "bg-turmeric-500 text-indigo-900" : "text-indigo-200",
+                )}
+              >
+                தமிழ்
+              </span>
             </button>
             <label
               className={cx(
-                "flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors duration-150",
+                "flex cursor-pointer items-center gap-1.5 rounded-full border-2 px-2.5 py-0.5 text-xs font-semibold transition-colors duration-150",
                 vegOnly
-                  ? "border-veg-500 bg-cream-50 text-veg-600"
-                  : "border-leaf-600 text-leaf-100 hover:border-brass-400",
+                  ? "border-indigo-900 bg-veg text-white"
+                  : "border-indigo-600 text-indigo-100 hover:border-turmeric-400",
               )}
             >
               <input
                 type="checkbox"
-                className="accent-[#2F8A56]"
+                className="accent-[#1E8A5A]"
                 checked={vegOnly}
                 onChange={(e) => setVegOnly(e.target.checked)}
               />
@@ -242,20 +245,20 @@ export default function Home() {
             </label>
             <Link
               href="/orders"
-              className="text-leaf-100 underline decoration-brass-500/50 underline-offset-4 transition-colors duration-150 hover:text-brass-300"
+              className="text-indigo-100 underline decoration-turmeric-500/60 underline-offset-4 transition-colors duration-150 hover:text-turmeric-400"
             >
               Orders
             </Link>
             <Link
               href="/demo"
-              className="text-leaf-100 underline decoration-brass-500/50 underline-offset-4 transition-colors duration-150 hover:text-brass-300"
+              className="text-indigo-100 underline decoration-turmeric-500/60 underline-offset-4 transition-colors duration-150 hover:text-turmeric-400"
               title="Demo guide: credentials + test cards"
             >
               Demo
             </Link>
             {user ? (
               <button
-                className="text-leaf-200 underline underline-offset-4 transition-colors duration-150 hover:text-brass-300"
+                className="text-indigo-200 underline underline-offset-4 transition-colors duration-150 hover:text-turmeric-400"
                 onClick={() => {
                   clearSession();
                   setUser(null);
@@ -264,39 +267,54 @@ export default function Home() {
                 Logout
               </button>
             ) : (
-              <Btn size="sm" onClick={() => setShowLogin(true)}>
+              <Btn variant="turmeric" size="sm" onClick={() => setShowLogin(true)}>
                 Login
               </Btn>
             )}
           </div>
         </div>
       </header>
+      {tickerText && <Ticker>{tickerText}</Ticker>}
 
-      {error && <p className="mx-auto mt-3 max-w-4xl px-4 text-sm text-chili-600">{error}</p>}
+      {error && (
+        <p className="mx-auto mt-3 max-w-4xl px-4 text-sm font-semibold text-chili">{error}</p>
+      )}
 
       <div className="mx-auto max-w-4xl px-4">
         {menu.length > 0 && (
-          <section className="mt-4 rounded-2xl bg-gradient-to-br from-leaf-800 to-leaf-700 px-5 py-4 shadow-card">
-            <p className="font-display text-lg font-semibold tracking-tight text-leaf-100">
-              {MEAL_GREETING[period]}
-            </p>
-            <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-brass-300/80">
-              Good for {period} right now
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {MEAL_PERIODS.map((p) => (
-                <span
-                  key={p}
-                  className={cx(
-                    "rounded-full px-3 py-1 text-xs font-semibold",
-                    p === period
-                      ? "btn-gold shadow-card"
-                      : "bg-leaf-700 text-leaf-200",
-                  )}
-                >
-                  {p}
-                </span>
-              ))}
+          <section className="relative mt-5 overflow-hidden rounded-2xl border-2 border-indigo-900 bg-magenta-500 px-5 py-5 text-white shadow-[5px_5px_0_#1B1B3A]">
+            <div
+              className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-magenta-400 opacity-50"
+              aria-hidden="true"
+            />
+            <div
+              className="absolute bottom-2 right-3 text-5xl [filter:drop-shadow(3px_3px_0_#1B1B3A)]"
+              aria-hidden="true"
+            >
+              {HERO[period].art}
+            </div>
+            <div className="relative z-[1]">
+              <p className="font-display text-[11px] font-bold uppercase tracking-[0.16em] text-turmeric-400">
+                {HERO[period].eyebrow}
+              </p>
+              <p className="mt-1.5 font-display text-[27px] font-bold uppercase leading-[1.1] tracking-[0.01em]">
+                {HERO[period].heading}
+              </p>
+              <div className="mt-3.5 flex flex-wrap gap-2">
+                {MEAL_PERIODS.map((p) => (
+                  <span
+                    key={p}
+                    className={cx(
+                      "rounded-full border-2 px-2.5 py-0.5 text-[11.5px] font-semibold",
+                      p === period
+                        ? "border-indigo-900 bg-turmeric-500 text-indigo-900 shadow-pop-xs"
+                        : "border-white bg-transparent text-white",
+                    )}
+                  >
+                    {p === period ? `● ${p} — now serving` : p}
+                  </span>
+                ))}
+              </div>
             </div>
           </section>
         )}
@@ -305,23 +323,32 @@ export default function Home() {
           menu={menu}
           onAdd={(item) => add(item, 1)}
         />
-        {categories.map((cat) => (
+        {categories.map((cat, ci) => {
+          const inCat = visible.filter((m) => m.category === cat);
+          const label = inCat.find((m) => m.category_label)?.category_label ?? cat;
+          return (
           <section key={cat} className="mt-8">
-            <SectionHeading as="h2" className="mb-4 text-2xl text-leaf-800">
-              {visible.find((m) => m.category === cat && m.category_label)?.category_label ?? cat}
-            </SectionHeading>
+            <div className="mb-1 flex flex-wrap items-baseline gap-2.5">
+              <PosterBlock tone={ci % 2 === 0 ? "magenta" : "indigo"} tamil={lang === "ta"}>
+                {label}
+              </PosterBlock>
+              <span className="text-[11.5px] text-muted">{inCat.length} dishes</span>
+            </div>
+            <Zari className="mb-4" />
             <div className="grid gap-4 md:grid-cols-2">
-              {visible
-                .filter((m) => m.category === cat)
+              {inCat
                 .sort((a, b) => Number(inPeriod(b)) - Number(inPeriod(a)))
                 .map((m) => {
                   const off = m.available_now === false;
                   return (
-                  <Card
+                  <div
                     key={m.id}
-                    tone="light"
-                    hover={!off}
-                    className="flex justify-between gap-3 p-3"
+                    className={cx(
+                      "flex justify-between gap-3 rounded-xl border-2 border-indigo-900 p-3",
+                      off
+                        ? "bg-sand-200"
+                        : "bg-paper shadow-pop transition-transform duration-150 hover:-translate-y-0.5",
+                    )}
                   >
                     {m.image_url && (
                       <div className="relative h-24 w-24 shrink-0">
@@ -330,13 +357,13 @@ export default function Home() {
                           src={m.image_url}
                           alt={m.name}
                           className={cx(
-                            "h-24 w-24 rounded-lg object-cover",
+                            "h-24 w-24 rounded-lg border-2 border-indigo-900 object-cover",
                             off && "opacity-40 saturate-50",
                           )}
                         />
                         {m.image_ai && (
                           <span
-                            className="absolute bottom-0 right-0 rounded-tl-lg rounded-br-lg bg-leaf-950/80 px-1.5 py-0.5 text-[9px] font-semibold text-brass-300"
+                            className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-indigo-900 px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.06em] text-turmeric-400"
                             title="This photo was generated by AI and approved by the kitchen"
                           >
                             ✨ AI
@@ -345,66 +372,50 @@ export default function Home() {
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <h3 className="flex items-center gap-1.5 font-semibold text-ink-900">
-                        <VegMark isVeg={m.is_veg} />
-                        <span className={cx("truncate", off && "text-ink-400")}>{m.name}</span>
+                      <h3 className="flex items-center gap-1.5">
+                        <FssaiMark veg={m.is_veg} />
+                        <span
+                          className={cx(
+                            "truncate font-display text-[15px] font-bold",
+                            off ? "text-faint" : "text-ink",
+                          )}
+                        >
+                          {m.name}
+                        </span>
                       </h3>
                       <p
                         className={cx(
-                          "mt-0.5 text-sm text-ink-600 line-clamp-2",
+                          "mt-0.5 text-sm text-muted line-clamp-2",
                           off && "opacity-60",
                         )}
                       >
                         {m.description}
                       </p>
                       {(m.spice_level > 0 || m.allergens.length > 0) && (
-                        <p className={cx("mt-1 flex flex-wrap gap-1", off && "opacity-60")}>
+                        <p className={cx("mt-1 flex flex-wrap items-center gap-1.5 text-[11.5px] text-muted", off && "opacity-60")}>
                           {m.spice_level > 0 && (
-                            <span className="rounded-full border border-chili-500/30 bg-chili-200/50 px-1.5 py-0.5 text-[10px]">
-                              {SPICE[m.spice_level]}
-                            </span>
+                            <span className="tracking-widest text-chili">{SPICE[m.spice_level]}</span>
                           )}
-                          {m.allergens.length > 0 && (
-                            <span className="rounded-full border border-turmeric-500/40 bg-turmeric-200 px-1.5 py-0.5 text-[10px] text-ink-900">
-                              ⚠ {m.allergens.join(", ")}
-                            </span>
-                          )}
+                          {m.allergens.length > 0 && <span>· ⚠ {m.allergens.join(", ")}</span>}
                         </p>
                       )}
-                      {m.meal_periods.length > 0 && (
-                        <p className={cx("mt-1 flex flex-wrap gap-1", off && "opacity-60")}>
-                          {m.meal_periods.map((p) => (
-                            <span
-                              key={p}
-                              className={cx(
-                                "rounded-full px-1.5 py-0.5 text-[10px]",
-                                p === period
-                                  ? "bg-brass-300/40 font-semibold text-brass-600"
-                                  : "bg-cream-200 text-ink-400",
-                              )}
-                            >
-                              {p}
-                            </span>
-                          ))}
-                        </p>
-                      )}
-                      {/* Serving-window badge (server-built text, stays English by design) */}
+                      {/* Serving-window chip (server-built text, stays English by design) */}
                       {off ? (
-                        <p className="mt-1">
-                          <span className="inline-flex items-center gap-1 rounded-full border border-ink-400/30 bg-cream-200 px-1.5 py-0.5 text-[10px] font-semibold text-ink-600">
+                        <p className="mt-1.5">
+                          <span className="inline-flex items-center gap-1 rounded-full border-[1.5px] border-turmeric-600 bg-warn-100 px-2 py-0.5 text-[11px] font-semibold text-[#8A6A03]">
                             ⏰ Not available now
                             {m.serving_windows && <> · Serves {m.serving_windows}</>}
                           </span>
                         </p>
                       ) : (
                         m.serving_windows && (
-                          <p className="mt-1 text-[10px] text-ink-400">⏰ {m.serving_windows}</p>
+                          <p className="mt-1 text-[10px] text-faint">⏰ {m.serving_windows}</p>
                         )
                       )}
                       <p
                         className={cx(
-                          "tnum mt-1 font-display text-base font-semibold text-leaf-800",
-                          off && "opacity-60",
+                          "tnum mt-1 font-display text-base font-bold text-ink",
+                          off && "opacity-50",
                         )}
                       >
                         ₹{m.price}
@@ -412,18 +423,18 @@ export default function Home() {
                     </div>
                     <div className="flex flex-col items-end justify-end">
                       {cart[m.id] ? (
-                        <div className="flex items-center gap-1 rounded-full border border-leaf-600 px-1 py-0.5">
+                        <div className="flex items-center overflow-hidden rounded-lg border-2 border-indigo-900 bg-paper font-display font-bold shadow-pop-sm">
                           <button
-                            className="h-6 w-6 rounded-full font-bold text-leaf-800 transition-colors duration-150 hover:bg-cream-200"
+                            className="h-8 w-8 bg-turmeric-500 text-indigo-900 transition-colors duration-150 hover:bg-turmeric-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
                             onClick={() => add(m, -1)}
                           >
                             −
                           </button>
-                          <span className="tnum w-5 text-center text-sm font-semibold text-ink-900">
+                          <span className="tnum w-8 text-center text-sm text-ink">
                             {cart[m.id].qty}
                           </span>
                           <button
-                            className="h-6 w-6 rounded-full font-bold text-leaf-800 transition-colors duration-150 hover:bg-cream-200 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="h-8 w-8 bg-turmeric-500 text-indigo-900 transition-colors duration-150 hover:bg-turmeric-400 disabled:cursor-not-allowed disabled:bg-sand-300 disabled:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
                             disabled={off}
                             onClick={() => add(m, 1)}
                           >
@@ -432,25 +443,27 @@ export default function Home() {
                         </div>
                       ) : (
                         <Btn
+                          variant="turmeric"
                           size="sm"
                           disabled={off}
                           title={off ? "Not available right now" : undefined}
                           onClick={() => add(m, 1)}
                         >
-                          ADD
+                          ADD +
                         </Btn>
                       )}
                     </div>
-                  </Card>
+                  </div>
                   );
                 })}
             </div>
           </section>
-        ))}
+          );
+        })}
       </div>
 
       {cartLines.length > 0 && (
-        <footer className="fixed bottom-0 left-0 right-0 z-40 rounded-t-2xl border-t border-brass-500/30 bg-leaf-900 p-3 shadow-modal">
+        <footer className="fixed bottom-0 left-0 right-0 z-40 border-t-[3px] border-turmeric-500 bg-indigo-900 p-3 text-indigo-100">
           <CheckoutSuggestions
             cartIds={Object.keys(cart).map(Number)}
             menu={menu}
@@ -469,7 +482,7 @@ export default function Home() {
               }}
             />
             <Btn
-              variant="leaf"
+              variant="subtle"
               size="sm"
               disabled={couponCode.length < 2 || !!coupon}
               onClick={applyCoupon}
@@ -477,26 +490,32 @@ export default function Home() {
               {coupon ? "✓ Applied" : "Apply"}
             </Btn>
             {coupon && (
-              <span className="text-xs font-semibold text-veg-200">
+              <span className="text-xs font-semibold text-[#5BD69B]">
                 {coupon.code}: −₹{parseFloat(coupon.discount).toFixed(2)}
               </span>
             )}
-            {couponError && <span className="text-xs text-chili-200">{couponError}</span>}
+            {couponError && (
+              <span className="text-xs font-semibold text-[#FF8B8B]">{couponError}</span>
+            )}
           </div>
           <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
-            <p className="text-sm text-leaf-100">
-              <b>{cartLines.reduce((s, l) => s + l.qty, 0)} items</b> ·{" "}
-              <span className="tnum font-display text-base font-semibold text-cream-50">
+            <p className="text-sm">
+              <span className="text-[11.5px] text-indigo-200">
+                {cartLines.reduce((s, l) => s + l.qty, 0)} items{coupon && " · coupon applied"}
+              </span>
+              <br />
+              <span className="tnum font-display text-[21px] font-bold text-white">
                 ₹{cartTotal.toFixed(2)}
               </span>{" "}
               {coupon && (
-                <span className="font-semibold text-veg-200">
+                <span className="text-sm font-semibold text-[#5BD69B]">
                   −₹{parseFloat(coupon.discount).toFixed(2)}
                 </span>
               )}{" "}
-              <span className="text-leaf-500">+ GST</span>
+              <span className="text-xs text-indigo-300">+ GST</span>
             </p>
             <Btn
+              variant="magenta"
               size="lg"
               disabled={placing || offWindowLines.length > 0}
               title={
@@ -510,9 +529,12 @@ export default function Home() {
             </Btn>
           </div>
           {offWindowLines.length > 0 && (
-            <div className="mx-auto mt-2 max-w-4xl text-xs text-chili-200">
+            <div className="mx-auto mt-2 max-w-4xl space-y-1 text-xs">
               {offWindowLines.map((m) => (
-                <p key={m.id}>
+                <p
+                  key={m.id}
+                  className="inline-block rounded-lg border-[1.5px] border-turmeric-600 bg-warn-100 px-2.5 py-1 font-semibold text-[#8A6A03]"
+                >
                   ⏰ {m.name} is not available right now
                   {m.serving_windows && <> (serves {m.serving_windows})</>} — remove it to
                   checkout.

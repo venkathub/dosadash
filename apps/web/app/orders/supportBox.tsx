@@ -52,7 +52,7 @@ export function SupportBox() {
   if (!open)
     return (
       <button
-        className="btn-gold fixed bottom-4 right-4 rounded-full px-4 py-2 text-sm font-bold shadow-lift transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass-500"
+        className="fixed bottom-4 right-4 rounded-full border-2 border-indigo-900 bg-turmeric-500 px-4 py-2 font-display text-sm font-bold text-indigo-900 shadow-pop transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
         onClick={() => setOpen(true)}
       >
         🛟 Need help?
@@ -60,11 +60,11 @@ export function SupportBox() {
     );
 
   return (
-    <div className="fixed bottom-4 right-4 flex h-96 w-80 flex-col overflow-hidden rounded-2xl bg-cream-50 shadow-modal">
-      <div className="flex items-center justify-between bg-leaf-800 px-3 py-2 text-sm">
-        <b className="font-display font-semibold tracking-tight text-brass-300">🛟 Order help</b>
+    <div className="fixed bottom-4 right-4 flex h-96 w-80 flex-col overflow-hidden rounded-2xl border-2 border-indigo-900 bg-sand-200 shadow-pop">
+      <div className="flex items-center justify-between border-b-[3px] border-turmeric-500 bg-indigo-900 px-3 py-2 text-sm">
+        <b className="font-display font-bold tracking-tight text-white">🛟 Order help</b>
         <button
-          className="text-leaf-200 transition-colors duration-150 hover:text-brass-300"
+          className="text-indigo-200 transition-colors duration-150 hover:text-turmeric-400"
           onClick={() => setOpen(false)}
         >
           ✕
@@ -72,36 +72,38 @@ export function SupportBox() {
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-3 text-sm">
         {history.length === 0 && (
-          <p className="text-ink-400">
+          <p className="text-faint">
             Ask about an order — status, cancelling, or a refund request. E.g. “where is my order?”
           </p>
         )}
         {history.map((m, i) => (
           <p
             key={i}
-            className={`animate-fade-up whitespace-pre-wrap px-3 py-2 ${
+            className={`animate-fade-up whitespace-pre-wrap border-2 border-indigo-900 px-3 py-2 ${
               m.role === "user"
-                ? "ml-10 rounded-2xl rounded-br-md bg-leaf-700 text-cream-50"
-                : "mr-10 rounded-2xl rounded-bl-md bg-cream-200 text-ink-900"
+                ? "ml-10 rounded-xl rounded-br-[4px] bg-indigo-900 text-indigo-100 shadow-[3px_3px_0_#C21F58]"
+                : "mr-10 rounded-xl rounded-bl-[4px] bg-offwhite text-ink shadow-pop-sm"
             }`}
           >
             {m.content}
           </p>
         ))}
         {busy && (
-          <p className="mr-10 rounded-2xl rounded-bl-md bg-cream-200 px-3 py-2 text-ink-400">…</p>
+          <p className="mr-10 rounded-xl rounded-bl-[4px] border-2 border-indigo-900 bg-offwhite px-3 py-2 text-faint shadow-pop-sm">
+            …
+          </p>
         )}
       </div>
-      <div className="flex gap-2 border-t border-cream-300 p-2">
+      <div className="flex gap-2 border-t-[3px] border-turmeric-500 bg-indigo-900 p-2">
         <Input
-          tone="light"
+          tone="dark"
           className="flex-1 rounded-full"
           value={input}
           placeholder="Type your question…"
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
         />
-        <Btn size="sm" disabled={busy} onClick={send}>
+        <Btn variant="turmeric" size="sm" disabled={busy} onClick={send}>
           Send
         </Btn>
       </div>

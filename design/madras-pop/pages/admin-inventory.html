@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · Inventory — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+</style>
+<style>
+  /* page content */
+  .chip-dk { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; border: 1.5px solid var(--indigo-600); border-radius: var(--r-pill); padding: 4px 12px; background: var(--indigo-800); color: var(--indigo-100); white-space: nowrap; }
+  .chip-warn { border-color: var(--turmeric-600); color: var(--turmeric-400); background: rgba(242,183,5,.10); }
+  .btn-chili-ghost { border: 2px solid var(--chili) !important; color: #FF8B8B !important; background: transparent; box-shadow: none !important; }
+  .po-card { background: var(--indigo-800); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 15px 17px; margin-top: 12px; }
+  .po-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .po-head .pid { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: #fff; }
+  .po-head .sup { font-size: 13px; color: var(--indigo-200); }
+  .po-head .amt { margin-left: auto; font-family: var(--font-display); font-weight: 700; font-size: 16px; color: #fff; }
+  .qty-input { width: 88px; text-align: right; padding: 5px 9px; font-size: 13px; }
+  .sec { margin-top: 22px; }
+  .cols-2 { display: grid; grid-template-columns: 1fr 1.35fr; gap: 18px; align-items: start; }
+  .waste-form { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+  .waste-form .select, .waste-form .input { width: auto; }
+  .waste-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--indigo-800); font-size: 13px; }
+  .scan { flex: none; width: 118px; height: 152px; border: 2px dashed var(--indigo-600); border-radius: var(--r-sm); background: linear-gradient(160deg, var(--indigo-950), var(--indigo-800)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 34px; color: var(--indigo-200); }
+  .scan .cap { font-size: 10.5px; font-family: var(--font-display); letter-spacing: .08em; text-transform: uppercase; }
+  .inv-grid { display: flex; gap: 18px; }
+  .ok-text { color: #5BD69B; font-size: 12.5px; font-weight: 600; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill on">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>Inventory</h1>
+    <span class="meta">42 ingredients tracked · agent drafts, humans approve</span>
+  </div>
+  <div class="zari on-dark"></div>
+
+  <!-- ══ (a) Purchase orders ══ -->
+  <div class="card-panel-dark sec" style="padding:18px;margin-top:14px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div>
+        <div class="eyebrow">Purchase orders</div>
+        <h3 class="h3" style="color:#fff;margin:2px 0 0">Agent-drafted POs</h3>
+      </div>
+      <span style="margin-left:auto"></span>
+      <a class="btn btn-turmeric btn-sm">🤖 Run agent now</a>
+      <span class="meta">nightly 02:30 IST after forecast</span>
+    </div>
+
+    <!-- PO #7 pending -->
+    <div class="po-card">
+      <div class="po-head">
+        <span class="pid tnum">PO #7</span>
+        <span class="badge badge-dk-warning">PENDING_APPROVAL</span>
+        <span class="sup">Koyambedu Wholesale Supplies · 42 line items</span>
+        <span class="ai-meta">inventory agent · inventory_agent_v1 · gpt-4o-mini</span>
+        <span class="amt tnum">₹18,450</span>
+      </div>
+      <div class="meta" style="margin-top:6px">needs = Σ forecast × recipe − stock (deterministic); LLM drafts, guardrail re-anchors</div>
+      <table class="tbl" style="margin-top:10px">
+        <thead><tr><th>Ingredient</th><th class="num">Stock</th><th class="num">14-day need</th><th class="num">Order qty</th><th class="num">Unit ₹</th><th class="num">Line total</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Urad dal</td><td class="num">6 kg</td><td class="num">29 kg</td>
+            <td class="num"><input class="input qty-input tnum" value="25 kg"></td>
+            <td class="num">₹142/kg</td><td class="num">₹3,550</td>
+          </tr>
+          <tr>
+            <td>Idli rice (parboiled)</td><td class="num">12 kg</td><td class="num">50 kg</td>
+            <td class="num"><input class="input qty-input tnum" value="40 kg"></td>
+            <td class="num">₹58/kg</td><td class="num">₹2,320</td>
+          </tr>
+          <tr>
+            <td>Gingelly oil</td><td class="num">1.5 L</td><td class="num">6 L</td>
+            <td class="num"><input class="input qty-input tnum" value="5 L"></td>
+            <td class="num">₹310/L</td><td class="num">₹1,550</td>
+          </tr>
+          <tr><td colspan="6" style="color:var(--indigo-300);font-size:12px">… 39 more line items</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:10px">
+        <a class="btn btn-veg btn-sm">✓ Approve</a>
+        <a class="btn btn-ghost btn-sm btn-chili-ghost">✗ Reject</a>
+        <span class="meta">owner also gets a Telegram approval card 📨</span>
+      </div>
+    </div>
+
+    <!-- PO #6 received -->
+    <div class="po-card">
+      <div class="po-head">
+        <span class="pid tnum">PO #6</span>
+        <span class="badge badge-dk-success">RECEIVED</span>
+        <span class="sup">Koyambedu Wholesale Supplies · received 19 Aug · stock +40kg urad dal</span>
+        <span class="amt tnum">₹11,020</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cols-2 sec">
+    <!-- ══ (b) Wastage quick-log ══ -->
+    <div class="card-panel-dark" style="padding:18px">
+      <div class="eyebrow">Wastage quick-log</div>
+      <h3 class="h3" style="color:#fff;margin:2px 0 4px">Log spoilage &amp; prep loss</h3>
+      <div class="waste-form">
+        <select class="select"><option>Tomatoes</option></select>
+        <input class="input tnum" style="width:80px" value="2 kg">
+        <select class="select"><option>end-of-day</option></select>
+        <a class="btn btn-turmeric btn-sm">Log −</a>
+      </div>
+      <div class="meta" style="margin:10px 0 4px">Recent</div>
+      <div class="waste-row"><span>Tomatoes <b>−2kg</b> · spoilage</span><span class="meta" style="margin-left:auto">stock 38kg (clamped at 0 never negative)</span></div>
+      <div class="waste-row"><span>Coconut <b>−1.5kg</b> · prep loss</span><span class="meta" style="margin-left:auto">stock 9.5kg · today 3:40 PM</span></div>
+      <div class="waste-row"><span>Curry leaves <b>−300g</b> · end-of-day</span><span class="meta" style="margin-left:auto">stock 1.2kg · yesterday</span></div>
+      <div class="meta" style="margin-top:10px">kitchen_staff can log · atomic decrement · audited `clamped` flag when hitting 0</div>
+    </div>
+
+    <!-- ══ (c) Invoice review queue ══ -->
+    <div class="card-panel-dark" style="padding:18px">
+      <div class="eyebrow">Invoice review queue</div>
+      <h3 class="h3" style="color:#fff;margin:2px 0 8px">Supplier invoice · Koyambedu Wholesale Supplies</h3>
+      <div class="inv-grid">
+        <div class="scan">📄<span class="cap">scan · inv_0619.jpg</span></div>
+        <div style="flex:1;min-width:0">
+          <table class="tbl">
+            <thead><tr><th>Extracted line</th><th class="num">Qty</th><th class="num">Price</th></tr></thead>
+            <tbody>
+              <tr><td>Urad dal (whole, white)</td><td class="num">40 kg</td><td class="num">₹5,680</td></tr>
+              <tr><td>Idli rice (parboiled)</td><td class="num">36 kg</td><td class="num">₹2,088</td></tr>
+              <tr><td>Gingelly oil (cold-pressed)</td><td class="num">5 L</td><td class="num">₹1,550</td></tr>
+            </tbody>
+          </table>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px">
+            <span class="ok-text">arithmetic verified ✓ (checked deterministically, not by the model)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <span class="chip-dk chip-warn">⚠ matched to PO #6 · qty within ±10% · 1 short delivery flagged</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px">
+            <span class="meta">combined confidence <b class="tnum" style="color:#fff">0.87</b> →</span>
+            <span class="badge badge-dk-info">MATCHED · pre-checked</span>
+            <span class="ai-meta">VLM · invoice_extract_v1 · gpt-4o-mini</span>
+          </div>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <a class="btn btn-veg btn-sm">✓ Approve → stock in</a>
+            <a class="btn btn-ghost btn-sm btn-chili-ghost">Reject</a>
+            <span class="meta">human approval ALWAYS required</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>

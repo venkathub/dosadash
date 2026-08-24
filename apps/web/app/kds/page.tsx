@@ -6,9 +6,9 @@ import {
   Btn,
   Card,
   ErrorBar,
-  Eyebrow,
   Input,
   SectionHeading,
+  cx,
   statusBadgeTone,
 } from "../components/ui";
 
@@ -30,13 +30,17 @@ const NEXT: Record<string, string> = {
   READY: "OUT_FOR_DELIVERY",
 };
 
-/** Left accent bar per column — readable from across the kitchen. */
+/** 6px left accent bar per column — readable from across the kitchen.
+ *  (Madras Pop: PLACED sky / CONFIRMED magenta / COOKING turmeric / READY veg) */
 const STATUS_ACCENT: Record<(typeof COLUMNS)[number], string> = {
-  PLACED: "bg-info-500",
-  CONFIRMED: "bg-brass-500",
+  PLACED: "bg-sky",
+  CONFIRMED: "bg-magenta-500",
   COOKING: "bg-turmeric-500",
-  READY: "bg-veg-500",
+  READY: "bg-veg",
 };
+
+/** An order this old is running late — the timer flips chili. */
+const LATE_MINUTES = 20;
 
 type QCResult = {
   verdict: "PASS" | "MISMATCH" | "CHECK" | "UNREADABLE";
@@ -52,6 +56,13 @@ const QC_LABEL: Record<QCResult["verdict"], string> = {
   UNREADABLE: "🔄 Retake photo",
 };
 
+function elapsedMinutes(placedAt: string | null, now: number): number | null {
+  if (!placedAt) return null;
+  const t = Date.parse(placedAt);
+  if (Number.isNaN(t)) return null;
+  return Math.max(0, Math.floor((now - t) / 60_000));
+}
+
 export default function Kds() {
   const [token, setToken] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
@@ -61,10 +72,17 @@ export default function Kds() {
   const [orders, setOrders] = useState<Record<number, OrderEvent>>({});
   const [qc, setQc] = useState<Record<number, QCResult | "pending">>({});
   const [connected, setConnected] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     setToken(localStorage.getItem("kds_token"));
+  }, []);
+
+  // Tick the elapsed timers twice a minute (cheap-tablet friendly — no rAF).
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
   }, []);
 
   const requestOtp = async () => {
@@ -170,9 +188,9 @@ export default function Kds() {
 
   if (!token) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-leaf-950 text-leaf-100">
+      <main className="flex min-h-screen items-center justify-center bg-indigo-950 text-indigo-100">
         <Card tone="dark" className="w-80 space-y-3 p-6">
-          <SectionHeading as="h1" className="text-xl text-brass-300">
+          <SectionHeading as="h1" className="text-xl text-white">
             🥞 Kitchen sign-in
           </SectionHeading>
           <Input
@@ -183,13 +201,13 @@ export default function Kds() {
             onChange={(e) => setPhone(e.target.value)}
           />
           {demoOtp === null ? (
-            <Btn variant="gold" className="min-h-[44px] w-full" onClick={requestOtp}>
+            <Btn variant="turmeric" className="min-h-[44px] w-full" onClick={requestOtp}>
               Send OTP
             </Btn>
           ) : (
             <>
-              <p className="rounded-lg border border-brass-500/40 bg-brass-500/15 px-2 py-1 text-xs text-brass-300">
-                Demo OTP: <b>{demoOtp}</b>
+              <p className="rounded-lg border-[1.5px] border-turmeric-600 bg-turmeric-500/15 px-2 py-1 text-xs text-turmeric-400">
+                Demo OTP: <b className="font-display">{demoOtp}</b>
               </p>
               <Input
                 tone="dark"
@@ -198,7 +216,7 @@ export default function Kds() {
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
               />
-              <Btn variant="gold" className="min-h-[44px] w-full" onClick={verifyOtp}>
+              <Btn variant="turmeric" className="min-h-[44px] w-full" onClick={verifyOtp}>
                 Verify
               </Btn>
             </>
@@ -215,46 +233,58 @@ export default function Kds() {
       .sort((a, b) => (a.placed_at ?? "").localeCompare(b.placed_at ?? ""));
 
   return (
-    <main className="min-h-screen bg-leaf-950 p-4 text-leaf-100">
-      <header className="mb-4 flex items-center justify-between">
-        <h1 className="font-display text-xl font-semibold tracking-tight text-brass-300">
+    <main className="min-h-screen bg-indigo-950 text-indigo-100">
+      <header className="mb-4 flex items-center gap-4 border-b-[3px] border-turmeric-500 bg-indigo-900 px-5 py-3">
+        <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-white">
           🔥 Kitchen
         </h1>
         {connected ? (
-          <span className="text-sm font-semibold text-veg-200">
+          <span className="font-display text-[13px] font-bold uppercase tracking-[0.1em] text-[#5BD69B]">
             <span className="animate-pulse-soft">●</span> live
           </span>
         ) : (
-          <span className="text-sm font-semibold text-turmeric-200">○ reconnecting…</span>
+          <span className="font-display text-[13px] font-bold uppercase tracking-[0.1em] text-turmeric-400">
+            ○ reconnecting…
+          </span>
         )}
       </header>
       {error && (
-        <div className="mb-2">
+        <div className="mx-4 mb-2">
           <ErrorBar msg={error} />
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 items-start gap-3.5 p-4 pt-0 lg:grid-cols-4">
         {COLUMNS.map((col) => (
-          <section key={col} className="rounded-xl bg-leaf-900 p-3">
-            <div className="mb-2 flex items-center gap-2">
-              <Eyebrow>{col}</Eyebrow>
-              <span className="tnum rounded-full bg-leaf-700 px-2 text-xs font-semibold text-leaf-100">
+          <section
+            key={col}
+            className="rounded-xl border-2 border-indigo-700 bg-indigo-900 p-3"
+          >
+            <div className="mb-3 flex items-center justify-between px-1">
+              <span className="font-display text-[11px] font-bold uppercase tracking-[0.16em] text-turmeric-400">
+                {col}
+              </span>
+              <span className="tnum min-w-[34px] rounded-full bg-turmeric-500 px-3 text-center font-display text-[15px] font-bold text-indigo-900">
                 {byStatus(col).length}
               </span>
             </div>
-            <div className="space-y-2">
-              {byStatus(col).map((o) => (
+            <div className="space-y-3">
+              {byStatus(col).map((o) => {
+                const mins = elapsedMinutes(o.placed_at, now);
+                const late = mins !== null && mins >= LATE_MINUTES;
+                return (
                 <article
                   key={o.order_id}
-                  className="animate-fade-up relative rounded-lg bg-leaf-800 p-3 pl-4 text-sm"
+                  className="animate-fade-up relative overflow-hidden rounded-lg border-2 border-indigo-600 bg-indigo-800 p-3 pl-4 text-sm"
                 >
                   <span
                     aria-hidden
-                    className={`absolute left-0 top-0 h-full w-1 rounded-l-lg ${STATUS_ACCENT[col]}`}
+                    className={`absolute left-0 top-0 h-full w-1.5 ${STATUS_ACCENT[col]}`}
                   />
-                  <div className="flex items-start justify-between gap-1">
-                    <span className="flex flex-wrap items-center gap-1">
-                      <span className="font-display font-semibold">#{o.order_id}</span>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-display text-lg font-bold text-white">
+                        #{o.order_id}
+                      </span>
                       {o.channel === "MOCK_AGGREGATOR" && (
                         <Badge tone="warning" title="Order from an aggregator channel">
                           🛵 aggregator
@@ -262,36 +292,51 @@ export default function Kds() {
                       )}
                       {o.channel === "TELEGRAM" && <Badge tone="info">✈️ telegram</Badge>}
                     </span>
-                    <span className="font-display tnum font-semibold text-brass-300">₹{o.total}</span>
+                    {mins !== null && (
+                      <span
+                        className={cx(
+                          "tnum rounded-full border-[1.5px] px-2.5 py-0.5 font-display text-[13px] font-bold",
+                          late
+                            ? "border-chili bg-chili/20 text-[#FF8B8B]"
+                            : "border-indigo-600 bg-indigo-950 text-indigo-100",
+                        )}
+                        title={late ? `running late (≥${LATE_MINUTES} min)` : "minutes since placed"}
+                      >
+                        {mins}m
+                      </span>
+                    )}
                   </div>
-                  <ul className="my-1.5 text-[15px] leading-snug text-leaf-100">
+                  <ul className="my-1.5 text-[15px] font-bold leading-snug text-white">
                     {o.items.map((i) => (
                       <li key={i.name}>
                         {i.qty}× {i.name}
                       </li>
                     ))}
                   </ul>
+                  <p className="tnum mb-2 font-display text-base font-bold text-turmeric-400">
+                    ₹{o.total}
+                  </p>
                   {qc[o.order_id] && qc[o.order_id] !== "pending" && (
                     <div className="mb-1.5 space-y-0.5">
                       <Badge tone={statusBadgeTone((qc[o.order_id] as QCResult).verdict)}>
                         {QC_LABEL[(qc[o.order_id] as QCResult).verdict]}
                       </Badge>
                       {(qc[o.order_id] as QCResult).missing.length > 0 && (
-                        <p className="text-xs text-chili-200">
+                        <p className="text-xs font-semibold text-[#FF8B8B]">
                           missing: {(qc[o.order_id] as QCResult).missing.join(", ")}
                         </p>
                       )}
                       {(qc[o.order_id] as QCResult).issues.map((issue) => (
-                        <p key={issue} className="text-xs text-turmeric-200">
+                        <p key={issue} className="text-xs text-turmeric-400">
                           {issue}
                         </p>
                       ))}
                     </div>
                   )}
-                  <div className="flex gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     {(col === "COOKING" || col === "READY") && (
                       <label
-                        className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-leaf-700 px-2.5 py-1 text-xs font-semibold text-leaf-100 transition-colors duration-150 hover:bg-leaf-600 ${
+                        className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg border-2 border-indigo-600 bg-transparent px-2.5 py-1 font-display text-sm font-bold text-indigo-100 transition-colors duration-150 hover:border-turmeric-400 hover:text-turmeric-400 ${
                           qc[o.order_id] === "pending" ? "cursor-not-allowed opacity-40" : ""
                         }`}
                       >
@@ -310,17 +355,16 @@ export default function Kds() {
                         />
                       </label>
                     )}
-                    <Btn
-                      variant="gold"
-                      size="sm"
-                      className="min-h-[44px] flex-1"
+                    <button
+                      className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border-2 border-indigo-950 bg-turmeric-500 font-display text-base font-bold text-indigo-900 shadow-pop-dark-sm transition-colors duration-100 hover:bg-turmeric-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
                       onClick={() => advance(o)}
                     >
                       → {NEXT[o.status].replace(/_/g, " ")}
-                    </Btn>
+                    </button>
                   </div>
                 </article>
-              ))}
+                );
+              })}
             </div>
           </section>
         ))}

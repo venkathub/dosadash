@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DosaDash — Admin · CRM — Madras Pop</title>
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  .adm-header { background: var(--indigo-900); border-bottom: 3px solid var(--magenta-500); padding: 12px 28px; display: flex; align-items: center; gap: 16px; }
+  .adm-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+  .adm-wordmark .bo { color: var(--magenta-400); }
+  .adm-role { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .adm-rail { display: flex; align-items: center; gap: 8px; padding: 12px 28px; overflow-x: auto; border-bottom: 1px solid var(--indigo-800); background: var(--indigo-950); }
+  .adm-group { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo-300); margin: 0 4px 0 14px; flex: none; }
+  .adm-rail .pill { flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--indigo-200); border: 1.5px solid var(--indigo-700); border-radius: var(--r-pill); padding: 5px 13px; text-decoration: none; }
+  .adm-rail .pill.on { background: var(--turmeric-500); color: var(--indigo-950); border-color: var(--turmeric-500); font-weight: 700; }
+  .adm-main { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+  .adm-title { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .adm-title h1 { font-size: 24px; color: #fff; }
+
+  /* page */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .stat { padding: 16px 18px; }
+  .stat .label { font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--indigo-300); }
+  .stat .val { font-family: var(--font-display); font-weight: 700; font-size: 27px; color: #fff; margin-top: 4px; }
+  .stat .sub { font-size: 12.5px; color: var(--indigo-200); margin-top: 2px; }
+  .two-col { display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px; margin-top: 20px; align-items: start; }
+  .panel { padding: 16px 18px; }
+  .panel-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .churn-cell { display: inline-flex; align-items: center; gap: 8px; }
+  .churn-track { width: 74px; height: 7px; border-radius: 999px; background: var(--indigo-950); border: 1px solid var(--indigo-700); overflow: hidden; display: inline-block; }
+  .churn-fill { height: 100%; display: block; }
+  .c-low { background: #2FA36B; } .c-mid { background: var(--turmeric-500); opacity: .85; } .c-high { background: var(--magenta-500); }
+  .tier-name { font-family: var(--font-display); font-weight: 700; color: #fff; }
+  .wb-row { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--indigo-800); }
+  .wb-row:last-of-type { border-bottom: none; }
+  .wb-rank { font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--turmeric-400); width: 22px; flex: none; }
+  .wb-body { min-width: 0; flex: 1; }
+  .wb-phone { font-family: var(--font-display); font-weight: 700; font-size: 14px; color: #fff; letter-spacing: .03em; }
+  .wb-nums { font-size: 12px; color: var(--indigo-200); }
+  .wb-nums b { color: var(--turmeric-400); font-weight: 700; }
+  .wb-usual { font-size: 12px; color: var(--indigo-300); margin-top: 1px; }
+  .foot-meta { margin-top: 18px; display: flex; align-items: center; gap: 10px; background: var(--indigo-900); border: 2px solid var(--indigo-700); border-radius: var(--r-md); padding: 11px 16px; }
+</style>
+</head>
+<body class="dark">
+
+<div class="adm-header">
+  <div class="adm-wordmark">🥞 DOSADASH <span class="bo">BACKOFFICE</span></div>
+  <div class="adm-role">
+    <span class="badge badge-dk-magenta">owner</span>
+    <span class="meta">+91 90000 000••</span>
+    <a class="btn btn-ghost btn-sm">Logout</a>
+  </div>
+</div>
+<div class="adm-rail">
+  <span class="adm-group">Operations</span>
+  <a class="pill">Orders</a><a class="pill">Menu</a><a class="pill">Inventory</a><a class="pill">Support</a><a class="pill">Reviews</a>
+  <span class="adm-group">Growth</span>
+  <a class="pill">Coupons</a><a class="pill">Combos</a><a class="pill on">CRM</a><a class="pill">Reports</a>
+  <span class="adm-group">AI Studio</span>
+  <a class="pill">Copilot</a><a class="pill">Nutrition</a><a class="pill">Translations</a><a class="pill">Images</a><a class="pill">Evals</a><a class="pill">Costs</a>
+  <span class="adm-group">System</span>
+  <a class="pill">Settings</a><a class="pill">Audit</a>
+</div>
+<main class="adm-main">
+
+  <div class="adm-title">
+    <h1>CRM</h1>
+    <span class="meta tnum">RFM quintile segments · last recompute 24 Aug 03:00 IST</span>
+  </div>
+  <div class="zari on-dark"></div>
+
+  <!-- ══ Stat cards ══ -->
+  <div class="stat-grid">
+    <div class="card-panel-dark stat">
+      <div class="label">Customer base</div>
+      <div class="val tnum">509 customers</div>
+      <div class="sub tnum">7 tiers · RFM quintiles, recomputed nightly</div>
+    </div>
+    <div class="card-panel-dark stat">
+      <div class="label">Champions</div>
+      <div class="val tnum" style="color:#5BD69B">62</div>
+      <div class="sub tnum">12.2% of base · avg LTV ₹4,860 · order every 4.1 days</div>
+    </div>
+    <div class="card-panel-dark stat" style="border-color:var(--magenta-700)">
+      <div class="label" style="color:var(--magenta-400)">At-risk LTV on the table</div>
+      <div class="val tnum" style="color:var(--magenta-400)">₹41k LTV</div>
+      <div class="sub tnum">57 at-risk customers · avg churn 0.74 · win-back queue below</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+
+    <!-- ══ Segments table ══ -->
+    <div class="card-panel-dark panel">
+      <div class="panel-head">
+        <span class="eyebrow">Segments</span>
+        <span class="meta" style="margin-left:auto">personal-rhythm churn, not a global clock</span>
+      </div>
+      <table class="tbl">
+        <thead>
+          <tr><th>Tier</th><th class="num">Customers</th><th class="num">Avg LTV ₹</th><th>Avg churn risk</th><th class="num">Last order</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tier-name">Champions</span></td><td class="num tnum">62</td><td class="num tnum">4,860</td>
+            <td><span class="churn-cell"><span class="churn-track"><span class="churn-fill c-low" style="width:12%"></span></span><span class="tnum meta">0.12</span></span></td>
+            <td class="num tnum">3d ago</td>
+          </tr>
+          <tr>
+            <td><span class="tier-name">Loyal</span></td><td class="num tnum">88</td><td class="num tnum">3,240</td>
+            <td><span class="churn-cell"><span class="churn-track"><span class="churn-fill c-low" style="width:21%"></span></span><span class="tnum meta">0.21</span></span></td>
+            <td class="num tnum">6d ago</td>
+          </tr>
+          <tr>
+            <td><span class="tier-name">Promising</span></td><td class="num tnum">96</td><td class="num tnum">1,780</td>
+            <td><span class="churn-cell"><span class="churn-track"><span class="churn-fill c-mid" style="width:34%"></span></span><span class="tnum meta">0.34</span></span></td>
+            <td class="num tnum">11d ago</td>
+          </tr>
+          <tr>
+            <td><span class="tier-name">Needs attention</span></td><td class="num tnum">74</td><td class="num tnum">1,420</td>
+            <td><span class="churn-cell"><span class="churn-track"><span class="churn-fill c-mid" style="width:52%"></span></span><span class="tnum meta">0.52</span></span></td>
+            <td class="num tnum">19d ago</td>
+          </tr>
+          <tr>
+            <td><span class="tier-name" style="color:var(--magenta-400)">At risk</span></td><td class="num tnum">57</td><td class="num tnum">719</td>
+            <td><span class="churn-cell"><span class="churn-track"><span class="churn-fill c-high" style="width:74%"></span></span><span class="tnum meta">0.74</span></span></td>
+            <td class="num tnum">34d ago</td>
+          </tr>
+          <tr>
+            <td><span class="tier-name">Hibernating</span></td><td class="num tnum">71</td><td class="num tnum">540</td>
+            <td><span class="churn-cell"><span class="churn-track"><span class="churn-fill c-high" style="width:86%"></span></span><span class="tnum meta">0.86</span></span></td>
+            <td class="num tnum">58d ago</td>
+          </tr>
+          <tr>
+            <td><span class="tier-name" style="color:var(--indigo-300)">Lost</span></td><td class="num tnum">61</td><td class="num tnum">310</td>
+            <td><span class="churn-cell"><span class="churn-track"><span class="churn-fill c-high" style="width:95%"></span></span><span class="tnum meta">0.95</span></span></td>
+            <td class="num tnum">97d ago</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══ Win-back queue ══ -->
+    <div class="card-panel-dark panel">
+      <div class="panel-head">
+        <span class="eyebrow">Win-back queue</span>
+        <span class="meta" style="margin-left:auto">ranked by LTV × churn</span>
+      </div>
+
+      <div class="wb-row">
+        <span class="wb-rank tnum">1</span>
+        <div class="wb-body">
+          <div class="wb-phone">+91 98••• •••42</div>
+          <div class="wb-nums tnum">LTV <b>₹4,120</b> · churn <b>0.81</b> · last order 41d ago</div>
+          <div class="wb-usual">usual: 2× Masala Dosa + Filter Coffee</div>
+        </div>
+        <a class="btn btn-ghost btn-sm">📨 Send win-back</a>
+      </div>
+
+      <div class="wb-row">
+        <span class="wb-rank tnum">2</span>
+        <div class="wb-body">
+          <div class="wb-phone">+91 97••• •••18</div>
+          <div class="wb-nums tnum">LTV <b>₹3,660</b> · churn <b>0.77</b> · last order 37d ago</div>
+          <div class="wb-usual">usual: Chicken Biryani + Sweet Lassi</div>
+        </div>
+        <a class="btn btn-ghost btn-sm">📨 Send win-back</a>
+      </div>
+
+      <div class="wb-row">
+        <span class="wb-rank tnum">3</span>
+        <div class="wb-body">
+          <div class="wb-phone">+91 99••• •••07</div>
+          <div class="wb-nums tnum">LTV <b>₹2,940</b> · churn <b>0.84</b> · last order 46d ago</div>
+          <div class="wb-usual">usual: Ghee Roast + Medu Vada (2 pcs)</div>
+        </div>
+        <a class="btn btn-ghost btn-sm">📨 Send win-back</a>
+      </div>
+
+      <div class="wb-row">
+        <span class="wb-rank tnum">4</span>
+        <div class="wb-body">
+          <div class="wb-phone">+91 96••• •••65</div>
+          <div class="wb-nums tnum">LTV <b>₹2,310</b> · churn <b>0.79</b> · last order 39d ago</div>
+          <div class="wb-usual">usual: Idli (2 pcs) + Sukku Coffee</div>
+        </div>
+        <a class="btn btn-ghost btn-sm">📨 Send win-back</a>
+      </div>
+
+      <div class="wb-row">
+        <span class="wb-rank tnum">5</span>
+        <div class="wb-body">
+          <div class="wb-phone">+91 98••• •••90</div>
+          <div class="wb-nums tnum">LTV <b>₹1,980</b> · churn <b>0.88</b> · last order 52d ago</div>
+          <div class="wb-usual">usual: Mutton Chukka + Parotta (2 pcs)</div>
+        </div>
+        <a class="btn btn-ghost btn-sm">📨 Send win-back</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot-meta">
+    <span class="badge badge-dk-info">Method</span>
+    <span class="meta">churn = personal-rhythm 1−exp(−recency / 2·median gap) · segments recomputed nightly 03:00 IST (RFM quintiles) · phones redacted before any LLM call or log</span>
+  </div>
+
+</main>
+
+</body>
+</html>
