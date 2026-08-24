@@ -23,6 +23,7 @@ from aiohttp import web
 
 from dosadash_bot import render, state
 from dosadash_bot.api_client import (
+    feedback_decision,
     link_account,
     place_order,
     po_decision,
@@ -60,6 +61,19 @@ def po_keyboard(po_id: int) -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(text="✅ Approve", callback_data=f"po:approve:{po_id}"),
                 InlineKeyboardButton(text="🚫 Reject", callback_data=f"po:reject:{po_id}"),
+            ]
+        ]
+    )
+
+
+def feedback_keyboard(report_id: int) -> InlineKeyboardMarkup:
+    """Admin decision buttons for a feedback report (Phase 13). RBAC lives
+    in the api — these buttons only carry intent."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Approve", callback_data=f"fb:approve:{report_id}"),
+                InlineKeyboardButton(text="🚫 Reject", callback_data=f"fb:reject:{report_id}"),
             ]
         ]
     )
@@ -254,6 +268,31 @@ async def on_po_decision(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
+@router.callback_query(F.data.startswith("fb:"))
+async def on_feedback_decision(callback: CallbackQuery) -> None:
+    """Admin tapped Approve/Reject on a feedback card — forward to the api
+    (which re-checks role + report state) and update the card in place."""
+    parts = (callback.data or "").split(":")
+    if len(parts) != 3 or parts[1] not in ("approve", "reject"):
+        await callback.answer("Unsupported action")
+        return
+    settings = get_settings()
+    result = await feedback_decision(
+        api_base_url=settings.api_base_url,
+        internal_token=settings.internal_api_token,
+        tg_user_id=callback.from_user.id,
+        report_id=int(parts[2]),
+        action=parts[1],
+    )
+    if callback.message is not None:
+        text = render.feedback_decided_text(int(parts[2]), result.status, result.detail)
+        if result.ok:
+            await _safe_edit(callback.message, text)  # buttons removed — decision is final
+        else:
+            await callback.message.answer(text)
+    await callback.answer()
+
+
 @router.callback_query(F.data == "chat:clear")
 async def on_clear(callback: CallbackQuery) -> None:
     if callback.message is not None:
@@ -303,6 +342,39 @@ def make_po_notify_handler(
     return po_notify
 
 
+def make_feedback_notify_handler(
+    bot: Bot, settings: Settings
+) -> Callable[[web.Request], Awaitable[web.StreamResponse]]:
+    """POST /internal/feedback-notify (api → bot): send an admin decision
+    card for a triaged feedback report (Phase 13). Same trust boundary as
+    the PO cards: shared internal token, api resolves recipients."""
+
+    async def feedback_notify(request: web.Request) -> web.Response:
+        provided = request.headers.get("X-Internal-Token", "")
+        if not settings.internal_api_token or not secrets.compare_digest(
+            provided, settings.internal_api_token
+        ):
+            return web.json_response({"detail": "Forbidden"}, status=403)
+        try:
+            payload = await request.json()
+            tg_user_id = int(payload["tg_user_id"])
+            report_id = int(payload["report_id"])
+        except (ValueError, KeyError):
+            return web.json_response({"detail": "Bad payload"}, status=422)
+        try:
+            await bot.send_message(
+                tg_user_id,
+                render.feedback_notify_text(payload),
+                reply_markup=feedback_keyboard(report_id),
+            )
+        except Exception:  # noqa: BLE001 — recipient may have blocked the bot
+            logger.warning("feedback notify send failed (tg %s)", tg_user_id, exc_info=True)
+            return web.json_response({"ok": False}, status=502)
+        return web.json_response({"ok": True})
+
+    return feedback_notify
+
+
 def create_app(settings: Settings) -> web.Application:
     bot = Bot(token=settings.telegram_bot_token)
     dispatcher = Dispatcher()
@@ -321,6 +393,7 @@ def create_app(settings: Settings) -> web.Application:
     app = web.Application()
     app.router.add_get("/healthz", healthz)
     app.router.add_post("/internal/po-notify", make_po_notify_handler(bot, settings))
+    app.router.add_post("/internal/feedback-notify", make_feedback_notify_handler(bot, settings))
     SimpleRequestHandler(
         dispatcher=dispatcher, bot=bot, secret_token=settings.webhook_secret
     ).register(app, path=settings.webhook_path)
