@@ -55,12 +55,12 @@ export function SupportInboxTab() {
       </div>
       <div className="space-y-2">
         {(tickets ?? []).map((t) => (
-          <div key={t.id} className="rounded-lg bg-leaf-800 p-3 text-sm">
+          <div key={t.id} className="rounded-lg bg-indigo-800 p-3 text-sm">
             <div className="flex flex-wrap items-center gap-3">
-              <span className="font-mono text-brass-300">🎫 #{t.id}</span>
+              <span className="font-mono text-turmeric-400">🎫 #{t.id}</span>
               <Badge tone={t.kind === "refund" ? "danger" : "neutral"}>{t.kind}</Badge>
               <Badge tone={statusBadgeTone(t.status)}>{t.status}</Badge>
-              <span className="text-xs text-leaf-200/70">
+              <span className="text-xs text-indigo-200/70">
                 user {t.user_id}
                 {t.order_id && ` · order #${t.order_id}`} · {new Date(t.created_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
               </span>
@@ -76,9 +76,9 @@ export function SupportInboxTab() {
                 </span>
               )}
             </div>
-            <p className="mt-2 text-leaf-200">“{t.customer_message}”</p>
+            <p className="mt-2 text-indigo-200">“{t.customer_message}”</p>
             {t.agent_summary && <p className="mt-1"><span className="ai-meta">🤖 {t.agent_summary}</span></p>}
-            {t.resolution_note && <p className="mt-1 text-xs text-veg-200">✔ {t.resolution_note}</p>}
+            {t.resolution_note && <p className="mt-1 text-xs text-[#5BD69B]">✔ {t.resolution_note}</p>}
           </div>
         ))}
         {tickets?.length === 0 && <EmptyState>Inbox zero 🎉</EmptyState>}

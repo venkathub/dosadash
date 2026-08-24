@@ -103,7 +103,7 @@ export function MenuTab() {
     <div>
       <ErrorBar msg={error} />
       <form
-        className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-leaf-800 p-3"
+        className="mb-4 flex flex-wrap items-center gap-2 rounded-lg bg-indigo-800 p-3"
         onSubmit={(e) => {
           e.preventDefault();
           act(() =>
@@ -124,7 +124,7 @@ export function MenuTab() {
         <Input tone="dark" className="px-2 py-1" placeholder="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <Input tone="dark" className="px-2 py-1" placeholder="Category" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
         <Input tone="dark" className="w-24 px-2 py-1" placeholder="₹ price" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-        <label className="flex items-center gap-1 text-xs text-leaf-200">
+        <label className="flex items-center gap-1 text-xs text-indigo-200">
           <input type="checkbox" checked={form.is_veg} onChange={(e) => setForm({ ...form, is_veg: e.target.checked })} /> veg
         </label>
         <Select tone="dark" className="px-2 py-1" value={form.spice} onChange={(e) => setForm({ ...form, spice: Number(e.target.value) })}>
@@ -145,10 +145,10 @@ export function MenuTab() {
               <td className={tdCls}>
                 {i.is_veg ? "🟢" : "🔴"} {i.name}
                 {i.allergens.length > 0 && (
-                  <span className="ml-2 text-xs text-turmeric-200">{i.allergens.join(", ")}</span>
+                  <span className="ml-2 text-xs text-turmeric-400">{i.allergens.join(", ")}</span>
                 )}
               </td>
-              <td className={`${tdCls} text-leaf-200`}>{i.category}</td>
+              <td className={`${tdCls} text-indigo-200`}>{i.category}</td>
               <td className={`${tdCls} text-right`}>
                 <Input
                   tone="dark"
@@ -163,7 +163,7 @@ export function MenuTab() {
                 />
               </td>
               <td
-                className={`${tdCls} text-xs text-leaf-200/70`}
+                className={`${tdCls} text-xs text-indigo-200/70`}
                 title={scheduleSummary(i.schedule).title}
               >
                 {scheduleSummary(i.schedule).text}
@@ -237,12 +237,12 @@ export function OrdersTab() {
       </div>
       <div className="space-y-2">
         {(orders ?? []).map((o) => (
-          <div key={o.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-leaf-800 p-3 text-sm">
-            <span className="font-mono text-brass-300">#{o.id}</span>
+          <div key={o.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-indigo-800 p-3 text-sm">
+            <span className="font-mono text-turmeric-400">#{o.id}</span>
             <Badge tone={statusBadgeTone(o.status)}>{o.status}</Badge>
-            <span className="text-leaf-200">{o.items.map((it) => `${it.qty}× ${it.name}`).join(", ")}</span>
+            <span className="text-indigo-200">{o.items.map((it) => `${it.qty}× ${it.name}`).join(", ")}</span>
             <span className="tnum ml-auto font-display font-semibold">₹{o.total}</span>
-            {o.payment && <span className="text-xs text-leaf-200/70">pay: {o.payment.status}</span>}
+            {o.payment && <span className="text-xs text-indigo-200/70">pay: {o.payment.status}</span>}
             {NEXT[o.status] && (
               <Btn variant="gold" size="sm" onClick={() => act(() => adminApi(`/orders/${o.id}/status`, { method: "POST", body: { status: NEXT[o.status] } }))}>
                 → {NEXT[o.status]}
@@ -303,7 +303,7 @@ export function CombosTab() {
     <div>
       <ErrorBar msg={error} />
       <form
-        className="mb-4 rounded-lg bg-leaf-800 p-3"
+        className="mb-4 rounded-lg bg-indigo-800 p-3"
         onSubmit={(e) => {
           e.preventDefault();
           act(() => adminApi("/admin/combos", { method: "POST", body: { name: form.name, price: form.price, item_ids: form.ids } })).then(() =>
@@ -319,7 +319,7 @@ export function CombosTab() {
         </div>
         <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
           {(data?.items ?? []).map((i) => (
-            <label key={i.id} className="flex items-center gap-1 rounded-full bg-leaf-700 px-2 py-0.5 text-xs text-leaf-100">
+            <label key={i.id} className="flex items-center gap-1 rounded-full bg-indigo-700 px-2 py-0.5 text-xs text-indigo-100">
               <input
                 type="checkbox"
                 checked={form.ids.includes(i.id)}
@@ -335,9 +335,9 @@ export function CombosTab() {
 
       <div className="space-y-2">
         {(data?.combos ?? []).map((c) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-leaf-800 p-3 text-sm">
+          <div key={c.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-indigo-800 p-3 text-sm">
             <span className="font-semibold">{c.name}</span>
-            <span className="text-leaf-200/70">{c.item_ids.map(itemName).join(" + ")}</span>
+            <span className="text-indigo-200/70">{c.item_ids.map(itemName).join(" + ")}</span>
             <span className="tnum">₹{c.price}</span>
             <Badge tone={statusBadgeTone(c.status)}>{c.status}</Badge>
             {c.source === "AI_SUGGESTED" && <span className="ai-meta">🤖 AI suggested</span>}
@@ -376,7 +376,7 @@ export function NutritionTab() {
   return (
     <div>
       <ErrorBar msg={error} />
-      <p className="mb-3 text-xs text-leaf-200/70">
+      <p className="mb-3 text-xs text-indigo-200/70">
         LLM drafts from the recipe mapping — nothing goes public without your approval.
       </p>
       <table className={tableCls}>
@@ -390,7 +390,7 @@ export function NutritionTab() {
               <tr key={i.id} className={trCls}>
                 <td className={tdCls}>{i.name}</td>
                 <td className={`${tdCls} text-right`}>{n ? Math.round(n.estimate.calories_kcal) : "—"}</td>
-                <td className={`${tdCls} text-right text-leaf-200`}>
+                <td className={`${tdCls} text-right text-indigo-200`}>
                   {n ? `${n.estimate.protein_g} / ${n.estimate.carbs_g} / ${n.estimate.fat_g}` : "—"}
                 </td>
                 <td className={`${tdCls} text-right`}>{n ? `${Math.round(n.estimate.confidence * 100)}%` : ""}</td>
@@ -456,8 +456,8 @@ export function SettingsTab() {
   return (
     <div className="max-w-2xl space-y-4">
       <ErrorBar msg={error} />
-      <div className="rounded-lg bg-leaf-800 p-4">
-        <Eyebrow className="mb-2 text-brass-300/80">Kitchen</Eyebrow>
+      <div className="rounded-lg bg-indigo-800 p-4">
+        <Eyebrow className="mb-2 text-turmeric-400/80">Kitchen</Eyebrow>
         <Btn
           variant={settings.kitchen_paused ? "gold" : "danger"}
           size="sm"
@@ -469,11 +469,11 @@ export function SettingsTab() {
         >
           {settings.kitchen_paused ? "▶ resume orders" : "⏸ pause kitchen"}
         </Btn>
-        {settings.kitchen_paused && <span className="ml-3 text-sm text-chili-200">orders are paused — checkout returns 503</span>}
+        {settings.kitchen_paused && <span className="ml-3 text-sm text-[#FF8B8B]">orders are paused — checkout returns 503</span>}
       </div>
 
-      <div className="rounded-lg bg-leaf-800 p-4">
-        <Eyebrow className="mb-2 text-brass-300/80">Delivery pincodes</Eyebrow>
+      <div className="rounded-lg bg-indigo-800 p-4">
+        <Eyebrow className="mb-2 text-turmeric-400/80">Delivery pincodes</Eyebrow>
         <Textarea
           tone="dark"
           className="w-full"
@@ -492,15 +492,15 @@ export function SettingsTab() {
         </Btn>
       </div>
 
-      <div className="rounded-lg bg-leaf-800 p-4">
-        <Eyebrow className="mb-2 text-brass-300/80">
-          Business hours <span className="normal-case tracking-normal text-leaf-200/60">(blank day = closed; none set = always open)</span>
+      <div className="rounded-lg bg-indigo-800 p-4">
+        <Eyebrow className="mb-2 text-turmeric-400/80">
+          Business hours <span className="normal-case tracking-normal text-indigo-200/60">(blank day = closed; none set = always open)</span>
         </Eyebrow>
         {DAYS.map((d) => (
           <div key={d} className="mb-1 flex items-center gap-2 text-sm">
-            <span className="w-10 uppercase text-leaf-200/70">{d}</span>
+            <span className="w-10 uppercase text-indigo-200/70">{d}</span>
             <Input tone="dark" className="w-20 px-2 py-1" placeholder="09:00" value={hrs[d]?.start ?? ""} onChange={(e) => setHours({ ...hrs, [d]: { start: e.target.value, end: hrs[d]?.end ?? "" } })} />
-            <span className="text-leaf-500">–</span>
+            <span className="text-indigo-300">–</span>
             <Input tone="dark" className="w-20 px-2 py-1" placeholder="22:00" value={hrs[d]?.end ?? ""} onChange={(e) => setHours({ ...hrs, [d]: { start: hrs[d]?.start ?? "", end: e.target.value } })} />
           </div>
         ))}
@@ -548,11 +548,11 @@ export function AuditTab() {
         <tbody>
           {visible.map((r) => (
             <tr key={r.id} className={`${trCls} align-top`}>
-              <td className={`${tdCls} whitespace-nowrap text-leaf-200/70`}>{r.at.replace("T", " ").slice(0, 19)}</td>
+              <td className={`${tdCls} whitespace-nowrap text-indigo-200/70`}>{r.at.replace("T", " ").slice(0, 19)}</td>
               <td className={tdCls}>u{r.user_id}</td>
-              <td className={`${tdCls} text-brass-300`}>{r.action}</td>
+              <td className={`${tdCls} text-turmeric-400`}>{r.action}</td>
               <td className={tdCls}>{r.entity}</td>
-              <td className={`${tdCls} max-w-md break-all font-mono text-xs text-leaf-200/70`}>{r.detail ? JSON.stringify(r.detail) : ""}</td>
+              <td className={`${tdCls} max-w-md break-all font-mono text-xs text-indigo-200/70`}>{r.detail ? JSON.stringify(r.detail) : ""}</td>
             </tr>
           ))}
         </tbody>
@@ -604,13 +604,13 @@ export function EvalsTab() {
               className={`${trCls} cursor-pointer`}
               onClick={() => openDetail(r.id)}
             >
-              <td className={`${tdCls} whitespace-nowrap text-leaf-200/70`}>{r.ran_at.replace("T", " ").slice(0, 19)}</td>
-              <td className={`${tdCls} font-mono text-leaf-200/70`}>{r.git_sha?.slice(0, 7) ?? "—"}</td>
+              <td className={`${tdCls} whitespace-nowrap text-indigo-200/70`}>{r.ran_at.replace("T", " ").slice(0, 19)}</td>
+              <td className={`${tdCls} font-mono text-indigo-200/70`}>{r.git_sha?.slice(0, 7) ?? "—"}</td>
               <td className={tdCls}>{r.trigger}</td>
               <td className={`${tdCls} tnum text-right`}>{r.cases}</td>
-              <td className={`${tdCls} tnum text-right ${r.order_accuracy >= 0.95 ? "text-veg-200" : "text-chili-200"}`}>{pct(r.order_accuracy)}</td>
-              <td className={`${tdCls} tnum text-right ${r.tool_correctness >= 1 ? "text-veg-200" : "text-chili-200"}`}>{pct(r.tool_correctness)}</td>
-              <td className={`${tdCls} tnum text-right ${r.guardrail_bypasses === 0 ? "text-veg-200" : "text-chili-200"}`}>
+              <td className={`${tdCls} tnum text-right ${r.order_accuracy >= 0.95 ? "text-[#5BD69B]" : "text-[#FF8B8B]"}`}>{pct(r.order_accuracy)}</td>
+              <td className={`${tdCls} tnum text-right ${r.tool_correctness >= 1 ? "text-[#5BD69B]" : "text-[#FF8B8B]"}`}>{pct(r.tool_correctness)}</td>
+              <td className={`${tdCls} tnum text-right ${r.guardrail_bypasses === 0 ? "text-[#5BD69B]" : "text-[#FF8B8B]"}`}>
                 {r.guardrail_bypasses}/{r.guardrail_cases}
               </td>
               <td className={`${tdCls} tnum text-right`}>{r.tone === null ? "—" : pct(r.tone)}</td>
@@ -623,27 +623,27 @@ export function EvalsTab() {
         <EmptyState>No runs recorded yet — CI posts here after every live eval gate run.</EmptyState>
       )}
       {detail && (
-        <div className="mt-4 rounded-lg bg-leaf-800 p-3 text-xs">
+        <div className="mt-4 rounded-lg bg-indigo-800 p-3 text-xs">
           <div className="mb-2 flex items-center gap-3">
-            <span className="font-semibold text-leaf-100">
+            <span className="font-semibold text-indigo-100">
               Run #{detail.id} · <span className="font-mono">{detail.git_sha?.slice(0, 7) ?? "local"}</span> · <GateBadge passed={detail.gates_passed} />
             </span>
             <Btn variant="ghost" size="sm" onClick={() => setDetail(null)}>close</Btn>
           </div>
           {detail.failures.length > 0 && (
-            <p className="mb-2 text-chili-200">gate failures: {detail.failures.join("; ")}</p>
+            <p className="mb-2 text-[#FF8B8B]">gate failures: {detail.failures.join("; ")}</p>
           )}
           {problemCases.length === 0 ? (
-            <p className="text-veg-200">All {detail.cases} cases clean.</p>
+            <p className="text-[#5BD69B]">All {detail.cases} cases clean.</p>
           ) : (
             <ul className="space-y-1">
               {problemCases.map((c) => (
                 <li key={c.id} className="border-t border-white/5 pt-1">
-                  <span className="text-brass-300">{c.id}</span>{" "}
-                  <span className="text-leaf-500">({c.language} · {c.tags.join(", ")})</span>
-                  {c.bypasses.length > 0 && <span className="text-chili-200"> BYPASS: {c.bypasses.join("; ")}</span>}
-                  {c.tool_violations.length > 0 && <span className="text-chili-200"> tool: {c.tool_violations.join("; ")}</span>}
-                  {c.accuracy_problems.length > 0 && <span className="text-leaf-200"> {c.accuracy_problems.join("; ")}</span>}
+                  <span className="text-turmeric-400">{c.id}</span>{" "}
+                  <span className="text-indigo-300">({c.language} · {c.tags.join(", ")})</span>
+                  {c.bypasses.length > 0 && <span className="text-[#FF8B8B]"> BYPASS: {c.bypasses.join("; ")}</span>}
+                  {c.tool_violations.length > 0 && <span className="text-[#FF8B8B]"> tool: {c.tool_violations.join("; ")}</span>}
+                  {c.accuracy_problems.length > 0 && <span className="text-indigo-200"> {c.accuracy_problems.join("; ")}</span>}
                 </li>
               ))}
             </ul>
@@ -669,32 +669,32 @@ export function CostsTab() {
   const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
   const cachePanel = cache && (
-    <div className="mb-5 rounded-lg bg-leaf-800 p-3 text-xs">
+    <div className="mb-5 rounded-lg bg-indigo-800 p-3 text-xs">
       <div className="mb-2 flex items-center gap-2">
         <Eyebrow>Cache efficiency (Phase 9)</Eyebrow>
         <Btn variant="ghost" size="sm" onClick={refreshCache}>↻</Btn>
       </div>
       <div className="flex flex-wrap gap-8">
         <div>
-          <p className="text-leaf-200/70">
+          <p className="text-indigo-200/70">
             Semantic cache {cache.semcache_enabled ? `(cosine ≥ ${cache.semcache_threshold})` : "(disabled)"}
           </p>
-          <p className="tnum font-display text-3xl font-semibold text-brass-300">{pct(cache.semcache.hit_rate)} <span className="text-base">hit rate</span></p>
-          <p className="text-leaf-200/70">
+          <p className="tnum font-display text-3xl font-semibold text-turmeric-400">{pct(cache.semcache.hit_rate)} <span className="text-base">hit rate</span></p>
+          <p className="text-indigo-200/70">
             {cache.semcache.exact_hits} exact · {cache.semcache.semantic_hits} semantic ·{" "}
             {cache.semcache.misses} misses · {cache.semcache.stores} stores · {cache.semcache.flushes} flushes
           </p>
         </div>
         <div>
-          <p className="text-leaf-200/70">Provider prompt cache (prefix-stable layout)</p>
-          <p className="tnum font-display text-3xl font-semibold text-brass-300">{pct(cache.prompt_cache.cached_share)} <span className="text-base">of prompt tokens cached</span></p>
-          <p className="text-leaf-200/70">
+          <p className="text-indigo-200/70">Provider prompt cache (prefix-stable layout)</p>
+          <p className="tnum font-display text-3xl font-semibold text-turmeric-400">{pct(cache.prompt_cache.cached_share)} <span className="text-base">of prompt tokens cached</span></p>
+          <p className="text-indigo-200/70">
             {compact(cache.prompt_cache.cached_prompt_tokens)} / {compact(cache.prompt_cache.prompt_tokens)} prompt tok
             over {cache.prompt_cache.calls} calls
           </p>
         </div>
       </div>
-      <p className="mt-2 text-leaf-500">
+      <p className="mt-2 text-indigo-300">
         Running counters on the cache Redis (LRU may reset them) — billing truth stays in Langfuse.
       </p>
     </div>
@@ -704,7 +704,7 @@ export function CostsTab() {
     return (
       <div>
         {cachePanel}
-        <p className="rounded-lg bg-leaf-800 p-4 text-sm text-leaf-200">
+        <p className="rounded-lg bg-indigo-800 p-4 text-sm text-indigo-200">
           Langfuse keys are not configured on the AI service — cost tracking is off.
           Set LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY to enable the dashboard.
         </p>
@@ -722,11 +722,11 @@ export function CostsTab() {
       <div className="mb-4 flex items-center gap-6">
         <div>
           <Eyebrow>Last 7 days</Eyebrow>
-          <p className="tnum font-display text-3xl font-semibold text-brass-300">{usd(last7)}</p>
+          <p className="tnum font-display text-3xl font-semibold text-turmeric-400">{usd(last7)}</p>
         </div>
         <div>
           <Eyebrow>Last 14 days</Eyebrow>
-          <p className="tnum font-display text-3xl font-semibold text-leaf-100">{usd(summary?.total_cost_usd ?? 0)}</p>
+          <p className="tnum font-display text-3xl font-semibold text-indigo-100">{usd(summary?.total_cost_usd ?? 0)}</p>
         </div>
         <Btn variant="ghost" size="sm" onClick={refresh}>↻</Btn>
       </div>
@@ -739,16 +739,16 @@ export function CostsTab() {
         <tbody>
           {days.map((d) => (
             <tr key={d.date} className={`${trCls} align-top`}>
-              <td className={`${tdCls} whitespace-nowrap text-leaf-200/70`}>{d.date}</td>
+              <td className={`${tdCls} whitespace-nowrap text-indigo-200/70`}>{d.date}</td>
               <td className={`${tdCls} tnum text-right`}>{d.traces}</td>
               <td className={`${tdCls} tnum text-right`}>{d.observations}</td>
-              <td className={`${tdCls} tnum text-right text-brass-300`}>{usd(d.cost_usd)}</td>
-              <td className={`${tdCls} text-leaf-200/70`}>
+              <td className={`${tdCls} tnum text-right text-turmeric-400`}>{usd(d.cost_usd)}</td>
+              <td className={`${tdCls} text-indigo-200/70`}>
                 {d.models.length === 0
                   ? "—"
                   : d.models.map((m) => (
                       <span key={m.model} className="mr-3 inline-block">
-                        <span className="text-leaf-200">{m.model}</span> {usd(m.cost_usd)}{" "}
+                        <span className="text-indigo-200">{m.model}</span> {usd(m.cost_usd)}{" "}
                         ({compact(m.input_tokens)}→{compact(m.output_tokens)} tok, {m.calls} calls)
                       </span>
                     ))}

@@ -90,7 +90,7 @@ export function TranslationsTab() {
         <Btn variant="gold" size="sm" disabled={busy !== null || missing === 0} onClick={draftMissing}>
           {busy === "all" ? "✨ Translating…" : `✨ Draft ${missing} missing (Tamil)`}
         </Btn>
-        <span className="text-xs text-leaf-200/70">
+        <span className="text-xs text-indigo-200/70">
           LLM drafts Tamil text — nothing is served without your approval. Prices and allergens
           always come from the English row.
         </span>
@@ -100,7 +100,7 @@ export function TranslationsTab() {
           const t = data?.byItem.get(item.id);
           const edit = edits[item.id];
           return (
-            <div key={item.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-leaf-800 p-3 text-sm">
+            <div key={item.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-indigo-800 p-3 text-sm">
               <span className="w-44 shrink-0 font-semibold">{item.name}</span>
               {t ? (
                 <>
@@ -130,7 +130,7 @@ export function TranslationsTab() {
                       })
                     }
                   />
-                  {t.category_label && <span className="text-xs text-leaf-200/60">{t.category_label}</span>}
+                  {t.category_label && <span className="text-xs text-indigo-200/60">{t.category_label}</span>}
                   <Badge tone={statusBadgeTone(t.status)}>{t.status}</Badge>
                   <span className="ai-meta">🤖 {t.model} · {t.prompt_version}</span>
                   <span className="flex gap-2">
@@ -156,7 +156,7 @@ export function TranslationsTab() {
                 </>
               ) : (
                 <>
-                  <span className="text-xs text-leaf-200/60">no Tamil text yet</span>
+                  <span className="text-xs text-indigo-200/60">no Tamil text yet</span>
                   <Btn variant="ghost" size="sm" disabled={busy !== null} onClick={() => draftOne(item.id)}>
                     {busy === item.id ? "…" : "✨ draft"}
                   </Btn>
