@@ -6,13 +6,9 @@ tags: [tiffin, meals, idiyappam, appam, adai, kitchadi, mini tiffin, mess, lunch
 
 # Tiffin & Meals Guide
 
-Tiffin and meals are the two halves of the Tamil eating day, and the kitchen
-keeps their clocks honest. Tiffin dishes run on tiffin-centre hours —
-breakfast 6:00–11:30 AM IST and dinner 5:00–10:00 PM IST — and rest at
-lunch. Meals do the opposite: the banana-leaf veg meals serve in two
-sittings (11:30 AM–3:30 PM and 7–10:30 PM IST), and the mess-style non-veg
-meals are a lunch-only ritual (11:30 AM–4 PM IST), just as at the highway
-messes that inspired them.
+Tiffin and meals are the two halves of the Tamil eating day, and the
+kitchen keeps their clocks honest (see the Serving Hours guide); the app
+always shows live availability per dish.
 
 ## Tiffin
 
@@ -24,28 +20,24 @@ counter. Most travel well and several are vegan and Jain-friendly.
 Delicate steamed rice-flour string hoppers served with sweetened coconut
 milk. Vegan, Jain-friendly, no spice. A gentle breakfast or light dinner —
 the go-to order for kids and anyone avoiding fried food.
-Serving window: 6–11:30 AM and 5–10 PM IST (not served at lunch).
 
 ### Appam — ₹110
 
 Fermented rice hopper with lacy crisp edges and a soft, pillowy centre,
 served with coconut milk. Vegan, Jain-friendly, no spice. Best eaten fresh;
 served at breakfast and dinner.
-Serving window: 6–11:30 AM and 5–10 PM IST (not served at lunch).
 
 ### Adai Avial — ₹130
 
 A thick, protein-rich pancake of mixed dals griddled crisp, paired with
 Kerala-style avial in coconut-curd gravy. Contains dairy (curd). Medium
 heat. A hearty breakfast or dinner for lentil lovers.
-Serving window: 6–11:30 AM and 5–10 PM IST (not served at lunch).
 
 ### Rava Kitchadi — ₹100
 
 Soft, ghee-laced semolina kitchadi with mixed vegetables and onion.
 Contains gluten (semolina) and dairy (ghee). Mild. A comforting breakfast
 alternative to upma-style dishes.
-Serving window: 6–11:30 AM and 5–10 PM IST (not served at lunch).
 
 ### Mini Tiffin — ₹150
 

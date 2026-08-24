@@ -331,7 +331,7 @@ MENU_ITEMS: tuple[SeedMenuItem, ...] = (
     ),
     # ------------------------------------------- Millet Specials (4) — 99 KM
     SeedMenuItem(
-        "Ragi Dosa",
+        "Ragi Millet Dosa",
         "Millet Specials",
         _D("110"),
         "Earthy finger-millet dosa off the open griddle, 99-KM highway style",

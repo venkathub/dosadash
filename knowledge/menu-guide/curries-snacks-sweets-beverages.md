@@ -6,41 +6,36 @@ tags: [chettinad, curry, snacks, sweets, beverages, coffee, menu, timing]
 
 # Chettinad Curries, Snacks, Sweets & Beverages
 
-Timing on this page varies by counter. The curry pots run through lunch and
-dinner (11:30 AM–10 PM IST). The snack fryer follows the evening crowd:
-fritters from 3 PM, parottas from 4 PM until late. Sweets and beverages are
-the exception to all clock-watching — they serve all day, every day.
+Timing on this page varies by counter (see the Serving Hours guide);
+sweets and beverages are the exception to all clock-watching — they serve
+all day, every day. The app always shows live availability per dish.
 
 ## Chettinad Curries
 
 Chettinad cooking (from the Chettiar region of Tamil Nadu) is defined by
 freshly ground masalas, black pepper, and fennel — these are the hottest
 dishes on the menu. Curries pair with Parotta, Kal Dosa, or plain rice
-dishes. All four serve 11:30 AM–10 PM IST (lunch and dinner).
+dishes.
 
 ### Chicken Chettinad — ₹240
 
 Fiery pepper-fennel chicken curry with coconut. Hot (spice level 3). The
 signature curry — order with Parotta or Kal Dosa.
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ### Pepper Mutton — ₹290
 
 Dry-roasted mutton tossed in cracked black pepper and curry leaves. Hot.
 A dry preparation (not a gravy) — great as a side to Sambar Rice.
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ### Kara Kuzhambu — ₹160
 
 Tangy tamarind-based curry with okra. Hot, and fully vegan — the plant-based
 route to Chettinad heat. Classic over plain rice or with Kal Dosa.
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ### Paneer Chettinad — ₹190
 
 Paneer simmered in pepper-coconut masala. Contains dairy (paneer). Medium
 heat — the mildest of the four curries.
-Serving window: 11:30 AM–10 PM IST (lunch and dinner).
 
 ## Snacks
 
@@ -51,26 +46,22 @@ runs until 11 PM.
 ### Aloo Bonda (3 pcs) — ₹80
 
 Spiced potato balls in gram-flour batter, fried golden. Vegan.
-Serving window: 3–9 PM IST (evening snacks).
 
 ### Onion Bajji (4 pcs) — ₹80
 
 Crisp onion fritters — the rainy-evening classic. Vegan. Best with Masala
 Chai.
-Serving window: 3–9 PM IST (evening snacks).
 
 ### Parotta (2 pcs) — ₹120
 
 Flaky, layered flatbreads with vegetable salna (gravy). Contains gluten
 (maida). Vegan. The right vehicle for any Chettinad curry.
-Serving window: 4–11 PM IST (evening into late night).
 
 ### Kothu Parotta — ₹160
 
 Parotta chopped and stir-fried on the griddle with egg, onion, tomato, and
 Chettinad masala — the loudest dish in the kitchen. Contains gluten and
 egg. Medium heat. A full meal on its own.
-Serving window: 4–11 PM IST (evening into late night).
 
 ## Sweets
 
