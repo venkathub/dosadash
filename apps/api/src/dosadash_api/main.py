@@ -32,6 +32,7 @@ from dosadash_api.routers.aggregator import router as aggregator_router
 from dosadash_api.routers.auth import router as auth_router
 from dosadash_api.routers.chat import router as chat_router
 from dosadash_api.routers.coupons import router as coupons_router
+from dosadash_api.routers.feedback import router as feedback_router
 from dosadash_api.routers.internal_mcp import router as internal_mcp_router
 from dosadash_api.routers.menu import router as menu_router
 from dosadash_api.routers.orders import router as orders_router
@@ -70,6 +71,7 @@ app.include_router(admin_translations_router)
 app.include_router(admin_wastage_router)
 app.include_router(chat_router)
 app.include_router(coupons_router)
+app.include_router(feedback_router)
 app.include_router(internal_mcp_router)
 app.include_router(menu_router)
 app.include_router(orders_router)

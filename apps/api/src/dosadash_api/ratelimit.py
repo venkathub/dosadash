@@ -7,6 +7,7 @@ priced by cost exposure:
 
     chat  — /api/v1/chat/*                        (LLM spend)      20/min
     auth  — /api/v1/auth/*                        (OTP abuse)      10/min
+    feedback — /api/v1/feedback                   (GitHub + triage) 5/min
     write — other POST/PATCH/PUT/DELETE /api/v1   (DB mutations)   60/min
     read  — GET/HEAD under /api/v1                (cheap)         240/min
 
@@ -66,6 +67,7 @@ def build_rules(settings: Settings) -> dict[str, Rule]:
     return {
         "chat": Rule("chat", settings.rate_limit_chat_per_minute),
         "auth": Rule("auth", settings.rate_limit_auth_per_minute),
+        "feedback": Rule("feedback", settings.rate_limit_feedback_per_minute),
         "write": Rule("write", settings.rate_limit_write_per_minute),
         "read": Rule("read", settings.rate_limit_read_per_minute),
     }
@@ -82,6 +84,8 @@ def classify(method: str, path: str, rules: dict[str, Rule]) -> Rule | None:
         return rules["chat"]
     if path.startswith("/api/v1/auth"):
         return rules["auth"]
+    if path.startswith("/api/v1/feedback"):
+        return rules["feedback"]
     if method in ("GET", "HEAD"):
         return rules["read"]
     return rules["write"]

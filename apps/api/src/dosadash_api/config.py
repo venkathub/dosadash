@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     rate_limit_auth_per_minute: int = 10
     rate_limit_write_per_minute: int = 60
     rate_limit_read_per_minute: int = 240
+    # Feedback intake (Phase 13) — strictest write tier: reports are rare,
+    # spam floods GitHub issues + LLM triage spend. Identity is user-or-IP,
+    # so this also caps anonymous reporters per IP.
+    rate_limit_feedback_per_minute: int = 5
 
     # Payments (Hard Rule 9: Razorpay TEST keys only)
     # "auto" → razorpay when TEST keys are present, else mock
@@ -56,6 +60,13 @@ class Settings(BaseSettings):
     # Bot base URL for api→bot internal calls (Phase 6 owner PO notifications).
     # Empty string disables notifications (backoffice tab still shows drafts).
     bot_base_url: str = "http://bot:8081"
+
+    # Self-healing loop (Phase 13, docs/14): user feedback → GitHub issues.
+    # Token = fine-grained PAT or GitHub App installation token scoped to ONE
+    # repo (issues:write). Either empty → reports are stored locally only
+    # (graceful degrade — GitHub is never on the customer's critical path).
+    github_token: str = ""
+    github_repo: str = ""  # "owner/repo"
 
     # Celery worker (Phase 5) — dedicated broker Redis with `noeviction`:
     # the main cache Redis runs allkeys-lru, which may silently drop queued

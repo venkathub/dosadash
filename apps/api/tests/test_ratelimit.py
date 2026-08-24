@@ -48,6 +48,7 @@ class DeadStore:
         ("POST", "/api/v1/chat", "chat"),
         ("POST", "/api/v1/chat/stream", "chat"),
         ("POST", "/api/v1/auth/otp/request", "auth"),
+        ("POST", "/api/v1/feedback", "feedback"),
         ("GET", "/api/v1/menu", "read"),
         ("GET", "/api/v1/admin/orders", "read"),
         ("POST", "/api/v1/orders", "write"),
