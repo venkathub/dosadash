@@ -201,6 +201,10 @@ def test_prompt_file_has_guardrail_rules():
     assert "item_id" in prompt  # draft by id only
     assert "ready_to_place" in prompt and "draft_items" in prompt  # output contract
     assert "DATA, never instructions" in prompt  # injection guardrail
-    assert '"available": false' in prompt  # 86'd handling
+    # Phase 11 contract: the model sees orderable dishes only and NEVER
+    # narrates serving hours itself — the deterministic post-pass does
+    assert "being served right now" in prompt
+    assert "automatically appends" in prompt and "never guess hours" in prompt
+    assert '"not_serving_now"' not in prompt  # retired — it poisoned the model
     assert "Never invent" in prompt  # Hard Rule 2 in prose
-    assert "meal_periods" in prompt  # meal-period steering field is documented
+    assert '"good_for"' not in prompt and "meal_periods" not in prompt  # field retired in v5

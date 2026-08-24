@@ -169,7 +169,6 @@ def test_agent_menu_payload_byte_stable_without_aliases():
         "jain_friendly",
         "spice",
         "allergens",
-        "meal_periods",
         "available",
     }
 

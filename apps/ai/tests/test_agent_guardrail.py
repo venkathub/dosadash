@@ -69,13 +69,16 @@ def test_off_window_item_stripped_with_serving_hint(monkeypatch):
     assert any("Masala Dosa" in w and "served 6–11:30 AM & 5–10 PM" in w for w in warnings)
 
 
-def test_menu_payload_serving_key_only_when_off_window(monkeypatch):
-    """`serving` follows the aliases emit-only-when-relevant rule: absent for
-    always-on and 86'd dishes, present (with window text) when off-window."""
+def test_menu_payload_and_serving_notes_contract(monkeypatch):
+    """Phase 11 contract: presence = orderability — off-window/86'd dishes
+    leave the menu payload entirely, and serving_notes computes the
+    deterministic reply note (window text for scheduled dishes, sold-out
+    for 86'd ones) from the customer's message or attempted draft ids."""
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
     from dosadash_ai.agent.context import menu_payload
+    from dosadash_ai.agent.guardrail import serving_notes
     from dosadash_shared import availability
 
     tiffin = {
@@ -88,12 +91,21 @@ def test_menu_payload_serving_key_only_when_off_window(monkeypatch):
     scheduled = MenuItemCtx(**{**base[1].__dict__, "schedule": tiffin})
     ctx = AgentContext(items={1: scheduled, 2: base[2], 3: base[3]})
 
-    payload = {p["item_id"]: p for p in menu_payload(ctx)}
-    assert payload[1]["available"] is False
-    assert payload[1]["serving"] == "6–11:30 AM & 5–10 PM"  # off-window → hint
-    assert "serving" not in payload[2]  # always-on → byte-stable payload
-    assert payload[3]["available"] is False
-    assert "serving" not in payload[3]  # 86'd → plain unavailable, no hint
+    menu = {p["name"]: p for p in menu_payload(ctx)}
+    assert set(menu) == {"Filter Coffee"}  # only the orderable dish remains
+    assert menu["Filter Coffee"]["available"] is True
+
+    # message names the off-window dish → deterministic window note
+    notes = serving_notes(ctx, "one masala dosa and a filter coffee please")
+    assert notes == ["Masala Dosa is served 6–11:30 AM & 5–10 PM — not right now."]
+    # 86'd dish (no window) → sold-out note
+    assert serving_notes(ctx, "add a mysore pak") == ["Mysore Pak is sold out right now."]
+    # nothing non-orderable mentioned → no notes at all
+    assert serving_notes(ctx, "just the coffee thanks") == []
+    # model attempted the off-window id without naming it → still noted
+    assert serving_notes(ctx, "hmm", attempted_ids=(1,)) == [
+        "Masala Dosa is served 6–11:30 AM & 5–10 PM — not right now."
+    ]
 
 
 def test_valid_items_get_db_name_and_price():
@@ -143,3 +155,32 @@ def test_gate_ready_requires_everything():
     assert gate_ready(open_ctx, OrderDraft(), True) is False  # empty draft
     paused_ctx = _ctx(kitchen_paused=True)
     assert gate_ready(paused_ctx, draft, True) is False  # paused kitchen
+
+
+def test_drop_substitutions_guards_sold_out_siblings():
+    """Phase 11: 86'd Masala Dosa + message '2 masala dosas' must not let a
+    drafted Mysore Masala Dosa slip through as a silent substitute — unless
+    the customer actually named the sibling too."""
+    from dosadash_ai.agent.guardrail import drop_substitutions
+
+    items = {
+        1: _item(1, "Masala Dosa", "120", available=False),  # 86'd
+        2: _item(2, "Mysore Masala Dosa", "140"),
+        3: _item(3, "Filter Coffee", "60"),
+    }
+    ctx = AgentContext(items=items)
+    draft, _ = validate_draft(ctx, [DraftItemIn(item_id=2, qty=2), DraftItemIn(item_id=3, qty=1)])
+
+    kept, warnings = drop_substitutions(ctx, "2 masala dosas please", draft)
+    assert [i.name for i in kept.items] == ["Filter Coffee"]  # substitute dropped
+    assert kept.subtotal == Decimal("60")
+    assert any("Mysore Masala Dosa" in w and "Masala Dosa" in w for w in warnings)
+
+    # customer explicitly named the sibling → it stays
+    kept2, warnings2 = drop_substitutions(ctx, "one mysore masala dosa please", draft)
+    assert [i.name for i in kept2.items] == ["Mysore Masala Dosa", "Filter Coffee"]
+    assert warnings2 == []
+
+    # nothing non-orderable mentioned → untouched
+    kept3, warnings3 = drop_substitutions(ctx, "a coffee and a mysore masala dosa", draft)
+    assert kept3 is draft and warnings3 == []

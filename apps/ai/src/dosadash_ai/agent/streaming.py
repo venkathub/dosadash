@@ -149,5 +149,5 @@ async def stream_turn(
             yield {"type": "error", "detail": f"LLM chain failed: {exc}"}
             return
 
-    response = build_response(state["ctx"], turn, model)
+    response = build_response(state["ctx"], turn, model, request.message)
     yield {"type": "final", "data": response.model_dump(mode="json")}
