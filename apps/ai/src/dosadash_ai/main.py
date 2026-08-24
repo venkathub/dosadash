@@ -14,6 +14,7 @@ from dosadash_ai.routers.agent import router as agent_router
 from dosadash_ai.routers.copilot import router as copilot_router
 from dosadash_ai.routers.costs import router as costs_router
 from dosadash_ai.routers.eta import router as eta_router
+from dosadash_ai.routers.feedback import router as feedback_router
 from dosadash_ai.routers.imagegen import router as imagegen_router
 from dosadash_ai.routers.inventory import router as inventory_router
 from dosadash_ai.routers.invoice import router as invoice_router
@@ -84,6 +85,7 @@ app.include_router(promo_router)
 app.include_router(translation_router)
 app.include_router(imagegen_router)
 app.include_router(reviews_router)
+app.include_router(feedback_router)
 
 
 @app.get("/healthz", response_model=HealthStatus)

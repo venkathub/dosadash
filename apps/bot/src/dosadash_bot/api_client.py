@@ -206,3 +206,36 @@ async def link_account(
     except ValueError:
         detail = None
     return LinkResult(ok=False, detail=detail)
+
+
+class FeedbackDecisionResult:
+    def __init__(self, ok: bool, status: str | None = None, detail: str | None = None) -> None:
+        self.ok = ok
+        self.status = status
+        self.detail = detail
+
+
+async def feedback_decision(
+    *,
+    api_base_url: str,
+    internal_token: str,
+    tg_user_id: int,
+    report_id: int,
+    action: str,
+) -> FeedbackDecisionResult:
+    """Forward an admin's Approve/Reject tap; the api re-checks RBAC + state."""
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                f"{api_base_url}/api/v1/internal/feedback/decision",
+                json={"tg_user_id": tg_user_id, "report_id": report_id, "action": action},
+                headers={"X-Internal-Token": internal_token},
+            )
+    except httpx.HTTPError:
+        return FeedbackDecisionResult(ok=False, detail="API unreachable")
+    if resp.status_code != 200:
+        return FeedbackDecisionResult(ok=False, detail=f"HTTP {resp.status_code}")
+    data = resp.json()
+    return FeedbackDecisionResult(
+        ok=bool(data.get("ok")), status=data.get("status"), detail=data.get("detail")
+    )

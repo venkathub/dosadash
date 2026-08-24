@@ -245,3 +245,22 @@ export type CrmUser = {
   ltv: number;
 };
 export type CrmReport = { computed_at: string | null; tiers: CrmTier[]; at_risk: CrmUser[] };
+
+// ---- feedback (Phase 13 self-healing loop)
+export type AdminFeedback = {
+  id: number;
+  user_id: number | null;
+  reporter_tier: "ANON" | "CUSTOMER" | "STAFF";
+  type: "BUG" | "FEATURE";
+  status: string;
+  title: string;
+  description: string;
+  context: Record<string, string> | null;
+  dedupe_hash: string;
+  github_issue_number: number | null;
+  github_error: string | null;
+  triage: { verdict?: string; effort?: string; risk?: string; model?: string; prompt_version?: string } | null;
+  created_at: string;
+  updated_at: string;
+};
+export type AdminFeedbackList = { reports: AdminFeedback[]; total: number; github_repo: string };

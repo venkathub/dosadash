@@ -14,6 +14,7 @@ import {
 import LoginModal from "./components/LoginModal";
 import OrderTracker from "./components/OrderTracker";
 import ChatWidget from "./components/ChatWidget";
+import FeedbackButton from "./components/FeedbackButton";
 import Recommendations from "./components/Recommendations";
 import CheckoutSuggestions from "./components/CheckoutSuggestions";
 import { Btn, Card, FssaiMark, Input, PosterBlock, Ticker, Zari, cx } from "./components/ui";
@@ -562,6 +563,7 @@ export default function Home() {
           setTracking(order);
         }}
       />
+      <FeedbackButton />
     </main>
   );
 }

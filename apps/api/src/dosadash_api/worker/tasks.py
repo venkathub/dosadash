@@ -497,3 +497,38 @@ def review_batch_poll(self: Any) -> dict[str, Any]:
         raise self.retry(exc=exc) from exc
     logger.info("review_batch_poll %s", result)
     return result
+
+
+# ------------------------------------------------------------- feedback (Phase 13)
+
+
+async def _triage_pending_feedback(limit: int) -> dict[str, Any]:
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from dosadash_api.services import feedback_triage_runner
+    from dosadash_api.services.ai_client import get_ai_client
+    from dosadash_api.services.github_client import get_github_client
+
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            return await feedback_triage_runner.triage_pending(
+                session, get_ai_client(), get_github_client(), limit=limit
+            )
+    finally:
+        await engine.dispose()
+
+
+@app.task(name="feedback.triage_pending", bind=True, max_retries=1, default_retry_delay=300)
+def feedback_triage_pending(self: Any, limit: int = 20) -> dict[str, Any]:
+    """Every 15 min: triage untriaged feedback reports (LLM assessment →
+    deterministic verdict → GitHub labels). Idempotent: only rows with
+    triage IS NULL are examined; ai-unreachable rows are skipped and
+    retried next run — a report is never lost."""
+    try:
+        result = asyncio.run(_triage_pending_feedback(limit))
+    except Exception as exc:
+        logger.exception("feedback_triage_pending failed")
+        raise self.retry(exc=exc) from exc
+    logger.info("feedback_triage_pending %s", result)
+    return result

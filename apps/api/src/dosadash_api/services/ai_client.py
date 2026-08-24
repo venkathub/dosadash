@@ -17,6 +17,8 @@ from dosadash_shared import (
     DishQCResult,
     EtaRequest,
     EtaResponse,
+    FeedbackTriageRequest,
+    FeedbackTriageResponse,
     InventoryDraftRequest,
     InventoryDraftResult,
     InvoiceExtractIn,
@@ -318,6 +320,23 @@ class AIClient:
         except httpx.HTTPError as exc:
             raise AIServiceError(f"AI service call failed: {exc}") from exc
         return ReviewBatchPollResponse.model_validate(resp.json())
+
+    async def triage_feedback(self, request: FeedbackTriageRequest) -> FeedbackTriageResponse:
+        """Feedback triage (Phase 13): LLM assessment + deterministic verdict.
+        The ai side never 5xxes for a chain failure — it degrades to a
+        NEEDS_APPROVAL fallback verdict, so AIServiceError here means the
+        service itself is unreachable (caller leaves the report for retry)."""
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                resp = await client.post(
+                    f"{self._base_url}/internal/feedback/triage",
+                    json=request.model_dump(mode="json"),
+                    headers={"X-Internal-Token": self._token},
+                )
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AIServiceError(f"AI service call failed: {exc}") from exc
+        return FeedbackTriageResponse.model_validate(resp.json())
 
 
 def get_ai_client() -> AIClient:

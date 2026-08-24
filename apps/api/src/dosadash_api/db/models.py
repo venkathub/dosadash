@@ -732,3 +732,54 @@ class ReviewBatchJob(TimestampMixin, Base):
     failed: Mapped[int | None] = mapped_column()
     error: Mapped[str | None] = mapped_column(Text)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+# --------------------------------------------------------------------------- feedback (Phase 13)
+
+
+class FeedbackReport(TimestampMixin, Base):
+    """User-raised bug/feature report (Phase 13 self-healing loop, docs/14).
+
+    The api stores the row FIRST (phone-redacted — Hard Rule 8: issue bodies
+    leave our infrastructure), then mirrors it to a GitHub issue best-effort
+    (hotfix-#72 pattern: a GitHub outage never 5xxes the reporter;
+    `github_error` records why the mirror failed so the admin tab can retry).
+
+    `dedupe_hash` collapses repeat reports onto the open original. Triage
+    provenance (Slice 3: verdict, model, prompt_version, at) lands in the
+    `triage` JSONB; GitHub labels are the authoritative automation signal and
+    `status` is the local projection the admin tab reads without a GitHub
+    round-trip."""
+
+    __tablename__ = "feedback_reports"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    reporter_tier: Mapped[str] = mapped_column(
+        Enum("ANON", "CUSTOMER", "STAFF", name="feedback_reporter_tier")
+    )
+    type: Mapped[str] = mapped_column(Enum("BUG", "FEATURE", name="feedback_type"))
+    status: Mapped[str] = mapped_column(
+        Enum(
+            "RECEIVED",
+            "TRACKED",
+            "AUTO_FIX",
+            "NEEDS_APPROVAL",
+            "APPROVED",
+            "REJECTED",
+            "FIXED",
+            "DISMISSED",
+            name="feedback_status",
+        ),
+        default="RECEIVED",
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str] = mapped_column(Text)
+    context: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    dedupe_hash: Mapped[str] = mapped_column(String(64), index=True)
+    github_issue_number: Mapped[int | None] = mapped_column(index=True)
+    github_error: Mapped[str | None] = mapped_column(String(300))
+    triage: Mapped[dict[str, Any] | None] = mapped_column(JSONB)

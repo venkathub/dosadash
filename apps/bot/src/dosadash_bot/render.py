@@ -132,3 +132,36 @@ def link_failed_text(detail: str | None) -> str:
         "Generate a fresh link from the DosaDash website (Orders → Link Telegram) "
         "and tap it within 10 minutes."
     )
+
+
+def feedback_notify_text(payload: dict[str, Any]) -> str:
+    """Admin approval card for a triaged feedback report (Phase 13).
+
+    The title is END-USER text — rendered verbatim inside the card but
+    never interpreted; approval only flips a GitHub label api-side."""
+    kind = "🐞 Bug" if payload.get("type") == "BUG" else "✨ Feature"
+    lines = [f"{kind} report #{payload['report_id']} needs a decision", ""]
+    lines.append(f"“{payload.get('title', '')}”")
+    summary = payload.get("summary")
+    if summary:
+        effort = payload.get("effort") or "?"
+        risk = payload.get("risk") or "?"
+        lines.append("")
+        lines.append(f"🤖 {summary} (effort {effort}, risk {risk})")
+    issue = payload.get("github_url")
+    if issue:
+        lines.append(f"🔗 {issue}")
+    lines.append("")
+    lines.append("Approve to let the AI fixer implement it, or reject it.")
+    return "\n".join(lines)
+
+
+def feedback_decided_text(report_id: int, status: str | None, detail: str | None) -> str:
+    if status == "APPROVED":
+        return (
+            f"✅ Report #{report_id} approved — the AI fixer will pick it up "
+            "and open a PR for review."
+        )
+    if status == "REJECTED":
+        return f"🚫 Report #{report_id} rejected."
+    return f"⚠️ Couldn't update report #{report_id}: {detail or 'please use the backoffice.'}"
