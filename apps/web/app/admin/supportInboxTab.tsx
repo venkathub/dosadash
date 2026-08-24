@@ -71,7 +71,7 @@ export function SupportInboxTab() {
                       💸 resolve + refund
                     </Btn>
                   )}
-                  <Btn variant="gold" size="sm" onClick={() => decide(t.id, "resolve", false)}>resolve</Btn>
+                  <Btn variant="turmeric" size="sm" onClick={() => decide(t.id, "resolve", false)}>resolve</Btn>
                   <Btn variant="ghost" size="sm" onClick={() => decide(t.id, "dismiss", false)}>dismiss</Btn>
                 </span>
               )}

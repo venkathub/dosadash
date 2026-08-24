@@ -206,7 +206,7 @@ export default function Home() {
           />
           <div className="flex items-center gap-3 text-sm">
             <button
-              className="flex overflow-hidden rounded-full border-2 border-indigo-600 font-display text-[11.5px] font-bold"
+              className="flex overflow-hidden rounded-full border-2 border-indigo-600 font-display text-[11.5px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
               title={lang === "ta" ? "Switch to English" : "தமிழில் காட்டு"}
               onClick={() => switchLang(lang === "ta" ? "en" : "ta")}
             >
@@ -425,7 +425,7 @@ export default function Home() {
                       {cart[m.id] ? (
                         <div className="flex items-center overflow-hidden rounded-lg border-2 border-indigo-900 bg-paper font-display font-bold shadow-pop-sm">
                           <button
-                            className="h-8 w-8 bg-turmeric-500 text-indigo-900 transition-colors duration-150 hover:bg-turmeric-400"
+                            className="h-8 w-8 bg-turmeric-500 text-indigo-900 transition-colors duration-150 hover:bg-turmeric-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
                             onClick={() => add(m, -1)}
                           >
                             −
@@ -434,7 +434,7 @@ export default function Home() {
                             {cart[m.id].qty}
                           </span>
                           <button
-                            className="h-8 w-8 bg-turmeric-500 text-indigo-900 transition-colors duration-150 hover:bg-turmeric-400 disabled:cursor-not-allowed disabled:bg-sand-300 disabled:text-faint"
+                            className="h-8 w-8 bg-turmeric-500 text-indigo-900 transition-colors duration-150 hover:bg-turmeric-400 disabled:cursor-not-allowed disabled:bg-sand-300 disabled:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
                             disabled={off}
                             onClick={() => add(m, 1)}
                           >

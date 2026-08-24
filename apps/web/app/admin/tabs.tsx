@@ -132,7 +132,7 @@ export function MenuTab() {
             <option key={s} value={s}>{"🌶".repeat(s) || "no spice"}</option>
           ))}
         </Select>
-        <Btn variant="gold" size="sm">Add</Btn>
+        <Btn variant="turmeric" size="sm">Add</Btn>
       </form>
 
       <table className={tableCls}>
@@ -244,7 +244,7 @@ export function OrdersTab() {
             <span className="tnum ml-auto font-display font-semibold">₹{o.total}</span>
             {o.payment && <span className="text-xs text-indigo-200/70">pay: {o.payment.status}</span>}
             {NEXT[o.status] && (
-              <Btn variant="gold" size="sm" onClick={() => act(() => adminApi(`/orders/${o.id}/status`, { method: "POST", body: { status: NEXT[o.status] } }))}>
+              <Btn variant="turmeric" size="sm" onClick={() => act(() => adminApi(`/orders/${o.id}/status`, { method: "POST", body: { status: NEXT[o.status] } }))}>
                 → {NEXT[o.status]}
               </Btn>
             )}
@@ -315,7 +315,7 @@ export function CombosTab() {
           <Eyebrow>New combo</Eyebrow>
           <Input tone="dark" className="px-2 py-1" placeholder="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Input tone="dark" className="w-24 px-2 py-1" placeholder="₹ price" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-          <Btn variant="gold" size="sm" disabled={form.ids.length < 2}>Create draft ({form.ids.length} items)</Btn>
+          <Btn variant="turmeric" size="sm" disabled={form.ids.length < 2}>Create draft ({form.ids.length} items)</Btn>
         </div>
         <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
           {(data?.items ?? []).map((i) => (
@@ -343,7 +343,7 @@ export function CombosTab() {
             {c.source === "AI_SUGGESTED" && <span className="ai-meta">🤖 AI suggested</span>}
             <span className="ml-auto" />
             {c.status !== "APPROVED" && (
-              <Btn variant="gold" size="sm" onClick={() => act(() => adminApi(`/admin/combos/${c.id}/status`, { method: "POST", body: { status: "APPROVED" } }))}>approve</Btn>
+              <Btn variant="turmeric" size="sm" onClick={() => act(() => adminApi(`/admin/combos/${c.id}/status`, { method: "POST", body: { status: "APPROVED" } }))}>approve</Btn>
             )}
             {c.status !== "REJECTED" && (
               <Btn variant="danger" size="sm" onClick={() => act(() => adminApi(`/admin/combos/${c.id}/status`, { method: "POST", body: { status: "REJECTED" } }))}>reject</Btn>
@@ -417,7 +417,7 @@ export function NutritionTab() {
                   </Btn>
                   {n && n.status === "DRAFT" && (
                     <>
-                      <Btn variant="gold" size="sm" className="ml-1" onClick={() => act(() => adminApi(`/admin/nutrition/${i.id}/status`, { method: "POST", body: { status: "APPROVED" } }))}>approve</Btn>
+                      <Btn variant="turmeric" size="sm" className="ml-1" onClick={() => act(() => adminApi(`/admin/nutrition/${i.id}/status`, { method: "POST", body: { status: "APPROVED" } }))}>approve</Btn>
                       <Btn variant="danger" size="sm" className="ml-1" onClick={() => act(() => adminApi(`/admin/nutrition/${i.id}/status`, { method: "POST", body: { status: "REJECTED" } }))}>reject</Btn>
                     </>
                   )}
@@ -459,7 +459,7 @@ export function SettingsTab() {
       <div className="rounded-lg bg-indigo-800 p-4">
         <Eyebrow className="mb-2 text-turmeric-400/80">Kitchen</Eyebrow>
         <Btn
-          variant={settings.kitchen_paused ? "gold" : "danger"}
+          variant={settings.kitchen_paused ? "turmeric" : "danger"}
           size="sm"
           onClick={() => {
             const reason = settings.kitchen_paused ? null : window.prompt("Pause reason?");
@@ -482,7 +482,7 @@ export function SettingsTab() {
           onChange={(e) => setPincodes(e.target.value)}
         />
         <Btn
-          variant="gold"
+          variant="turmeric"
           size="sm"
           className="mt-2"
           disabled={pincodes === null}
@@ -506,7 +506,7 @@ export function SettingsTab() {
         ))}
         <div className="mt-2 flex gap-2">
           <Btn
-            variant="gold"
+            variant="turmeric"
             size="sm"
             disabled={hours === null}
             onClick={() => {

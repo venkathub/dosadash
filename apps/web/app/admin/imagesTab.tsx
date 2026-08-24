@@ -81,7 +81,7 @@ export function ImagesTab() {
                 </Btn>
                 {d?.status === "DRAFT" && (
                   <>
-                    <Btn variant="gold" size="sm" disabled={busy !== null} onClick={() => setStatus(item.id, "APPROVED")}>
+                    <Btn variant="turmeric" size="sm" disabled={busy !== null} onClick={() => setStatus(item.id, "APPROVED")}>
                       ✓ Publish (AI-labeled)
                     </Btn>
                     <Btn variant="danger" size="sm" disabled={busy !== null} onClick={() => setStatus(item.id, "REJECTED")}>

@@ -75,7 +75,7 @@ export function CopilotTab() {
           placeholder="Ask about sales, dishes, forecasts, customers…"
           className="flex-1 px-3 py-2"
         />
-        <Btn variant="gold" size="md" disabled={busy || question.trim().length < 3}>
+        <Btn variant="turmeric" size="md" disabled={busy || question.trim().length < 3}>
           {busy ? "Thinking…" : "Ask"}
         </Btn>
       </form>

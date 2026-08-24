@@ -78,7 +78,7 @@ function GroupedNav({ tab, onSelect }: { tab: Tab; onSelect: (t: Tab) => void })
                 onClick={() => onSelect(t)}
                 aria-current={tab === t ? "page" : undefined}
                 className={cx(
-                  "flex w-full items-center gap-2 rounded-lg border-[1.5px] px-2.5 py-1.5 text-left font-display text-[13px] transition-colors duration-150",
+                  "flex w-full items-center gap-2 rounded-lg border-[1.5px] px-2.5 py-1.5 text-left font-display text-[13px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500",
                   tab === t
                     ? "border-turmeric-500 bg-turmeric-500 font-bold text-indigo-950"
                     : "border-transparent font-semibold text-indigo-200 hover:bg-indigo-800 hover:text-turmeric-400",
@@ -119,7 +119,7 @@ export default function Admin() {
       <header className="flex items-center gap-3 border-b-[3px] border-magenta-500 bg-indigo-900 px-4 py-3">
         <button
           aria-label="Open sections"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border-[1.5px] border-indigo-600 bg-indigo-950 text-lg text-indigo-100 lg:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border-[1.5px] border-indigo-600 bg-indigo-950 text-lg text-indigo-100 lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
           onClick={() => setNavOpen(true)}
         >
           ☰

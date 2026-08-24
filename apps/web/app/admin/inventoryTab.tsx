@@ -112,7 +112,7 @@ export function InventoryTab() {
           ))}
         </Select>
         <Btn variant="ghost" size="sm" onClick={refresh}>↻ refresh</Btn>
-        <Btn variant="gold" size="sm" disabled={busy} onClick={draftNow}>
+        <Btn variant="turmeric" size="sm" disabled={busy} onClick={draftNow}>
           {busy ? "🤖 drafting…" : "🤖 Run inventory agent now"}
         </Btn>
       </div>
@@ -134,7 +134,7 @@ export function InventoryTab() {
               {po.expected_cost && <span className="tnum ml-auto font-display font-semibold">≈ ₹{Number(po.expected_cost).toFixed(0)}</span>}
               {po.status === "PENDING_APPROVAL" && (
                 <>
-                  <Btn variant="gold" size="sm" onClick={() => act(() => adminApi(`/admin/purchase-orders/${po.id}/approve`, { method: "POST" }))}>
+                  <Btn variant="turmeric" size="sm" onClick={() => act(() => adminApi(`/admin/purchase-orders/${po.id}/approve`, { method: "POST" }))}>
                     ✅ approve
                   </Btn>
                   <Btn
@@ -148,7 +148,7 @@ export function InventoryTab() {
               )}
               {po.status === "APPROVED" && (
                 <>
-                  <Btn variant="gold" size="sm" onClick={() => act(() => adminApi(`/admin/purchase-orders/${po.id}/receive`, { method: "POST" }))}>
+                  <Btn variant="turmeric" size="sm" onClick={() => act(() => adminApi(`/admin/purchase-orders/${po.id}/receive`, { method: "POST" }))}>
                     📦 mark received
                   </Btn>
                   <Btn variant="danger" size="sm" onClick={() => act(() => adminApi(`/admin/purchase-orders/${po.id}/cancel`, { method: "POST" }))}>
@@ -299,7 +299,7 @@ function InvoiceSection({ onStockChanged }: { onStockChanged: () => void }) {
               {inv.po_id && <span className="text-xs text-indigo-200/70">→ PO #{inv.po_id}</span>}
               {(inv.status === "MATCHED" || inv.status === "PENDING_REVIEW") && (
                 <span className="ml-auto flex gap-2">
-                  <Btn variant="gold" size="sm" disabled={!inv.po_id} onClick={() => decide(inv.id, "approve")}>
+                  <Btn variant="turmeric" size="sm" disabled={!inv.po_id} onClick={() => decide(inv.id, "approve")}>
                     ✅ approve → stock in
                   </Btn>
                   <Btn variant="danger" size="sm" onClick={() => decide(inv.id, "reject")}>
@@ -337,7 +337,7 @@ function QtyEditor({ value, unit, onSave }: { value: string; unit: string; onSav
       <Input tone="dark" className="w-20 px-2 py-1 text-right" value={qty} onChange={(e) => setQty(e.target.value)} />
       <span className="text-indigo-200/70">{unit}</span>
       {qty !== value && (
-        <Btn variant="gold" size="sm" onClick={() => onSave(qty)}>
+        <Btn variant="turmeric" size="sm" onClick={() => onSave(qty)}>
           save
         </Btn>
       )}
@@ -406,7 +406,7 @@ function WastageSection() {
           ))}
         </Select>
         <Input tone="dark" className="w-56 px-2 py-1" placeholder="note (optional)" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
-        <Btn variant="gold" size="sm">Log wastage</Btn>
+        <Btn variant="turmeric" size="sm">Log wastage</Btn>
       </form>
       <div className="space-y-1">
         {(data?.entries ?? []).map((w) => (

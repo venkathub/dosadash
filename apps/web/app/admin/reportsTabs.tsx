@@ -81,7 +81,7 @@ export function ReportsTab() {
             <Btn
               key={g}
               onClick={() => setGranularity(g)}
-              variant={granularity === g ? "gold" : "ghost"}
+              variant={granularity === g ? "turmeric" : "ghost"}
               size="sm"
             >
               {g}
@@ -194,7 +194,7 @@ export function ReportsTab() {
             onChange={(e) => setMonth(e.target.value)}
             className="px-2 py-1"
           />
-          <Btn variant="gold" size="sm" onClick={downloadGst}>Download CSV</Btn>
+          <Btn variant="turmeric" size="sm" onClick={downloadGst}>Download CSV</Btn>
         </div>
       </section>
     </div>
