@@ -31,6 +31,27 @@ const TAB_GROUPS = [
 const TABS = ["Menu", "Orders", "Inventory", "Support", "Reviews", "Coupons", "Combos", "CRM", "Reports", "Copilot", "Nutrition", "Translations", "Images", "Evals", "Costs", "Settings", "Audit"] as const;
 type Tab = (typeof TABS)[number];
 
+/** Sidebar icons — the product's emoji icon language (docs/13 §4). */
+const TAB_ICON: Record<Tab, string> = {
+  Menu: "🍽️",
+  Orders: "🧾",
+  Inventory: "📦",
+  Support: "🛟",
+  Reviews: "⭐",
+  Coupons: "🎟️",
+  Combos: "🧩",
+  CRM: "👥",
+  Reports: "📈",
+  Copilot: "🤖",
+  Nutrition: "🥗",
+  Translations: "🌐",
+  Images: "🖼️",
+  Evals: "🎯",
+  Costs: "💸",
+  Settings: "⚙️",
+  Audit: "📜",
+};
+
 /** Display-only: read the role claim out of the stored JWT for the header chip. */
 function roleFromToken(token: string): string | null {
   try {
@@ -77,34 +98,74 @@ export default function Admin() {
           </Btn>
         </span>
       </header>
-      <nav className="flex items-center gap-2 overflow-x-auto whitespace-nowrap border-b border-indigo-800 bg-indigo-950 px-4 py-3">
-        {TAB_GROUPS.map((group, gi) => (
-          <span key={group.label} className="flex flex-none items-center gap-2">
-            <span
-              className={cx(
-                "flex-none font-display text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-300",
-                gi > 0 && "ml-2.5",
-              )}
-            >
-              {group.label}
-            </span>
-            {group.tabs.map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={
-                  tab === t
-                    ? "flex-none rounded-full border-[1.5px] border-turmeric-500 bg-turmeric-500 px-3 py-1 font-display text-xs font-bold text-indigo-950"
-                    : "flex-none rounded-full border-[1.5px] border-indigo-700 px-3 py-1 font-display text-xs font-semibold text-indigo-200 transition-colors duration-150 hover:border-turmeric-400 hover:text-turmeric-400"
-                }
-              >
-                {t}
-              </button>
+      <div className="mx-auto flex max-w-[1380px] items-start">
+        {/* Desktop: vertical grouped sidebar */}
+        <aside className="sticky top-0 hidden max-h-screen w-56 shrink-0 overflow-y-auto border-r border-indigo-800 px-3 py-4 lg:block">
+          <nav aria-label="Backoffice sections">
+            {TAB_GROUPS.map((group) => (
+              <div key={group.label} className="mb-4">
+                <div className="mb-1.5 px-2.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-300">
+                  {group.label}
+                </div>
+                <div className="space-y-1">
+                  {group.tabs.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTab(t)}
+                      aria-current={tab === t ? "page" : undefined}
+                      className={cx(
+                        "flex w-full items-center gap-2 rounded-lg border-[1.5px] px-2.5 py-1.5 text-left font-display text-[13px] transition-colors duration-150",
+                        tab === t
+                          ? "border-turmeric-500 bg-turmeric-500 font-bold text-indigo-950"
+                          : "border-transparent font-semibold text-indigo-200 hover:bg-indigo-800 hover:text-turmeric-400",
+                      )}
+                    >
+                      <span aria-hidden className="w-5 text-center">
+                        {TAB_ICON[t]}
+                      </span>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
-          </span>
-        ))}
-      </nav>
-      <section className="mx-auto max-w-[1380px] p-4 sm:px-6" key={tab}>
+          </nav>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          {/* Small screens: horizontal rail fallback */}
+          <nav
+            aria-label="Backoffice sections"
+            className="flex items-center gap-2 overflow-x-auto whitespace-nowrap border-b border-indigo-800 bg-indigo-950 px-4 py-3 lg:hidden"
+          >
+            {TAB_GROUPS.map((group, gi) => (
+              <span key={group.label} className="flex flex-none items-center gap-2">
+                <span
+                  className={cx(
+                    "flex-none font-display text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-300",
+                    gi > 0 && "ml-2.5",
+                  )}
+                >
+                  {group.label}
+                </span>
+                {group.tabs.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    className={
+                      tab === t
+                        ? "flex-none rounded-full border-[1.5px] border-turmeric-500 bg-turmeric-500 px-3 py-1 font-display text-xs font-bold text-indigo-950"
+                        : "flex-none rounded-full border-[1.5px] border-indigo-700 px-3 py-1 font-display text-xs font-semibold text-indigo-200 transition-colors duration-150 hover:border-turmeric-400 hover:text-turmeric-400"
+                    }
+                  >
+                    {t}
+                  </button>
+                ))}
+              </span>
+            ))}
+          </nav>
+
+          <section className="p-4 sm:px-6" key={tab}>
         <div className="mb-3">
           {activeGroup && <Eyebrow>{activeGroup.label}</Eyebrow>}
           <SectionHeading as="h2" className="inline-block text-xl text-white">
@@ -130,7 +191,9 @@ export default function Admin() {
           {tab === "Settings" && <SettingsTab />}
           {tab === "Audit" && <AuditTab />}
         </Card>
-      </section>
+          </section>
+        </div>
+      </div>
     </main>
   );
 }

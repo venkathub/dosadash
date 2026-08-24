@@ -123,6 +123,10 @@ the frame→cases table. Highlights the implementation must preserve:
   buttons; **no backdrop-blur on the board**.
 - **Admin shell**: grouped pill rail (Operations · Growth · AI Studio · System), active pill
   = turmeric; header keeps role chip + redacted phone. All 17 tabs mocked individually.
+  **Post-approval UX revision (2026-08-24, user-requested):** at `lg+` the grouped nav is a
+  **vertical left sidebar** (sticky, 224px, group labels + icon'd items, active = turmeric
+  pill) instead of the mockup's horizontal rail — 17 tabs scan better vertically; the
+  horizontal rail remains as the small-screen fallback. Same tokens, same grouping.
 - **Evals/Costs**: the measured-numbers story (96.55% gate arc, 48.9% cache share) rendered
   as hero stats — keep real numbers wired to the real endpoints as today.
 
