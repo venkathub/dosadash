@@ -1,18 +1,17 @@
 # Live eval merge gate (Hard Rule 5). Runs the full agent (real LLM chain +
 # real DB) over all 80 golden conversations and fails the check if
 # order_accuracy < 0.95, tool_correctness < 1.0, or any guardrail bypass
-# occurs. Triggered only for PRs touching agents, prompts, shared schemas,
-# or evals — key-free asset gates in ci.yml cover everything else.
+# occurs. Runs on every PR so the check can be a REQUIRED status check
+# (Phase 13: the fixer's auto-merge waits on required checks — a
+# path-filtered workflow would never report on unrelated PRs and starve
+# them forever). The expensive job itself still only runs when agents,
+# prompts, shared schemas, or evals changed: the `changes` job diffs the
+# PR and unrelated PRs skip the gate, which GitHub counts as success.
 
 name: Live evals
 
 on:
   pull_request:
-    paths:
-      - "apps/ai/**"
-      - "packages/shared/**"
-      - "evals/**"
-      - ".github/workflows/live-evals.yml"
   workflow_dispatch:
 
 concurrency:
@@ -30,8 +29,33 @@ env:
   AI_DATABASE_URL: postgresql+asyncpg://dosadash:dosadash@localhost:5433/dosadash
 
 jobs:
+  changes:
+    name: Detect eval-relevant changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      relevant: ${{ steps.diff.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+              | grep -E '^(apps/ai/|packages/shared/|evals/|\.github/workflows/live-evals\.yml)'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "No agent/prompt/shared/eval changes — live gate skipped (counts as pass)."
+          fi
+
   live-evals:
     name: Live eval gate (order_accuracy >= 0.95)
+    needs: changes
+    if: >-
+      always() &&
+      (github.event_name == 'workflow_dispatch' || needs.changes.outputs.relevant == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
