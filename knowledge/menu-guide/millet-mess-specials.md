@@ -13,8 +13,7 @@ kitchen at Perumbairkandigai, where ragi dosas come off an open griddle and
 sukku coffee steams in the morning fog. The Mess Specials channel Manna
 Mess at Acharapakkam, the famous non-veg mess where lorry drivers and
 weekend road-trippers queue side by side for mutton chukka and karuvadu.
-The timing follows the same highway rhythm (see the Serving Hours guide);
-the app always shows live availability per dish.
+The menu always shows exactly what is being served right now.
 
 ## Millet Specials
 

@@ -35,6 +35,7 @@ from dosadash_ai.agent.context import (
 from dosadash_ai.agent.guardrail import (
     drop_substitutions,
     gate_ready,
+    reply_draft_contradictions,
     serving_notes,
     validate_draft,
 )
@@ -123,8 +124,9 @@ def build_messages(state: AgentState) -> list[dict[str, str]]:
 
 async def _llm_turn(state: AgentState) -> dict[str, Any]:
     request = state["request"]
+    messages = build_messages(state)
     turn, model = await structured_completion(
-        messages=build_messages(state),
+        messages=messages,
         response_model=AgentTurn,
         trace_name="agent.turn",
         prompt_version=ORDER_AGENT_PROMPT_VERSION,
@@ -132,6 +134,43 @@ async def _llm_turn(state: AgentState) -> dict[str, Any]:
         user_id=str(request.user_id) if request.user_id is not None else None,
         max_tokens=900,
     )
+    # One-round self-correction (copilot precedent): if the reply refused —
+    # or promised but didn't draft — an ORDERABLE dish the customer asked
+    # for by name, tell the model exactly which dishes ARE on the menu and
+    # let it redo the turn once. Deterministic detection, narrow trigger;
+    # a failed retry keeps the original turn (never a 5xx).
+    contradicted = reply_draft_contradictions(state["ctx"], request.message, turn)
+    if contradicted:
+        logger.info("agent: self-correcting wrongly-refused dishes %s", contradicted)
+        names = ", ".join(contradicted)
+        try:
+            retry_turn, retry_model = await structured_completion(
+                messages=[
+                    *messages,
+                    {"role": "assistant", "content": turn.model_dump_json()},
+                    {
+                        "role": "system",
+                        "content": (
+                            f"CORRECTION: {names} IS on the menu and being served "
+                            "right now — your reply wrongly treated it as "
+                            "unavailable or left it out of draft_items. Redo this "
+                            "turn: add the customer's requested menu dishes to "
+                            "draft_items and answer accordingly."
+                        ),
+                    },
+                ],
+                response_model=AgentTurn,
+                trace_name="agent.turn.self_correct",
+                prompt_version=ORDER_AGENT_PROMPT_VERSION,
+                session_id=request.session_id,
+                user_id=str(request.user_id) if request.user_id is not None else None,
+                max_tokens=900,
+            )
+        except LLMError:
+            logger.warning("agent: self-correction retry failed, keeping original turn")
+        else:
+            if not reply_draft_contradictions(state["ctx"], request.message, retry_turn):
+                turn, model = retry_turn, retry_model
     return {"turn": turn, "model": model}
 
 

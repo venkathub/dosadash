@@ -6,9 +6,7 @@ tags: [rice, pongal, biryani, menu, festival, timing]
 
 # Rice, Pongal & Biryani Guide
 
-This page straddles the kitchen's two shifts: pongal pots in the morning,
-rice plates and biryani from lunch onwards (see the Serving Hours guide);
-the app always shows live availability per dish.
+The menu always shows exactly what is being served right now.
 
 ## Rice & Pongal
 

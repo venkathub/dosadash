@@ -8,6 +8,7 @@ conjunction, not a model opinion.
 """
 
 from decimal import Decimal
+from typing import Any
 
 from dosadash_ai.agent.context import AgentContext
 from dosadash_shared import DraftItemIn, OrderDraft, OrderDraftItem, availability
@@ -153,3 +154,79 @@ def serving_notes(
     return [f"{' and '.join(sorted(names))} {label}." for label, names in sorted(grouped.items())][
         :3
     ]
+
+
+_REFUSAL_PHRASES = (
+    "not available",
+    "unavailable",
+    "don't have",
+    "do not have",
+    "sold out",
+    "not serving",
+    "not on the menu",
+    "not on our menu",
+    "nahi hai",
+    "illa",
+)
+_UNKEPT_PROMISE_PHRASES = (
+    "i can add",
+    "i'll add",
+    "i will add",
+    "however, i can add",
+)
+
+
+_REMOVAL_WORDS = (
+    "remove",
+    "cancel",
+    "hata",
+    "nikal",
+    "venaam",
+    "vendam",
+    "venda",
+    "without",
+    "drop the",
+    "no more",
+    "rehne do",
+    "instead",
+)
+
+
+def reply_draft_contradictions(ctx: AgentContext, message: str, turn: Any) -> list[str]:
+    """Names of ORDERABLE dishes the customer asked for that the model's
+    reply wrongly refused ('Curd Rice is not available') or promised but
+    didn't draft ('I can add the Filter Coffee') — the trigger for the
+    one-round self-correction retry (copilot precedent). Deliberately
+    narrow: the dish must be orderable, named in the customer's message,
+    named in the reply, absent from draft_items, AND the reply must
+    contain a refusal / unkept-promise phrase — factual answers and
+    removal turns never trigger.
+
+    Second trigger (draft-level evidence, no phrase needed): the named
+    orderable dish is missing from the draft while an UNREQUESTED dish of
+    the same category was drafted — the silent-substitution signature
+    ('mutton chukka' → drafts Nattu Kozhi Kuzhambu). Suppressed when the
+    message carries removal/replacement intent, where a named-but-absent
+    dish is the CORRECT outcome."""
+    text = message.casefold()
+    reply = turn.reply.casefold()
+    removal_intent = any(w in text for w in _REMOVAL_WORDS)
+    drafted_ids = {line.item_id for line in turn.draft_items}
+    drafted_unrequested_categories = {
+        ctx.items[i].category
+        for i in drafted_ids
+        if i in ctx.items and ctx.items[i].name.split(" (")[0].casefold() not in text
+    }
+    phrase_mode = any(p in reply for p in _REFUSAL_PHRASES + _UNKEPT_PROMISE_PHRASES)
+    wrongly_refused = []
+    for item in ctx.items.values():
+        if not item.orderable or item.id in drafted_ids:
+            continue
+        base = item.name.split(" (")[0].casefold()
+        if not base or base not in text:
+            continue
+        if phrase_mode and base in reply:
+            wrongly_refused.append(item.name)
+        elif not removal_intent and item.category in drafted_unrequested_categories:
+            wrongly_refused.append(item.name)  # substitution signature
+    return sorted(set(wrongly_refused))

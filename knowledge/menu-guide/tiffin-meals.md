@@ -6,9 +6,8 @@ tags: [tiffin, meals, idiyappam, appam, adai, kitchadi, mini tiffin, mess, lunch
 
 # Tiffin & Meals Guide
 
-Tiffin and meals are the two halves of the Tamil eating day, and the
-kitchen keeps their clocks honest (see the Serving Hours guide); the app
-always shows live availability per dish.
+Tiffin and meals are the two halves of the Tamil eating day.
+The menu always shows exactly what is being served right now.
 
 ## Tiffin
 

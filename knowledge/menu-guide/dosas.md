@@ -10,8 +10,7 @@ Every dosa is made to order from batter fermented in-house overnight (rice +
 urad dal, stone-ground). All dosas are served with coconut chutney, tomato
 chutney, and sambar unless noted. Typical prep time is 15–20 minutes.
 
-Dosas run on tiffin-centre hours (see the Serving Hours guide); the app
-always shows live availability per dish.
+The menu always shows exactly what is being served right now.
 
 ## Plain Dosa — ₹90
 

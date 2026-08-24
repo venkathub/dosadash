@@ -6,9 +6,7 @@ tags: [chettinad, curry, snacks, sweets, beverages, coffee, menu, timing]
 
 # Chettinad Curries, Snacks, Sweets & Beverages
 
-Timing on this page varies by counter (see the Serving Hours guide);
-sweets and beverages are the exception to all clock-watching — they serve
-all day, every day. The app always shows live availability per dish.
+The menu always shows exactly what is being served right now.
 
 ## Chettinad Curries
 

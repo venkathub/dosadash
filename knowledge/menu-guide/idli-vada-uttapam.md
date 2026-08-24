@@ -9,8 +9,7 @@ tags: [idli, vada, uttapam, tiffin, menu, timing]
 Steamed and griddled tiffin classics. Idlis are steamed fresh through the
 day; vadas are fried to order. All are served with sambar and chutneys.
 
-Everything on this page runs on tiffin-centre hours (see the Serving Hours
-guide); the app always shows live availability per dish.
+The menu always shows exactly what is being served right now.
 
 ## Idli (2 pcs) — ₹80
 

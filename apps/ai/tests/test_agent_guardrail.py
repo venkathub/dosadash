@@ -184,3 +184,67 @@ def test_drop_substitutions_guards_sold_out_siblings():
     # nothing non-orderable mentioned → untouched
     kept3, warnings3 = drop_substitutions(ctx, "a coffee and a mysore masala dosa", draft)
     assert kept3 is draft and warnings3 == []
+
+
+def test_reply_draft_contradictions_detects_wrong_refusals():
+    """Phase 11 self-correction trigger: orderable dish named by the
+    customer + named in the reply + missing from draft + refusal phrasing
+    → flagged. Factual answers and honest turns never trigger."""
+    from dosadash_ai.agent.guardrail import reply_draft_contradictions
+    from dosadash_shared import AgentTurn
+
+    ctx = _ctx()  # Masala Dosa + Filter Coffee orderable, Mysore Pak 86'd
+
+    wrong = AgentTurn(reply="Sorry, Filter Coffee is not available right now.", draft_items=[])
+    assert reply_draft_contradictions(ctx, "one filter coffee please", wrong) == ["Filter Coffee"]
+
+    unkept = AgentTurn(reply="I can add the Filter Coffee for you. Anything else?", draft_items=[])
+    assert reply_draft_contradictions(ctx, "a filter coffee", unkept) == ["Filter Coffee"]
+
+    honest = AgentTurn(
+        reply="Added one Filter Coffee!", draft_items=[DraftItemIn(item_id=2, qty=1)]
+    )
+    assert reply_draft_contradictions(ctx, "a filter coffee", honest) == []
+
+    # 86'd dish correctly refused → NOT a contradiction (it isn't orderable)
+    sold_out = AgentTurn(reply="Mysore Pak is sold out right now.", draft_items=[])
+    assert reply_draft_contradictions(ctx, "one mysore pak", sold_out) == []
+
+    # factual answer without refusal phrasing → no trigger
+    factual = AgentTurn(reply="Filter Coffee contains milk and sugar.", draft_items=[])
+    assert reply_draft_contradictions(ctx, "does filter coffee have milk?", factual) == []
+
+
+def test_reply_draft_contradictions_substitution_signature():
+    """Draft-level trigger: named orderable dish missing while an
+    unrequested same-category dish was drafted — but never on removal/
+    replacement turns."""
+    from dosadash_ai.agent.guardrail import reply_draft_contradictions
+    from dosadash_shared import AgentTurn
+
+    items = {
+        1: _item(1, "Mutton Chukka", "280"),
+        2: _item(2, "Nattu Kozhi Kuzhambu", "260"),
+        3: _item(3, "Filter Coffee", "60"),
+    }
+    ctx = AgentContext(items=items)
+
+    substituted = AgentTurn(
+        reply="Added Nattu Kozhi Kuzhambu!", draft_items=[DraftItemIn(item_id=2, qty=1)]
+    )
+    assert reply_draft_contradictions(ctx, "one mutton chukka please", substituted) == [
+        "Mutton Chukka"
+    ]
+
+    # customer named both dishes → no trigger
+    both = reply_draft_contradictions(ctx, "mutton chukka and nattu kozhi kuzhambu", substituted)
+    assert both == []
+
+    # replacement turn: named-but-absent is the CORRECT outcome → suppressed
+    replaced = AgentTurn(reply="Swapped it!", draft_items=[DraftItemIn(item_id=2, qty=1)])
+    assert (
+        reply_draft_contradictions(
+            ctx, "make it nattu kozhi instead of the mutton chukka", replaced
+        )
+        == []
+    )
