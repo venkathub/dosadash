@@ -135,7 +135,10 @@ def test_verifier_is_cheap_and_read_only() -> None:
     assert turns is not None and int(turns.group(1)) <= 40
     tools = re.search(r'--allowedTools "([^"]+)"', text)
     assert tools is not None
-    for forbidden in ["Edit", "Write", "git push", "npm", "uv run"]:
+    # no code editing AND no filesystem exploration: the first live run
+    # burned its whole turn budget reading the repo instead of probing
+    # prod — verification is gh + curl only.
+    for forbidden in ["Edit", "Write", "Read", "Grep", "Glob", "git push", "npm", "uv run"]:
         assert forbidden not in tools.group(1), f"verifier toolset must exclude {forbidden}"
     # deterministic pre-filter: the Claude step must be conditional on the
     # free gh query so empty queues cost zero tokens
