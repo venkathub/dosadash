@@ -32,8 +32,8 @@ def test_anonymous_state_has_null_memory():
     assert '"memory": null' in state_msg
 
 
-def test_prompt_v4_states_memory_rules():
-    assert ORDER_AGENT_PROMPT_VERSION == "order_agent_v4"
+def test_current_prompt_states_memory_rules():
+    assert ORDER_AGENT_PROMPT_VERSION == "order_agent_v5"
     prompt = (PROMPTS / f"{ORDER_AGENT_PROMPT_VERSION}.md").read_text()
     assert '"memory"' in prompt
     assert "usual" in prompt

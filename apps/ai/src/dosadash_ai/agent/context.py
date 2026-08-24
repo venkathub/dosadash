@@ -220,7 +220,13 @@ def menu_payload(ctx: AgentContext) -> list[dict[str, Any]]:
     `aliases` (approved translated names, Phase 7) appears ONLY when an item
     has any — a menu with no approved translations serializes byte-identically
     to the pre-localization payload, so prompt prefix caching and the live
-    eval gate are unaffected until translations are actually approved."""
+    eval gate are unaffected until translations are actually approved.
+
+    `serving` (Phase 11) appears ONLY on dishes that are off their serving
+    window right now (86'd dishes stay a plain available:false) — the agent
+    can then tell the customer WHEN the dish is served instead of a bare
+    refusal. Same emit-only-when-relevant rule: an all-on-window menu is
+    byte-identical to the pre-Phase-11 payload."""
     return [
         {
             "item_id": item.id,
@@ -233,6 +239,11 @@ def menu_payload(ctx: AgentContext) -> list[dict[str, Any]]:
             "allergens": list(item.allergens),
             "meal_periods": list(item.meal_periods),
             "available": item.orderable,
+            **(
+                {"serving": availability.serving_windows_text(item.schedule)}
+                if item.is_available and not item.orderable
+                else {}
+            ),
             **({"aliases": list(item.aliases)} if item.aliases else {}),
         }
         for item in ctx.items.values()

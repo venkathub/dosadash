@@ -37,6 +37,10 @@ class MenuItemSummary(BaseModel):
     # heading — `category` itself stays canonical as the stable key.
     canonical_name: str | None = None
     category_label: str | None = None
+    # Serving windows (Phase 11 highway rebuild): off-window dishes stay on
+    # the menu but are not orderable ("Dosa is not available in Lunch").
+    available_now: bool = True
+    serving_windows: str | None = None  # human text, e.g. "6–11:30 AM & 5–10 PM"
 
 
 class MenuItemDetail(MenuItemSummary):

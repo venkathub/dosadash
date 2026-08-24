@@ -14,6 +14,8 @@ export type MenuItem = {
   image_ai: boolean; // AI-generated photo — always shown with an AI badge
   canonical_name: string | null; // English name when a translation is applied
   category_label: string | null; // localized section heading
+  available_now: boolean; // false = outside this dish's serving windows right now
+  serving_windows: string | null; // server-built human text (e.g. "6–11:30 AM & 5–10 PM"); null = always available
 };
 
 export type OrderItem = { item_id: number; name: string; qty: number; unit_price: string };

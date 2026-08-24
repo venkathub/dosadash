@@ -39,6 +39,8 @@ export async function adminApi<T>(
 
 /* ---------------------------------------------------------------- types */
 
+export type ScheduleWindow = { start: string; end: string };
+
 export type AdminItem = {
   id: number;
   name: string;
@@ -47,7 +49,8 @@ export type AdminItem = {
   is_veg: boolean;
   spice_level: number;
   is_available: boolean;
-  schedule: Record<string, { start: string; end: string }> | null;
+  // Per weekday: legacy single window OR a multi-window list (Phase 11).
+  schedule: Record<string, ScheduleWindow | ScheduleWindow[]> | null;
   allergens: string[];
 };
 

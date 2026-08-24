@@ -81,6 +81,8 @@ def _allergens(item: MenuItem) -> list[str]:
 def _summary(item: MenuItem, trans: MenuItemTranslation | None = None) -> MenuItemSummary:
     out = MenuItemSummary.model_validate(item)
     out.allergens = _allergens(item)
+    out.available_now = availability.item_on_schedule(item.schedule)
+    out.serving_windows = availability.serving_windows_text(item.schedule)
     _localize(out, item, trans)
     return out
 
@@ -121,12 +123,9 @@ async def list_menu(
     stmt = stmt.order_by(MenuItem.category, MenuItem.name)
     items = (await session.scalars(stmt)).all()
     translations = await _approved_translations(session, lang)
-    # schedule windows are time-of-day dependent → filtered here, not in SQL
-    return [
-        _summary(i, translations.get(i.id))
-        for i in items
-        if availability.item_on_schedule(i.schedule)
-    ]
+    # Off-window dishes stay visible but annotated (available_now=False +
+    # serving_windows text) — checkout and the agent still hard-block them.
+    return [_summary(i, translations.get(i.id)) for i in items]
 
 
 @router.get("/categories", response_model=list[CategoryOut])
@@ -179,6 +178,8 @@ async def get_item(item_id: int, session: SessionDep, lang: str | None = None) -
         raise HTTPException(status_code=404, detail="Menu item not found")
     out = MenuItemDetail.model_validate(item)
     out.allergens = _allergens(item)
+    out.available_now = availability.item_on_schedule(item.schedule)
+    out.serving_windows = availability.serving_windows_text(item.schedule)
     out.ingredients = sorted(ri.ingredient.name for ri in item.recipe)
     if lang is not None:
         trans = await session.get(MenuItemTranslation, (item_id, lang))

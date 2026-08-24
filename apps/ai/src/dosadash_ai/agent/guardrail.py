@@ -10,7 +10,7 @@ conjunction, not a model opinion.
 from decimal import Decimal
 
 from dosadash_ai.agent.context import AgentContext
-from dosadash_shared import DraftItemIn, OrderDraft, OrderDraftItem
+from dosadash_shared import DraftItemIn, OrderDraft, OrderDraftItem, availability
 
 
 def validate_draft(ctx: AgentContext, proposed: list[DraftItemIn]) -> tuple[OrderDraft, list[str]]:
@@ -25,7 +25,13 @@ def validate_draft(ctx: AgentContext, proposed: list[DraftItemIn]) -> tuple[Orde
             warnings.append(f"Removed an item that is not on our menu (id {line.item_id}).")
             continue
         if not item.orderable:
-            warnings.append(f"Removed {item.name} — it is not available right now.")
+            windows = (
+                availability.serving_windows_text(item.schedule) if item.is_available else None
+            )
+            if windows:  # on the menu, just outside its serving window
+                warnings.append(f"Removed {item.name} — it is served {windows}.")
+            else:  # 86'd (or schedule with no windows today)
+                warnings.append(f"Removed {item.name} — it is not available right now.")
             continue
         if item.id in seen:
             merged = items[seen[item.id]]
