@@ -87,7 +87,7 @@ export function TranslationsTab() {
     <div>
       <ErrorBar msg={error} />
       <div className="mb-3 flex items-center gap-3">
-        <Btn variant="gold" size="sm" disabled={busy !== null || missing === 0} onClick={draftMissing}>
+        <Btn variant="turmeric" size="sm" disabled={busy !== null || missing === 0} onClick={draftMissing}>
           {busy === "all" ? "✨ Translating…" : `✨ Draft ${missing} missing (Tamil)`}
         </Btn>
         <span className="text-xs text-indigo-200/70">
@@ -135,13 +135,13 @@ export function TranslationsTab() {
                   <span className="ai-meta">🤖 {t.model} · {t.prompt_version}</span>
                   <span className="flex gap-2">
                     {edit && (
-                      <Btn variant="leaf" size="sm" disabled={busy !== null} onClick={() => save(item.id)}>
+                      <Btn variant="indigo" size="sm" disabled={busy !== null} onClick={() => save(item.id)}>
                         💾 Save
                       </Btn>
                     )}
                     {t.status === "DRAFT" && !edit && (
                       <>
-                        <Btn variant="gold" size="sm" disabled={busy !== null} onClick={() => setStatus(item.id, "APPROVED")}>
+                        <Btn variant="turmeric" size="sm" disabled={busy !== null} onClick={() => setStatus(item.id, "APPROVED")}>
                           ✓ Approve
                         </Btn>
                         <Btn variant="danger" size="sm" disabled={busy !== null} onClick={() => setStatus(item.id, "REJECTED")}>

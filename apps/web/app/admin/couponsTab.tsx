@@ -76,7 +76,7 @@ export function CouponsTab() {
     <div>
       <ErrorBar msg={error} />
       <div className="mb-3 flex items-center gap-3">
-        <Btn variant="gold" size="sm" disabled={suggesting} onClick={suggest}>
+        <Btn variant="turmeric" size="sm" disabled={suggesting} onClick={suggest}>
           {suggesting ? "🤖 Thinking…" : "🤖 Suggest promos"}
         </Btn>
         {suggestNote && <span className="ai-meta">{suggestNote}</span>}
@@ -116,7 +116,7 @@ export function CouponsTab() {
         <Input tone="dark" className="w-20 px-2 py-1" placeholder="uses" value={form.usage_limit} onChange={set("usage_limit")} />
         <Input tone="dark" className="w-20 px-2 py-1" placeholder="per user" value={form.per_user_limit} onChange={set("per_user_limit")} />
         <Input tone="dark" className="w-44 px-2 py-1" placeholder="Description" value={form.description} onChange={set("description")} />
-        <Btn variant="gold" size="sm">Create (inactive)</Btn>
+        <Btn variant="turmeric" size="sm">Create (inactive)</Btn>
       </form>
 
       <div className="space-y-2">
@@ -134,7 +134,7 @@ export function CouponsTab() {
             {c.source === "AI_SUGGESTED" && <span className="ai-meta">🤖 AI</span>}
             <span className="ml-auto flex gap-2">
               <Btn
-                variant={c.is_active ? "ghost" : "gold"}
+                variant={c.is_active ? "ghost" : "turmeric"}
                 size="sm"
                 onClick={() => act(() => adminApi(`/admin/coupons/${c.id}`, { method: "PATCH", body: { is_active: !c.is_active } }))}
               >

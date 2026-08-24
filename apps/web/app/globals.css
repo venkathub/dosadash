@@ -227,20 +227,6 @@
     border-color: var(--indigo-300);
   }
 
-  /* transitional alias (Heritage Luxe call sites; migrate to <Btn> in PRs 2–4):
-     gold CTA → turmeric CTA */
-  .btn-gold {
-    background: var(--turmeric-500);
-    border: 2px solid var(--indigo-900);
-    color: var(--indigo-900);
-    box-shadow: 3px 3px 0 var(--indigo-900);
-    font-family: "Space Grotesk", "Noto Sans Tamil", system-ui, sans-serif;
-    font-weight: 700;
-  }
-  .btn-gold:hover:not(:disabled) {
-    background: var(--turmeric-400);
-  }
-
   /* tabular numerals for prices/tables */
   .tnum {
     font-feature-settings: "tnum";

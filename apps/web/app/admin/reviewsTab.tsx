@@ -126,7 +126,7 @@ function ReviewCard({
               <Btn variant="ghost" size="sm" disabled={busy} onClick={draftReply}>
                 🤖 draft reply
               </Btn>
-              <Btn variant="gold" size="sm" disabled={busy || !reply.trim()} onClick={publish}>
+              <Btn variant="turmeric" size="sm" disabled={busy || !reply.trim()} onClick={publish}>
                 publish
               </Btn>
             </span>
@@ -223,7 +223,7 @@ export function ReviewsTab() {
             <option key={f}>{f}</option>
           ))}
         </Select>
-        <Btn variant="gold" size="sm" disabled={scoring || (data?.unscored ?? 0) === 0} onClick={scorePending}>
+        <Btn variant="turmeric" size="sm" disabled={scoring || (data?.unscored ?? 0) === 0} onClick={scorePending}>
           {scoring ? "scoring…" : `🤖 score ${data?.unscored ?? 0} pending`}
         </Btn>
         <Btn variant="ghost" size="sm" onClick={refresh}>↻ refresh</Btn>

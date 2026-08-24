@@ -18,16 +18,13 @@ export function cx(...parts: Array<string | false | null | undefined>) {
 
 export type BtnVariant =
   | "magenta" // primary CTA
-  | "turmeric" // ADD / secondary-primary
+  | "turmeric" // ADD / secondary-primary (default)
   | "indigo"
   | "paper" // default light-surface button
   | "veg"
   | "ghost" // dark-surface quiet outline
   | "danger"
-  // deprecated aliases (Heritage Luxe call sites; migrate in PRs 2–4)
-  | "gold" // → turmeric
-  | "leaf" // → indigo
-  | "subtle"; // → dark quiet
+  | "subtle"; // dark-surface quiet fill
 
 export type BtnSize = "sm" | "md" | "lg";
 
@@ -37,7 +34,7 @@ const BTN_BASE =
   "focus-visible:ring-magenta-500 disabled:cursor-not-allowed disabled:border-faint " +
   "disabled:bg-sand-300 disabled:text-faint disabled:shadow-none";
 
-const BTN_SOLID: Record<string, string> = {
+const BTN_VARIANT: Record<BtnVariant, string> = {
   magenta: "border-indigo-900 bg-magenta-500 text-white shadow-pop-sm hover:bg-magenta-400",
   turmeric:
     "border-indigo-900 bg-turmeric-500 text-indigo-900 shadow-pop-sm hover:bg-turmeric-400",
@@ -51,12 +48,6 @@ const BTN_SOLID: Record<string, string> = {
     "border-indigo-600 bg-white/5 text-indigo-100 shadow-none hover:bg-white/10",
 };
 
-const BTN_VARIANT: Record<BtnVariant, string> = {
-  ...BTN_SOLID,
-  gold: BTN_SOLID.turmeric,
-  leaf: BTN_SOLID.indigo,
-} as Record<BtnVariant, string>;
-
 const BTN_SIZE: Record<BtnSize, string> = {
   sm: "px-2.5 py-1 text-xs",
   md: "px-4 py-1.5 text-sm",
@@ -64,7 +55,7 @@ const BTN_SIZE: Record<BtnSize, string> = {
 };
 
 export function Btn({
-  variant = "gold",
+  variant = "turmeric",
   size = "md",
   className,
   ...props
