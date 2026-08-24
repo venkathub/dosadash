@@ -16,6 +16,10 @@ export default function Orders() {
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tgLinked, setTgLinked] = useState<boolean | null>(null);
+  // never read localStorage during render: the server prerenders this client
+  // page with no session, so a render-time getUser() makes the first client
+  // render disagree with the server HTML (React hydration error #418).
+  const [signedIn, setSignedIn] = useState(false);
   const router = useRouter();
 
   const refreshMe = () =>
@@ -24,7 +28,9 @@ export default function Orders() {
       .catch(() => setTgLinked(null));
 
   useEffect(() => {
-    if (!getUser()) {
+    const user = getUser();
+    setSignedIn(!!user);
+    if (!user) {
       setError("Log in from the home page to see your orders.");
       setOrders([]);
       return;
@@ -143,7 +149,7 @@ export default function Orders() {
             </Card>
           ))}
         </div>
-        {getUser() && <SupportBox />}
+        {signedIn && <SupportBox />}
         <FeedbackButton />
       </div>
     </main>
