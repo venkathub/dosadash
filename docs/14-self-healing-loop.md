@@ -249,3 +249,28 @@ any of this the loop degrades exactly as before (reconciler-only sync).
 `https://dosadash.venkateshs.dev/api/v1/internal/fixer-runs` (repo secret
 `INTERNAL_API_TOKEN` already exists from the eval ingest). Unset → the
 step skips, everything else unaffected.
+
+## 12. Phase 14 — the /fixer portal (slice 4)
+
+`apps/web/app/fixer/page.tsx` — the loop's own KDS-style surface (own
+route, own `fixer_token`, admin/owner OTP login, Madras Pop):
+
+- **pipeline board**, 6 accent-bar lanes: 📥 Intake (RECEIVED/TRACKED) ·
+  🟡 Approval (NEEDS_APPROVAL, **inline Approve/Reject** on the card) ·
+  🤖 Fixing (AUTO_FIX/APPROVED/FIXING) · 🔀 PR open · 🚀 Shipped
+  (FIXED/VERIFIED) · ⚠️ Attention (REOPENED); REJECTED/DISMISSED collapse
+  into a Closed strip;
+- **metrics strip** from slice 3 (reports, auto-fix/merge rates, verified
+  + reopen, approval latency p50/p90, MTTR, run outcomes);
+- **report drawer**: full lifecycle timeline (same stage vocabulary as
+  the Telegram cards), triage provenance (`.ai-meta`), issue/PR deep
+  links, decision buttons;
+- **live**: `/ws/fixer` (new WS endpoint, admin/owner JWT, KDS
+  mechanism) relays `pubsub:feedback`; deliberately event-only — the
+  portal refetches REST on each event (debounced) so socket and REST can
+  never tell different stories; 60s poll fallback; 📡 live-feed ticker.
+
+Also: admin Feedback tab gained the new statuses + a portal deep link;
+`/fixer` added to the ui-smoke browser gate (6 routes). Verified: web
+build green, ui-smoke 0 errors, DOM snapshot of both views (login +
+board) w/ zero page errors.

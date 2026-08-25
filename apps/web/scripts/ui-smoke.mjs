@@ -17,7 +17,7 @@
 import { chromium } from "playwright";
 
 const BASE = process.env.UI_SMOKE_BASE ?? "http://localhost:3000";
-const ROUTES = ["/", "/orders", "/kds", "/demo", "/admin"];
+const ROUTES = ["/", "/orders", "/kds", "/demo", "/admin", "/fixer"];
 // Fail signatures: uncaught exceptions always; console errors only when
 // they look like React runtime/hydration problems (fetch failures against
 // the absent API log as console errors too — those are environmental).
