@@ -27,13 +27,22 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.db.models import FeedbackReport
-from dosadash_api.services import feedback_events
+from dosadash_api.services import feedback_events, feedback_notify
 from dosadash_api.services.github_client import GitHubClient, GitHubError
 from dosadash_shared import LABEL_STATUS_PRECEDENCE, FeedbackEventStage, FeedbackStatus
 
 logger = logging.getLogger(__name__)
 
 Status = FeedbackStatus
+
+# Reconciler-discovered outcomes that deserve the same audible Telegram
+# ping the webhook stage would have produced (feedback_notify decides the
+# ping from the stage, so we translate status → stage here).
+_SYNC_PING: dict[FeedbackStatus, FeedbackEventStage] = {
+    FeedbackStatus.VERIFIED: FeedbackEventStage.VERIFIED,
+    FeedbackStatus.REOPENED: FeedbackEventStage.REOPENED,
+    FeedbackStatus.NEEDS_APPROVAL: FeedbackEventStage.ESCALATED,
+}
 
 # Statuses the reconciler re-checks. REJECTED/DISMISSED/VERIFIED are
 # terminal; RECEIVED has no issue yet (the re-mirror pass owns it).
@@ -50,6 +59,10 @@ _SYNCABLE_STATUSES = (
 
 # Statuses that a discovered open PR upgrades to PR_OPEN.
 _PR_UPGRADEABLE = {Status.AUTO_FIX, Status.APPROVED, Status.FIXING}
+
+# Statuses in which a bare ai:needs-approval label means the fixer
+# escalated mid-run (mirror of the webhook's _ESCALATABLE set).
+_ESCALATABLE = {Status.AUTO_FIX, Status.APPROVED, Status.FIXING, Status.PR_OPEN}
 
 # Statuses where a not_planned close means the report was dismissed upstream.
 _DISMISSABLE = {Status.TRACKED, Status.AUTO_FIX, Status.NEEDS_APPROVAL}
@@ -82,6 +95,10 @@ def derive_status(
         return Status.FIXED
     if pr and pr.get("state") == "open" and current in _PR_UPGRADEABLE:
         return Status.PR_OPEN
+    if label_status == Status.NEEDS_APPROVAL and current in _ESCALATABLE:
+        # the fixer escalated (swapped its trigger label for
+        # ai:needs-approval) and we never saw the webhook.
+        return Status.NEEDS_APPROVAL
     if issue_state == "closed" and state_reason == "not_planned" and current in _DISMISSABLE:
         return Status.DISMISSED
     if label_status is not None and current in (Status.TRACKED,):
@@ -161,6 +178,12 @@ async def sync_github(
         await session.commit()
         corrected += 1
         await feedback_events.publish(report.id, FeedbackEventStage.SYNCED, detail=detail)
+        # Phase 14 slice 2: keep the Telegram anchors honest too. The
+        # reconciler maps the CORRECTED status onto a ping decision: a
+        # sync that lands on VERIFIED/REOPENED is the same news as the
+        # webhook stage would have been.
+        ping_stage = _SYNC_PING.get(target, FeedbackEventStage.SYNCED)
+        await feedback_notify.notify_stage(session, report, ping_stage)
         logger.info(
             "reconciled report #%s: %s → %s (event %s)",
             report.id,

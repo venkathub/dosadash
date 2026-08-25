@@ -15,7 +15,7 @@ from dosadash_api.auth.deps import require_role
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import FeedbackEvent, FeedbackReport, User
 from dosadash_api.db.session import get_session
-from dosadash_api.services import audit, feedback_events, feedback_triage_runner
+from dosadash_api.services import audit, feedback_events, feedback_notify, feedback_triage_runner
 from dosadash_api.services.ai_client import AIClient, get_ai_client
 from dosadash_api.services.github_client import GitHubClient, GitHubError, get_github_client
 from dosadash_shared import (
@@ -166,6 +166,9 @@ async def _decide(
     )
     await session.commit()
     await feedback_events.publish(report.id, stage)
+    # Phase 14 slice 2: silent anchor-card update (the decision card the
+    # admin tapped already edits itself with the outcome).
+    await feedback_notify.notify_stage(session, report, stage)
 
 
 class FeedbackDecisionIn(BaseModel):

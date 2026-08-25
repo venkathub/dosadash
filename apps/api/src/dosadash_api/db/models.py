@@ -818,3 +818,24 @@ class FeedbackEvent(Base):
     payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     delivery_id: Mapped[str | None] = mapped_column(String(64), index=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)
+
+
+class FeedbackNotification(TimestampMixin, Base):
+    """Telegram lifecycle anchor per (report, admin) — Phase 14 slice 2.
+
+    The bot keeps ONE status card per report per linked admin, edited in
+    place on every lifecycle stage (Telegram edits are silent — the full
+    timeline stays visible without notification spam); separate ping
+    replies fire only for actionable/terminal stages. This row remembers
+    the anchor's message_id so the api can ask the bot to edit rather than
+    resend. Row missing → the bot sends a fresh card and we store it."""
+
+    __tablename__ = "feedback_notifications"
+    __table_args__ = (UniqueConstraint("report_id", "tg_user_id"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    report_id: Mapped[int] = mapped_column(
+        ForeignKey("feedback_reports.id", ondelete="CASCADE"), index=True
+    )
+    tg_user_id: Mapped[int] = mapped_column(BigInteger)
+    message_id: Mapped[int] = mapped_column(BigInteger)

@@ -110,6 +110,7 @@ async def remirror_unmirrored(
             await session.commit()
             remirrored += 1
             await feedback_events.publish(report.id, FeedbackEventStage.TRACKED)
+            await feedback_notify.notify_stage(session, report, FeedbackEventStage.TRACKED)
             logger.info("re-mirrored report #%s → issue #%s", report.id, issue)
         except GitHubError as exc:
             failures += 1
@@ -205,9 +206,12 @@ async def triage_pending(
         await feedback_events.publish(
             report.id, FeedbackEventStage.TRIAGED, detail={"verdict": result.verdict.value}
         )
+        # Phase 14 slice 2: silent anchor-card update for every verdict…
+        await feedback_notify.notify_stage(session, report, FeedbackEventStage.TRIAGED)
         if result.verdict == TriageVerdict.NEEDS_APPROVAL:
-            # Telegram decision cards (Phase 6 PO pattern) — best-effort,
-            # after commit; the admin web tab is always the fallback.
+            # …then the ACTIONABLE decision card (Phase 6 PO pattern) —
+            # best-effort, after commit; the admin web tab is always the
+            # fallback.
             notified += await feedback_notify.notify_admins_feedback(session, report)
     return {
         "examined": len(rows),
