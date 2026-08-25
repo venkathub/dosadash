@@ -13,6 +13,7 @@ label registry so neither side can drift alone:
   PRs back to issues is what the fixer workflow actually instructs.
 """
 
+import re
 from pathlib import Path
 
 from dosadash_shared import (
@@ -84,3 +85,48 @@ def test_fix_branch_contract_matches_fixer_workflow() -> None:
         "the fixer must be instructed to branch as fix/issue-N — the PR→issue "
         "mapping in the webhook and GitHubClient.find_fix_pr depend on it"
     )
+
+
+# ---------------------------------------------------- run ingest (slice 3)
+# Both workflows self-report their outcome to the api. These gates keep
+# the ingest steps honest: present, best-effort, and with the reported
+# model literal equal to the --model pin (so metrics can never silently
+# lie about which model ran).
+
+
+def _model_pin(text: str) -> str:
+    match = re.search(r"--model (claude-[a-z0-9.-]+)", text)
+    assert match is not None
+    return match.group(1)
+
+
+def _ingest_model(text: str) -> str:
+    match = re.search(r'"model":"(claude-[a-z0-9.-]+)"', text)
+    assert match is not None, "ingest step must report the model it ran"
+    return match.group(1)
+
+
+def test_fix_workflow_reports_runs_best_effort() -> None:
+    text = FIX_WORKFLOW.read_text()
+    assert "FIXER_INGEST_URL" in text and "X-Internal-Token" in text
+    assert '"workflow":"fix"' in text
+    assert "if: always()" in text, "a FAILED run is exactly the one worth reporting"
+    assert "non-blocking" in text  # curl failure must never fail the fix run
+    assert "secrets.FIXER_INGEST_URL" in text  # never a hardcoded URL
+
+
+def test_verify_workflow_reports_runs_conditionally() -> None:
+    text = VERIFY_WORKFLOW.read_text()
+    assert "FIXER_INGEST_URL" in text and "X-Internal-Token" in text
+    assert '"workflow":"verify"' in text
+    # empty queues spent zero tokens — they must also produce zero rows
+    assert "steps.pending.outputs.numbers != ''" in text
+
+
+def test_ingest_model_matches_pin() -> None:
+    for workflow in (FIX_WORKFLOW, VERIFY_WORKFLOW):
+        text = workflow.read_text()
+        assert _ingest_model(text) == _model_pin(text), (
+            f"{workflow.name}: ingest reports a different model than --model pins — "
+            "update both together"
+        )

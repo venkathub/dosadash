@@ -100,3 +100,22 @@ jobs:
 
             Post each issue's comment BEFORE starting the next issue, so a
             turn-budget exhaustion never loses completed evidence.
+
+      # Phase 14 slice 3: self-report verify runs too (only when the
+      # Claude step actually ran — empty queues stay invisible). Model
+      # literal must match the --model pin above (gate-checked).
+      - name: Report run to DosaDash (observability, best-effort)
+        if: always() && steps.pending.outputs.numbers != ''
+        env:
+          FIXER_INGEST_URL: ${{ secrets.FIXER_INGEST_URL }}
+          INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+        run: |
+          if [ -z "$FIXER_INGEST_URL" ]; then
+            echo "FIXER_INGEST_URL unset — skipping run ingest"
+            exit 0
+          fi
+          curl -sS -m 15 -X POST "$FIXER_INGEST_URL" \
+            -H "X-Internal-Token: $INTERNAL_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"workflow":"verify","run_id":${{ github.run_id }},"run_attempt":${{ github.run_attempt }},"conclusion":"${{ job.status }}","model":"claude-haiku-4-5"}' \
+            || echo "run ingest failed (non-blocking)"

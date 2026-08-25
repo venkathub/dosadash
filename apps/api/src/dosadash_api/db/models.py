@@ -839,3 +839,30 @@ class FeedbackNotification(TimestampMixin, Base):
     )
     tg_user_id: Mapped[int] = mapped_column(BigInteger)
     message_id: Mapped[int] = mapped_column(BigInteger)
+
+
+class FixerRun(Base):
+    """One fixer/verifier workflow run, self-reported by the workflow's
+    final ingest step (Phase 14 slice 3 — the eval_runs CI-ingest pattern).
+
+    Run-level truth the GitHub webhooks cannot carry: a run that died
+    without opening a PR is invisible to label/PR events — here it lands
+    as conclusion='failure' and (for fix runs) raises a FIX_FAILED
+    timeline event + Telegram ping. (workflow, run_id, run_attempt) is
+    unique so re-run attempts are distinct rows and step retries no-op."""
+
+    __tablename__ = "fixer_runs"
+    __table_args__ = (UniqueConstraint("workflow", "run_id", "run_attempt"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    report_id: Mapped[int | None] = mapped_column(
+        ForeignKey("feedback_reports.id", ondelete="SET NULL"), index=True
+    )
+    workflow: Mapped[str] = mapped_column(String(10))  # fix | verify
+    run_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    run_attempt: Mapped[int] = mapped_column(default=1)
+    issue_number: Mapped[int | None] = mapped_column(index=True)
+    conclusion: Mapped[str] = mapped_column(String(30))
+    trigger_label: Mapped[str | None] = mapped_column(String(40))
+    model: Mapped[str | None] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)

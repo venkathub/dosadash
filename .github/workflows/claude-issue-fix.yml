@@ -139,3 +139,26 @@ jobs:
             budget, stop cleanly: comment exactly what you found, what you
             tried, and relabel with ai:needs-approval as in step 2. An
             honest escalation is success; a speculative fix is failure.
+
+      # Phase 14 slice 3: self-report the run outcome to DosaDash
+      # (eval_runs ingest pattern) — run-level truth the GitHub webhooks
+      # cannot carry: a run that dies WITHOUT opening a PR is invisible to
+      # label/PR events, but lands here as a failure (FIX_FAILED timeline
+      # event + Telegram ping api-side). Best-effort: unset secret or a
+      # dead api never fails the fix run. Model literal must match the
+      # --model pin above (gate-checked).
+      - name: Report run to DosaDash (observability, best-effort)
+        if: always()
+        env:
+          FIXER_INGEST_URL: ${{ secrets.FIXER_INGEST_URL }}
+          INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+        run: |
+          if [ -z "$FIXER_INGEST_URL" ]; then
+            echo "FIXER_INGEST_URL unset — skipping run ingest"
+            exit 0
+          fi
+          curl -sS -m 15 -X POST "$FIXER_INGEST_URL" \
+            -H "X-Internal-Token: $INTERNAL_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"workflow":"fix","run_id":${{ github.run_id }},"run_attempt":${{ github.run_attempt }},"issue_number":${{ github.event.issue.number }},"conclusion":"${{ job.status }}","trigger_label":"${{ github.event.label.name }}","model":"claude-sonnet-4-6"}' \
+            || echo "run ingest failed (non-blocking)"

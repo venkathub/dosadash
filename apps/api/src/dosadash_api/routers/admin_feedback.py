@@ -15,7 +15,13 @@ from dosadash_api.auth.deps import require_role
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import FeedbackEvent, FeedbackReport, User
 from dosadash_api.db.session import get_session
-from dosadash_api.services import audit, feedback_events, feedback_notify, feedback_triage_runner
+from dosadash_api.services import (
+    audit,
+    feedback_events,
+    feedback_metrics,
+    feedback_notify,
+    feedback_triage_runner,
+)
 from dosadash_api.services.ai_client import AIClient, get_ai_client
 from dosadash_api.services.github_client import GitHubClient, GitHubError, get_github_client
 from dosadash_shared import (
@@ -27,6 +33,7 @@ from dosadash_shared import (
     FeedbackEventListOut,
     FeedbackEventOut,
     FeedbackEventStage,
+    FeedbackMetricsOut,
     FeedbackStatus,
     FeedbackType,
     Role,
@@ -70,6 +77,18 @@ async def list_feedback(
         total=total,
         github_repo=get_settings().github_repo,
     )
+
+
+@router.get("/metrics", response_model=FeedbackMetricsOut)
+async def feedback_metrics_rollup(
+    session: SessionDep,
+    days: Annotated[int, Query(ge=1, le=365)] = 90,
+    admin: User = AdminUser,
+) -> FeedbackMetricsOut:
+    """Phase 14 slice 3: the fixer/verifier observability rollup — funnel,
+    rates, latency percentiles, weekly trend, run outcomes. Computed from
+    the local lifecycle tables only (no GitHub round-trip)."""
+    return await feedback_metrics.compute(session, window_days=days)
 
 
 @router.get("/{report_id}/events", response_model=FeedbackEventListOut)

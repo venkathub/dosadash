@@ -139,6 +139,7 @@ class FeedbackEventStage(StrEnum):
     FIX_STARTED = "FIX_STARTED"  # fixer trigger label landed on the issue
     RCA_POSTED = "RCA_POSTED"  # "## Root cause analysis" comment
     ESCALATED = "ESCALATED"  # fixer hit a hard limit → back to approval
+    FIX_FAILED = "FIX_FAILED"  # fixer run died without a PR (run ingest)
     PR_OPENED = "PR_OPENED"  # fix PR opened
     PR_CLOSED = "PR_CLOSED"  # fix PR closed WITHOUT merging
     PR_MERGED = "PR_MERGED"  # fix PR merged
@@ -188,6 +189,62 @@ class FeedbackEventOut(BaseModel):
 
 class FeedbackEventListOut(BaseModel):
     events: list[FeedbackEventOut]
+
+
+# ------------------------------------------------- run ingest + metrics
+# Slice 3: the workflows report their own runs (eval_runs CI-ingest
+# pattern) — run-level truth (did the agent run at all? did it die without
+# a PR?) that GitHub label/PR webhooks cannot carry. `FeedbackMetricsOut`
+# is the portal's metrics contract; inner maps stay loose on purpose (the
+# metric set will grow — the portal renders what it gets).
+
+
+class FixerRunIn(BaseModel):
+    """workflow → api ingest payload (X-Internal-Token protected)."""
+
+    workflow: Literal["fix", "verify"]
+    run_id: int
+    run_attempt: int = 1
+    issue_number: int | None = None  # verify runs cover a queue → None
+    conclusion: str = Field(max_length=30)  # success | failure | cancelled
+    trigger_label: str | None = Field(default=None, max_length=40)
+    model: str | None = Field(default=None, max_length=60)
+
+
+class FixerRunOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    report_id: int | None = None
+    workflow: str
+    run_id: int
+    run_attempt: int
+    issue_number: int | None = None
+    conclusion: str
+    trigger_label: str | None = None
+    model: str | None = None
+    created_at: datetime
+    duplicate: bool = False
+
+
+class FeedbackMetricsOut(BaseModel):
+    """Fixer/verifier observability rollup (Phase 14 slice 3).
+
+    All counts are within the requested window. `latency` values are
+    seconds: {metric: {"p50": …, "p90": …, "count": n}}; a metric with no
+    completed samples reports p50/p90 = None. `rates` are 0..1 or None
+    when the denominator is empty (never fake a 0% from no data)."""
+
+    window_days: int
+    totals_by_status: dict[str, int]
+    totals_by_type: dict[str, int]
+    totals_by_tier: dict[str, int]
+    funnel: dict[str, int]
+    rates: dict[str, float | None]
+    latency: dict[str, dict[str, float | None]]
+    weekly: list[dict]
+    runs: dict[str, dict[str, int]]
+    generated_at: datetime
 
 
 class AdminFeedbackOut(BaseModel):
