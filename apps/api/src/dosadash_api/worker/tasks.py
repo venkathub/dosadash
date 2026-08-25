@@ -532,3 +532,35 @@ def feedback_triage_pending(self: Any, limit: int = 20) -> dict[str, Any]:
         raise self.retry(exc=exc) from exc
     logger.info("feedback_triage_pending %s", result)
     return result
+
+
+# ------------------------------------------------------------- feedback sync (Phase 14)
+
+
+async def _sync_feedback_github(limit: int) -> dict[str, Any]:
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from dosadash_api.services import feedback_sync
+    from dosadash_api.services.github_client import get_github_client
+
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            return await feedback_sync.sync_github(session, get_github_client(), limit=limit)
+    finally:
+        await engine.dispose()
+
+
+@app.task(name="feedback.sync_github", bind=True, max_retries=1, default_retry_delay=300)
+def feedback_sync_github(self: Any, limit: int = 30) -> dict[str, Any]:
+    """Every 15 min (offset from triage): reconcile in-flight reports
+    against GitHub labels/state/PRs — the webhook's safety net. Idempotent:
+    a report already matching GitHub truth is untouched; GitHub-unreachable
+    rows are skipped and retried next run."""
+    try:
+        result = asyncio.run(_sync_feedback_github(limit))
+    except Exception as exc:
+        logger.exception("feedback_sync_github failed")
+        raise self.retry(exc=exc) from exc
+    logger.info("feedback_sync_github %s", result)
+    return result

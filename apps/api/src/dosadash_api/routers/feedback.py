@@ -23,10 +23,11 @@ from dosadash_api.config import get_settings
 from dosadash_api.db.models import FeedbackReport
 from dosadash_api.db.session import get_session
 from dosadash_api.routers.chat import OptionalUser
-from dosadash_api.services import feedback_service
+from dosadash_api.services import feedback_events, feedback_service
 from dosadash_api.services.github_client import GitHubClient, GitHubError, get_github_client
 from dosadash_shared import (
     FeedbackCreateIn,
+    FeedbackEventStage,
     FeedbackOut,
     FeedbackStatus,
     ReporterTier,
@@ -104,6 +105,17 @@ async def create_feedback(
     session.add(report)
     await session.flush()  # need report.id for the issue body
 
+    # Phase 14: the timeline starts at birth — RECEIVED always, TRACKED
+    # when the mirror lands (same commit; publish after).
+    stages = [FeedbackEventStage.RECEIVED]
+    feedback_events.record(
+        session,
+        report,
+        FeedbackEventStage.RECEIVED,
+        actor="system",
+        payload={"tier": report.reporter_tier},
+    )
+
     if github.enabled:
         try:
             report.github_issue_number = await github.create_issue(
@@ -112,6 +124,14 @@ async def create_feedback(
                 labels=feedback_service.issue_labels(report),
             )
             report.status = FeedbackStatus.TRACKED
+            feedback_events.record(
+                session,
+                report,
+                FeedbackEventStage.TRACKED,
+                actor="system",
+                payload={"issue": report.github_issue_number},
+            )
+            stages.append(FeedbackEventStage.TRACKED)
         except GitHubError as exc:
             # Store-only degrade: the admin tab shows the row + error, a
             # later slice can re-mirror. Never fail the reporter for GitHub.
@@ -122,4 +142,6 @@ async def create_feedback(
 
     await session.commit()
     await session.refresh(report)
+    for stage in stages:
+        await feedback_events.publish(report.id, stage)
     return FeedbackOut.model_validate(report)

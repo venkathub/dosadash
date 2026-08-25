@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     # (graceful degrade — GitHub is never on the customer's critical path).
     github_token: str = ""
     github_repo: str = ""  # "owner/repo"
+    # Phase 14 lifecycle sync: HMAC secret for the GitHub → api webhook
+    # (X-Hub-Signature-256). Empty → webhook 503s; the beat reconciler
+    # still keeps the loop's tail in sync at 15-min freshness.
+    github_webhook_secret: str = ""
 
     # Celery worker (Phase 5) — dedicated broker Redis with `noeviction`:
     # the main cache Redis runs allkeys-lru, which may silently drop queued

@@ -147,3 +147,50 @@ api `routers/feedback.py` · `routers/admin_feedback.py` (+`internal_router`)
 · shared `feedback.py` + `redaction.py` · workflow `claude-issue-fix.yml`
 · evals `feedback_triage.jsonl` + `test_feedback_triage_assets.py` +
 `test_fixer_workflow_assets.py`
+
+## 9. Phase 14 — lifecycle sync (slice 1)
+
+Phase 13 left the loop's tail (fixer run → PR → merge → verify) visible
+only on GitHub: `status` stopped at APPROVED/REJECTED and `FIXED` was never
+written. Slice 1 closes that gap:
+
+- **`feedback_events`** (migration `b8e6f95a2c74`): append-only timeline —
+  one row per stage (intake, triage, decision, fix dispatch, RCA, PR,
+  merge, verification, reopen), written by the local pipeline, the GitHub
+  webhook, or the reconciler. Single source for the /fixer portal
+  (slice 4), the Telegram lifecycle feed (slice 2), and funnel/MTTR
+  metrics (slice 3). New statuses: `FIXING`, `PR_OPEN`, `VERIFIED`,
+  `REOPENED`; new columns `fix_pr_number`, `verified_at`.
+- **GitHub webhook** `POST /api/v1/github/webhook`: HMAC-SHA256
+  (`X-Hub-Signature-256`, aggregator pattern; secret
+  `GITHUB_FEEDBACK_WEBHOOK_SECRET` in `infra/.env` → 503 unconfigured /
+  403 bad sig), repo-pinned, delivery-GUID idempotent. Subscribed events:
+  `issues`, `issue_comment`, `pull_request` (+`ping`). Label→stage mapping
+  is self-echo-damped: labels our own api applies don't re-record, except
+  trigger labels (= fixer dispatch → `FIXING`) and `ai:needs-approval`
+  mid-flight (= fixer escalation). PRs map to issues via the `fix/issue-N`
+  branch contract (fallback: `Fixes #N` body scan). Status is a GUARDED
+  projection — out-of-order deliveries degrade to timeline-only events.
+- **Reconciler** `feedback.sync_github` (beat `5-59/15`, offset from
+  triage): diffs each in-flight report against the issue's CURRENT
+  labels/state + fixer PR via new GitHubClient read methods
+  (`get_issue`/`find_fix_pr` — PAT additionally needs
+  `pull-requests:read`). Drift → `SYNCED` event + authoritative
+  correction. Worst case (webhook never configured): 15-min staleness,
+  never permanent drift. Precedence lives in
+  `dosadash_shared.LABEL_STATUS_PRECEDENCE` (gate-pinned).
+- **`pubsub:feedback`**: every recorded stage publishes best-effort —
+  deliberately separate from menu/orders channels (ops telemetry must
+  never touch the RAG cascade or KDS fan-out).
+- **Timeline API**: `GET /api/v1/admin/feedback/{id}/events` (ADMIN/OWNER).
+- **Gates**: `evals/suites/test_feedback_lifecycle_assets.py` pins the
+  comment markers (`## Root cause analysis` / `## Prod verification`), the
+  fix-branch contract, and label↔status precedence to the workflow files
+  and the registry.
+
+**Runbook addition (arming the webhook)**: generate a secret on-VPS →
+`GITHUB_FEEDBACK_WEBHOOK_SECRET` in `infra/.env`; add a repo webhook →
+`https://dosadash.venkateshs.dev/api/v1/github/webhook`, content type
+`application/json`, same secret, events: Issues, Issue comments, Pull
+requests. Extend the PAT with `pull-requests:read` if it lacks it. Without
+any of this the loop degrades exactly as before (reconciler-only sync).
