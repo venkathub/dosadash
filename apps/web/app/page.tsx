@@ -218,7 +218,7 @@ export default function Home() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
             <button
               className="flex overflow-hidden rounded-full border-2 border-indigo-600 font-display text-[11.5px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
               title={lang === "ta" ? "Switch to English" : "தமிழில் காட்டு"}
