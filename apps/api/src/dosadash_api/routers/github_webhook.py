@@ -34,7 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import FeedbackReport
 from dosadash_api.db.session import get_session
-from dosadash_api.services import feedback_events
+from dosadash_api.services import feedback_events, feedback_notify
 from dosadash_shared import (
     FIX_BRANCH_PREFIX,
     FIXER_TRIGGER_LABELS,
@@ -229,5 +229,8 @@ async def github_webhook(
     )
     await session.commit()
     await feedback_events.publish(report.id, stage, detail=detail)
+    # Phase 14 slice 2: Telegram anchor-card update (best-effort; ping
+    # stages — escalation/verified/reopened — also reply audibly).
+    await feedback_notify.notify_stage(session, report, stage)
     logger.info("github webhook: report #%s stage %s", report.id, stage.value)
     return {"ok": True, "report_id": report.id, "stage": stage.value}

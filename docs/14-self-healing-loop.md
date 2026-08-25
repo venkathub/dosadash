@@ -194,3 +194,30 @@ written. Slice 1 closes that gap:
 `application/json`, same secret, events: Issues, Issue comments, Pull
 requests. Extend the PAT with `pull-requests:read` if it lacks it. Without
 any of this the loop degrades exactly as before (reconciler-only sync).
+
+## 10. Phase 14 — Telegram lifecycle feed (slice 2)
+
+"Each and every status in Telegram" without notification spam:
+
+- **One anchor status card per (report, linked admin)** — created on the
+  first notified stage, then **edited in place** on every subsequent stage
+  (Telegram edits are silent, so the full timeline stays visible without a
+  sound per stage). Anchor `message_id`s live in `feedback_notifications`
+  (migration `c7d5e83f9a26`); a card the admin deleted is transparently
+  re-sent and re-anchored.
+- **Audible ping replies** (under the anchor) fire only for
+  actionable/terminal stages: `ESCALATED` (fixer hit a hard limit),
+  `VERIFIED` (fix confirmed live), `REOPENED` (verification failed).
+  `NEEDS_APPROVAL` keeps its Phase-13 **decision card** (buttons intact,
+  flow untouched) — decision card = actionable surface, anchor = status
+  surface.
+- Wiring: every stage writer (intake, triage runner incl. re-mirror,
+  decisions, GitHub webhook, reconciler) calls
+  `feedback_notify.notify_stage()` AFTER its commit — fully best-effort
+  (bot outage/unlinked admins → 0 sends, admin tab and the coming /fixer
+  portal are the fallback). The reconciler translates corrected statuses
+  onto ping stages so a missed-webhook VERIFIED still sounds.
+- Bot: `POST /internal/feedback-lifecycle` (X-Internal-Token) —
+  send-or-edit + optional ping reply; "message is not modified" counts as
+  success. Rendering (stage emoji lines, IST timestamps, status
+  headlines) is bot-side per Hard Rule 10.

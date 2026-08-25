@@ -375,6 +375,72 @@ def make_feedback_notify_handler(
     return feedback_notify
 
 
+def make_feedback_lifecycle_handler(
+    bot: Bot, settings: Settings
+) -> Callable[[web.Request], Awaitable[web.StreamResponse]]:
+    """POST /internal/feedback-lifecycle (api → bot, Phase 14 slice 2):
+    send-or-edit ONE anchor status card per (report, admin), plus an
+    audible ping reply for actionable/terminal stages. The api owns the
+    anchor bookkeeping (feedback_notifications) — the bot just returns the
+    message_id it ended up with:
+    - message_id present → edit in place (silent). "message is not
+      modified" counts as success; any other edit failure (card deleted by
+      the admin) falls back to sending a fresh card.
+    - no message_id → send a fresh card.
+    """
+
+    async def feedback_lifecycle(request: web.Request) -> web.Response:
+        provided = request.headers.get("X-Internal-Token", "")
+        if not settings.internal_api_token or not secrets.compare_digest(
+            provided, settings.internal_api_token
+        ):
+            return web.json_response({"detail": "Forbidden"}, status=403)
+        try:
+            payload = await request.json()
+            tg_user_id = int(payload["tg_user_id"])
+            report_id = int(payload["report_id"])
+        except (ValueError, KeyError):
+            return web.json_response({"detail": "Bad payload"}, status=422)
+
+        text = render.feedback_lifecycle_text(payload)
+        anchor_id: int | None = None
+        message_id = payload.get("message_id")
+        if message_id:
+            try:
+                await bot.edit_message_text(
+                    text=text, chat_id=tg_user_id, message_id=int(message_id)
+                )
+                anchor_id = int(message_id)
+            except Exception as exc:  # noqa: BLE001 — fall back to a fresh card
+                if "message is not modified" in str(exc).lower():
+                    anchor_id = int(message_id)
+                else:
+                    logger.info(
+                        "lifecycle edit failed (tg %s, msg %s) — sending fresh",
+                        tg_user_id,
+                        message_id,
+                    )
+        if anchor_id is None:
+            try:
+                message = await bot.send_message(tg_user_id, text)
+                anchor_id = message.message_id
+            except Exception:  # noqa: BLE001 — recipient may have blocked the bot
+                logger.warning("lifecycle send failed (tg %s)", tg_user_id, exc_info=True)
+                return web.json_response({"ok": False}, status=502)
+        if payload.get("ping"):
+            try:
+                await bot.send_message(
+                    tg_user_id,
+                    render.feedback_ping_text(payload.get("stage") or "", report_id),
+                    reply_to_message_id=anchor_id,
+                )
+            except Exception:  # noqa: BLE001 — the ping is a nice-to-have
+                logger.warning("lifecycle ping failed (tg %s)", tg_user_id, exc_info=True)
+        return web.json_response({"ok": True, "message_id": anchor_id})
+
+    return feedback_lifecycle
+
+
 def create_app(settings: Settings) -> web.Application:
     bot = Bot(token=settings.telegram_bot_token)
     dispatcher = Dispatcher()
@@ -394,6 +460,9 @@ def create_app(settings: Settings) -> web.Application:
     app.router.add_get("/healthz", healthz)
     app.router.add_post("/internal/po-notify", make_po_notify_handler(bot, settings))
     app.router.add_post("/internal/feedback-notify", make_feedback_notify_handler(bot, settings))
+    app.router.add_post(
+        "/internal/feedback-lifecycle", make_feedback_lifecycle_handler(bot, settings)
+    )
     SimpleRequestHandler(
         dispatcher=dispatcher, bot=bot, secret_token=settings.webhook_secret
     ).register(app, path=settings.webhook_path)

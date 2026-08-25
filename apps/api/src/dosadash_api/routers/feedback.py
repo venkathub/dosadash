@@ -23,7 +23,7 @@ from dosadash_api.config import get_settings
 from dosadash_api.db.models import FeedbackReport
 from dosadash_api.db.session import get_session
 from dosadash_api.routers.chat import OptionalUser
-from dosadash_api.services import feedback_events, feedback_service
+from dosadash_api.services import feedback_events, feedback_notify, feedback_service
 from dosadash_api.services.github_client import GitHubClient, GitHubError, get_github_client
 from dosadash_shared import (
     FeedbackCreateIn,
@@ -144,4 +144,8 @@ async def create_feedback(
     await session.refresh(report)
     for stage in stages:
         await feedback_events.publish(report.id, stage)
+    # Phase 14 slice 2: anchor status card for linked admins (best-effort,
+    # silent — Telegram edits don't notify; the latest stage carries the
+    # full timeline so one call is enough).
+    await feedback_notify.notify_stage(session, report, stages[-1])
     return FeedbackOut.model_validate(report)
