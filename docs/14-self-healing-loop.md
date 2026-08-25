@@ -221,3 +221,31 @@ any of this the loop degrades exactly as before (reconciler-only sync).
   send-or-edit + optional ping reply; "message is not modified" counts as
   success. Rendering (stage emoji lines, IST timestamps, status
   headlines) is bot-side per Hard Rule 10.
+
+## 11. Phase 14 — metrics + run ingest (slice 3)
+
+- **`GET /api/v1/admin/feedback/metrics?days=N`** (ADMIN/OWNER): the
+  fixer/verifier observability rollup, computed purely from local
+  lifecycle tables — funnel (distinct reports reaching each stage +
+  mirror failures), honest rates (empty denominator → null, never a fake
+  0%: auto-fix, approval, escalation, fix-run success, merge,
+  verification, reopen, triage-fallback), latency p50/p90 with sample
+  counts (time-to-triage, approval latency, fix→PR, PR→merge, MTTR
+  received→verified), weekly IST trend (reports/fixed/verified), and
+  per-workflow run outcomes. `summarize()` is pure + unit-tested.
+- **`fixer_runs`** (migration `d9e6f24a8b35`): both workflows end with a
+  best-effort `curl` ingest step (eval_runs CI-ingest pattern) →
+  `POST /api/v1/internal/fixer-runs` (X-Internal-Token; idempotent on
+  (workflow, run_id, run_attempt)). Run-level truth webhooks can't carry:
+  a fix run that dies WITHOUT opening a PR lands as `failure` → new
+  **FIX_FAILED** timeline stage + audible Telegram ping (a dead run needs
+  a human eye); late replays after merge stay quiet. Verify runs only
+  report when the Claude step actually ran (empty queues stay invisible).
+- Gates: ingest steps present + best-effort + `secrets.FIXER_INGEST_URL`
+  (never hardcoded), and the ingest step's model literal must equal the
+  workflow's `--model` pin — metrics can never lie about the model.
+
+**Runbook addition**: repo secret `FIXER_INGEST_URL` =
+`https://dosadash.venkateshs.dev/api/v1/internal/fixer-runs` (repo secret
+`INTERNAL_API_TOKEN` already exists from the eval ingest). Unset → the
+step skips, everything else unaffected.

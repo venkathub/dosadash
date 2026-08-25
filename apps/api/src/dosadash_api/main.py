@@ -35,6 +35,7 @@ from dosadash_api.routers.auth import router as auth_router
 from dosadash_api.routers.chat import router as chat_router
 from dosadash_api.routers.coupons import router as coupons_router
 from dosadash_api.routers.feedback import router as feedback_router
+from dosadash_api.routers.fixer_runs import router as fixer_runs_router
 from dosadash_api.routers.github_webhook import router as github_webhook_router
 from dosadash_api.routers.internal_mcp import router as internal_mcp_router
 from dosadash_api.routers.menu import router as menu_router
@@ -77,6 +78,7 @@ app.include_router(chat_router)
 app.include_router(coupons_router)
 app.include_router(feedback_router)
 app.include_router(feedback_internal_router)
+app.include_router(fixer_runs_router)
 app.include_router(github_webhook_router)
 app.include_router(internal_mcp_router)
 app.include_router(menu_router)

@@ -30,7 +30,9 @@ Stage = FeedbackEventStage
 
 # Stages that warrant an audible ping (a reply to the anchor card).
 # NEEDS_APPROVAL is deliberately absent — it has its own decision card.
-LIFECYCLE_PING_STAGES = frozenset({Stage.ESCALATED, Stage.VERIFIED, Stage.REOPENED})
+LIFECYCLE_PING_STAGES = frozenset(
+    {Stage.ESCALATED, Stage.VERIFIED, Stage.REOPENED, Stage.FIX_FAILED}
+)
 
 # The anchor renders at most this many timeline rows (oldest dropped).
 _TIMELINE_LIMIT = 12
