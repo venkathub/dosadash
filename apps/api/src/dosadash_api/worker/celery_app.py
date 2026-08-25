@@ -73,4 +73,11 @@ app.conf.beat_schedule = {
         "task": "feedback.triage_pending",
         "schedule": crontab(minute="*/15"),
     },
+    # Phase 14: reconcile in-flight reports against GitHub truth (labels,
+    # issue state, fixer PRs) — heals missed webhook deliveries. Offset
+    # from the triage beat so the two never race on the same rows.
+    "feedback-github-sync": {
+        "task": "feedback.sync_github",
+        "schedule": crontab(minute="5-59/15"),
+    },
 }

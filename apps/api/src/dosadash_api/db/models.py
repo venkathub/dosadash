@@ -769,7 +769,11 @@ class FeedbackReport(TimestampMixin, Base):
             "NEEDS_APPROVAL",
             "APPROVED",
             "REJECTED",
+            "FIXING",
+            "PR_OPEN",
             "FIXED",
+            "VERIFIED",
+            "REOPENED",
             "DISMISSED",
             name="feedback_status",
         ),
@@ -783,3 +787,34 @@ class FeedbackReport(TimestampMixin, Base):
     github_issue_number: Mapped[int | None] = mapped_column(index=True)
     github_error: Mapped[str | None] = mapped_column(String(300))
     triage: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # Phase 14 lifecycle sync: the fixer's PR (once opened) + verifier sign-off.
+    fix_pr_number: Mapped[int | None] = mapped_column()
+    verified_at: Mapped[datetime | None] = mapped_column()
+
+
+class FeedbackEvent(Base):
+    """Append-only lifecycle timeline for one feedback report (Phase 14).
+
+    Every stage of the self-healing loop — intake, triage, human decision,
+    fixer run, PR, merge, verification, reopen — lands here exactly once,
+    written by the local pipeline, the GitHub webhook, or the reconciler.
+    This table is the single source for the /fixer portal timeline, the
+    Telegram lifecycle feed (Slice 2), and all funnel/MTTR metrics
+    (Slice 3). `stage` is a String (not a PG enum) on purpose: the stage
+    vocabulary will grow with the loop and must never need a migration.
+
+    `delivery_id` carries GitHub's X-GitHub-Delivery GUID so webhook
+    redeliveries are idempotent (checked in code, not a DB constraint —
+    locally-written events have none)."""
+
+    __tablename__ = "feedback_events"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    report_id: Mapped[int] = mapped_column(
+        ForeignKey("feedback_reports.id", ondelete="CASCADE"), index=True
+    )
+    stage: Mapped[str] = mapped_column(String(40), index=True)
+    actor: Mapped[str | None] = mapped_column(String(120))
+    payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    delivery_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)

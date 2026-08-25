@@ -26,6 +26,7 @@ ORDERS_CHANNEL = "pubsub:orders"
 MENU_CHANNEL = "pubsub:menu"
 SETTINGS_CHANNEL = "pubsub:settings"
 INVENTORY_CHANNEL = "pubsub:inventory"
+FEEDBACK_CHANNEL = "pubsub:feedback"
 
 
 @lru_cache
@@ -126,3 +127,24 @@ async def publish_settings_event(event_type: str, *, detail: dict[str, Any] | No
         await get_redis().publish(SETTINGS_CHANNEL, json.dumps(payload))
     except Exception:  # noqa: BLE001 — best-effort by design
         logger.warning("settings event publish failed (%s)", event_type, exc_info=True)
+
+
+def feedback_event_payload(
+    stage: str, *, report_id: int, detail: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Self-healing-loop lifecycle events (Phase 14). Own channel — the
+    fixer pipeline is ops telemetry, so it must never touch the RAG
+    re-embed cascade (menu) or the KDS fan-out (orders). Consumers: the
+    /fixer portal WS (Slice 4) and the Telegram lifecycle feed (Slice 2)."""
+    return {"type": f"feedback.{stage.lower()}", "report_id": report_id, "detail": detail or {}}
+
+
+async def publish_feedback_event(
+    stage: str, *, report_id: int, detail: dict[str, Any] | None = None
+) -> None:
+    """Fire-and-forget publish; logs (never raises) on Redis failure."""
+    payload = feedback_event_payload(stage, report_id=report_id, detail=detail)
+    try:
+        await get_redis().publish(FEEDBACK_CHANNEL, json.dumps(payload))
+    except Exception:  # noqa: BLE001 — best-effort by design
+        logger.warning("feedback event publish failed (report %s)", report_id, exc_info=True)
