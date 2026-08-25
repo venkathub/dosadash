@@ -769,7 +769,11 @@ class FeedbackReport(TimestampMixin, Base):
             "NEEDS_APPROVAL",
             "APPROVED",
             "REJECTED",
+            "FIXING",
+            "PR_OPEN",
             "FIXED",
+            "VERIFIED",
+            "REOPENED",
             "DISMISSED",
             name="feedback_status",
         ),
@@ -783,3 +787,82 @@ class FeedbackReport(TimestampMixin, Base):
     github_issue_number: Mapped[int | None] = mapped_column(index=True)
     github_error: Mapped[str | None] = mapped_column(String(300))
     triage: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # Phase 14 lifecycle sync: the fixer's PR (once opened) + verifier sign-off.
+    fix_pr_number: Mapped[int | None] = mapped_column()
+    verified_at: Mapped[datetime | None] = mapped_column()
+
+
+class FeedbackEvent(Base):
+    """Append-only lifecycle timeline for one feedback report (Phase 14).
+
+    Every stage of the self-healing loop — intake, triage, human decision,
+    fixer run, PR, merge, verification, reopen — lands here exactly once,
+    written by the local pipeline, the GitHub webhook, or the reconciler.
+    This table is the single source for the /fixer portal timeline, the
+    Telegram lifecycle feed (Slice 2), and all funnel/MTTR metrics
+    (Slice 3). `stage` is a String (not a PG enum) on purpose: the stage
+    vocabulary will grow with the loop and must never need a migration.
+
+    `delivery_id` carries GitHub's X-GitHub-Delivery GUID so webhook
+    redeliveries are idempotent (checked in code, not a DB constraint —
+    locally-written events have none)."""
+
+    __tablename__ = "feedback_events"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    report_id: Mapped[int] = mapped_column(
+        ForeignKey("feedback_reports.id", ondelete="CASCADE"), index=True
+    )
+    stage: Mapped[str] = mapped_column(String(40), index=True)
+    actor: Mapped[str | None] = mapped_column(String(120))
+    payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    delivery_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)
+
+
+class FeedbackNotification(TimestampMixin, Base):
+    """Telegram lifecycle anchor per (report, admin) — Phase 14 slice 2.
+
+    The bot keeps ONE status card per report per linked admin, edited in
+    place on every lifecycle stage (Telegram edits are silent — the full
+    timeline stays visible without notification spam); separate ping
+    replies fire only for actionable/terminal stages. This row remembers
+    the anchor's message_id so the api can ask the bot to edit rather than
+    resend. Row missing → the bot sends a fresh card and we store it."""
+
+    __tablename__ = "feedback_notifications"
+    __table_args__ = (UniqueConstraint("report_id", "tg_user_id"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    report_id: Mapped[int] = mapped_column(
+        ForeignKey("feedback_reports.id", ondelete="CASCADE"), index=True
+    )
+    tg_user_id: Mapped[int] = mapped_column(BigInteger)
+    message_id: Mapped[int] = mapped_column(BigInteger)
+
+
+class FixerRun(Base):
+    """One fixer/verifier workflow run, self-reported by the workflow's
+    final ingest step (Phase 14 slice 3 — the eval_runs CI-ingest pattern).
+
+    Run-level truth the GitHub webhooks cannot carry: a run that died
+    without opening a PR is invisible to label/PR events — here it lands
+    as conclusion='failure' and (for fix runs) raises a FIX_FAILED
+    timeline event + Telegram ping. (workflow, run_id, run_attempt) is
+    unique so re-run attempts are distinct rows and step retries no-op."""
+
+    __tablename__ = "fixer_runs"
+    __table_args__ = (UniqueConstraint("workflow", "run_id", "run_attempt"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    report_id: Mapped[int | None] = mapped_column(
+        ForeignKey("feedback_reports.id", ondelete="SET NULL"), index=True
+    )
+    workflow: Mapped[str] = mapped_column(String(10))  # fix | verify
+    run_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    run_attempt: Mapped[int] = mapped_column(default=1)
+    issue_number: Mapped[int | None] = mapped_column(index=True)
+    conclusion: Mapped[str] = mapped_column(String(30))
+    trigger_label: Mapped[str | None] = mapped_column(String(40))
+    model: Mapped[str | None] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)

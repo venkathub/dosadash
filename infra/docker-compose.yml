@@ -82,6 +82,9 @@ services:
       # fine-grained PAT / App installation token; empty → store-only.
       API_GITHUB_TOKEN: ${GITHUB_FEEDBACK_TOKEN:-}
       API_GITHUB_REPO: ${GITHUB_FEEDBACK_REPO:-}
+      # Phase 14: GitHub → api webhook HMAC secret (lifecycle sync).
+      # Generate on-VPS; empty → webhook 503s, beat reconciler still syncs.
+      API_GITHUB_WEBHOOK_SECRET: ${GITHUB_FEEDBACK_WEBHOOK_SECRET:-}
       API_AI_BASE_URL: http://ai:8001
       # Read-only copilot role — created by migration b3f9c82d4e61 when set
       READONLY_DB_PASSWORD: ${READONLY_DB_PASSWORD:-}

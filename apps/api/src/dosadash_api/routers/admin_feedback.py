@@ -13,9 +13,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.auth.deps import require_role
 from dosadash_api.config import get_settings
-from dosadash_api.db.models import FeedbackReport, User
+from dosadash_api.db.models import FeedbackEvent, FeedbackReport, User
 from dosadash_api.db.session import get_session
-from dosadash_api.services import audit, feedback_triage_runner
+from dosadash_api.services import (
+    audit,
+    feedback_events,
+    feedback_metrics,
+    feedback_notify,
+    feedback_triage_runner,
+)
 from dosadash_api.services.ai_client import AIClient, get_ai_client
 from dosadash_api.services.github_client import GitHubClient, GitHubError, get_github_client
 from dosadash_shared import (
@@ -24,6 +30,10 @@ from dosadash_shared import (
     LABEL_AI_REJECTED,
     AdminFeedbackListOut,
     AdminFeedbackOut,
+    FeedbackEventListOut,
+    FeedbackEventOut,
+    FeedbackEventStage,
+    FeedbackMetricsOut,
     FeedbackStatus,
     FeedbackType,
     Role,
@@ -67,6 +77,44 @@ async def list_feedback(
         total=total,
         github_repo=get_settings().github_repo,
     )
+
+
+@router.get("/metrics", response_model=FeedbackMetricsOut)
+async def feedback_metrics_rollup(
+    session: SessionDep,
+    days: Annotated[int, Query(ge=1, le=365)] = 90,
+    admin: User = AdminUser,
+) -> FeedbackMetricsOut:
+    """Phase 14 slice 3: the fixer/verifier observability rollup — funnel,
+    rates, latency percentiles, weekly trend, run outcomes. Computed from
+    the local lifecycle tables only (no GitHub round-trip)."""
+    return await feedback_metrics.compute(session, window_days=days)
+
+
+@router.get("/{report_id}/events", response_model=FeedbackEventListOut)
+async def list_feedback_events(
+    report_id: int,
+    session: SessionDep,
+    admin: User = AdminUser,
+) -> FeedbackEventListOut:
+    """Phase 14: the report's lifecycle timeline (intake → triage →
+    decision → fixer → PR → merge → verify), oldest first — the portal's
+    drill-down view."""
+    report = await session.get(FeedbackReport, report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    rows = (
+        (
+            await session.execute(
+                select(FeedbackEvent)
+                .where(FeedbackEvent.report_id == report_id)
+                .order_by(FeedbackEvent.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return FeedbackEventListOut(events=[FeedbackEventOut.model_validate(r) for r in rows])
 
 
 @router.post("/triage-now")
@@ -129,7 +177,17 @@ async def _decide(
         entity=f"feedback_report:{report.id}",
         detail={"status": report.status.value},
     )
+    # Phase 14: decision lands on the timeline too (record BEFORE commit so
+    # event + status share the transaction; publish after, caller-side).
+    stage = FeedbackEventStage.APPROVED if action == "approve" else FeedbackEventStage.REJECTED
+    feedback_events.record(
+        session, report, stage, actor=f"admin:{actor.id}", payload={"role": actor.role.value}
+    )
     await session.commit()
+    await feedback_events.publish(report.id, stage)
+    # Phase 14 slice 2: silent anchor-card update (the decision card the
+    # admin tapped already edits itself with the outcome).
+    await feedback_notify.notify_stage(session, report, stage)
 
 
 class FeedbackDecisionIn(BaseModel):

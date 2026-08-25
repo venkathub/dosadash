@@ -20,7 +20,7 @@ import logging
 import httpx
 
 from dosadash_api.config import get_settings
-from dosadash_shared import GITHUB_LABELS
+from dosadash_shared import FIX_BRANCH_PREFIX, GITHUB_LABELS
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +116,47 @@ class GitHubClient:
         )
         if resp.status_code != 201:
             raise GitHubError(f"comment failed: HTTP {resp.status_code}")
+
+    # -------------------------------------------------- reads (Phase 14)
+    # The reconciler heals missed webhooks by diffing an issue's CURRENT
+    # labels/state against the local projection. Requires the PAT to also
+    # carry `pull-requests:read` (runbook: docs/14 §7).
+
+    async def get_issue(self, issue_number: int) -> dict:
+        """Current issue state: labels, open/closed, close reason."""
+        resp = await self._request("GET", f"/repos/{self._repo}/issues/{issue_number}")
+        if resp.status_code != 200:
+            raise GitHubError(f"issue get failed: HTTP {resp.status_code}")
+        data = resp.json()
+        return {
+            "state": data.get("state"),
+            "state_reason": data.get("state_reason"),
+            "labels": [label["name"] for label in data.get("labels", [])],
+            "closed_at": data.get("closed_at"),
+        }
+
+    async def find_fix_pr(self, issue_number: int) -> dict | None:
+        """Locate the fixer's PR via its branch-naming contract
+        (`fix/issue-N` — dosadash_shared.FIX_BRANCH_PREFIX). Deterministic
+        and one cheap list call; no search-API rate-limit exposure."""
+        owner = self._repo.split("/")[0]
+        resp = await self._request(
+            "GET",
+            f"/repos/{self._repo}/pulls"
+            f"?head={owner}:{FIX_BRANCH_PREFIX}{issue_number}&state=all&per_page=1",
+        )
+        if resp.status_code != 200:
+            raise GitHubError(f"pr lookup failed: HTTP {resp.status_code}")
+        pulls = resp.json()
+        if not pulls:
+            return None
+        pr = pulls[0]
+        return {
+            "number": pr["number"],
+            "state": pr.get("state"),
+            "merged_at": pr.get("merged_at"),
+            "html_url": pr.get("html_url"),
+        }
 
 
 def get_github_client() -> GitHubClient:

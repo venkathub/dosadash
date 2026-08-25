@@ -83,7 +83,11 @@ class FeedbackStatus(StrEnum):
     NEEDS_APPROVAL = "NEEDS_APPROVAL"  # triage: waiting on admin decision
     APPROVED = "APPROVED"  # admin said yes — fixer dispatched
     REJECTED = "REJECTED"  # admin said no
+    FIXING = "FIXING"  # Phase 14: fixer trigger label landed — agent running
+    PR_OPEN = "PR_OPEN"  # Phase 14: fix PR opened, merge gates running
     FIXED = "FIXED"  # fixer PR merged
+    VERIFIED = "VERIFIED"  # Phase 14: verifier confirmed the fix live in prod
+    REOPENED = "REOPENED"  # Phase 14: verifier (or a human) reopened the issue
     DISMISSED = "DISMISSED"  # closed without action (spam/not actionable)
 
 
@@ -117,6 +121,132 @@ class FeedbackOut(BaseModel):
     duplicate: bool = False  # True → an open twin already exists; no new issue
 
 
+# ---------------------------------------------------- lifecycle (Phase 14)
+# The loop's tail (fixer run → PR → merge → verify) happens on GitHub;
+# Phase 14 syncs it back so the portal, Telegram, and metrics never need a
+# GitHub round-trip. `FeedbackEventStage` is the append-only timeline
+# vocabulary; `LABEL_STATUS_PRECEDENCE` is how the reconciler derives the
+# local status projection from an issue's current label set (highest first
+# — an issue carrying both ai:fixed and ai:verified is VERIFIED).
+
+
+class FeedbackEventStage(StrEnum):
+    RECEIVED = "RECEIVED"  # report stored locally
+    TRACKED = "TRACKED"  # GitHub issue created (intake or re-mirror)
+    TRIAGED = "TRIAGED"  # triage verdict recorded (verdict in payload)
+    APPROVED = "APPROVED"  # human approved (Telegram or admin tab)
+    REJECTED = "REJECTED"  # human rejected
+    FIX_STARTED = "FIX_STARTED"  # fixer trigger label landed on the issue
+    RCA_POSTED = "RCA_POSTED"  # "## Root cause analysis" comment
+    ESCALATED = "ESCALATED"  # fixer hit a hard limit → back to approval
+    FIX_FAILED = "FIX_FAILED"  # fixer run died without a PR (run ingest)
+    PR_OPENED = "PR_OPENED"  # fix PR opened
+    PR_CLOSED = "PR_CLOSED"  # fix PR closed WITHOUT merging
+    PR_MERGED = "PR_MERGED"  # fix PR merged
+    FIXED = "FIXED"  # ai:fixed label (fixer's own completion signal)
+    VERIFICATION_POSTED = "VERIFICATION_POSTED"  # "## Prod verification" comment
+    VERIFIED = "VERIFIED"  # ai:verified label
+    REOPENED = "REOPENED"  # issue reopened (verifier or human)
+    CLOSED = "CLOSED"  # issue closed on GitHub
+    DISMISSED = "DISMISSED"  # triage: not actionable
+    SYNCED = "SYNCED"  # reconciler corrected local status from labels
+
+
+# Reconciler mapping: issue labels → local status, highest precedence first.
+# Coherence with GITHUB_LABELS is eval-gated (every ai:* label that implies
+# a status must appear exactly once here).
+LABEL_STATUS_PRECEDENCE: tuple[tuple[str, FeedbackStatus], ...] = (
+    (LABEL_AI_VERIFIED, FeedbackStatus.VERIFIED),
+    (LABEL_AI_FIXED, FeedbackStatus.FIXED),
+    (LABEL_AI_REJECTED, FeedbackStatus.REJECTED),
+    (LABEL_AI_APPROVED, FeedbackStatus.APPROVED),
+    (LABEL_AI_NEEDS_APPROVAL, FeedbackStatus.NEEDS_APPROVAL),
+    (LABEL_AI_AUTO_FIX, FeedbackStatus.AUTO_FIX),
+)
+
+# Comment markers the workflows write (byte-agreement is eval-gated against
+# the workflow files, same discipline as the untrusted fence).
+RCA_COMMENT_MARKER = "## Root cause analysis"
+VERIFICATION_COMMENT_MARKER = "## Prod verification"
+
+# The fixer's branch naming contract — how PR webhook events map back to
+# their issue without a GitHub round-trip.
+FIX_BRANCH_PREFIX = "fix/issue-"
+
+
+class FeedbackEventOut(BaseModel):
+    """One timeline entry (portal drill-down + Telegram lifecycle feed)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    report_id: int
+    stage: FeedbackEventStage
+    actor: str | None = None  # "webhook:github" | "reconciler" | "admin:<id>" | "system"
+    payload: dict | None = None
+    created_at: datetime
+
+
+class FeedbackEventListOut(BaseModel):
+    events: list[FeedbackEventOut]
+
+
+# ------------------------------------------------- run ingest + metrics
+# Slice 3: the workflows report their own runs (eval_runs CI-ingest
+# pattern) — run-level truth (did the agent run at all? did it die without
+# a PR?) that GitHub label/PR webhooks cannot carry. `FeedbackMetricsOut`
+# is the portal's metrics contract; inner maps stay loose on purpose (the
+# metric set will grow — the portal renders what it gets).
+
+
+class FixerRunIn(BaseModel):
+    """workflow → api ingest payload (X-Internal-Token protected)."""
+
+    workflow: Literal["fix", "verify"]
+    run_id: int
+    run_attempt: int = 1
+    issue_number: int | None = None  # verify runs cover a queue → None
+    conclusion: str = Field(max_length=30)  # success | failure | cancelled
+    trigger_label: str | None = Field(default=None, max_length=40)
+    model: str | None = Field(default=None, max_length=60)
+
+
+class FixerRunOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    report_id: int | None = None
+    workflow: str
+    run_id: int
+    run_attempt: int
+    issue_number: int | None = None
+    conclusion: str
+    trigger_label: str | None = None
+    model: str | None = None
+    created_at: datetime
+    duplicate: bool = False
+
+
+class FeedbackMetricsOut(BaseModel):
+    """Fixer/verifier observability rollup (Phase 14 slice 3).
+
+    All counts are within the requested window. `latency` values are
+    seconds: {metric: {"p50": …, "p90": …, "count": n}}; a metric with no
+    completed samples reports p50/p90 = None. `rates` are 0..1 or None
+    when the denominator is empty (never fake a 0% from no data)."""
+
+    window_days: int
+    totals_by_status: dict[str, int]
+    totals_by_type: dict[str, int]
+    totals_by_tier: dict[str, int]
+    funnel: dict[str, int]
+    rates: dict[str, float | None]
+    latency: dict[str, dict[str, float | None]]
+    weekly: list[dict]
+    runs: dict[str, dict[str, int]]
+    generated_at: datetime
+
+
 class AdminFeedbackOut(BaseModel):
     """Backoffice wire shape — full row incl. triage provenance."""
 
@@ -134,6 +264,8 @@ class AdminFeedbackOut(BaseModel):
     github_issue_number: int | None = None
     github_error: str | None = None
     triage: dict | None = None
+    fix_pr_number: int | None = None  # Phase 14: the fixer's PR, once opened
+    verified_at: datetime | None = None  # Phase 14: verifier sign-off time
     created_at: datetime
     updated_at: datetime
 

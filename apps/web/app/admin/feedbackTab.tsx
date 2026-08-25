@@ -27,7 +27,11 @@ const STATUSES = [
   "NEEDS_APPROVAL",
   "APPROVED",
   "REJECTED",
+  "FIXING",
+  "PR_OPEN",
   "FIXED",
+  "VERIFIED",
+  "REOPENED",
   "DISMISSED",
 ] as const;
 
@@ -39,13 +43,17 @@ function feedbackTone(status: string): BadgeTone {
     case "NEEDS_APPROVAL":
       return "warning";
     case "TRACKED":
+    case "FIXING":
+    case "PR_OPEN":
       return "info";
     case "AUTO_FIX":
       return "brass";
     case "APPROVED":
     case "FIXED":
+    case "VERIFIED":
       return "success";
     case "REJECTED":
+    case "REOPENED":
       return "danger";
     default:
       return "neutral";
@@ -88,6 +96,14 @@ export function FeedbackTab() {
       <ErrorBar msg={error} />
       <div className="flex flex-wrap items-center gap-2">
         <Eyebrow>User reports → GitHub issues → AI fixer</Eyebrow>
+        <a
+          href="/fixer"
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs text-magenta-400 underline-offset-2 hover:underline"
+        >
+          🛠 Fixer Ops portal ↗
+        </a>
         <div className="grow" />
         <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-44">
           {STATUSES.map((s) => (

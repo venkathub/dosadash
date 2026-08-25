@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import FeedbackReport
-from dosadash_api.services import feedback_notify, feedback_service
+from dosadash_api.services import feedback_events, feedback_notify, feedback_service
 from dosadash_api.services.ai_client import AIClient, AIServiceError
 from dosadash_api.services.github_client import GitHubClient, GitHubError
 from dosadash_shared import (
@@ -33,6 +33,7 @@ from dosadash_shared import (
     LABEL_AI_AUTO_FIX,
     LABEL_AI_NEEDS_APPROVAL,
     LABEL_AI_REJECTED,
+    FeedbackEventStage,
     FeedbackStatus,
     FeedbackTriageRequest,
     TriageVerdict,
@@ -99,8 +100,17 @@ async def remirror_unmirrored(
                 await github.add_labels(issue, status_labels)
             if report.status == FeedbackStatus.RECEIVED:
                 report.status = FeedbackStatus.TRACKED
+            feedback_events.record(
+                session,
+                report,
+                FeedbackEventStage.TRACKED,
+                actor="system",
+                payload={"issue": issue, "remirror": True},
+            )
             await session.commit()
             remirrored += 1
+            await feedback_events.publish(report.id, FeedbackEventStage.TRACKED)
+            await feedback_notify.notify_stage(session, report, FeedbackEventStage.TRACKED)
             logger.info("re-mirrored report #%s → issue #%s", report.id, issue)
         except GitHubError as exc:
             failures += 1
@@ -169,6 +179,18 @@ async def triage_pending(
             "at": datetime.now(UTC).isoformat(),
         }
         report.status = _VERDICT_STATUS[result.verdict]
+        # Phase 14: TRIAGED timeline event (verdict + provenance snapshot).
+        feedback_events.record(
+            session,
+            report,
+            FeedbackEventStage.TRIAGED,
+            actor="system",
+            payload={
+                "verdict": result.verdict.value,
+                "fallback": result.fallback,
+                "model": result.model,
+            },
+        )
 
         if result.labels and report.github_issue_number and github.enabled:
             try:
@@ -181,9 +203,15 @@ async def triage_pending(
 
         await session.commit()  # per report — done work survives a crash
         triaged += 1
+        await feedback_events.publish(
+            report.id, FeedbackEventStage.TRIAGED, detail={"verdict": result.verdict.value}
+        )
+        # Phase 14 slice 2: silent anchor-card update for every verdict…
+        await feedback_notify.notify_stage(session, report, FeedbackEventStage.TRIAGED)
         if result.verdict == TriageVerdict.NEEDS_APPROVAL:
-            # Telegram decision cards (Phase 6 PO pattern) — best-effort,
-            # after commit; the admin web tab is always the fallback.
+            # …then the ACTIONABLE decision card (Phase 6 PO pattern) —
+            # best-effort, after commit; the admin web tab is always the
+            # fallback.
             notified += await feedback_notify.notify_admins_feedback(session, report)
     return {
         "examined": len(rows),

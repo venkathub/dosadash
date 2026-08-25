@@ -2,6 +2,7 @@
 
 /ws/kds          — kitchen display: snapshot of active orders + live events (staff JWT)
 /ws/orders/{id}  — customer live tracking for one order (owner or staff JWT)
+/ws/fixer        — self-healing-loop live feed for the /fixer portal (admin/owner JWT)
 
 Browsers can't set headers on WebSocket upgrade → JWT arrives as ?token=.
 Close codes: 4401 bad/missing token, 4403 insufficient role/ownership.
@@ -21,9 +22,9 @@ from dosadash_api.auth.security import decode_access_token
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import Order, OrderItem, User
 from dosadash_api.db.session import get_sessionmaker
-from dosadash_api.events import ORDERS_CHANNEL, get_redis, order_event_payload
+from dosadash_api.events import FEEDBACK_CHANNEL, ORDERS_CHANNEL, get_redis, order_event_payload
 from dosadash_api.services.order_service import STAFF_ROLES
-from dosadash_shared import OrderState
+from dosadash_shared import OrderState, Role
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -45,10 +46,12 @@ async def _authenticate(token: str) -> User | None:
         return await session.get(User, int(payload["sub"]))
 
 
-async def _forward_events(websocket: WebSocket, *, order_id: int | None = None) -> None:
-    """Relay pubsub:orders to this socket (optionally filtered to one order)."""
+async def _forward_events(
+    websocket: WebSocket, *, order_id: int | None = None, channel: str = ORDERS_CHANNEL
+) -> None:
+    """Relay one pubsub channel to this socket (optionally filtered to one order)."""
     pubsub = get_redis().pubsub()
-    await pubsub.subscribe(ORDERS_CHANNEL)
+    await pubsub.subscribe(channel)
     try:
         async for message in pubsub.listen():
             if message["type"] != "message":
@@ -60,7 +63,7 @@ async def _forward_events(websocket: WebSocket, *, order_id: int | None = None) 
             await websocket.send_text(message["data"])
     finally:
         with contextlib.suppress(Exception):
-            await pubsub.unsubscribe(ORDERS_CHANNEL)
+            await pubsub.unsubscribe(channel)
             await pubsub.aclose()
 
 
@@ -106,6 +109,26 @@ async def kds_socket(websocket: WebSocket, token: str = Query(default="")) -> No
         )
     )
     forward = asyncio.create_task(_forward_events(websocket))
+    await _run_until_disconnect(websocket, forward)
+
+
+@router.websocket("/ws/fixer")
+async def fixer_socket(websocket: WebSocket, token: str = Query(default="")) -> None:
+    """Phase 14: the /fixer portal's live feed — relays pubsub:feedback
+    (every lifecycle stage publishes there). Deliberately event-only, no
+    snapshot: the portal fetches state via the admin REST endpoints and
+    uses events as its refresh trigger, so socket and REST can never tell
+    different stories."""
+    user = await _authenticate(token)
+    if user is None:
+        await websocket.close(code=4401)
+        return
+    if user.role not in (Role.ADMIN, Role.OWNER):
+        await websocket.close(code=4403)
+        return
+    await websocket.accept()
+    await websocket.send_text(json.dumps({"type": "feedback.hello"}))
+    forward = asyncio.create_task(_forward_events(websocket, channel=FEEDBACK_CHANNEL))
     await _run_until_disconnect(websocket, forward)
 
 

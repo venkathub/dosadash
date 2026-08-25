@@ -4,7 +4,9 @@ Hard Rule 10: the bot only normalizes I/O. These helpers render apps/ai
 agent responses (Phase 3) and the account-linking flow (Phase 1).
 """
 
+from datetime import UTC, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 
 def welcome_text(first_name: str | None) -> str:
@@ -165,3 +167,106 @@ def feedback_decided_text(report_id: int, status: str | None, detail: str | None
     if status == "REJECTED":
         return f"🚫 Report #{report_id} rejected."
     return f"⚠️ Couldn't update report #{report_id}: {detail or 'please use the backoffice.'}"
+
+
+# ------------------------------------------------- lifecycle feed (Phase 14)
+# One anchor status card per report per linked admin, edited in place on
+# every stage (silent — Telegram edits don't notify); ping replies fire
+# only for actionable/terminal stages. Payload comes pre-extracted from
+# the api (data); everything visual lives here (Hard Rule 10).
+
+_STAGE_LINES: dict[str, str] = {
+    "RECEIVED": "📥 Received",
+    "TRACKED": "📌 Filed on GitHub",
+    "TRIAGED": "🔎 Triaged",
+    "APPROVED": "✅ Approved",
+    "REJECTED": "🚫 Rejected",
+    "FIX_STARTED": "🤖 AI fixer dispatched",
+    "RCA_POSTED": "🧠 Root cause posted",
+    "ESCALATED": "🛑 Fixer escalated — needs approval",
+    "FIX_FAILED": "💥 Fixer run failed",
+    "PR_OPENED": "🔀 Fix PR opened",
+    "PR_CLOSED": "❌ Fix PR closed unmerged",
+    "PR_MERGED": "🎉 Fix PR merged",
+    "FIXED": "🧩 Fix landed",
+    "VERIFICATION_POSTED": "🧪 Prod verification posted",
+    "VERIFIED": "🏁 Verified live in prod",
+    "REOPENED": "⚠️ Reopened — fix didn't hold",
+    "CLOSED": "🗂 Issue closed",
+    "DISMISSED": "🚮 Dismissed by triage",
+    "SYNCED": "🔁 Synced from GitHub",
+}
+
+_STATUS_HEADLINES: dict[str, str] = {
+    "RECEIVED": "📥 Received",
+    "TRACKED": "📌 Tracked — awaiting triage",
+    "AUTO_FIX": "🤖 Queued for auto-fix",
+    "NEEDS_APPROVAL": "🟡 Awaiting your decision",
+    "APPROVED": "✅ Approved — fixer queued",
+    "REJECTED": "🚫 Rejected",
+    "FIXING": "🔧 AI fixer working",
+    "PR_OPEN": "🔀 Fix PR running the merge gates",
+    "FIXED": "🎉 Fix merged — deploying",
+    "VERIFIED": "🏁 Verified in production",
+    "REOPENED": "⚠️ Reopened",
+    "DISMISSED": "🚮 Dismissed",
+}
+
+
+def _timeline_time(iso: str | None) -> str:
+    """Compact IST timestamp: HH:MM today, `d Mon HH:MM` otherwise.
+    Event times are naive UTC (DB convention)."""
+    if not iso:
+        return "—"
+    try:
+        dt = datetime.fromisoformat(iso)
+    except ValueError:
+        return "—"
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    ist = dt.astimezone(ZoneInfo("Asia/Kolkata"))
+    now = datetime.now(ZoneInfo("Asia/Kolkata"))
+    if ist.date() == now.date():
+        return ist.strftime("%H:%M")
+    return ist.strftime("%d %b %H:%M")
+
+
+def feedback_lifecycle_text(payload: dict[str, Any]) -> str:
+    """The anchor status card. Title is END-USER text — rendered verbatim,
+    never interpreted."""
+    kind = "🐞 Bug" if payload.get("type") == "BUG" else "✨ Feature"
+    status = payload.get("status") or ""
+    headline = _STATUS_HEADLINES.get(status, status)
+    lines = [
+        f"{kind} report #{payload['report_id']} — “{payload.get('title', '')}”",
+        f"Status: {headline}",
+        "",
+    ]
+    for entry in payload.get("timeline") or []:
+        stage_line = _STAGE_LINES.get(entry.get("stage") or "", entry.get("stage") or "?")
+        note = entry.get("note")
+        suffix = f" ({note})" if note else ""
+        lines.append(f"{_timeline_time(entry.get('at'))} · {stage_line}{suffix}")
+    issue = payload.get("github_url")
+    if issue:
+        lines.append("")
+        lines.append(f"🔗 {issue}")
+    return "\n".join(lines)
+
+
+def feedback_ping_text(stage: str, report_id: int) -> str:
+    """Audible reply under the anchor — only for stages worth a sound."""
+    if stage == "ESCALATED":
+        return (
+            f"🛑 Report #{report_id}: the AI fixer hit a hard limit and "
+            "handed back — your decision is needed."
+        )
+    if stage == "VERIFIED":
+        return f"🏁 Report #{report_id}: fix verified live in production."
+    if stage == "REOPENED":
+        return f"⚠️ Report #{report_id}: verification failed — the issue was reopened."
+    if stage == "FIX_FAILED":
+        return (
+            f"💥 Report #{report_id}: the AI fixer run died without a PR — check the workflow logs."
+        )
+    return f"🔔 Report #{report_id}: {_STAGE_LINES.get(stage, stage)}"

@@ -147,3 +147,130 @@ api `routers/feedback.py` · `routers/admin_feedback.py` (+`internal_router`)
 · shared `feedback.py` + `redaction.py` · workflow `claude-issue-fix.yml`
 · evals `feedback_triage.jsonl` + `test_feedback_triage_assets.py` +
 `test_fixer_workflow_assets.py`
+
+## 9. Phase 14 — lifecycle sync (slice 1)
+
+Phase 13 left the loop's tail (fixer run → PR → merge → verify) visible
+only on GitHub: `status` stopped at APPROVED/REJECTED and `FIXED` was never
+written. Slice 1 closes that gap:
+
+- **`feedback_events`** (migration `b8e6f95a2c74`): append-only timeline —
+  one row per stage (intake, triage, decision, fix dispatch, RCA, PR,
+  merge, verification, reopen), written by the local pipeline, the GitHub
+  webhook, or the reconciler. Single source for the /fixer portal
+  (slice 4), the Telegram lifecycle feed (slice 2), and funnel/MTTR
+  metrics (slice 3). New statuses: `FIXING`, `PR_OPEN`, `VERIFIED`,
+  `REOPENED`; new columns `fix_pr_number`, `verified_at`.
+- **GitHub webhook** `POST /api/v1/github/webhook`: HMAC-SHA256
+  (`X-Hub-Signature-256`, aggregator pattern; secret
+  `GITHUB_FEEDBACK_WEBHOOK_SECRET` in `infra/.env` → 503 unconfigured /
+  403 bad sig), repo-pinned, delivery-GUID idempotent. Subscribed events:
+  `issues`, `issue_comment`, `pull_request` (+`ping`). Label→stage mapping
+  is self-echo-damped: labels our own api applies don't re-record, except
+  trigger labels (= fixer dispatch → `FIXING`) and `ai:needs-approval`
+  mid-flight (= fixer escalation). PRs map to issues via the `fix/issue-N`
+  branch contract (fallback: `Fixes #N` body scan). Status is a GUARDED
+  projection — out-of-order deliveries degrade to timeline-only events.
+- **Reconciler** `feedback.sync_github` (beat `5-59/15`, offset from
+  triage): diffs each in-flight report against the issue's CURRENT
+  labels/state + fixer PR via new GitHubClient read methods
+  (`get_issue`/`find_fix_pr` — PAT additionally needs
+  `pull-requests:read`). Drift → `SYNCED` event + authoritative
+  correction. Worst case (webhook never configured): 15-min staleness,
+  never permanent drift. Precedence lives in
+  `dosadash_shared.LABEL_STATUS_PRECEDENCE` (gate-pinned).
+- **`pubsub:feedback`**: every recorded stage publishes best-effort —
+  deliberately separate from menu/orders channels (ops telemetry must
+  never touch the RAG cascade or KDS fan-out).
+- **Timeline API**: `GET /api/v1/admin/feedback/{id}/events` (ADMIN/OWNER).
+- **Gates**: `evals/suites/test_feedback_lifecycle_assets.py` pins the
+  comment markers (`## Root cause analysis` / `## Prod verification`), the
+  fix-branch contract, and label↔status precedence to the workflow files
+  and the registry.
+
+**Runbook addition (arming the webhook)**: generate a secret on-VPS →
+`GITHUB_FEEDBACK_WEBHOOK_SECRET` in `infra/.env`; add a repo webhook →
+`https://dosadash.venkateshs.dev/api/v1/github/webhook`, content type
+`application/json`, same secret, events: Issues, Issue comments, Pull
+requests. Extend the PAT with `pull-requests:read` if it lacks it. Without
+any of this the loop degrades exactly as before (reconciler-only sync).
+
+## 10. Phase 14 — Telegram lifecycle feed (slice 2)
+
+"Each and every status in Telegram" without notification spam:
+
+- **One anchor status card per (report, linked admin)** — created on the
+  first notified stage, then **edited in place** on every subsequent stage
+  (Telegram edits are silent, so the full timeline stays visible without a
+  sound per stage). Anchor `message_id`s live in `feedback_notifications`
+  (migration `c7d5e83f9a26`); a card the admin deleted is transparently
+  re-sent and re-anchored.
+- **Audible ping replies** (under the anchor) fire only for
+  actionable/terminal stages: `ESCALATED` (fixer hit a hard limit),
+  `VERIFIED` (fix confirmed live), `REOPENED` (verification failed).
+  `NEEDS_APPROVAL` keeps its Phase-13 **decision card** (buttons intact,
+  flow untouched) — decision card = actionable surface, anchor = status
+  surface.
+- Wiring: every stage writer (intake, triage runner incl. re-mirror,
+  decisions, GitHub webhook, reconciler) calls
+  `feedback_notify.notify_stage()` AFTER its commit — fully best-effort
+  (bot outage/unlinked admins → 0 sends, admin tab and the coming /fixer
+  portal are the fallback). The reconciler translates corrected statuses
+  onto ping stages so a missed-webhook VERIFIED still sounds.
+- Bot: `POST /internal/feedback-lifecycle` (X-Internal-Token) —
+  send-or-edit + optional ping reply; "message is not modified" counts as
+  success. Rendering (stage emoji lines, IST timestamps, status
+  headlines) is bot-side per Hard Rule 10.
+
+## 11. Phase 14 — metrics + run ingest (slice 3)
+
+- **`GET /api/v1/admin/feedback/metrics?days=N`** (ADMIN/OWNER): the
+  fixer/verifier observability rollup, computed purely from local
+  lifecycle tables — funnel (distinct reports reaching each stage +
+  mirror failures), honest rates (empty denominator → null, never a fake
+  0%: auto-fix, approval, escalation, fix-run success, merge,
+  verification, reopen, triage-fallback), latency p50/p90 with sample
+  counts (time-to-triage, approval latency, fix→PR, PR→merge, MTTR
+  received→verified), weekly IST trend (reports/fixed/verified), and
+  per-workflow run outcomes. `summarize()` is pure + unit-tested.
+- **`fixer_runs`** (migration `d9e6f24a8b35`): both workflows end with a
+  best-effort `curl` ingest step (eval_runs CI-ingest pattern) →
+  `POST /api/v1/internal/fixer-runs` (X-Internal-Token; idempotent on
+  (workflow, run_id, run_attempt)). Run-level truth webhooks can't carry:
+  a fix run that dies WITHOUT opening a PR lands as `failure` → new
+  **FIX_FAILED** timeline stage + audible Telegram ping (a dead run needs
+  a human eye); late replays after merge stay quiet. Verify runs only
+  report when the Claude step actually ran (empty queues stay invisible).
+- Gates: ingest steps present + best-effort + `secrets.FIXER_INGEST_URL`
+  (never hardcoded), and the ingest step's model literal must equal the
+  workflow's `--model` pin — metrics can never lie about the model.
+
+**Runbook addition**: repo secret `FIXER_INGEST_URL` =
+`https://dosadash.venkateshs.dev/api/v1/internal/fixer-runs` (repo secret
+`INTERNAL_API_TOKEN` already exists from the eval ingest). Unset → the
+step skips, everything else unaffected.
+
+## 12. Phase 14 — the /fixer portal (slice 4)
+
+`apps/web/app/fixer/page.tsx` — the loop's own KDS-style surface (own
+route, own `fixer_token`, admin/owner OTP login, Madras Pop):
+
+- **pipeline board**, 6 accent-bar lanes: 📥 Intake (RECEIVED/TRACKED) ·
+  🟡 Approval (NEEDS_APPROVAL, **inline Approve/Reject** on the card) ·
+  🤖 Fixing (AUTO_FIX/APPROVED/FIXING) · 🔀 PR open · 🚀 Shipped
+  (FIXED/VERIFIED) · ⚠️ Attention (REOPENED); REJECTED/DISMISSED collapse
+  into a Closed strip;
+- **metrics strip** from slice 3 (reports, auto-fix/merge rates, verified
+  + reopen, approval latency p50/p90, MTTR, run outcomes);
+- **report drawer**: full lifecycle timeline (same stage vocabulary as
+  the Telegram cards), triage provenance (`.ai-meta`), issue/PR deep
+  links, decision buttons;
+- **live**: `/ws/fixer` (new WS endpoint, admin/owner JWT, KDS
+  mechanism) relays `pubsub:feedback`; deliberately event-only — the
+  portal refetches REST on each event (debounced) so socket and REST can
+  never tell different stories; 60s poll fallback; 📡 live-feed ticker.
+
+Also: admin Feedback tab gained the new statuses + a portal deep link;
+`/fixer` added to the ui-smoke browser gate (6 routes). Verified: web
+build green, ui-smoke 0 errors, DOM snapshot of both views (login +
+board) w/ zero page errors.
