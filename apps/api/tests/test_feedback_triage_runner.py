@@ -51,6 +51,7 @@ class FakeGitHub:
         self._enabled = enabled
         self._fail = fail
         self.labeled: list[tuple[int, list[str]]] = []
+        self.created: list[dict] = []
 
     @property
     def enabled(self) -> bool:
@@ -60,6 +61,10 @@ class FakeGitHub:
         if self._fail:
             raise GitHubError("boom")
         self.labeled.append((issue_number, labels))
+
+    async def create_issue(self, *, title: str, body: str, labels: list[str]) -> int:
+        self.created.append({"title": title, "body": body, "labels": labels})
+        return 200 + len(self.created)
 
 
 def _report(**overrides) -> FeedbackReport:
@@ -89,6 +94,8 @@ async def test_auto_fix_verdict_persisted_and_labeled(db_session: AsyncSession) 
         "skipped": 0,
         "label_failures": 0,
         "notified": 0,  # no bot configured in tests
+        "remirrored": 0,
+        "remirror_failures": 0,
     }
     row = (await db_session.execute(select(FeedbackReport))).scalar_one()
     assert row.status == "AUTO_FIX"
@@ -149,7 +156,9 @@ async def test_already_triaged_and_unmirrored_rows(db_session: AsyncSession) -> 
 
     assert summary["examined"] == 1  # only the untriaged row
     assert len(ai.calls) == 1
-    assert github.labeled == []  # no issue number → no label call
+    # the unmirrored row was re-mirrored first, so its labels DID land
+    assert summary["remirrored"] == 1
+    assert github.labeled == [(201, ["ai:auto-fix"])]
     rows = (await db_session.execute(select(FeedbackReport).order_by(FeedbackReport.id))).scalars()
     assert [r.status for r in rows] == ["AUTO_FIX", "AUTO_FIX"]
 
@@ -196,3 +205,111 @@ async def test_triage_now_requires_admin(client) -> None:
     headers = {"Authorization": f"Bearer {verify.json()['access_token']}"}
     resp = await client.post("/api/v1/admin/feedback/triage-now", headers=headers)
     assert resp.status_code == 403
+
+
+# ------------------------------------------------- re-mirror (prod #3 postmortem)
+
+
+class FakeGitHubFull(FakeGitHub):
+    """FakeGitHub whose issue creation can be forced to fail."""
+
+    def __init__(self, *, enabled: bool = True, create_fails: bool = False) -> None:
+        super().__init__(enabled=enabled)
+        self._create_fails = create_fails
+
+    async def create_issue(self, *, title: str, body: str, labels: list[str]) -> int:
+        from dosadash_api.services.github_client import GitHubError
+
+        if self._create_fails:
+            raise GitHubError("GitHub call failed: still down")
+        return await super().create_issue(title=title, body=body, labels=labels)
+
+
+async def test_remirror_approved_report_resumes_the_loop(db_session: AsyncSession) -> None:
+    """The exact prod #3 shape: intake mirror failed, triage ran, admin
+    approved — locally APPROVED but no issue, so the label-driven fixer
+    never fired. Re-mirror must create the issue AND land ai:approved."""
+    db_session.add(
+        _report(
+            status="APPROVED",
+            github_issue_number=None,
+            triage={"verdict": "NEEDS_APPROVAL", "assessment": {"summary": "s"}},
+        )
+    )
+    await db_session.commit()
+    ai, github = FakeAI(), FakeGitHubFull()
+
+    summary = await feedback_triage_runner.triage_pending(db_session, ai, github)
+
+    assert summary["remirrored"] == 1 and summary["remirror_failures"] == 0
+    assert ai.calls == []  # already triaged — no LLM spend
+    row = (await db_session.execute(select(FeedbackReport))).scalar_one()
+    assert row.github_issue_number == 201
+    assert row.github_error is None
+    assert row.status == "APPROVED"  # status untouched
+    # intake labels on create + the status label that resumes the fixer
+    assert github.created[0]["labels"] == ["user-reported", "bug"]
+    assert github.labeled == [(201, ["ai:approved"])]
+
+
+async def test_remirror_received_report_becomes_tracked_then_triaged(
+    db_session: AsyncSession,
+) -> None:
+    db_session.add(_report(status="RECEIVED", github_issue_number=None))
+    await db_session.commit()
+    ai, github = FakeAI(), FakeGitHubFull()
+
+    summary = await feedback_triage_runner.triage_pending(db_session, ai, github)
+
+    assert summary["remirrored"] == 1
+    assert summary["triaged"] == 1  # same run continues into triage
+    row = (await db_session.execute(select(FeedbackReport))).scalar_one()
+    assert row.github_issue_number == 201
+    assert row.status == "AUTO_FIX"  # FakeAI verdict, labels applied
+    assert (201, ["ai:auto-fix"]) in github.labeled
+
+
+async def test_remirror_failure_recorded_and_retried_next_run(db_session: AsyncSession) -> None:
+    db_session.add(_report(status="APPROVED", github_issue_number=None, triage={"verdict": "X"}))
+    await db_session.commit()
+
+    summary = await feedback_triage_runner.triage_pending(
+        db_session, FakeAI(), FakeGitHubFull(create_fails=True)
+    )
+
+    assert summary["remirror_failures"] == 1
+    row = (await db_session.execute(select(FeedbackReport))).scalar_one()
+    assert row.github_issue_number is None  # still pending → next run retries
+    assert "re-mirror failed" in row.github_error
+
+
+async def test_remirror_skips_terminal_and_mirrored(db_session: AsyncSession) -> None:
+    db_session.add_all(
+        [
+            _report(
+                status="DISMISSED",
+                github_issue_number=None,
+                dedupe_hash="1" * 64,
+                triage={"verdict": "DISMISS"},
+            ),
+            _report(
+                status="FIXED",
+                github_issue_number=None,
+                dedupe_hash="2" * 64,
+                triage={"verdict": "X"},
+            ),
+            _report(
+                status="APPROVED",
+                github_issue_number=99,
+                dedupe_hash="3" * 64,
+                triage={"verdict": "X"},
+            ),
+        ]
+    )
+    await db_session.commit()
+    github = FakeGitHubFull()
+
+    summary = await feedback_triage_runner.triage_pending(db_session, FakeAI(), github)
+
+    assert summary["remirrored"] == 0
+    assert github.created == []
