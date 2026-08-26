@@ -274,3 +274,60 @@ Also: admin Feedback tab gained the new statuses + a portal deep link;
 `/fixer` added to the ui-smoke browser gate (6 routes). Verified: web
 build green, ui-smoke 0 errors, DOM snapshot of both views (login +
 board) w/ zero page errors.
+
+## 13. Fixer dispatch watchdog (post-Phase-14 — Actions-outage postmortem)
+
+**Incident (2026-08-26 15:11 UTC):** report #5 → issue #138 was filed six
+seconds before GitHub's "Incident with Actions" (critical, database
+primary failover) began. The loop did everything right — intake, triage
+(NEEDS_APPROVAL), owner approval via Telegram, `ai:approved` label,
+FIX_STARTED event — and then stalled invisibly: one workflow run sat
+`queued` forever, a second attempt died with `startup_failure` (zero
+jobs, zero logs). Neither produces a webhook, a run-ingest row, or any
+other signal we consumed. The portal said FIXING; nothing was fixing.
+
+**Gap:** a fixer dispatch is just a LABEL — everything after it is
+GitHub's compute, and Phase 14's observability only covered signals that
+GitHub actually emits. A run the orchestrator never starts emits nothing.
+
+**Design (dish-QC philosophy — observe, then compute):**
+
+- **Observe**: `GitHubClient.list_workflow_runs(FIXER_WORKFLOW_FILE)`
+  (run-level truth webhooks can't carry) + the public githubstatus.com
+  Actions component (best-effort, 4-min cache, `None` = honestly unknown).
+- **Compute** (pure, unit-tested `classify`/`decide` in
+  `services/fixer_watchdog.py`): a dispatched report (status
+  AUTO_FIX/APPROVED/FIXING, no PR) whose newest dispatch (FIX_STARTED or
+  FIX_RETRIED event) is past the 10-min stall window with no live run is
+  STALLED — reason `run_queued` / `run_died` (startup_failure etc.) /
+  `dispatch_lost`. Runs older than the dispatch window are ignored, so a
+  previous report's success never masks a stall.
+- **Act**:
+  - transparency first: a deduped `FIX_STALLED` timeline event (one
+    Telegram ping per stall, not per beat; Actions status embedded in
+    the payload);
+  - auto-resume: once Actions is `operational` (unknown counts as
+    operational — the status API being down must not freeze recovery),
+    re-apply the trigger label (remove + add → a fresh `labeled` event
+    re-dispatches the workflow; the webhook records FIX_STARTED again,
+    which re-arms the stall window). Stuck-queued runs are cancelled
+    first (`actions:write`; a 403 degrades to a `cancel_forbidden` stall
+    instead of racing a zombie run);
+  - retries capped at 3 → terminal `retries_exhausted` stall (humans
+    take over from the portal).
+- **Beat**: `feedback.fixer_watchdog` every 5 min (`2-59/5` — offset from
+  triage/sync). Zero dispatched reports = one DB query, no GitHub calls.
+- **Surface**: `GET /api/v1/admin/feedback/ops` (`FixerOpsOut`) → the
+  /fixer portal renders a chili banner during an Actions outage ("fix
+  runs can't execute right now — watchdog will auto-resume"), a turmeric
+  banner per stalled dispatch (reason, run id, retries, since), an
+  `⏳ stalled` chip on the affected report card, and the new stages in
+  every timeline (portal drawer + Telegram anchor cards).
+
+New timeline stages `FIX_STALLED` / `FIX_RETRIED` needed **no migration**
+— `feedback_events.stage` is a String precisely because "the stage
+vocabulary will grow with the loop" (§9). Gates: `FIXER_WORKFLOW_FILE`
+must name the real workflow file; `startup_failure` must classify as
+dead. PAT note (runbook §7 addendum): granting the fixer PAT
+`actions:write` enables stuck-run cancellation; without it the watchdog
+still detects + reports, and resumes dead (non-queued) dispatches.

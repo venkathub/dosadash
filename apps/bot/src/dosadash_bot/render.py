@@ -185,6 +185,8 @@ _STAGE_LINES: dict[str, str] = {
     "RCA_POSTED": "🧠 Root cause posted",
     "ESCALATED": "🛑 Fixer escalated — needs approval",
     "FIX_FAILED": "💥 Fixer run failed",
+    "FIX_STALLED": "⏳ Fixer run stalled on GitHub",
+    "FIX_RETRIED": "🔁 Fixer re-dispatched by watchdog",
     "PR_OPENED": "🔀 Fix PR opened",
     "PR_CLOSED": "❌ Fix PR closed unmerged",
     "PR_MERGED": "🎉 Fix PR merged",
@@ -268,5 +270,10 @@ def feedback_ping_text(stage: str, report_id: int) -> str:
     if stage == "FIX_FAILED":
         return (
             f"💥 Report #{report_id}: the AI fixer run died without a PR — check the workflow logs."
+        )
+    if stage == "FIX_STALLED":
+        return (
+            f"⏳ Report #{report_id}: the fixer dispatch stalled on GitHub "
+            "(outage or dead run). The watchdog will auto-retry once GitHub recovers."
         )
     return f"🔔 Report #{report_id}: {_STAGE_LINES.get(stage, stage)}"

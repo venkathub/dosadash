@@ -137,6 +137,8 @@ class FeedbackEventStage(StrEnum):
     APPROVED = "APPROVED"  # human approved (Telegram or admin tab)
     REJECTED = "REJECTED"  # human rejected
     FIX_STARTED = "FIX_STARTED"  # fixer trigger label landed on the issue
+    FIX_STALLED = "FIX_STALLED"  # watchdog: dispatched run queued-dead / startup_failure / lost
+    FIX_RETRIED = "FIX_RETRIED"  # watchdog re-dispatched the trigger label
     RCA_POSTED = "RCA_POSTED"  # "## Root cause analysis" comment
     ESCALATED = "ESCALATED"  # fixer hit a hard limit → back to approval
     FIX_FAILED = "FIX_FAILED"  # fixer run died without a PR (run ingest)
@@ -172,6 +174,11 @@ VERIFICATION_COMMENT_MARKER = "## Prod verification"
 # The fixer's branch naming contract — how PR webhook events map back to
 # their issue without a GitHub round-trip.
 FIX_BRANCH_PREFIX = "fix/issue-"
+
+# The fixer workflow's file name — the watchdog lists this workflow's runs
+# to detect dispatches that GitHub lost (stuck queued / startup_failure).
+# Existence of the file under .github/workflows is gate-checked.
+FIXER_WORKFLOW_FILE = "claude-issue-fix.yml"
 
 
 class FeedbackEventOut(BaseModel):
@@ -244,6 +251,40 @@ class FeedbackMetricsOut(BaseModel):
     latency: dict[str, dict[str, float | None]]
     weekly: list[dict]
     runs: dict[str, dict[str, int]]
+    generated_at: datetime
+
+
+# ------------------------------------------------- dispatch watchdog (ops)
+# Post-Phase-14: a fixer dispatch is a LABEL — GitHub owns everything after
+# it. A GitHub Actions outage (observed live 2026-08-26: run stuck `queued`
+# + a `startup_failure` with zero jobs while the incident page reported a
+# major_outage) leaves the loop silently stalled. The watchdog makes that
+# state first-class: it detects dead dispatches, records FIX_STALLED /
+# FIX_RETRIED timeline events, and re-applies the trigger label once
+# GitHub recovers. `FixerOpsOut` is the portal's transparency contract.
+
+
+class FixerStallOut(BaseModel):
+    """One currently-stalled dispatch (latest watchdog verdict)."""
+
+    report_id: int
+    reason: str  # run_queued | run_died | dispatch_lost | cancel_forbidden | retries_exhausted
+    run_id: int | None = None
+    retries: int = 0
+    since: datetime | None = None
+    detail: dict | None = None
+
+
+class FixerOpsOut(BaseModel):
+    """Loop-health rollup for the /fixer portal banner.
+
+    `github_actions` is the live component status from githubstatus.com
+    ({status, incident, checked_at}) or None when the status API itself is
+    unreachable — unknown is reported as unknown, never guessed."""
+
+    github_actions: dict | None = None
+    stalls: list[FixerStallOut] = []
+    watchdog_enabled: bool = True
     generated_at: datetime
 
 
