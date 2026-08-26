@@ -4,6 +4,7 @@ self-healing loop, an on-demand triage trigger, and the approval flow
 Approve/Reject buttons are the web fallback — one shared transition)."""
 
 import secrets
+from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
@@ -21,6 +22,7 @@ from dosadash_api.services import (
     feedback_metrics,
     feedback_notify,
     feedback_triage_runner,
+    fixer_watchdog,
 )
 from dosadash_api.services.ai_client import AIClient, get_ai_client
 from dosadash_api.services.github_client import GitHubClient, GitHubError, get_github_client
@@ -36,6 +38,8 @@ from dosadash_shared import (
     FeedbackMetricsOut,
     FeedbackStatus,
     FeedbackType,
+    FixerOpsOut,
+    FixerStallOut,
     Role,
 )
 
@@ -89,6 +93,26 @@ async def feedback_metrics_rollup(
     rates, latency percentiles, weekly trend, run outcomes. Computed from
     the local lifecycle tables only (no GitHub round-trip)."""
     return await feedback_metrics.compute(session, window_days=days)
+
+
+@router.get("/ops", response_model=FixerOpsOut)
+async def feedback_ops(
+    session: SessionDep,
+    admin: User = AdminUser,
+) -> FixerOpsOut:
+    """Loop-health transparency (Actions-outage postmortem): the live
+    GitHub Actions component status (githubstatus.com, cached, best-effort
+    — None means honestly unknown) plus every currently-stalled fixer
+    dispatch as detected by the watchdog. The portal renders this as the
+    'what is happening behind the scenes' banner."""
+    gh_status = await fixer_watchdog.fetch_actions_status()
+    stalls = await fixer_watchdog.current_stalls(session)
+    return FixerOpsOut(
+        github_actions=gh_status,
+        stalls=[FixerStallOut(**s) for s in stalls],
+        watchdog_enabled=get_github_client().enabled,
+        generated_at=datetime.now(UTC).replace(tzinfo=None),
+    )
 
 
 @router.get("/{report_id}/events", response_model=FeedbackEventListOut)

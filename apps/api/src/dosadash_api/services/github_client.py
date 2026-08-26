@@ -16,6 +16,7 @@ touching the network (ai_client.py pattern).
 """
 
 import logging
+from typing import Any
 
 import httpx
 
@@ -62,6 +63,16 @@ class GitHubClient:
             raise GitHubError(f"GitHub call failed: {exc}") from exc
         return resp
 
+    @staticmethod
+    def _json(resp: httpx.Response, context: str) -> Any:
+        """Parse a response body, folding non-JSON (proxy 502 HTML, empty
+        bodies mid-outage) into GitHubError so every caller degrades on
+        ONE exception type instead of leaking ValueError."""
+        try:
+            return resp.json()
+        except ValueError as exc:
+            raise GitHubError(f"{context}: non-JSON response (HTTP {resp.status_code})") from exc
+
     async def _ensure_labels(self, labels: list[str]) -> None:
         """Create registry labels lazily so a fresh repo needs no manual setup."""
         for name in labels:
@@ -88,7 +99,7 @@ class GitHubClient:
         )
         if resp.status_code != 201:
             raise GitHubError(f"issue create failed: HTTP {resp.status_code}")
-        return int(resp.json()["number"])
+        return int(self._json(resp, "issue create")["number"])
 
     async def add_labels(self, issue_number: int, labels: list[str]) -> None:
         """Append labels to an existing issue (triage/approval flips)."""
@@ -127,7 +138,7 @@ class GitHubClient:
         resp = await self._request("GET", f"/repos/{self._repo}/issues/{issue_number}")
         if resp.status_code != 200:
             raise GitHubError(f"issue get failed: HTTP {resp.status_code}")
-        data = resp.json()
+        data = self._json(resp, "issue get")
         return {
             "state": data.get("state"),
             "state_reason": data.get("state_reason"),
@@ -147,7 +158,7 @@ class GitHubClient:
         )
         if resp.status_code != 200:
             raise GitHubError(f"pr lookup failed: HTTP {resp.status_code}")
-        pulls = resp.json()
+        pulls = self._json(resp, "pr lookup")
         if not pulls:
             return None
         pr = pulls[0]
@@ -157,6 +168,47 @@ class GitHubClient:
             "merged_at": pr.get("merged_at"),
             "html_url": pr.get("html_url"),
         }
+
+    # -------------------------------------------- workflow runs (watchdog)
+    # The dispatch watchdog needs run-level truth GitHub webhooks cannot
+    # carry: a run stuck `queued` or dead with `startup_failure` (zero
+    # jobs, zero logs — observed live during the 2026-08-26 Actions
+    # outage) never triggers any webhook and never self-reports through
+    # the run-ingest step. Listing runs works with the repo-scoped PAT on
+    # a public repo; cancelling additionally needs `actions:write`, so
+    # cancel degrades honestly (False, never raises for permission).
+
+    async def list_workflow_runs(self, workflow_file: str, *, per_page: int = 30) -> list[dict]:
+        """Recent runs of one workflow file, newest first."""
+        resp = await self._request(
+            "GET",
+            f"/repos/{self._repo}/actions/workflows/{workflow_file}/runs?per_page={per_page}",
+        )
+        if resp.status_code != 200:
+            raise GitHubError(f"workflow runs list failed: HTTP {resp.status_code}")
+        return [
+            {
+                "id": run.get("id"),
+                "status": run.get("status"),  # queued | in_progress | completed
+                "conclusion": run.get("conclusion"),
+                "display_title": run.get("display_title"),
+                "event": run.get("event"),
+                "created_at": run.get("created_at"),
+            }
+            for run in self._json(resp, "workflow runs list").get("workflow_runs", [])
+        ]
+
+    async def cancel_workflow_run(self, run_id: int) -> bool:
+        """Cancel one run. True on accepted; False when the token lacks
+        `actions:write` (403) or the run can no longer be cancelled (409)
+        — callers treat False as 'do not redispatch yet'."""
+        resp = await self._request("POST", f"/repos/{self._repo}/actions/runs/{run_id}/cancel")
+        if resp.status_code == 202:
+            return True
+        if resp.status_code in (403, 409):
+            logger.warning("run cancel refused (run %s): HTTP %s", run_id, resp.status_code)
+            return False
+        raise GitHubError(f"run cancel failed: HTTP {resp.status_code}")
 
 
 def get_github_client() -> GitHubClient:

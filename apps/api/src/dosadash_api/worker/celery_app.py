@@ -80,4 +80,13 @@ app.conf.beat_schedule = {
         "task": "feedback.sync_github",
         "schedule": crontab(minute="5-59/15"),
     },
+    # Post-Phase-14 (Actions-outage postmortem): fixer dispatch watchdog —
+    # detects dispatches GitHub lost (stuck-queued / startup_failure runs),
+    # records FIX_STALLED transparency events, and auto-resumes by
+    # re-applying the trigger label once GitHub Actions is healthy again.
+    # Cheap: exits on one DB query when nothing is dispatched.
+    "feedback-fixer-watchdog": {
+        "task": "feedback.fixer_watchdog",
+        "schedule": crontab(minute="2-59/5"),
+    },
 }

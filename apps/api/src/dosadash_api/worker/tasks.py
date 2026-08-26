@@ -564,3 +564,38 @@ def feedback_sync_github(self: Any, limit: int = 30) -> dict[str, Any]:
         raise self.retry(exc=exc) from exc
     logger.info("feedback_sync_github %s", result)
     return result
+
+
+# ------------------------------------------- fixer dispatch watchdog (post-Phase-14)
+
+
+async def _fixer_watchdog(limit: int) -> dict[str, Any]:
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from dosadash_api.services import fixer_watchdog
+    from dosadash_api.services.github_client import get_github_client
+
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            return await fixer_watchdog.watch(session, get_github_client(), limit=limit)
+    finally:
+        await engine.dispose()
+
+
+@app.task(name="feedback.fixer_watchdog", bind=True, max_retries=0)
+def feedback_fixer_watchdog(self: Any, limit: int = 20) -> dict[str, Any]:
+    """Every 5 min: detect fixer dispatches GitHub silently lost (runs
+    stuck queued / startup_failure — 2026-08-26 Actions-outage postmortem)
+    → FIX_STALLED transparency events + auto-resume by re-applying the
+    trigger label once Actions is healthy. Zero dispatched reports = one
+    cheap DB query, no GitHub calls. No celery retry and no raise: the
+    next beat IS the retry — a transient failure (DB restart, GitHub
+    flaking mid-outage) is one warning line, never a crash-looping task."""
+    try:
+        result = asyncio.run(_fixer_watchdog(limit))
+    except Exception:  # noqa: BLE001 — watchdog must never crash the beat
+        logger.exception("feedback_fixer_watchdog failed — next beat retries")
+        return {"error": "watchdog pass failed", "examined": 0, "stalled": 0, "retried": 0}
+    logger.info("feedback_fixer_watchdog %s", result)
+    return result

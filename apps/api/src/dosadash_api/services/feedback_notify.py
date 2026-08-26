@@ -30,8 +30,10 @@ Stage = FeedbackEventStage
 
 # Stages that warrant an audible ping (a reply to the anchor card).
 # NEEDS_APPROVAL is deliberately absent — it has its own decision card.
+# FIX_STALLED pings once per stall (the watchdog dedupes recording), so a
+# GitHub outage is NEWS, not a heartbeat.
 LIFECYCLE_PING_STAGES = frozenset(
-    {Stage.ESCALATED, Stage.VERIFIED, Stage.REOPENED, Stage.FIX_FAILED}
+    {Stage.ESCALATED, Stage.VERIFIED, Stage.REOPENED, Stage.FIX_FAILED, Stage.FIX_STALLED}
 )
 
 # The anchor renders at most this many timeline rows (oldest dropped).
@@ -110,6 +112,11 @@ def _timeline_note(stage: str, payload: dict | None) -> str | None:
         return f"issue #{issue}" if issue else None
     if stage == Stage.SYNCED:
         return f"{payload.get('from')} → {payload.get('to')}"
+    if stage == Stage.FIX_STALLED:
+        return payload.get("reason")
+    if stage == Stage.FIX_RETRIED:
+        attempt = payload.get("attempt")
+        return f"attempt {attempt}" if attempt else None
     return None
 
 

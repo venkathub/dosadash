@@ -68,6 +68,18 @@ type Metrics = {
   runs: Record<string, Record<string, number>>;
 };
 
+type Ops = {
+  github_actions: { status: string; incident: string | null; checked_at: string } | null;
+  stalls: {
+    report_id: number;
+    reason: string;
+    run_id: number | null;
+    retries: number;
+    since: string | null;
+  }[];
+  watchdog_enabled: boolean;
+};
+
 /* ------------------------------------------------------- api helper */
 
 const TOKEN_KEY = "fixer_token";
@@ -132,6 +144,8 @@ const STAGE_LABEL: Record<string, string> = {
   APPROVED: "✅ Approved",
   REJECTED: "🚫 Rejected",
   FIX_STARTED: "🤖 AI fixer dispatched",
+  FIX_STALLED: "⏳ Fixer run stalled on GitHub",
+  FIX_RETRIED: "🔁 Fixer re-dispatched by watchdog",
   RCA_POSTED: "🧠 Root cause posted",
   ESCALATED: "🛑 Fixer escalated",
   FIX_FAILED: "💥 Fixer run failed",
@@ -316,6 +330,7 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [reports, setReports] = useState<Report[]>([]);
   const [repo, setRepo] = useState("");
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [ops, setOps] = useState<Ops | null>(null);
   const [feed, setFeed] = useState<{ at: number; text: string }[]>([]);
   const [connected, setConnected] = useState(false);
   const [selected, setSelected] = useState<Report | null>(null);
@@ -336,6 +351,13 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "load failed");
+    }
+    // Loop health is additive transparency — its failure must never blank
+    // the board (older api without /ops, transient 5xx…).
+    try {
+      setOps(await api<Ops>(token, "/admin/feedback/ops"));
+    } catch {
+      setOps(null);
     }
   }, [token]);
 
@@ -407,6 +429,7 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
 
   const closedReports = reports.filter((r) => CLOSED_STATUSES.includes(r.status));
   const role = roleFromToken(token);
+  const stalledIds = new Set((ops?.stalls ?? []).map((s) => s.report_id));
 
   return (
     <main className="min-h-screen bg-indigo-950 pb-16 text-indigo-100">
@@ -442,6 +465,8 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
 
       <div className="mx-auto max-w-[1380px] px-4">
         <ErrorBar msg={error} />
+
+        {ops && <LoopHealthBanner ops={ops} />}
 
         {metrics && <MetricsStrip metrics={metrics} />}
 
@@ -483,9 +508,20 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
                         <span className="tnum text-xs font-bold">
                           {report.type === "BUG" ? "🐞" : "✨"} #{report.id}
                         </span>
-                        <Badge tone={fixerTone(report.status)} surface="light">
-                          {report.status}
-                        </Badge>
+                        <span className="flex items-center gap-1">
+                          {stalledIds.has(report.id) && (
+                            <Badge
+                              tone="warning"
+                              surface="light"
+                              title="Fixer dispatch stalled on GitHub — the watchdog will auto-retry"
+                            >
+                              ⏳ stalled
+                            </Badge>
+                          )}
+                          <Badge tone={fixerTone(report.status)} surface="light">
+                            {report.status}
+                          </Badge>
+                        </span>
                       </div>
                       <p className="mt-1 line-clamp-2 text-[13px] font-semibold">{report.title}</p>
                       <p className="mt-1 text-[11px] text-muted">
@@ -588,6 +624,58 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
 }
 
 /* --------------------------------------------------------- metrics */
+
+/** Human vocabulary for watchdog stall reasons (payload.reason). */
+const STALL_REASON: Record<string, string> = {
+  run_queued: "run stuck in GitHub's queue",
+  run_died: "run died before starting (startup failure)",
+  dispatch_lost: "GitHub never started a run",
+  cancel_forbidden: "stuck run can't be cancelled (token lacks actions:write)",
+  retries_exhausted: "auto-retry limit reached — needs a human",
+};
+
+/** Loop-health transparency (Actions-outage postmortem): when GitHub is
+ *  down or a dispatch stalled, say so — the board must never look idle
+ *  while a fix is silently going nowhere. */
+function LoopHealthBanner({ ops }: { ops: Ops }) {
+  const gh = ops.github_actions;
+  const outage = gh !== null && gh.status !== "operational";
+  if (!outage && ops.stalls.length === 0) return null;
+  return (
+    <div className="mt-5 grid gap-2">
+      {outage && gh && (
+        <div className="rounded-lg border-2 border-chili bg-chili/15 px-3 py-2 text-sm text-[#FF8B8B]">
+          <span className="font-display font-bold">
+            🛑 GitHub Actions: {gh.status.replace(/_/g, " ")}
+          </span>
+          {gh.incident && <span className="text-indigo-100"> — “{gh.incident}”</span>}
+          <span className="block text-xs text-indigo-200">
+            Fix runs can’t execute right now. The watchdog is tracking this and will
+            re-dispatch stalled fixes automatically once GitHub recovers.
+          </span>
+        </div>
+      )}
+      {ops.stalls.map((stall) => (
+        <div
+          key={stall.report_id}
+          className="rounded-lg border-2 border-turmeric-600 bg-turmeric-500/10 px-3 py-2 text-sm text-turmeric-400"
+        >
+          <span className="font-display font-bold">
+            ⏳ Report #{stall.report_id} — fixer dispatch stalled
+          </span>
+          <span className="block text-xs text-indigo-200">
+            {STALL_REASON[stall.reason] ?? stall.reason}
+            {stall.run_id !== null && ` (run ${stall.run_id})`} · retries {stall.retries}/3
+            {stall.since && ` · since ${stamp(stall.since)}`}
+            {stall.reason === "retries_exhausted"
+              ? " · auto-retry stopped — re-approve or investigate the workflow"
+              : " · auto-retry armed"}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function MetricsStrip({ metrics }: { metrics: Metrics }) {
   // Report/verified counts come from totals_by_status (current status of every
@@ -750,6 +838,14 @@ function ReportDrawer({
                   <span>{STAGE_LABEL[event.stage] ?? event.stage}</span>
                   {event.payload?.verdict !== undefined && (
                     <span className="text-[11px] text-muted">({String(event.payload.verdict)})</span>
+                  )}
+                  {event.payload?.reason !== undefined && (
+                    <span className="text-[11px] text-muted">({String(event.payload.reason)})</span>
+                  )}
+                  {event.payload?.attempt !== undefined && (
+                    <span className="text-[11px] text-muted">
+                      (attempt {String(event.payload.attempt)})
+                    </span>
                   )}
                   {event.payload?.pr_number !== undefined && event.payload?.pr_number !== null && (
                     <span className="text-[11px] text-muted">
