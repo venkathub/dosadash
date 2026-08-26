@@ -21,7 +21,6 @@ import {
   ErrorBar,
   Input,
   Modal,
-  SectionHeading,
   cx,
   type BadgeTone,
 } from "../components/ui";
@@ -61,6 +60,7 @@ type LifecycleEvent = {
 
 type Metrics = {
   window_days: number;
+  totals_by_status: Record<string, number>;
   funnel: Record<string, number>;
   rates: Record<string, number | null>;
   latency: Record<string, { p50: number | null; p90: number | null; count: number }>;
@@ -190,6 +190,17 @@ function pct(r: number | null): string {
   return r === null ? "—" : `${Math.round(r * 1000) / 10}%`;
 }
 
+/** Display-only: read the role claim out of the stored JWT for the header chip
+ *  (same pattern as the /admin shell — never used for authorization). */
+function roleFromToken(token: string): string | null {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return typeof payload.role === "string" ? payload.role : null;
+  } catch {
+    return null;
+  }
+}
+
 /* ------------------------------------------------------------ page */
 
 export default function FixerPortal() {
@@ -206,53 +217,83 @@ export default function FixerPortal() {
 
   const requestOtp = async () => {
     setError(null);
-    const r = await fetch("/api/v1/auth/otp/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone }),
-    });
-    const body = await r.json();
-    if (!r.ok) return setError(body.detail ?? "OTP request failed");
-    setDemoOtp(body.demo_otp);
+    try {
+      const r = await fetch("/api/v1/auth/otp/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      // A mid-deploy 502 from the proxy has an empty/HTML body — .json()
+      // would throw and leave the button silently dead (caught live in prod).
+      const body = await r.json().catch(() => null);
+      if (!r.ok) return setError(body?.detail ?? `OTP request failed (HTTP ${r.status}) — retry in a moment`);
+      setDemoOtp(body?.demo_otp ?? null);
+    } catch {
+      setError("Network error — check your connection and retry.");
+    }
   };
 
   const verifyOtp = async () => {
     setError(null);
-    const r = await fetch("/api/v1/auth/otp/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, otp }),
-    });
-    const body = await r.json();
-    if (!r.ok) return setError(body.detail ?? "verification failed");
-    if (body.user.role !== "admin" && body.user.role !== "owner") {
-      return setError(`This account has role '${body.user.role}' — Fixer Ops needs admin access.`);
+    try {
+      const r = await fetch("/api/v1/auth/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, otp }),
+      });
+      const body = await r.json().catch(() => null);
+      if (!r.ok) return setError(body?.detail ?? `Verification failed (HTTP ${r.status}) — retry in a moment`);
+      if (body.user.role !== "admin" && body.user.role !== "owner") {
+        return setError(`This account has role '${body.user.role}' — Fixer Ops needs admin access.`);
+      }
+      localStorage.setItem(TOKEN_KEY, body.access_token);
+      setToken(body.access_token);
+    } catch {
+      setError("Network error — check your connection and retry.");
     }
-    localStorage.setItem(TOKEN_KEY, body.access_token);
-    setToken(body.access_token);
   };
 
   if (!token) {
     return (
-      <main className="mx-auto grid min-h-screen max-w-sm place-content-center gap-4 px-4">
-        <SectionHeading className="text-center">🛠 Fixer Ops</SectionHeading>
-        <p className="text-center text-sm text-muted">
-          The self-healing loop, live. Admin or owner sign-in.
-        </p>
-        <Card className="grid gap-3 p-4">
+      <main className="flex min-h-screen items-center justify-center bg-indigo-950 text-indigo-100">
+        <Card tone="dark" className="w-80 space-y-3 p-6">
+          <div className="font-display text-lg font-bold tracking-wide text-white">
+            🛠 DOSADASH <span className="text-magenta-400">FIXER OPS</span>
+          </div>
+          <p className="text-sm text-indigo-200">
+            The self-healing loop, live. Admin or owner sign-in.
+          </p>
           <Input
+            tone="dark"
+            className="w-full py-2"
             placeholder="Phone (+91…)"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && requestOtp()}
           />
-          <Btn variant="indigo" onClick={requestOtp}>
-            Send OTP
-          </Btn>
-          {demoOtp && (
+          {demoOtp === null ? (
+            <Btn variant="turmeric" className="w-full py-2" onClick={requestOtp}>
+              Send OTP
+            </Btn>
+          ) : (
             <>
-              <p className="text-xs text-muted">Demo OTP: {demoOtp}</p>
-              <Input placeholder="OTP" value={otp} onChange={(e) => setOtp(e.target.value)} />
-              <Btn variant="turmeric" onClick={verifyOtp}>
+              <p className="rounded-lg border-[1.5px] border-turmeric-600 bg-turmeric-500/15 px-2 py-1 text-xs text-turmeric-400">
+                Demo OTP: <b className="font-display">{demoOtp}</b>
+              </p>
+              <Input
+                tone="dark"
+                className="w-full py-2"
+                placeholder="6-digit OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && otp.length === 6 && verifyOtp()}
+              />
+              <Btn
+                variant="turmeric"
+                className="w-full py-2"
+                disabled={otp.length !== 6}
+                onClick={verifyOtp}
+              >
                 Sign in
               </Btn>
             </>
@@ -365,28 +406,34 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
   };
 
   const closedReports = reports.filter((r) => CLOSED_STATUSES.includes(r.status));
+  const role = roleFromToken(token);
 
   return (
-    <main className="min-h-screen bg-indigo-900 pb-16 text-offwhite">
-      <header className="sticky top-0 z-20 border-b-[3px] border-turmeric-500 bg-indigo-950 px-4 py-3">
+    <main className="min-h-screen bg-indigo-950 pb-16 text-indigo-100">
+      {/* Backoffice-family shell: indigo-900 header + 3px magenta accent
+          (magenta = admin surfaces; turmeric stays customer/KDS — docs/13 §3). */}
+      <header className="sticky top-0 z-20 border-b-[3px] border-magenta-500 bg-indigo-900 px-4 py-3">
         <div className="mx-auto flex max-w-[1380px] items-center justify-between gap-3">
           <div className="flex items-baseline gap-3">
-            <span className="font-display text-lg font-bold tracking-[0.12em]">
-              🛠 DOSADASH FIXER OPS
+            <span className="font-display text-lg font-bold tracking-wide text-white">
+              🛠 DOSADASH <span className="text-magenta-400">FIXER OPS</span>
             </span>
-            <span
-              className={cx(
-                "inline-block h-2.5 w-2.5 rounded-full",
-                connected ? "bg-veg" : "bg-chili",
-              )}
-              title={connected ? "live" : "reconnecting"}
-            />
+            {connected ? (
+              <span className="font-display text-[12px] font-bold uppercase tracking-[0.1em] text-[#5BD69B]">
+                <span className="animate-pulse-soft">●</span> live
+              </span>
+            ) : (
+              <span className="font-display text-[12px] font-bold uppercase tracking-[0.1em] text-turmeric-400">
+                ○ reconnecting…
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            {role && <Badge tone="brass">{role}</Badge>}
             <a href="/admin" className="text-xs text-indigo-200 underline-offset-2 hover:underline">
               Backoffice ↗
             </a>
-            <Btn variant="paper" size="sm" onClick={onLogout}>
+            <Btn variant="ghost" size="sm" onClick={onLogout}>
               Logout
             </Btn>
           </div>
@@ -398,18 +445,25 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
 
         {metrics && <MetricsStrip metrics={metrics} />}
 
-        <div className="mt-6 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <div className="mt-6 grid items-start gap-3 md:grid-cols-3 xl:grid-cols-6">
           {LANES.map((lane) => {
             const laneReports = reports.filter((r) => lane.statuses.includes(r.status));
             return (
-              <section key={lane.label} className="min-w-0">
-                <h2 className="mb-2 font-display text-[13px] font-bold uppercase tracking-[0.1em] text-indigo-200">
-                  {lane.label}{" "}
-                  <span className="tnum text-indigo-300">({laneReports.length})</span>
-                </h2>
+              <section
+                key={lane.label}
+                className="min-w-0 rounded-xl border-2 border-indigo-700 bg-indigo-900 p-3"
+              >
+                <div className="mb-3 flex items-center justify-between gap-2 px-1">
+                  <h2 className="font-display text-[11px] font-bold uppercase tracking-[0.14em] text-turmeric-400">
+                    {lane.label}
+                  </h2>
+                  <span className="tnum min-w-[30px] rounded-full bg-turmeric-500 px-2.5 text-center font-display text-[13px] font-bold text-indigo-900">
+                    {laneReports.length}
+                  </span>
+                </div>
                 <div className="grid gap-2">
                   {laneReports.length === 0 && (
-                    <div className="rounded-lg border-2 border-dashed border-indigo-700 p-3 text-center text-xs text-indigo-300">
+                    <div className="rounded-lg border-2 border-dashed border-indigo-600 p-3 text-center text-xs text-indigo-300">
                       —
                     </div>
                   )}
@@ -422,7 +476,7 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") setSelected(report);
                       }}
-                      className="relative cursor-pointer overflow-hidden rounded-lg border-2 border-ink bg-offwhite p-3 pl-4 text-left text-ink shadow-pop transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta-500"
+                      className="relative cursor-pointer overflow-hidden rounded-lg border-2 border-ink bg-offwhite p-3 pl-4 text-left text-ink shadow-pop-dark transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta-500"
                     >
                       <span className={cx("absolute inset-y-0 left-0 w-[6px]", lane.accent)} />
                       <div className="flex items-center justify-between gap-2">
@@ -473,7 +527,7 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
 
         {feed.length > 0 && (
           <section className="mt-8">
-            <h2 className="mb-2 font-display text-[13px] font-bold uppercase tracking-[0.1em] text-indigo-200">
+            <h2 className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-turmeric-400">
               📡 Live feed
             </h2>
             <div className="grid gap-1">
@@ -495,7 +549,7 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
 
         {closedReports.length > 0 && (
           <section className="mt-8">
-            <h2 className="mb-2 font-display text-[13px] font-bold uppercase tracking-[0.1em] text-indigo-300">
+            <h2 className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-300">
               🗂 Closed ({closedReports.length})
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -536,17 +590,22 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
 /* --------------------------------------------------------- metrics */
 
 function MetricsStrip({ metrics }: { metrics: Metrics }) {
+  // Report/verified counts come from totals_by_status (current status of every
+  // report in the window) — NOT the event funnel: reports that predate the
+  // feedback_events table have no lifecycle events, so the funnel undercounts
+  // history and would contradict the board right next to it.
+  const totalReports = Object.values(metrics.totals_by_status ?? {}).reduce((a, b) => a + b, 0);
   const cards: { label: string; value: string; sub?: string }[] = [
     {
       label: "Reports",
-      value: String(metrics.funnel.received ?? 0),
+      value: String(totalReports),
       sub: `${metrics.window_days}d window`,
     },
     { label: "Auto-fix rate", value: pct(metrics.rates.auto_fix_rate) },
     { label: "Merge rate", value: pct(metrics.rates.merge_rate) },
     {
       label: "Verified",
-      value: String(metrics.funnel.verified ?? 0),
+      value: String(metrics.totals_by_status?.VERIFIED ?? 0),
       sub: `reopen ${pct(metrics.rates.reopen_rate)}`,
     },
     {
@@ -570,13 +629,13 @@ function MetricsStrip({ metrics }: { metrics: Metrics }) {
       {cards.map((card) => (
         <div
           key={card.label}
-          className="rounded-lg border-2 border-ink bg-offwhite p-3 text-ink shadow-pop"
+          className="rounded-xl border-2 border-indigo-700 bg-indigo-900 p-3"
         >
-          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+          <p className="font-display text-[10.5px] font-bold uppercase tracking-[0.12em] text-turmeric-400">
             {card.label}
           </p>
-          <p className="tnum font-display text-xl font-bold">{card.value}</p>
-          {card.sub && <p className="tnum text-[11px] text-muted">{card.sub}</p>}
+          <p className="tnum font-display text-xl font-bold text-white">{card.value}</p>
+          {card.sub && <p className="tnum text-[11px] text-indigo-300">{card.sub}</p>}
         </div>
       ))}
     </section>
