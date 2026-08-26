@@ -38,7 +38,8 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import inspect as sa_inspect
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.db.models import FeedbackEvent, FeedbackReport
@@ -119,7 +120,9 @@ async def fetch_actions_status(*, force: bool = False) -> dict[str, Any] | None:
                 "incident": incident,
                 "checked_at": datetime.now(UTC).replace(tzinfo=None).isoformat(),
             }
-    except (httpx.HTTPError, ValueError):
+    except Exception:  # noqa: BLE001 — best-effort probe: any failure
+        # (network, non-JSON body, unexpected shape) is "unknown", never
+        # an exception that aborts a watchdog pass.
         logger.warning("githubstatus fetch failed — Actions health unknown")
         result = None
     _status_cache = (now, result)
@@ -300,10 +303,39 @@ async def _record_stall(
     return True
 
 
+# Session-scoped Postgres advisory lock: two overlapping watchdog passes
+# (a slow GitHub can stretch one past the 5-min beat) would both read the
+# same retry count and DOUBLE-DISPATCH paid fixer runs. Single-flight is a
+# cost control, not a nicety. Key = arbitrary constant, project-unique.
+_ADVISORY_LOCK_KEY = 0xD05A_F17E
+
+
 async def watch(session: AsyncSession, github: GitHubClient, *, limit: int = 20) -> dict[str, Any]:
-    """One watchdog pass; per-report commits (sync_github pattern)."""
+    """One watchdog pass; per-report commits (sync_github pattern).
+    Single-flight via a pg advisory lock — an overlapping pass returns
+    immediately instead of double-spending redispatch attempts."""
     if not github.enabled:
         return {"examined": 0, "stalled": 0, "retried": 0, "skipped": 0, "disabled": True}
+    locked = await session.scalar(
+        text("SELECT pg_try_advisory_lock(:key)"), {"key": _ADVISORY_LOCK_KEY}
+    )
+    if not locked:
+        logger.info("watchdog pass already running — skipping (single-flight)")
+        return {"examined": 0, "stalled": 0, "retried": 0, "skipped": 0, "overlapped": True}
+    try:
+        return await _watch_locked(session, github, limit=limit)
+    finally:
+        try:
+            await session.execute(
+                text("SELECT pg_advisory_unlock(:key)"), {"key": _ADVISORY_LOCK_KEY}
+            )
+        except Exception:  # noqa: BLE001 — lock dies with the session anyway
+            pass
+
+
+async def _watch_locked(
+    session: AsyncSession, github: GitHubClient, *, limit: int = 20
+) -> dict[str, Any]:
     reports = (
         (
             await session.execute(
@@ -336,6 +368,14 @@ async def watch(session: AsyncSession, github: GitHubClient, *, limit: int = 20)
 
     now = datetime.now(UTC).replace(tzinfo=None)
     for report in reports:
+        # a rollback in a previous iteration expires every loaded row —
+        # refresh before touching attributes (async lazy-load would raise).
+        if sa_inspect(report).expired:
+            try:
+                await session.refresh(report)
+            except Exception:  # noqa: BLE001
+                summary["skipped"] += 1
+                continue
         summary["examined"] += 1
         dispatched_at, retries, latest_watchdog = await _dispatch_history(session, report.id)
         if dispatched_at is None:
@@ -360,7 +400,12 @@ async def watch(session: AsyncSession, github: GitHubClient, *, limit: int = 20)
                     summary["stalled"] += 1
             elif action in ("REDISPATCH", "CANCEL_AND_REDISPATCH"):
                 if action == "CANCEL_AND_REDISPATCH":
-                    cancelled = await github.cancel_workflow_run(evidence["run_id"])
+                    stuck_run_id = evidence.get("run_id")
+                    cancelled = (
+                        await github.cancel_workflow_run(stuck_run_id)
+                        if stuck_run_id is not None
+                        else False
+                    )
                     if not cancelled:
                         # actions:write missing or run un-cancellable —
                         # be transparent, do NOT race a zombie run.
@@ -376,8 +421,6 @@ async def watch(session: AsyncSession, github: GitHubClient, *, limit: int = 20)
                         continue
                 issue = await github.get_issue(report.github_issue_number)
                 label = _trigger_label(issue["labels"], Status(report.status))
-                await github.remove_label(report.github_issue_number, label)
-                await github.add_labels(report.github_issue_number, [label])
                 payload = {
                     "attempt": retries + 1,
                     "label": label,
@@ -386,10 +429,32 @@ async def watch(session: AsyncSession, github: GitHubClient, *, limit: int = 20)
                     else None,
                     "reason": evidence.get("reason"),
                 }
+                # COST-CRITICAL ORDERING: a redispatch launches a PAID
+                # fixer run. Record + COMMIT the FIX_RETRIED attempt
+                # BEFORE touching the label (Phase-8 batch precedent —
+                # local work commits before the provider call), so the
+                # MAX_RETRIES cap can never under-count: a crash between
+                # commit and dispatch wastes one attempt, never spawns
+                # an unaccounted run. The webhook's FIX_STARTED echo is
+                # the confirmation the dispatch actually landed.
                 feedback_events.record(
                     session, report, Stage.FIX_RETRIED, actor="watchdog", payload=payload
                 )
                 await session.commit()
+                try:
+                    await github.remove_label(report.github_issue_number, label)
+                    await github.add_labels(report.github_issue_number, [label])
+                except GitHubError as exc:
+                    # attempt consumed, dispatch failed — the stall will
+                    # re-classify next beat and retry with n-1 budget.
+                    summary["skipped"] += 1
+                    logger.warning(
+                        "watchdog redispatch failed for report #%s (attempt %s counted): %s",
+                        report.id,
+                        retries + 1,
+                        exc,
+                    )
+                    continue
                 await feedback_events.publish(report.id, Stage.FIX_RETRIED, detail=payload)
                 await feedback_notify.notify_stage(session, report, Stage.FIX_RETRIED)
                 summary["retried"] += 1
@@ -399,10 +464,15 @@ async def watch(session: AsyncSession, github: GitHubClient, *, limit: int = 20)
                     retries + 1,
                     label,
                 )
-        except GitHubError as exc:
+        except Exception as exc:  # noqa: BLE001 — per-report isolation:
+            # one poisoned row (GitHub error, DB hiccup, bad payload)
+            # must never abort recovery for every other report.
             summary["skipped"] += 1
-            logger.warning("watchdog skipped report #%s: %s", report.id, exc)
-            await session.rollback()
+            logger.warning("watchdog skipped report #%s: %s", report.id, exc, exc_info=True)
+            try:
+                await session.rollback()
+            except Exception:  # noqa: BLE001
+                pass
     return summary
 
 

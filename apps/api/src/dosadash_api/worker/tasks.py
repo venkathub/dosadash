@@ -589,8 +589,13 @@ def feedback_fixer_watchdog(self: Any, limit: int = 20) -> dict[str, Any]:
     stuck queued / startup_failure — 2026-08-26 Actions-outage postmortem)
     → FIX_STALLED transparency events + auto-resume by re-applying the
     trigger label once Actions is healthy. Zero dispatched reports = one
-    cheap DB query, no GitHub calls. No celery retry: the next beat IS the
-    retry."""
-    result = asyncio.run(_fixer_watchdog(limit))
+    cheap DB query, no GitHub calls. No celery retry and no raise: the
+    next beat IS the retry — a transient failure (DB restart, GitHub
+    flaking mid-outage) is one warning line, never a crash-looping task."""
+    try:
+        result = asyncio.run(_fixer_watchdog(limit))
+    except Exception:  # noqa: BLE001 — watchdog must never crash the beat
+        logger.exception("feedback_fixer_watchdog failed — next beat retries")
+        return {"error": "watchdog pass failed", "examined": 0, "stalled": 0, "retried": 0}
     logger.info("feedback_fixer_watchdog %s", result)
     return result

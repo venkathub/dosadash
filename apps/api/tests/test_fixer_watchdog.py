@@ -424,6 +424,148 @@ async def test_current_stalls_and_supersession(db_session: AsyncSession) -> None
     assert await fixer_watchdog.current_stalls(db_session) == []
 
 
+# --------------------------------------------- cost-safety error handling
+
+
+class ExplodingLabelsGitHub(FakeGitHub):
+    """Label re-add fails AFTER the retry attempt was committed."""
+
+    async def add_labels(self, issue_number: int, labels: list[str]) -> None:
+        from dosadash_api.services.github_client import GitHubError
+
+        raise GitHubError("label add failed: HTTP 502")
+
+
+async def test_failed_redispatch_still_consumes_the_attempt(
+    db_session: AsyncSession, monkeypatch
+) -> None:
+    """COST INVARIANT: the FIX_RETRIED attempt commits BEFORE the label
+    dispatch. A dispatch failure must consume budget (fewer paid runs on
+    crash, never more) — the cap can never under-count."""
+    report = _report()
+    db_session.add(report)
+    await db_session.commit()
+    await _dispatch_event(db_session, report)
+    _operational(monkeypatch)
+    github = ExplodingLabelsGitHub(
+        runs=[_live_run(run_id=9, status="completed", conclusion="startup_failure")]
+    )
+    summary = await fixer_watchdog.watch(db_session, github)
+    assert summary["retried"] == 0 and summary["skipped"] == 1
+    retried = (
+        (
+            await db_session.execute(
+                select(FeedbackEvent).where(
+                    FeedbackEvent.stage == FeedbackEventStage.FIX_RETRIED.value
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert len(retried) == 1  # attempt recorded despite the failed dispatch
+
+
+class ExplodingListGitHub(FakeGitHub):
+    async def get_issue(self, issue_number: int) -> dict:
+        raise RuntimeError("totally unexpected")  # NOT a GitHubError
+
+
+async def test_unexpected_error_isolates_per_report(db_session: AsyncSession, monkeypatch) -> None:
+    """A poisoned row (non-GitHubError) must be skipped, not abort the
+    whole pass — other reports' recovery continues next beat."""
+    report_a = _report()
+    report_b = _report(dedupe_hash="d" * 64, github_issue_number=139)
+    db_session.add_all([report_a, report_b])
+    await db_session.commit()
+    await _dispatch_event(db_session, report_a)
+    await _dispatch_event(db_session, report_b)
+    _operational(monkeypatch)
+    github = ExplodingListGitHub(
+        runs=[_live_run(run_id=9, status="completed", conclusion="startup_failure")]
+    )
+    summary = await fixer_watchdog.watch(db_session, github)
+    # both rows hit the exploding get_issue — both isolated, none fatal
+    assert summary["examined"] == 2
+    assert summary["skipped"] == 2
+
+
+async def test_status_probe_failure_never_raises(monkeypatch) -> None:
+    """githubstatus.com being down (or returning garbage) is 'unknown',
+    never an exception that kills a watchdog pass."""
+
+    class BoomClient:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def get(self, url):
+            raise RuntimeError("dns exploded")
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", BoomClient)
+    assert await fixer_watchdog.fetch_actions_status(force=True) is None
+
+
+async def test_watch_is_single_flight(db_session: AsyncSession, monkeypatch) -> None:
+    """Two overlapping passes must never both dispatch (paid-run double
+    spend) — the advisory lock makes the second a no-op."""
+    report = _report()
+    db_session.add(report)
+    await db_session.commit()
+    await _dispatch_event(db_session, report)
+    _operational(monkeypatch)
+
+    from sqlalchemy import text
+
+    # simulate a concurrent pass holding the lock on ANOTHER session
+    other = await db_session.bind.connect()
+    await other.execute(
+        text("SELECT pg_advisory_lock(:key)"),
+        {"key": fixer_watchdog._ADVISORY_LOCK_KEY},
+    )
+    try:
+        github = FakeGitHub(
+            runs=[_live_run(run_id=9, status="completed", conclusion="startup_failure")]
+        )
+        summary = await fixer_watchdog.watch(db_session, github)
+        assert summary.get("overlapped") is True
+        assert summary["retried"] == 0
+        assert github.list_calls == 0  # never even talked to GitHub
+    finally:
+        await other.execute(
+            text("SELECT pg_advisory_unlock(:key)"),
+            {"key": fixer_watchdog._ADVISORY_LOCK_KEY},
+        )
+        await other.close()
+
+
+async def test_github_client_non_json_body_becomes_github_error() -> None:
+    """A proxy 502 HTML body (the portal-login bug class) must surface as
+    GitHubError — the one exception type every caller degrades on."""
+    import httpx
+
+    from dosadash_api.services.github_client import GitHubClient, GitHubError
+
+    client = GitHubClient("t", "o/r")
+
+    async def fake_request(method, path, json=None):
+        return httpx.Response(200, text="<html>502 Bad Gateway</html>")
+
+    client._request = fake_request  # type: ignore[method-assign]
+    try:
+        await client.list_workflow_runs("claude-issue-fix.yml")
+        raise AssertionError("expected GitHubError")
+    except GitHubError as exc:
+        assert "non-JSON" in str(exc)
+
+
 # ------------------------------------------------------------ ops endpoint
 
 
