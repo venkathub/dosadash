@@ -146,6 +146,7 @@ from dosadash_shared.feedback import (
     FixerRunOut,
     FixerStallOut,
     ReporterTier,
+    SentinelIncidentIn,
     TriageAssessment,
     TriageVerdict,
 )
@@ -618,6 +619,7 @@ __all__ = [
     "FixerRunOut",
     "FixerStallOut",
     "ReporterTier",
+    "SentinelIncidentIn",
     "TriageAssessment",
     "TriageVerdict",
     "REDACTED",

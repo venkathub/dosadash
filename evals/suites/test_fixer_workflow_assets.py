@@ -253,3 +253,55 @@ def test_reviewer_carries_fence_and_checklist_contract() -> None:
         assert zone in text, f"reviewer checklist must cover HUMAN_ONLY zone {zone}"
     # eval-coverage rule (Hard Rule 5) must be part of the checklist
     assert "evals" in text
+
+
+# ------------------------------------------- deploy canary (Phase 15 S4)
+
+DEPLOY_WORKFLOW = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "deploy.yml"
+
+
+def test_canary_probes_public_surface_within_bounds() -> None:
+    """The canary is deterministic and $0: bounded public-surface probing,
+    both breach modes (sustained + flapping) explicit in the script."""
+    text = DEPLOY_WORKFLOW.read_text()
+    doc = yaml.safe_load(text)
+    assert "canary" in doc["jobs"], "deploy must carry the post-deploy canary job"
+    assert doc["jobs"]["canary"]["needs"] == "deploy"
+    assert "https://" in doc["jobs"]["canary"]["env"]["BASE_URL"]
+    for path in ("/healthz", "/api/v1/menu"):
+        assert path in text, f"canary must probe {path}"
+    # bounded window: rounds × sleep ≈ 10 min, sustained-breach early stop
+    assert "seq 1 20" in text and "sleep 30" in text
+    assert '"$consecutive" -ge 3' in text, "sustained-outage breach rule"
+    assert "failures * 10" in text, "flapping (≥10% error rate) breach rule"
+
+
+def test_canary_rollback_is_mechanical_and_merge_gated() -> None:
+    """Rollback is a mechanical `git revert` PR that the FULL merge-gate
+    stack decides — never a direct push to main. The PAT is required (the
+    default token can't trigger CI → auto-merge would starve, Phase-13
+    lesson) and a revert war is structurally impossible."""
+    text = DEPLOY_WORKFLOW.read_text()
+    assert "git revert --no-edit" in text
+    assert "gh pr merge --auto --squash" in text
+    assert "git push origin" in text and "git push origin main" not in text
+    assert "CLAUDE_FIX_GH_TOKEN" in text, "default token would starve auto-merge of CI"
+    # oscillation guard: an auto-rollback deploy never auto-reverts again
+    assert '"revert: auto-rollback"' in text
+    assert "refus" in text  # refusing a revert war is stated, not implied
+    # breach fails the Deploy run → the verifier (success-only) stays away
+    assert "exit 1" in text
+
+
+def test_canary_incident_report_rides_the_sentinel_spine() -> None:
+    from typing import get_args
+
+    from dosadash_shared import SentinelIncidentIn
+
+    text = DEPLOY_WORKFLOW.read_text()
+    assert "secrets.CANARY_REPORT_URL" in text  # never a hardcoded URL
+    assert "X-Internal-Token" in text
+    assert "non-blocking" in text  # filing failure must never mask the rollback
+    kinds = get_args(SentinelIncidentIn.model_fields["kind"].annotation)
+    assert '"kind":"deploy_canary_failed"' in text
+    assert "deploy_canary_failed" in kinds, "workflow kind must stay in the shared allowlist"
