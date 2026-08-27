@@ -67,6 +67,13 @@ type Metrics = {
   weekly: { week: string; reports: number; fixed: number; verified: number }[];
   runs: Record<string, Record<string, number>>;
   spend?: Record<string, number | null>;
+  autonomy?: {
+    max_auto_effort: string;
+    merged_fixes: number;
+    verification_rate: number | null;
+    min_merged_fixes: number;
+    min_verification_rate: number;
+  } | null;
 };
 
 type Ops = {
@@ -689,7 +696,10 @@ function MetricsStrip({ metrics }: { metrics: Metrics }) {
     {
       label: "Reports",
       value: String(totalReports),
-      sub: `${metrics.window_days}d window`,
+      sub:
+        metrics.rates.sentinel_fp_rate != null
+          ? `${metrics.window_days}d · sentinel FP ${pct(metrics.rates.sentinel_fp_rate)}`
+          : `${metrics.window_days}d window`,
     },
     { label: "Auto-fix rate", value: pct(metrics.rates.auto_fix_rate) },
     { label: "Merge rate", value: pct(metrics.rates.merge_rate) },
@@ -722,6 +732,17 @@ function MetricsStrip({ metrics }: { metrics: Metrics }) {
           ? `$${metrics.spend.total_cost_usd.toFixed(2)}`
           : "—",
       sub: `cached ${pct(metrics.rates.fix_cached_token_share ?? null)}`,
+    },
+    {
+      // S6 capability ladder: the M rung is EARNED from loop outcomes
+      // (≥20 merged @ ≥90% verified), never configured.
+      label: "Autonomy",
+      value: metrics.autonomy?.max_auto_effort === "M" ? "S+M auto" : "S auto",
+      sub: metrics.autonomy
+        ? `${metrics.autonomy.merged_fixes}/${metrics.autonomy.min_merged_fixes} merged · verif ${pct(
+            metrics.autonomy.verification_rate,
+          )}`
+        : undefined,
     },
   ];
   return (

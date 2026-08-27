@@ -105,23 +105,50 @@ def _all_assessments():
 
 
 def test_high_risk_can_never_auto_fix() -> None:
-    """Property sweep over the full assessment × tier space: the only path
-    to AUTO_FIX is BUG-filed ∧ BUG-read ∧ S ∧ LOW ∧ actionable ∧ a HUMAN
-    reporter tier."""
+    """Property sweep over the full assessment × tier × ladder space: the
+    only path to AUTO_FIX is BUG-filed ∧ BUG-read ∧ effort within the
+    caller's ladder ceiling ∧ LOW ∧ actionable ∧ a HUMAN reporter tier."""
     for filed in ["BUG", "FEATURE"]:
         for tier in list(ReporterTier):
-            request = FeedbackTriageRequest(
-                report_id=1, type=filed, title="sweep", description="sweep", reporter_tier=tier
-            )
-            for assessment in _all_assessments():
-                verdict, _ = decide(request, assessment)
-                if verdict == TriageVerdict.AUTO_FIX:
-                    assert filed == "BUG"
-                    assert assessment.type == "BUG"
-                    assert assessment.effort == "S"
-                    assert assessment.risk == "LOW"
-                    assert assessment.actionable
-                    assert tier != ReporterTier.SYSTEM
+            for ceiling in ["S", "M"]:
+                request = FeedbackTriageRequest(
+                    report_id=1,
+                    type=filed,
+                    title="sweep",
+                    description="sweep",
+                    reporter_tier=tier,
+                    max_auto_effort=ceiling,
+                )
+                for assessment in _all_assessments():
+                    verdict, _ = decide(request, assessment)
+                    if verdict == TriageVerdict.AUTO_FIX:
+                        assert filed == "BUG"
+                        assert assessment.type == "BUG"
+                        allowed = {"S"} if ceiling == "S" else {"S", "M"}
+                        assert assessment.effort in allowed
+                        assert assessment.effort != "L", "L never auto-fixes at any rung"
+                        assert assessment.risk == "LOW"
+                        assert assessment.actionable
+                        assert tier != ReporterTier.SYSTEM
+
+
+def test_ladder_ceiling_is_never_widened() -> None:
+    """S6: the ceiling is the api's EARNED autonomy state — the policy may
+    only narrow it. Default requests (no ceiling field) stay S-only, so an
+    old caller can never accidentally grant M."""
+    assessment_m = TriageAssessment(
+        actionable=True, type="BUG", severity="LOW", effort="M", risk="LOW", summary="sweep"
+    )
+    base = {"report_id": 1, "type": "BUG", "title": "sweep", "description": "sweep"}
+    default_request = FeedbackTriageRequest(**base, reporter_tier="CUSTOMER")
+    assert default_request.max_auto_effort == "S", "ladder default must be the bottom rung"
+    verdict, violations = decide(default_request, assessment_m)
+    assert verdict == TriageVerdict.NEEDS_APPROVAL
+    assert violations
+
+    m_request = FeedbackTriageRequest(**base, reporter_tier="CUSTOMER", max_auto_effort="M")
+    verdict, _ = decide(m_request, assessment_m)
+    assert verdict == TriageVerdict.AUTO_FIX
 
 
 def test_system_tier_always_needs_approval() -> None:

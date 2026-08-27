@@ -60,7 +60,12 @@ def decide(
     """Deterministic policy — the ONLY writer of verdicts.
 
     Returns (verdict, violations). Violations record why an assessment was
-    denied AUTO_FIX so the admin tab can show the reasoning."""
+    denied AUTO_FIX so the admin tab can show the reasoning.
+
+    S6 capability ladder: `request.max_auto_effort` is a CEILING the api
+    computed from measured loop outcomes ("S" structural, "M" earned) —
+    the policy never widens it, and L effort can never auto-fix at any
+    rung."""
     violations: list[str] = []
     if request.reporter_tier == ReporterTier.SYSTEM:
         # Phase 15 v1 policy: sentinel-filed incidents ALWAYS go to a human
@@ -77,8 +82,12 @@ def decide(
     if assessment.type != FeedbackType.BUG:
         violations.append("model reads this as a feature disguised as a bug")
         return TriageVerdict.NEEDS_APPROVAL, violations
-    if assessment.effort != "S":
-        violations.append(f"effort {assessment.effort} needs a human")
+    allowed_efforts = {"S"} if request.max_auto_effort == "S" else {"S", "M"}
+    if assessment.effort not in allowed_efforts:
+        violations.append(
+            f"effort {assessment.effort} exceeds the current autonomy "
+            f"ceiling ({request.max_auto_effort}) — needs a human"
+        )
         return TriageVerdict.NEEDS_APPROVAL, violations
     if assessment.risk != "LOW":
         violations.append("HIGH risk never auto-fixes")
@@ -107,6 +116,7 @@ async def triage(request: FeedbackTriageRequest) -> FeedbackTriageResponse:
             violations=[f"llm unavailable: {exc}"[:300]],
         )
     verdict, violations = decide(request, assessment)
+    ladder_level = f"AUTO_FIX_{assessment.effort}" if verdict == TriageVerdict.AUTO_FIX else None
     return FeedbackTriageResponse(
         report_id=request.report_id,
         verdict=verdict,
@@ -114,4 +124,5 @@ async def triage(request: FeedbackTriageRequest) -> FeedbackTriageResponse:
         labels=VERDICT_LABELS[verdict],
         violations=violations,
         model=model,
+        ladder_level=ladder_level,
     )
