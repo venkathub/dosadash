@@ -269,6 +269,6 @@ def test_spec_label_is_advisory_and_scoped() -> None:
                         )
                     if verdict != TriageVerdict.NEEDS_APPROVAL:
                         assert LABEL_AI_SPEC not in labels
-                    assert needs_spec(request, assessment, verdict) == (
-                        LABEL_AI_SPEC in labels
-                    ), "composer and predicate must agree"
+                    assert needs_spec(request, assessment, verdict) == (LABEL_AI_SPEC in labels), (
+                        "composer and predicate must agree"
+                    )

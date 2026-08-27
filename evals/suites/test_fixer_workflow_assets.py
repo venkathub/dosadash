@@ -312,9 +312,7 @@ def test_canary_incident_report_rides_the_sentinel_spine() -> None:
 
 # ------------------------------------------------- spec agent (Phase 15 S2)
 
-SPEC_WORKFLOW = (
-    Path(__file__).resolve().parents[2] / ".github" / "workflows" / SPEC_WORKFLOW_FILE
-)
+SPEC_WORKFLOW = Path(__file__).resolve().parents[2] / ".github" / "workflows" / SPEC_WORKFLOW_FILE
 
 
 def test_spec_agent_is_advisory_read_only() -> None:
