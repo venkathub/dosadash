@@ -93,9 +93,12 @@ export default function Home() {
   const inPeriod = (m: MenuItem) =>
     m.meal_periods.length === 0 || m.meal_periods.includes(period);
 
-  // The kitchen only scores some dishes, so the protein filter is offered
-  // only when there is real data behind it (no data → no chip, no claim).
-  const hasProteinData = useMemo(() => menu.some((m) => m.protein_g != null), [menu]);
+  // Show the chip only when at least one dish in the menu is actually scored at
+  // or above the threshold — the filter must always return results when offered.
+  const hasProteinData = useMemo(
+    () => menu.some((m) => (m.protein_g ?? 0) >= HIGH_PROTEIN_G),
+    [menu]
+  );
 
   const visible = useMemo(
     () =>
