@@ -399,16 +399,17 @@ async def _watch_locked(
                 ):
                     summary["stalled"] += 1
             elif action in ("REDISPATCH", "CANCEL_AND_REDISPATCH"):
+                outcome: str | None = None
                 if action == "CANCEL_AND_REDISPATCH":
                     stuck_run_id = evidence.get("run_id")
-                    cancelled = (
+                    outcome = (
                         await github.cancel_workflow_run(stuck_run_id)
                         if stuck_run_id is not None
-                        else False
+                        else "forbidden"
                     )
-                    if not cancelled:
-                        # actions:write missing or run un-cancellable —
-                        # be transparent, do NOT race a zombie run.
+                    if outcome == "forbidden":
+                        # token lacks actions:write — never dispatch
+                        # alongside a run we cannot control.
                         if await _record_stall(
                             session,
                             report,
@@ -419,6 +420,13 @@ async def _watch_locked(
                         ):
                             summary["stalled"] += 1
                         continue
+                    # "cancelled" → clean redispatch. "refused" (409) →
+                    # the run is finished or OUTAGE-ORPHANED (postmortem:
+                    # `queued` forever, uncancellable by any token, never
+                    # starts). The fixer workflow's concurrency group
+                    # replaces pending runs, so a fresh dispatch is safe
+                    # and is the ONLY exit from that zombie state —
+                    # holding forever means the fix never lands.
                 issue = await github.get_issue(report.github_issue_number)
                 label = _trigger_label(issue["labels"], Status(report.status))
                 payload = {
@@ -427,6 +435,7 @@ async def _watch_locked(
                     "cancelled_run_id": evidence.get("run_id")
                     if action == "CANCEL_AND_REDISPATCH"
                     else None,
+                    "cancel_outcome": outcome if action == "CANCEL_AND_REDISPATCH" else None,
                     "reason": evidence.get("reason"),
                 }
                 # COST-CRITICAL ORDERING: a redispatch launches a PAID

@@ -198,16 +198,26 @@ class GitHubClient:
             for run in self._json(resp, "workflow runs list").get("workflow_runs", [])
         ]
 
-    async def cancel_workflow_run(self, run_id: int) -> bool:
-        """Cancel one run. True on accepted; False when the token lacks
-        `actions:write` (403) or the run can no longer be cancelled (409)
-        — callers treat False as 'do not redispatch yet'."""
+    async def cancel_workflow_run(self, run_id: int) -> str:
+        """Cancel one run. Returns the outcome — callers act on WHY it
+        failed (postmortem 2026-08-26: outage-orphaned runs report
+        `queued` forever but answer 409 'not been queued yet' to every
+        token, so 403 vs 409 must stay distinguishable):
+        - "cancelled":  accepted (202)
+        - "forbidden":  token lacks actions:write (403) — never dispatch
+                        alongside a run we cannot control
+        - "refused":    GitHub state conflict (409) — the run is finished
+                        or orphaned; the fixer concurrency group replaces
+                        pending runs, so redispatching is safe."""
         resp = await self._request("POST", f"/repos/{self._repo}/actions/runs/{run_id}/cancel")
         if resp.status_code == 202:
-            return True
-        if resp.status_code in (403, 409):
-            logger.warning("run cancel refused (run %s): HTTP %s", run_id, resp.status_code)
-            return False
+            return "cancelled"
+        if resp.status_code == 403:
+            logger.warning("run cancel forbidden (run %s): missing actions:write", run_id)
+            return "forbidden"
+        if resp.status_code == 409:
+            logger.warning("run cancel refused (run %s): state conflict", run_id)
+            return "refused"
         raise GitHubError(f"run cancel failed: HTTP {resp.status_code}")
 
 
