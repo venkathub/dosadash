@@ -633,3 +633,35 @@ def sentinel_scan(self: Any) -> dict[str, Any]:
         return {"error": "sentinel pass failed", "anomalies": 0, "filed": 0}
     logger.info("sentinel_scan %s", result)
     return result
+
+
+# ------------------------------------------------------------- janitor (Phase 15)
+
+
+async def _janitor_scan() -> dict[str, Any]:
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from dosadash_api.services import janitor
+    from dosadash_api.services.github_client import get_github_client
+
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            return await janitor.scan(session, get_github_client())
+    finally:
+        await engine.dispose()
+
+
+@app.task(name="janitor.weekly", bind=True, max_retries=0)
+def janitor_weekly(self: Any) -> dict[str, Any]:
+    """Weekly (Sun 04:30 IST): deterministic maintenance-debt detection
+    (flaky-eval tally, translation DRAFT backlog, week-old pending
+    approvals) → SYSTEM reports through the sentinel spine. Watchdog
+    style: never crash the beat — next week IS the retry."""
+    try:
+        result = asyncio.run(_janitor_scan())
+    except Exception:  # noqa: BLE001 — the janitor must never crash the beat
+        logger.exception("janitor_weekly failed — next beat retries")
+        return {"error": "janitor pass failed", "anomalies": 0, "filed": 0}
+    logger.info("janitor_weekly %s", result)
+    return result

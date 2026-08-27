@@ -97,4 +97,12 @@ app.conf.beat_schedule = {
         "task": "sentinel.scan",
         "schedule": crontab(minute="4-59/5"),
     },
+    # Phase 15 (docs/15 §S5): weekly maintenance janitor — flaky-eval
+    # tally, translation DRAFT backlog, stale approvals → SYSTEM reports
+    # through the sentinel spine. Sunday early morning, off every other
+    # nightly beat's hour.
+    "janitor-weekly": {
+        "task": "janitor.weekly",
+        "schedule": crontab(hour=4, minute=30, day_of_week=0),
+    },
 }
