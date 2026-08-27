@@ -89,4 +89,12 @@ app.conf.beat_schedule = {
         "task": "feedback.fixer_watchdog",
         "schedule": crontab(minute="2-59/5"),
     },
+    # Phase 15 (docs/15 §S1): the production sentinel — deterministic
+    # anomaly detection (healthz fleet / 5xx burst / eval-gate reds) files
+    # SYSTEM feedback reports through the existing self-healing intake.
+    # Offset from the watchdog (2-59/5) and the sync beat (5-59/15).
+    "sentinel-scan": {
+        "task": "sentinel.scan",
+        "schedule": crontab(minute="4-59/5"),
+    },
 }

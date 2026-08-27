@@ -758,7 +758,7 @@ class FeedbackReport(TimestampMixin, Base):
         ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
     reporter_tier: Mapped[str] = mapped_column(
-        Enum("ANON", "CUSTOMER", "STAFF", name="feedback_reporter_tier")
+        Enum("ANON", "CUSTOMER", "STAFF", "SYSTEM", name="feedback_reporter_tier")
     )
     type: Mapped[str] = mapped_column(Enum("BUG", "FEATURE", name="feedback_type"))
     status: Mapped[str] = mapped_column(

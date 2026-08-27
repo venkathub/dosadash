@@ -9,6 +9,7 @@ from dosadash_api.services import feedback_triage_runner
 from dosadash_api.services.ai_client import AIServiceError, get_ai_client
 from dosadash_api.services.github_client import GitHubError, get_github_client
 from dosadash_shared import (
+    FEEDBACK_TRIAGE_PROMPT_VERSION,
     FeedbackTriageResponse,
     Role,
     TriageAssessment,
@@ -101,7 +102,7 @@ async def test_auto_fix_verdict_persisted_and_labeled(db_session: AsyncSession) 
     assert row.status == "AUTO_FIX"
     assert row.triage["verdict"] == "AUTO_FIX"
     assert row.triage["model"] == "gpt-4o-mini"
-    assert row.triage["prompt_version"] == "feedback_triage_v1"
+    assert row.triage["prompt_version"] == FEEDBACK_TRIAGE_PROMPT_VERSION
     assert github.labeled == [(41, ["ai:auto-fix"])]
 
 

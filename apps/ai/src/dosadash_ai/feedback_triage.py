@@ -25,6 +25,7 @@ from dosadash_shared import (
     FeedbackTriageRequest,
     FeedbackTriageResponse,
     FeedbackType,
+    ReporterTier,
     TriageAssessment,
     TriageVerdict,
 )
@@ -61,6 +62,13 @@ def decide(
     Returns (verdict, violations). Violations record why an assessment was
     denied AUTO_FIX so the admin tab can show the reasoning."""
     violations: list[str] = []
+    if request.reporter_tier == ReporterTier.SYSTEM:
+        # Phase 15 v1 policy: sentinel-filed incidents ALWAYS go to a human
+        # — no auto-fix AND no LLM-decided dismissal. Detector precision is
+        # measured first (dismissed-rate on the metrics rollup); loosening
+        # is a deliberate later step, never a default.
+        violations.append("sentinel reports always need approval (v1 policy)")
+        return TriageVerdict.NEEDS_APPROVAL, violations
     if not assessment.actionable:
         return TriageVerdict.DISMISS, violations
     if request.type != FeedbackType.BUG:

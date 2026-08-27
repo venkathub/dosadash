@@ -12,13 +12,27 @@ from dosadash_api.db.models import FeedbackReport
 from dosadash_shared import (
     LABEL_BUG,
     LABEL_FEATURE,
+    LABEL_SENTINEL,
     LABEL_USER_REPORTED,
     UNTRUSTED_BEGIN,
     UNTRUSTED_END,
+    FeedbackStatus,
     FeedbackType,
+    ReporterTier,
 )
 
 _WS_RE = re.compile(r"\s+")
+
+# A report in one of these states is still "open" — an identical submission
+# (or a recurring sentinel anomaly) collapses onto it instead of filing a
+# second GitHub issue. Shared by the intake router and the sentinel.
+OPEN_STATUSES = (
+    FeedbackStatus.RECEIVED,
+    FeedbackStatus.TRACKED,
+    FeedbackStatus.AUTO_FIX,
+    FeedbackStatus.NEEDS_APPROVAL,
+    FeedbackStatus.APPROVED,
+)
 
 
 def compute_dedupe_hash(type_: str, title: str, description: str) -> str:
@@ -33,12 +47,18 @@ def compute_dedupe_hash(type_: str, title: str, description: str) -> str:
 
 def issue_title(report: FeedbackReport) -> str:
     """`[user-bug] <title>` — the prefix is OURS (trusted signal in issue
-    lists); the remainder is user text and stays inside 120 chars."""
+    lists); the remainder is user text and stays inside 120 chars.
+    Sentinel reports get `[sentinel]` so issue lists separate machine-filed
+    incidents from human reports at a glance."""
+    if report.reporter_tier == ReporterTier.SYSTEM:
+        return f"[sentinel] {report.title}"
     kind = "user-bug" if report.type == FeedbackType.BUG else "user-feature"
     return f"[{kind}] {report.title}"
 
 
 def issue_labels(report: FeedbackReport) -> list[str]:
+    if report.reporter_tier == ReporterTier.SYSTEM:
+        return [LABEL_SENTINEL, LABEL_BUG]
     return [
         LABEL_USER_REPORTED,
         LABEL_BUG if report.type == FeedbackType.BUG else LABEL_FEATURE,
