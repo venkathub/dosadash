@@ -46,11 +46,15 @@ from dosadash_api.routers.recs import router as recs_router
 from dosadash_api.routers.reviews import router as reviews_router
 from dosadash_api.routers.support import router as support_router
 from dosadash_api.routers.ws import router as ws_router
+from dosadash_api.sentinel_counters import ServerErrorCounterMiddleware
 from dosadash_shared import HealthStatus
 
 app = FastAPI(title="DosaDash API", version="0.1.0")
 # Phase 9 hardening: inbound rate limiting (pure ASGI — SSE-safe, fail-open).
 app.add_middleware(RateLimitMiddleware)
+# Phase 15 sentinel: per-minute 5xx counters (pure ASGI, fire-and-forget —
+# a Redis outage never adds latency or failures to the request path).
+app.add_middleware(ServerErrorCounterMiddleware)
 app.include_router(auth_router)
 app.include_router(aggregator_router)
 app.include_router(admin_combos_router)

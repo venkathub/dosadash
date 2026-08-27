@@ -72,6 +72,20 @@ class Settings(BaseSettings):
     # still keeps the loop's tail in sync at 15-min freshness.
     github_webhook_secret: str = ""
 
+    # Phase 15 sentinel (docs/15 §S1): production telemetry as a feedback
+    # reporter. Detection is deterministic (zero LLM); SYSTEM reports can
+    # never AUTO_FIX in v1 (triage policy, property-gated).
+    sentinel_enabled: bool = True
+    # The api's own base URL as seen from the worker (compose network).
+    self_base_url: str = "http://api:8000"
+    sentinel_probe_timeout_seconds: float = 3.0
+    # ≥ this many 5xx responses within the window → one burst anomaly.
+    sentinel_5xx_threshold: int = 5
+    sentinel_5xx_window_minutes: int = 15
+    # Hard cap: filings per fingerprint per 24h regardless of status
+    # (re-filing after dismissal is alerting; endless re-filing is spam).
+    sentinel_max_filings_per_day: int = 5
+
     # Celery worker (Phase 5) — dedicated broker Redis with `noeviction`:
     # the main cache Redis runs allkeys-lru, which may silently drop queued
     # task messages, so the broker gets its own tiny instance.

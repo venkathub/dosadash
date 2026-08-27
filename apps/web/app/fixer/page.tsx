@@ -29,7 +29,7 @@ import {
 
 type Report = {
   id: number;
-  reporter_tier: "ANON" | "CUSTOMER" | "STAFF";
+  reporter_tier: "ANON" | "CUSTOMER" | "STAFF" | "SYSTEM";
   type: "BUG" | "FEATURE";
   status: string;
   title: string;
@@ -165,6 +165,7 @@ const TIER_ICON: Record<Report["reporter_tier"], string> = {
   ANON: "👤",
   CUSTOMER: "🛒",
   STAFF: "🧑‍🍳",
+  SYSTEM: "🛰️",
 };
 
 /** DB timestamps are naive UTC — pin the zone before Date.parse. */

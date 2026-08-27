@@ -18,7 +18,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-FEEDBACK_TRIAGE_PROMPT_VERSION = "feedback_triage_v1"
+FEEDBACK_TRIAGE_PROMPT_VERSION = "feedback_triage_v2"
 
 # ------------------------------------------------------------------- labels
 # The GitHub label registry — single source of truth for the api (creates
@@ -27,6 +27,7 @@ FEEDBACK_TRIAGE_PROMPT_VERSION = "feedback_triage_v1"
 # between this dict and .github/workflows/claude-issue-fix.yml is eval-gated.
 
 LABEL_USER_REPORTED = "user-reported"
+LABEL_SENTINEL = "sentinel"  # Phase 15: filed by the production sentinel, not a human
 LABEL_BUG = "bug"
 LABEL_FEATURE = "feature"
 LABEL_AI_AUTO_FIX = "ai:auto-fix"
@@ -39,6 +40,7 @@ LABEL_AI_VERIFIED = "ai:verified"
 # name -> (color hex without '#', description)
 GITHUB_LABELS: dict[str, tuple[str, str]] = {
     LABEL_USER_REPORTED: ("1B1B3A", "Raised from the DosaDash GUI feedback button"),
+    LABEL_SENTINEL: ("0E7490", "Filed automatically by the production sentinel (telemetry)"),
     LABEL_BUG: ("D6336C", "User-reported defect"),
     LABEL_FEATURE: ("F2B705", "User-requested feature"),
     LABEL_AI_AUTO_FIX: ("5BD69B", "Triage verdict: small low-risk bug — fixer may auto-merge"),
@@ -69,11 +71,15 @@ class FeedbackType(StrEnum):
 
 class ReporterTier(StrEnum):
     """Who raised it — drives triage trust (STAFF feature requests are
-    auto-implementation candidates; ANON reports never are)."""
+    auto-implementation candidates; ANON reports never are). SYSTEM is the
+    production sentinel (Phase 15): machine-filed telemetry reports — the
+    triage policy routes them to NEEDS_APPROVAL unconditionally in v1
+    (measure detector precision first, loosen later)."""
 
     ANON = "ANON"
     CUSTOMER = "CUSTOMER"
     STAFF = "STAFF"
+    SYSTEM = "SYSTEM"
 
 
 class FeedbackStatus(StrEnum):

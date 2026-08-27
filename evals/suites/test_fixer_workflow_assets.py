@@ -155,3 +155,17 @@ def test_verifier_carries_fence_and_label_contract() -> None:
     assert LABEL_AI_VERIFIED in text
     assert LABEL_AI_VERIFIED in GITHUB_LABELS
     assert "not verified" in text and "reopen" in text  # honest-failure path exists
+
+
+def test_prompts_never_inline_issue_body() -> None:
+    """S7 cache + injection hygiene (docs/15): `github.event.issue.body`
+    must never be interpolated into an agent prompt. The agent reads the
+    issue via `gh` mid-transcript instead, which (a) keeps the volatile
+    untrusted text out of the cacheable prompt prefix and (b) keeps the
+    fence quoting the SINGLE layer where user text enters the context."""
+    for workflow in (WORKFLOW, VERIFY_WORKFLOW):
+        text = workflow.read_text()
+        assert "github.event.issue.body" not in text, (
+            f"{workflow.name}: issue body interpolated into the workflow — "
+            "read it via `gh issue view` inside the run instead"
+        )

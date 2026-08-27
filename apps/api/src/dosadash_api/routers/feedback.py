@@ -43,14 +43,9 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 GitHubDep = Annotated[GitHubClient, Depends(get_github_client)]
 
 # A report in one of these states is still "open" — an identical submission
-# collapses onto it instead of filing a second GitHub issue.
-_OPEN_STATUSES = (
-    FeedbackStatus.RECEIVED,
-    FeedbackStatus.TRACKED,
-    FeedbackStatus.AUTO_FIX,
-    FeedbackStatus.NEEDS_APPROVAL,
-    FeedbackStatus.APPROVED,
-)
+# collapses onto it instead of filing a second GitHub issue. Single source
+# lives in feedback_service (the sentinel shares it, Phase 15).
+_OPEN_STATUSES = feedback_service.OPEN_STATUSES
 
 
 def _tier(user_role: Role | None) -> ReporterTier:
