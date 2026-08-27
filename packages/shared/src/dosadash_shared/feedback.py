@@ -252,6 +252,18 @@ class FeedbackEventListOut(BaseModel):
 # metric set will grow — the portal renders what it gets).
 
 
+class SentinelIncidentIn(BaseModel):
+    """CI/deploy → api internal incident intake (Phase 15 S4) — rides the
+    sentinel filing spine (SYSTEM report → issue → triage → approval).
+    `kind` is an allowlist: external callers name a detector, they never
+    invent one."""
+
+    kind: Literal["deploy_canary_failed"]
+    subject: str = Field(min_length=1, max_length=80)
+    title: str = Field(min_length=5, max_length=120)
+    evidence: dict = {}
+
+
 class FixerRunIn(BaseModel):
     """workflow → api ingest payload (X-Internal-Token protected).
 
