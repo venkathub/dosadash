@@ -160,12 +160,12 @@ class FakeGitHub:
         self,
         runs: list[dict] | None = None,
         labels: list[str] | None = None,
-        cancel_ok: bool = True,
+        cancel_outcome: str = "cancelled",
     ) -> None:
         self.enabled = True
         self.runs = runs or []
         self.labels = labels if labels is not None else ["bug", "ai:approved"]
-        self.cancel_ok = cancel_ok
+        self.cancel_outcome = cancel_outcome
         self.cancelled: list[int] = []
         self.removed: list[str] = []
         self.added: list[list[str]] = []
@@ -176,9 +176,9 @@ class FakeGitHub:
         self.list_calls += 1
         return self.runs
 
-    async def cancel_workflow_run(self, run_id: int) -> bool:
+    async def cancel_workflow_run(self, run_id: int) -> str:
         self.cancelled.append(run_id)
-        return self.cancel_ok
+        return self.cancel_outcome
 
     async def get_issue(self, issue_number: int) -> dict:
         return {"state": "open", "state_reason": None, "labels": self.labels, "closed_at": None}
@@ -318,6 +318,35 @@ async def test_queued_stall_cancels_then_redispatches(
     assert github.added == [["ai:approved"]]
 
 
+async def test_cancel_refused_zombie_run_still_redispatches(
+    db_session: AsyncSession, monkeypatch
+) -> None:
+    """POSTMORTEM 2026-08-26 (report #5): an outage can orphan a run that
+    reports `queued` forever but answers 409 to every cancel, from every
+    token. Holding forever means the fix never lands — a 409 'refused'
+    must redispatch (the fixer concurrency group replaces pending runs,
+    so no double-run is possible). Only 403 'forbidden' holds."""
+    report = _report()
+    db_session.add(report)
+    await db_session.commit()
+    await _dispatch_event(db_session, report)
+    _operational(monkeypatch)
+    github = FakeGitHub(
+        runs=[_live_run(run_id=42, status="queued", minutes_ago=25)], cancel_outcome="refused"
+    )
+    summary = await fixer_watchdog.watch(db_session, github)
+    assert summary["retried"] == 1 and summary["stalled"] == 0
+    assert github.cancelled == [42]
+    assert github.added == [["ai:approved"]]
+    retried = (
+        await db_session.execute(
+            select(FeedbackEvent).where(FeedbackEvent.stage == FeedbackEventStage.FIX_RETRIED.value)
+        )
+    ).scalar_one()
+    assert retried.payload["cancel_outcome"] == "refused"
+    assert retried.payload["cancelled_run_id"] == 42
+
+
 async def test_cancel_forbidden_degrades_to_stall(db_session: AsyncSession, monkeypatch) -> None:
     report = _report()
     db_session.add(report)
@@ -325,7 +354,7 @@ async def test_cancel_forbidden_degrades_to_stall(db_session: AsyncSession, monk
     await _dispatch_event(db_session, report)
     _operational(monkeypatch)
     github = FakeGitHub(
-        runs=[_live_run(run_id=42, status="queued", minutes_ago=25)], cancel_ok=False
+        runs=[_live_run(run_id=42, status="queued", minutes_ago=25)], cancel_outcome="forbidden"
     )
     summary = await fixer_watchdog.watch(db_session, github)
     assert summary["retried"] == 0 and summary["stalled"] == 1
