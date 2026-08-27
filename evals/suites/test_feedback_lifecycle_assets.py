@@ -115,6 +115,32 @@ def test_fix_workflow_reports_runs_best_effort() -> None:
     assert "secrets.FIXER_INGEST_URL" in text  # never a hardcoded URL
 
 
+def test_ingest_carries_cache_telemetry() -> None:
+    """Phase 15 S7: both workflows parse the action's execution file for
+    cache/cost usage — and DEGRADE to the base payload on any parse
+    failure (telemetry must never break outcome reporting, and outcome
+    reporting must never break the run)."""
+    for workflow in (FIX_WORKFLOW, VERIFY_WORKFLOW):
+        text = workflow.read_text()
+        assert "steps.claude.outputs.execution_file" in text, (
+            f"{workflow.name}: ingest must read the action's execution file"
+        )
+        for field in (
+            "cost_usd",
+            "cache_read_tokens",
+            "cache_creation_tokens",
+            "input_tokens",
+            "output_tokens",
+        ):
+            assert field in text, f"{workflow.name}: ingest must extract {field}"
+        assert 'PAYLOAD="$BASE"' in text, (
+            f"{workflow.name}: a jq failure must degrade to the base payload"
+        )
+        assert "USAGE='{}'" in text, (
+            f"{workflow.name}: a missing/unreadable execution file must degrade to no usage"
+        )
+
+
 def test_verify_workflow_reports_runs_conditionally() -> None:
     text = VERIFY_WORKFLOW.read_text()
     assert "FIXER_INGEST_URL" in text and "X-Internal-Token" in text

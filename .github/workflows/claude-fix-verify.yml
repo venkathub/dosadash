@@ -55,6 +55,7 @@ jobs:
           echo "Pending verification: ${numbers:-none}"
 
       - name: Run Claude verifier (Haiku — pennies)
+        id: claude
         if: steps.pending.outputs.numbers != ''
         uses: anthropics/claude-code-action@v1
         with:
@@ -104,18 +105,35 @@ jobs:
       # Phase 14 slice 3: self-report verify runs too (only when the
       # Claude step actually ran — empty queues stay invisible). Model
       # literal must match the --model pin above (gate-checked).
+      # Phase 15 S7: usage telemetry from the execution file, same
+      # degrade-to-base-payload contract as the fix workflow.
       - name: Report run to DosaDash (observability, best-effort)
         if: always() && steps.pending.outputs.numbers != ''
         env:
           FIXER_INGEST_URL: ${{ secrets.FIXER_INGEST_URL }}
           INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
         run: |
           if [ -z "$FIXER_INGEST_URL" ]; then
             echo "FIXER_INGEST_URL unset — skipping run ingest"
             exit 0
           fi
+          BASE='{"workflow":"verify","run_id":${{ github.run_id }},"run_attempt":${{ github.run_attempt }},"conclusion":"${{ job.status }}","model":"claude-haiku-4-5"}'
+          USAGE='{}'
+          if [ -n "$EXECUTION_FILE" ] && [ -f "$EXECUTION_FILE" ]; then
+            USAGE=$(jq -c '[.[] | select(.type? == "result")] | last // {} |
+              {cost_usd: (.total_cost_usd // null),
+               input_tokens: (.usage.input_tokens // null),
+               cache_read_tokens: (.usage.cache_read_input_tokens // null),
+               cache_creation_tokens: (.usage.cache_creation_input_tokens // null),
+               output_tokens: (.usage.output_tokens // null)}' \
+              "$EXECUTION_FILE" 2>/dev/null) || USAGE='{}'
+          fi
+          PAYLOAD=$(jq -cn --argjson base "$BASE" --argjson usage "$USAGE" \
+            '$base + ($usage | with_entries(select(.value != null)))' 2>/dev/null) \
+            || PAYLOAD="$BASE"
           curl -sS -m 15 -X POST "$FIXER_INGEST_URL" \
             -H "X-Internal-Token: $INTERNAL_API_TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"workflow":"verify","run_id":${{ github.run_id }},"run_attempt":${{ github.run_attempt }},"conclusion":"${{ job.status }}","model":"claude-haiku-4-5"}' \
+            -d "$PAYLOAD" \
             || echo "run ingest failed (non-blocking)"

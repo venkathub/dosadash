@@ -125,6 +125,15 @@ def summarize(
         if Stage.PR_MERGED.value in stages or Stage.FIXED.value in stages
     )
     fix_runs = [r for r in runs if r.workflow == "fix"]
+    # Phase 15 S7: within-run prompt-cache share, over fix runs that
+    # actually reported usage (execution-file parse is best-effort — a
+    # window with zero telemetry reports None, never a fake 0%).
+    usage_runs = [r for r in fix_runs if r.cache_read_tokens is not None]
+    cached = sum(r.cache_read_tokens or 0 for r in usage_runs)
+    total_input = sum(
+        (r.cache_read_tokens or 0) + (r.cache_creation_tokens or 0) + (r.input_tokens or 0)
+        for r in usage_runs
+    )
     rates: dict[str, float | None] = {
         "auto_fix_rate": _rate(verdicts.get("AUTO_FIX", 0), triaged),
         "approval_rate": _rate(funnel["approved"], decided),
@@ -136,6 +145,7 @@ def summarize(
         "verification_rate": _rate(funnel["verified"], fixed_ever),
         "reopen_rate": _rate(funnel["reopened"], fixed_ever),
         "triage_fallback_rate": _rate(fallbacks, triaged),
+        "fix_cached_token_share": _rate(cached, total_input),
     }
 
     latency: dict[str, dict[str, float | None]] = {}
@@ -174,6 +184,15 @@ def summarize(
         bucket["total"] += 1
         bucket[run.conclusion] = bucket.get(run.conclusion, 0) + 1
 
+    # Phase 15 S7: loop TCO as a number, not a vibe. None when no run in
+    # the window carried cost telemetry (empty-denominator honesty rule).
+    spend: dict[str, float | None] = {}
+    for workflow in ("fix", "verify"):
+        costs = [r.cost_usd for r in runs if r.workflow == workflow and r.cost_usd is not None]
+        spend[f"{workflow}_cost_usd"] = round(sum(costs), 4) if costs else None
+    all_costs = [v for v in spend.values() if v is not None]
+    spend["total_cost_usd"] = round(sum(all_costs), 4) if all_costs else None
+
     return FeedbackMetricsOut(
         window_days=window_days,
         totals_by_status=dict(totals_by_status),
@@ -184,6 +203,7 @@ def summarize(
         latency=latency,
         weekly=weekly,
         runs=runs_summary,
+        spend=spend,
         generated_at=now,
     )
 
