@@ -182,6 +182,18 @@ Prompt caching + Batch API, applied honestly:
   (auto-tally the wobble pool from `eval_runs` — retires the
   hand-maintained flaky list), Tamil DRAFT backlog nudges, cost drift.
   All NEEDS_APPROVAL. LLM narratives batch-only (S7).
+- **Shipped shape** (PR #148): beat `janitor.weekly` (Sun 04:30 IST) —
+  three pure detectors: flaky-eval tally over the last 10 `eval_runs`
+  case_reports (**intermittent only**: ≥2 fails AND ≥1 pass — a case
+  failing every run is the gate's job), translation DRAFT backlog ≥10,
+  and week-old NEEDS_APPROVAL reports (SYSTEM tier excluded — the
+  janitor never counts its own kind). Files through the sentinel spine
+  (SYSTEM, dedupe, fence, NEEDS_APPROVAL always); weekly re-runs
+  collapse onto the open report. *Deferred, documented*: dependency
+  scans (network tooling + the #90 human-RSS rule makes them
+  approval-lane anyway) and Langfuse cost drift (needs a worker costs
+  read model); narratives are templated — an LLM summarizer, if ever
+  added, goes Batch-only (S7).
 
 ## 4. Sequencing
 
