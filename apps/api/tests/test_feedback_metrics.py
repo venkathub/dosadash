@@ -243,6 +243,7 @@ def test_summarize_spend_honest_none_without_telemetry() -> None:
     assert out.spend == {
         "fix_cost_usd": None,
         "verify_cost_usd": None,
+        "review_cost_usd": None,
         "total_cost_usd": None,
     }
 

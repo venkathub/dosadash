@@ -216,6 +216,16 @@ FIX_BRANCH_PREFIX = "fix/issue-"
 # Existence of the file under .github/workflows is gate-checked.
 FIXER_WORKFLOW_FILE = "claude-issue-fix.yml"
 
+# S3 (Phase 15): the independent AI reviewer — a SECOND model (never the
+# fixer's) reads every fixer PR against the issue intent + the Hard-Rules
+# checklist and posts ONE comment whose last line is a machine-parseable
+# verdict. The verdict is COMPUTED by a deterministic workflow step from
+# that marker (dish-QC philosophy) — only REQUEST_CHANGES (or a missing
+# verdict: fail-closed) fails the check; notes never block.
+REVIEW_WORKFLOW_FILE = "claude-pr-review.yml"
+REVIEW_COMMENT_MARKER = "## AI review"
+REVIEW_VERDICTS: tuple[str, str, str] = ("APPROVE", "APPROVE_WITH_NOTES", "REQUEST_CHANGES")
+
 
 class FeedbackEventOut(BaseModel):
     """One timeline entry (portal drill-down + Telegram lifecycle feed)."""
@@ -250,7 +260,7 @@ class FixerRunIn(BaseModel):
     cache share and real spend. All optional: a run whose execution file
     is missing/unreadable still lands (outcome truth outranks telemetry)."""
 
-    workflow: Literal["fix", "verify"]
+    workflow: Literal["fix", "verify", "review"]
     run_id: int
     run_attempt: int = 1
     issue_number: int | None = None  # verify runs cover a queue → None

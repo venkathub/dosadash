@@ -34,6 +34,7 @@ from dosadash_shared import (
 _WORKFLOWS = Path(__file__).resolve().parents[2] / ".github" / "workflows"
 FIX_WORKFLOW = _WORKFLOWS / "claude-issue-fix.yml"
 VERIFY_WORKFLOW = _WORKFLOWS / "claude-fix-verify.yml"
+REVIEW_WORKFLOW = _WORKFLOWS / "claude-pr-review.yml"
 
 
 def test_every_status_bearing_label_in_precedence_exactly_once() -> None:
@@ -120,7 +121,7 @@ def test_ingest_carries_cache_telemetry() -> None:
     cache/cost usage — and DEGRADE to the base payload on any parse
     failure (telemetry must never break outcome reporting, and outcome
     reporting must never break the run)."""
-    for workflow in (FIX_WORKFLOW, VERIFY_WORKFLOW):
+    for workflow in (FIX_WORKFLOW, VERIFY_WORKFLOW, REVIEW_WORKFLOW):
         text = workflow.read_text()
         assert "steps.claude.outputs.execution_file" in text, (
             f"{workflow.name}: ingest must read the action's execution file"
@@ -150,7 +151,7 @@ def test_verify_workflow_reports_runs_conditionally() -> None:
 
 
 def test_ingest_model_matches_pin() -> None:
-    for workflow in (FIX_WORKFLOW, VERIFY_WORKFLOW):
+    for workflow in (FIX_WORKFLOW, VERIFY_WORKFLOW, REVIEW_WORKFLOW):
         text = workflow.read_text()
         assert _ingest_model(text) == _model_pin(text), (
             f"{workflow.name}: ingest reports a different model than --model pins — "
