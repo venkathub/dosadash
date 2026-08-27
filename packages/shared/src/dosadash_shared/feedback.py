@@ -213,7 +213,12 @@ class FeedbackEventListOut(BaseModel):
 
 
 class FixerRunIn(BaseModel):
-    """workflow → api ingest payload (X-Internal-Token protected)."""
+    """workflow → api ingest payload (X-Internal-Token protected).
+
+    The usage fields (Phase 15 S7) are parsed best-effort from the
+    action's execution file — they measure the run's within-run prompt
+    cache share and real spend. All optional: a run whose execution file
+    is missing/unreadable still lands (outcome truth outranks telemetry)."""
 
     workflow: Literal["fix", "verify"]
     run_id: int
@@ -222,6 +227,11 @@ class FixerRunIn(BaseModel):
     conclusion: str = Field(max_length=30)  # success | failure | cancelled
     trigger_label: str | None = Field(default=None, max_length=40)
     model: str | None = Field(default=None, max_length=60)
+    cost_usd: float | None = None
+    input_tokens: int | None = None  # uncached input (after the last cache point)
+    cache_read_tokens: int | None = None
+    cache_creation_tokens: int | None = None
+    output_tokens: int | None = None
 
 
 class FixerRunOut(BaseModel):
@@ -236,6 +246,11 @@ class FixerRunOut(BaseModel):
     conclusion: str
     trigger_label: str | None = None
     model: str | None = None
+    cost_usd: float | None = None
+    input_tokens: int | None = None
+    cache_read_tokens: int | None = None
+    cache_creation_tokens: int | None = None
+    output_tokens: int | None = None
     created_at: datetime
     duplicate: bool = False
 
@@ -246,7 +261,9 @@ class FeedbackMetricsOut(BaseModel):
     All counts are within the requested window. `latency` values are
     seconds: {metric: {"p50": …, "p90": …, "count": n}}; a metric with no
     completed samples reports p50/p90 = None. `rates` are 0..1 or None
-    when the denominator is empty (never fake a 0% from no data)."""
+    when the denominator is empty (never fake a 0% from no data). `spend`
+    (Phase 15 S7) is USD totals from run telemetry — None when no run in
+    the window carried cost data (same honesty rule)."""
 
     window_days: int
     totals_by_status: dict[str, int]
@@ -257,6 +274,7 @@ class FeedbackMetricsOut(BaseModel):
     latency: dict[str, dict[str, float | None]]
     weekly: list[dict]
     runs: dict[str, dict[str, int]]
+    spend: dict[str, float | None] = {}
     generated_at: datetime
 
 

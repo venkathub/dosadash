@@ -129,3 +129,30 @@ async def test_unknown_issue_stores_unlinked_row(client, db_session: AsyncSessio
     resp = await client.post(INGEST, json=_payload(issue_number=555), headers=_headers())
     assert resp.status_code == 201
     assert resp.json()["report_id"] is None
+
+
+async def test_usage_telemetry_stored_and_optional(client, db_session: AsyncSession) -> None:
+    """Phase 15 S7: cache/cost fields persist when reported and stay NULL
+    when the execution-file parse degraded to the base payload."""
+    with_usage = _payload(
+        run_id=900101,
+        cost_usd=0.62,
+        input_tokens=1200,
+        cache_read_tokens=88000,
+        cache_creation_tokens=9000,
+        output_tokens=4100,
+    )
+    resp = await client.post(INGEST, json=with_usage, headers=_headers())
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["cost_usd"] == 0.62
+    assert body["cache_read_tokens"] == 88000
+
+    bare = _payload(run_id=900102)  # degrade contract: base payload only
+    resp = await client.post(INGEST, json=bare, headers=_headers())
+    assert resp.status_code == 201
+    assert resp.json()["cost_usd"] is None
+
+    rows = (await db_session.execute(select(FixerRun).order_by(FixerRun.run_id))).scalars().all()
+    assert rows[0].cache_creation_tokens == 9000
+    assert rows[1].cache_read_tokens is None

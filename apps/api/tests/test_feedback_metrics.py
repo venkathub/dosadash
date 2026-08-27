@@ -198,3 +198,50 @@ async def test_compute_loads_window(db_session: AsyncSession) -> None:
     assert out.totals_by_status.get("TRACKED") == 1
     assert out.funnel["received"] == 1
     assert out.runs["fix"]["total"] == 1
+
+
+# ------------------------------------------------------- S7 usage telemetry
+
+
+def test_summarize_spend_and_cache_share() -> None:
+    """Phase 15 S7: cached-token share over fix runs THAT reported usage;
+    spend sums per workflow. 90k cached of 100k total input → 0.9."""
+    runs = [
+        _run("fix", "success", 1),  # no telemetry — excluded from the share
+        FixerRun(
+            workflow="fix",
+            run_id=2,
+            run_attempt=1,
+            conclusion="success",
+            created_at=T0,
+            cost_usd=0.62,
+            input_tokens=1000,
+            cache_read_tokens=90_000,
+            cache_creation_tokens=9_000,
+            output_tokens=4_000,
+        ),
+        FixerRun(
+            workflow="verify",
+            run_id=3,
+            run_attempt=1,
+            conclusion="success",
+            created_at=T0,
+            cost_usd=0.05,
+        ),
+    ]
+    out = summarize([], [], runs, window_days=90, now=T0)
+    assert out.rates["fix_cached_token_share"] == 0.9
+    assert out.spend["fix_cost_usd"] == 0.62
+    assert out.spend["verify_cost_usd"] == 0.05
+    assert out.spend["total_cost_usd"] == 0.67
+
+
+def test_summarize_spend_honest_none_without_telemetry() -> None:
+    """No run carried usage → None everywhere, never a fake $0 / 0%."""
+    out = summarize([], [], [_run("fix", "success", 1)], window_days=90, now=T0)
+    assert out.rates["fix_cached_token_share"] is None
+    assert out.spend == {
+        "fix_cost_usd": None,
+        "verify_cost_usd": None,
+        "total_cost_usd": None,
+    }

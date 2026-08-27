@@ -66,6 +66,7 @@ type Metrics = {
   latency: Record<string, { p50: number | null; p90: number | null; count: number }>;
   weekly: { week: string; reports: number; fixed: number; verified: number }[];
   runs: Record<string, Record<string, number>>;
+  spend?: Record<string, number | null>;
 };
 
 type Ops = {
@@ -712,9 +713,19 @@ function MetricsStrip({ metrics }: { metrics: Metrics }) {
       value: `${metrics.runs.fix?.success ?? 0}/${metrics.runs.fix?.total ?? 0} ok`,
       sub: `verify ${metrics.runs.verify?.total ?? 0}`,
     },
+    {
+      // Phase 15 S7: loop TCO + within-run prompt-cache share from run
+      // telemetry. "—" until a run reports usage (honest null, never 0).
+      label: "Agent spend",
+      value:
+        metrics.spend?.total_cost_usd != null
+          ? `$${metrics.spend.total_cost_usd.toFixed(2)}`
+          : "—",
+      sub: `cached ${pct(metrics.rates.fix_cached_token_share ?? null)}`,
+    },
   ];
   return (
-    <section className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
+    <section className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
       {cards.map((card) => (
         <div
           key={card.label}
