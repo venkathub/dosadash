@@ -156,3 +156,22 @@ async def test_usage_telemetry_stored_and_optional(client, db_session: AsyncSess
     rows = (await db_session.execute(select(FixerRun).order_by(FixerRun.run_id))).scalars().all()
     assert rows[0].cache_creation_tokens == 9000
     assert rows[1].cache_read_tokens is None
+
+
+async def test_review_workflow_runs_ingest(client, db_session: AsyncSession) -> None:
+    """Phase 15 S3: reviewer runs land as workflow='review' — visible in
+    metrics/spend, and NEVER eligible for the FIX_FAILED alarm path."""
+    db_session.add(_report())
+    await db_session.commit()
+    payload = _payload(
+        workflow="review",
+        run_id=910001,
+        conclusion="failure",  # a failed review must not alarm as a failed fix
+        trigger_label=None,
+        cost_usd=0.04,
+    )
+    resp = await client.post(INGEST, json=payload, headers=_headers())
+    assert resp.status_code == 201
+    assert resp.json()["workflow"] == "review"
+    events = (await db_session.execute(select(FeedbackEvent))).scalars().all()
+    assert events == []  # no FIX_FAILED from review conclusions

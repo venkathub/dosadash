@@ -130,6 +130,13 @@ Prompt caching + Batch API, applied honestly:
   check. Verdict COMPUTED from the structured output;
   APPROVE_WITH_NOTES never blocks. Kill switch + model/turn gates like
   the fixer.
+- **Shipped shape** (PR #145): `claude-pr-review.yml` — Haiku ≤20 turns,
+  read-only toolset, scope `startsWith(head_ref, fix/issue-)`, verdict
+  marker parsed by a deterministic step (missing verdict = fail-closed),
+  run ingest as workflow `review` w/ S7 telemetry. **Arming runbook**:
+  repo variable `CLAUDE_REVIEW_ENABLED=true`; to make it blocking, add
+  required check "AI review verdict" to branch protection (skips count
+  as satisfied — live-gate pattern).
 
 ### S4 — Release agent: canary verdict + auto-rollback
 
