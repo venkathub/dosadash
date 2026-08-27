@@ -55,6 +55,36 @@ GITHUB_LABELS: dict[str, tuple[str, str]] = {
 # asset gate can assert the workflow file and the registry never drift.
 FIXER_TRIGGER_LABELS: tuple[str, str] = (LABEL_AI_AUTO_FIX, LABEL_AI_APPROVED)
 
+# ------------------------------------------------- capability ladder (S6)
+# Phase 15: the loop's autonomy is a LADDER, not a switch — each rung is
+# either structural (deterministic policy) or EARNED from measured loop
+# outcomes, never configured by vibes:
+#   AUTO_FIX_S  bug·S·LOW, human reporter        — structural (Phase 13)
+#   AUTO_FIX_M  bug·M·LOW, human reporter        — earned: unlocked only
+#               once ≥ AUTO_FIX_M_MIN_MERGED_FIXES fixes have merged AND
+#               the concluded-verification rate (verified / (verified +
+#               reopened)) is ≥ AUTO_FIX_M_MIN_VERIFICATION_RATE
+#   APPROVAL    everything else triage can route  — human decides intent
+#   HUMAN_ONLY  the zones below                   — never agent-modifiable
+# The api computes the unlock (services/feedback_autonomy.py) and passes
+# `max_auto_effort` into the triage request; the pure policy enforces it.
+AUTO_FIX_M_MIN_MERGED_FIXES = 20
+AUTO_FIX_M_MIN_VERIFICATION_RATE = 0.90
+
+# Zones no agent may modify at ANY ladder level — the fixer workflow's
+# hard-limits prompt must name every one of these (eval-gated).
+HUMAN_ONLY_ZONES: tuple[str, ...] = (
+    ".github/workflows/",
+    "infra/",
+    "apps/api/migrations/",
+    "lockfiles",
+    "secret",
+)
+
+# Sentinel detector precision (S1/S6): FP-rate = dismissed-or-rejected
+# share of decided SYSTEM reports — honestly null below this sample floor.
+SENTINEL_FP_MIN_SAMPLES = 10
+
 # ---------------------------------------------------------- untrusted fence
 # Issue-body markers around raw user text. The fixer prompt instructs the
 # agent that fenced content is data-only; the fence strings are constants so
@@ -275,6 +305,10 @@ class FeedbackMetricsOut(BaseModel):
     weekly: list[dict]
     runs: dict[str, dict[str, int]]
     spend: dict[str, float | None] = {}
+    # S6: all-time earned-autonomy state ({max_auto_effort, merged_fixes,
+    # verification_rate, thresholds…}) — None when the caller didn't
+    # compute it (summarize() stays pure; the endpoint injects it).
+    autonomy: dict | None = None
     generated_at: datetime
 
 
@@ -372,13 +406,18 @@ class TriageAssessment(BaseModel):
 
 class FeedbackTriageRequest(BaseModel):
     """api/worker → ai: one report (text already redacted api-side; the ai
-    redacts again defensively before the LLM — Rule 8 twice over)."""
+    redacts again defensively before the LLM — Rule 8 twice over).
+
+    `max_auto_effort` is the caller's current capability-ladder rung
+    (S6): "S" always; "M" only when the api's earned-autonomy computation
+    unlocked it. The pure policy treats it as a ceiling, never a floor."""
 
     report_id: int
     type: FeedbackType
     title: str = Field(max_length=120)
     description: str = Field(max_length=2000)
     reporter_tier: ReporterTier
+    max_auto_effort: Literal["S", "M"] = "S"
 
 
 class FeedbackTriageResponse(BaseModel):
@@ -390,3 +429,6 @@ class FeedbackTriageResponse(BaseModel):
     violations: list[str] = []
     model: str | None = None
     prompt_version: str = FEEDBACK_TRIAGE_PROMPT_VERSION
+    # S6: which ladder rung produced an AUTO_FIX ("AUTO_FIX_S"/"AUTO_FIX_M"),
+    # None for every non-auto verdict — provenance for the portal chip.
+    ladder_level: str | None = None

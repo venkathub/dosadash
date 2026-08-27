@@ -245,3 +245,47 @@ def test_summarize_spend_honest_none_without_telemetry() -> None:
         "verify_cost_usd": None,
         "total_cost_usd": None,
     }
+
+
+# --------------------------------------------------- S6 sentinel FP + autonomy
+
+
+def _system_report(status: str, n: int) -> FeedbackReport:
+    return FeedbackReport(
+        id=9000 + n,
+        reporter_tier="SYSTEM",
+        type="BUG",
+        status=status,
+        title=f"sentinel {n}",
+        description="evidence",
+        dedupe_hash=str(n).ljust(64, "f")[:64],
+        created_at=T0,
+    )
+
+
+def test_sentinel_fp_rate_needs_a_sample_floor() -> None:
+    """9 decided SYSTEM reports → None (one dismissal means nothing);
+    at the floor the rate is real: 3 FP of 10 decided = 0.3."""
+    reports = [_system_report("DISMISSED", i) for i in range(3)] + [
+        _system_report("APPROVED", 10 + i) for i in range(6)
+    ]
+    out = summarize(reports, [], [], window_days=90, now=T0)
+    assert out.rates["sentinel_fp_rate"] is None  # 9 decided < floor 10
+
+    reports.append(_system_report("VERIFIED", 30))
+    out = summarize(reports, [], [], window_days=90, now=T0)
+    assert out.rates["sentinel_fp_rate"] == 0.3
+
+
+def test_sentinel_fp_ignores_pending_and_human_reports() -> None:
+    reports = [_system_report("NEEDS_APPROVAL", i) for i in range(20)]  # all pending
+    out = summarize(reports, [], [], window_days=90, now=T0)
+    assert out.rates["sentinel_fp_rate"] is None
+
+
+def test_summarize_passes_autonomy_through() -> None:
+    autonomy = {"max_auto_effort": "S", "merged_fixes": 3, "verification_rate": None}
+    out = summarize([], [], [], window_days=90, now=T0, autonomy=autonomy)
+    assert out.autonomy == autonomy
+    out = summarize([], [], [], window_days=90, now=T0)
+    assert out.autonomy is None

@@ -20,6 +20,7 @@ import yaml
 from dosadash_shared import (
     FIXER_TRIGGER_LABELS,
     GITHUB_LABELS,
+    HUMAN_ONLY_ZONES,
     LABEL_AI_AUTO_FIX,
     LABEL_AI_NEEDS_APPROVAL,
     UNTRUSTED_BEGIN,
@@ -169,3 +170,12 @@ def test_prompts_never_inline_issue_body() -> None:
             f"{workflow.name}: issue body interpolated into the workflow — "
             "read it via `gh issue view` inside the run instead"
         )
+
+
+def test_hard_limit_zones_match_registry() -> None:
+    """S6: HUMAN_ONLY zones are a shared registry — the fixer prompt's
+    hard-limits rule must name every one, so widening the agent's blast
+    radius requires editing BOTH (and this gate) deliberately."""
+    _, text = _load()
+    for zone in HUMAN_ONLY_ZONES:
+        assert zone in text, f"fixer prompt must forbid the HUMAN_ONLY zone: {zone}"

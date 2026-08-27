@@ -21,11 +21,18 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.db.models import FeedbackEvent, FeedbackReport, FixerRun
-from dosadash_shared import FeedbackEventStage, FeedbackMetricsOut
+from dosadash_api.services import feedback_autonomy
+from dosadash_shared import (
+    SENTINEL_FP_MIN_SAMPLES,
+    FeedbackEventStage,
+    FeedbackMetricsOut,
+    FeedbackStatus,
+)
 
 IST = ZoneInfo("Asia/Kolkata")
 
 Stage = FeedbackEventStage
+Status = FeedbackStatus
 
 # Funnel = distinct reports that ever reached each stage (within window).
 _FUNNEL_STAGES: tuple[Stage, ...] = (
@@ -72,6 +79,34 @@ def _rate(numerator: int, denominator: int) -> float | None:
     return round(numerator / denominator, 4) if denominator else None
 
 
+# S6: sentinel detector precision. A decided SYSTEM report is either a
+# false positive (a human threw it away) or a true positive (a human acted
+# on it). Undecided reports are pending, not evidence; below the sample
+# floor the rate is honestly None — ten dismissals mean something, one
+# means nothing.
+_SENTINEL_FP_STATUSES = frozenset({Status.REJECTED.value, Status.DISMISSED.value})
+_SENTINEL_TP_STATUSES = frozenset(
+    {
+        Status.APPROVED.value,
+        Status.FIXING.value,
+        Status.PR_OPEN.value,
+        Status.FIXED.value,
+        Status.VERIFIED.value,
+        Status.REOPENED.value,
+    }
+)
+
+
+def _sentinel_fp_rate(reports: list[FeedbackReport]) -> float | None:
+    system = [r for r in reports if str(r.reporter_tier) == "SYSTEM"]
+    fp = sum(1 for r in system if str(r.status) in _SENTINEL_FP_STATUSES)
+    tp = sum(1 for r in system if str(r.status) in _SENTINEL_TP_STATUSES)
+    decided = fp + tp
+    if decided < SENTINEL_FP_MIN_SAMPLES:
+        return None
+    return round(fp / decided, 4)
+
+
 def _week_key(dt: datetime) -> str:
     """ISO-Monday of the IST week the (naive-UTC) timestamp falls in."""
     ist = dt.replace(tzinfo=UTC).astimezone(IST)
@@ -86,6 +121,7 @@ def summarize(
     *,
     window_days: int,
     now: datetime | None = None,
+    autonomy: dict | None = None,
 ) -> FeedbackMetricsOut:
     now = now or datetime.now(UTC).replace(tzinfo=None)
 
@@ -146,6 +182,7 @@ def summarize(
         "reopen_rate": _rate(funnel["reopened"], fixed_ever),
         "triage_fallback_rate": _rate(fallbacks, triaged),
         "fix_cached_token_share": _rate(cached, total_input),
+        "sentinel_fp_rate": _sentinel_fp_rate(reports),
     }
 
     latency: dict[str, dict[str, float | None]] = {}
@@ -204,6 +241,7 @@ def summarize(
         weekly=weekly,
         runs=runs_summary,
         spend=spend,
+        autonomy=autonomy,
         generated_at=now,
     )
 
@@ -233,4 +271,7 @@ async def compute(session: AsyncSession, *, window_days: int = 90) -> FeedbackMe
         .scalars()
         .all()
     )
-    return summarize(list(reports), list(events), list(runs), window_days=window_days)
+    autonomy = await feedback_autonomy.compute(session)
+    return summarize(
+        list(reports), list(events), list(runs), window_days=window_days, autonomy=autonomy
+    )
