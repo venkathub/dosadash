@@ -24,9 +24,12 @@ from dosadash_shared import (
     HUMAN_ONLY_ZONES,
     LABEL_AI_AUTO_FIX,
     LABEL_AI_NEEDS_APPROVAL,
+    LABEL_AI_SPEC,
     REVIEW_COMMENT_MARKER,
     REVIEW_VERDICTS,
     REVIEW_WORKFLOW_FILE,
+    SPEC_COMMENT_MARKER,
+    SPEC_WORKFLOW_FILE,
     UNTRUSTED_BEGIN,
     UNTRUSTED_END,
 )
@@ -305,3 +308,48 @@ def test_canary_incident_report_rides_the_sentinel_spine() -> None:
     kinds = get_args(SentinelIncidentIn.model_fields["kind"].annotation)
     assert '"kind":"deploy_canary_failed"' in text
     assert "deploy_canary_failed" in kinds, "workflow kind must stay in the shared allowlist"
+
+
+# ------------------------------------------------- spec agent (Phase 15 S2)
+
+SPEC_WORKFLOW = (
+    Path(__file__).resolve().parents[2] / ".github" / "workflows" / SPEC_WORKFLOW_FILE
+)
+
+
+def test_spec_agent_is_advisory_read_only() -> None:
+    """The spec agent comments — it never codes, never labels, never
+    merges. A spec workflow that could mutate anything would be a second
+    fixer without the fixer's guardrails."""
+    text = SPEC_WORKFLOW.read_text()
+    doc = yaml.safe_load(text)
+    condition = doc["jobs"]["spec"]["if"]
+    assert "vars.CLAUDE_SPEC_ENABLED == 'true'" in condition
+    assert f"github.event.label.name == '{LABEL_AI_SPEC}'" in condition
+    allowed = re.search(r'--allowedTools "([^"]+)"', text).group(1)
+    for banned in ("Edit", "Write", "NotebookEdit"):
+        assert banned not in allowed.split(","), f"spec toolset must exclude {banned}"
+    for mutating in ("git push", "gh pr", "gh issue edit"):
+        assert mutating not in allowed, f"spec agent must not be allowed {mutating}"
+    assert "gh issue comment" in allowed  # its one output channel
+
+
+def test_spec_prompt_carries_contract() -> None:
+    text = SPEC_WORKFLOW.read_text()
+    assert SPEC_COMMENT_MARKER in text
+    assert UNTRUSTED_BEGIN in text and UNTRUSTED_END in text
+    # Rule 5 travels into the spec: eval cases are part of scope
+    assert "Eval cases to add" in text
+    assert "Decomposition" in text
+    for zone in HUMAN_ONLY_ZONES:
+        assert zone in text, f"spec must flag HUMAN_ONLY zone {zone} as not agent-implementable"
+    turns = int(re.search(r"--max-turns (\d+)", text).group(1))
+    assert turns <= 40
+
+
+def test_fixer_reads_spec_comments() -> None:
+    """An approved fixer run must see the spec (the agreed scope) — the
+    issue read must include comments."""
+    _, text = _load()
+    assert "--comments" in text
+    assert SPEC_COMMENT_MARKER in text

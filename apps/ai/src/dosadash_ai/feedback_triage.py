@@ -22,6 +22,7 @@ from dosadash_shared import (
     FEEDBACK_TRIAGE_PROMPT_VERSION,
     LABEL_AI_AUTO_FIX,
     LABEL_AI_NEEDS_APPROVAL,
+    LABEL_AI_SPEC,
     FeedbackTriageRequest,
     FeedbackTriageResponse,
     FeedbackType,
@@ -37,6 +38,45 @@ VERDICT_LABELS: dict[TriageVerdict, list[str]] = {
     TriageVerdict.NEEDS_APPROVAL: [LABEL_AI_NEEDS_APPROVAL],
     TriageVerdict.DISMISS: [],  # nothing for the fixer to trigger on
 }
+
+
+def needs_spec(
+    request: FeedbackTriageRequest,
+    assessment: TriageAssessment,
+    verdict: TriageVerdict,
+) -> bool:
+    """S2: should the spec agent draft scope BEFORE the human decides?
+
+    Only for NEEDS_APPROVAL (an auto-fix is small enough not to need one;
+    a dismissal has nothing to spec), only for human reporters (SYSTEM
+    incidents need investigation, not a feature spec), and only when the
+    work is feature-shaped or larger than S. Advisory by construction:
+    `ai:spec` dispatches a read-only commenter, never the fixer."""
+    if verdict != TriageVerdict.NEEDS_APPROVAL:
+        return False
+    if request.reporter_tier == ReporterTier.SYSTEM:
+        return False
+    if not assessment.actionable:
+        return False
+    return (
+        request.type == FeedbackType.FEATURE
+        or assessment.type == FeedbackType.FEATURE
+        or assessment.effort in ("M", "L")
+    )
+
+
+def labels_for(
+    request: FeedbackTriageRequest,
+    assessment: TriageAssessment | None,
+    verdict: TriageVerdict,
+) -> list[str]:
+    """Verdict labels + the advisory spec label when earned. The ONLY
+    label composer — triage() and the asset gates share it so golden
+    expectations can never drift from the shipped composition."""
+    labels = list(VERDICT_LABELS[verdict])
+    if assessment is not None and needs_spec(request, assessment, verdict):
+        labels.append(LABEL_AI_SPEC)
+    return labels
 
 
 def build_messages(request: FeedbackTriageRequest) -> list[dict[str, str]]:
@@ -121,7 +161,7 @@ async def triage(request: FeedbackTriageRequest) -> FeedbackTriageResponse:
         report_id=request.report_id,
         verdict=verdict,
         assessment=assessment,
-        labels=VERDICT_LABELS[verdict],
+        labels=labels_for(request, assessment, verdict),
         violations=violations,
         model=model,
         ladder_level=ladder_level,

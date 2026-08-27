@@ -237,15 +237,13 @@ def test_summarize_spend_and_cache_share() -> None:
 
 
 def test_summarize_spend_honest_none_without_telemetry() -> None:
-    """No run carried usage → None everywhere, never a fake $0 / 0%."""
+    """No run carried usage → None everywhere, never a fake $0 / 0%.
+    Shape-robust on purpose: new agent workflows join the spend map
+    without this test needing to know them by name."""
     out = summarize([], [], [_run("fix", "success", 1)], window_days=90, now=T0)
     assert out.rates["fix_cached_token_share"] is None
-    assert out.spend == {
-        "fix_cost_usd": None,
-        "verify_cost_usd": None,
-        "review_cost_usd": None,
-        "total_cost_usd": None,
-    }
+    assert {"fix_cost_usd", "total_cost_usd"} <= set(out.spend)
+    assert all(v is None for v in out.spend.values())
 
 
 # --------------------------------------------------- S6 sentinel FP + autonomy
