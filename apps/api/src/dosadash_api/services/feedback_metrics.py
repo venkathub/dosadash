@@ -224,7 +224,7 @@ def summarize(
     # Phase 15 S7: loop TCO as a number, not a vibe. None when no run in
     # the window carried cost telemetry (empty-denominator honesty rule).
     spend: dict[str, float | None] = {}
-    for workflow in ("fix", "verify", "review"):
+    for workflow in ("fix", "verify", "review", "spec"):
         costs = [r.cost_usd for r in runs if r.workflow == workflow and r.cost_usd is not None]
         spend[f"{workflow}_cost_usd"] = round(sum(costs), 4) if costs else None
     all_costs = [v for v in spend.values() if v is not None]

@@ -19,7 +19,13 @@ import json
 from pathlib import Path
 
 from dosadash_ai import feedback_triage
-from dosadash_ai.feedback_triage import VERDICT_LABELS, build_messages, decide
+from dosadash_ai.feedback_triage import (
+    VERDICT_LABELS,
+    build_messages,
+    decide,
+    labels_for,
+    needs_spec,
+)
 from dosadash_shared import (
     FEEDBACK_TRIAGE_PROMPT_VERSION,
     FIXER_TRIGGER_LABELS,
@@ -53,7 +59,8 @@ def _run(case: dict) -> tuple[TriageVerdict, list[str], list[str]]:
         return verdict, VERDICT_LABELS[verdict], ["llm unavailable"]
     assessment = TriageAssessment.model_validate(case["assessment"])
     verdict, violations = decide(request, assessment)
-    return verdict, VERDICT_LABELS[verdict], violations
+    # the SHIPPED label composition (verdict labels + advisory ai:spec)
+    return verdict, labels_for(request, assessment, verdict), violations
 
 
 # ---------------------------------------------------------------- golden set
@@ -223,3 +230,45 @@ def test_fallback_constants_are_safe() -> None:
     """The chain-failure path must never be able to auto-fix."""
     assert VERDICT_LABELS[TriageVerdict.NEEDS_APPROVAL] != VERDICT_LABELS[TriageVerdict.AUTO_FIX]
     assert feedback_triage.VERDICT_LABELS[TriageVerdict.NEEDS_APPROVAL] == ["ai:needs-approval"]
+
+
+# ------------------------------------------------- spec lane (Phase 15 S2)
+
+
+def test_spec_label_is_advisory_and_scoped() -> None:
+    """Property sweep: ai:spec accompanies ONLY human-filed NEEDS_APPROVAL
+    verdicts on actionable feature-shaped or M/L work — and it can never
+    dispatch the fixer (not a trigger label, structurally)."""
+    from dosadash_shared import LABEL_AI_SPEC
+
+    assert LABEL_AI_SPEC not in FIXER_TRIGGER_LABELS, "spec must never trigger the fixer"
+    assert LABEL_AI_SPEC in GITHUB_LABELS
+
+    for filed in ["BUG", "FEATURE"]:
+        for tier in list(ReporterTier):
+            for ceiling in ["S", "M"]:
+                request = FeedbackTriageRequest(
+                    report_id=1,
+                    type=filed,
+                    title="sweep",
+                    description="sweep",
+                    reporter_tier=tier,
+                    max_auto_effort=ceiling,
+                )
+                for assessment in _all_assessments():
+                    verdict, _ = decide(request, assessment)
+                    labels = labels_for(request, assessment, verdict)
+                    if LABEL_AI_SPEC in labels:
+                        assert verdict == TriageVerdict.NEEDS_APPROVAL
+                        assert tier != ReporterTier.SYSTEM
+                        assert assessment.actionable
+                        assert (
+                            filed == "FEATURE"
+                            or assessment.type == "FEATURE"
+                            or assessment.effort in ("M", "L")
+                        )
+                    if verdict != TriageVerdict.NEEDS_APPROVAL:
+                        assert LABEL_AI_SPEC not in labels
+                    assert needs_spec(request, assessment, verdict) == (LABEL_AI_SPEC in labels), (
+                        "composer and predicate must agree"
+                    )

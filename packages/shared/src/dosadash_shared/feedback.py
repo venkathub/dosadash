@@ -32,6 +32,7 @@ LABEL_BUG = "bug"
 LABEL_FEATURE = "feature"
 LABEL_AI_AUTO_FIX = "ai:auto-fix"
 LABEL_AI_NEEDS_APPROVAL = "ai:needs-approval"
+LABEL_AI_SPEC = "ai:spec"  # Phase 15 S2: spec agent dispatch (advisory, never a fixer trigger)
 LABEL_AI_APPROVED = "ai:approved"
 LABEL_AI_REJECTED = "ai:rejected"
 LABEL_AI_FIXED = "ai:fixed"
@@ -45,6 +46,7 @@ GITHUB_LABELS: dict[str, tuple[str, str]] = {
     LABEL_FEATURE: ("F2B705", "User-requested feature"),
     LABEL_AI_AUTO_FIX: ("5BD69B", "Triage verdict: small low-risk bug — fixer may auto-merge"),
     LABEL_AI_NEEDS_APPROVAL: ("FF8B8B", "Triage verdict: human approval required to run fixer"),
+    LABEL_AI_SPEC: ("7B61C4", "Feature/M-L work: spec agent drafts scope before the human decides"),
     LABEL_AI_APPROVED: ("2DA44E", "Admin approved via Telegram/backoffice — fixer may run"),
     LABEL_AI_REJECTED: ("6E7781", "Admin rejected — fixer must not run"),
     LABEL_AI_FIXED: ("8250DF", "Fixer PR merged"),
@@ -176,6 +178,7 @@ class FeedbackEventStage(StrEnum):
     FIX_STALLED = "FIX_STALLED"  # watchdog: dispatched run queued-dead / startup_failure / lost
     FIX_RETRIED = "FIX_RETRIED"  # watchdog re-dispatched the trigger label
     RCA_POSTED = "RCA_POSTED"  # "## Root cause analysis" comment
+    SPEC_POSTED = "SPEC_POSTED"  # Phase 15 S2: "## Spec" comment landed
     ESCALATED = "ESCALATED"  # fixer hit a hard limit → back to approval
     FIX_FAILED = "FIX_FAILED"  # fixer run died without a PR (run ingest)
     PR_OPENED = "PR_OPENED"  # fix PR opened
@@ -226,6 +229,16 @@ REVIEW_WORKFLOW_FILE = "claude-pr-review.yml"
 REVIEW_COMMENT_MARKER = "## AI review"
 REVIEW_VERDICTS: tuple[str, str, str] = ("APPROVE", "APPROVE_WITH_NOTES", "REQUEST_CHANGES")
 
+# S2 (Phase 15): the spec agent — a READ-ONLY run dispatched by `ai:spec`
+# (applied by triage ALONGSIDE ai:needs-approval for actionable features
+# and M/L-effort work) that posts ONE "## Spec" comment (requirements,
+# acceptance criteria, EVAL CASES to add, risks, S-sized decomposition)
+# BEFORE the human decides. The approval flow itself is untouched: the
+# human still taps approve/reject on the same card — now with a spec to
+# read. ai:spec must never enter FIXER_TRIGGER_LABELS (gate-pinned).
+SPEC_WORKFLOW_FILE = "claude-issue-spec.yml"
+SPEC_COMMENT_MARKER = "## Spec"
+
 
 class FeedbackEventOut(BaseModel):
     """One timeline entry (portal drill-down + Telegram lifecycle feed)."""
@@ -272,7 +285,7 @@ class FixerRunIn(BaseModel):
     cache share and real spend. All optional: a run whose execution file
     is missing/unreadable still lands (outcome truth outranks telemetry)."""
 
-    workflow: Literal["fix", "verify", "review"]
+    workflow: Literal["fix", "verify", "review", "spec"]
     run_id: int
     run_attempt: int = 1
     issue_number: int | None = None  # verify runs cover a queue → None

@@ -157,6 +157,22 @@ Prompt caching + Batch API, applied honestly:
   with `ai:approved`, each riding the EXISTING S-sized fixer path,
   serialized by single-flight. Rule 5 preserved: the fixer PR is
   gate-checked to contain the spec's eval additions.
+- **Shipped shape** (PR #147, deliberately simpler than planned): no new
+  verdict and NO approval-flow changes — triage applies `ai:spec`
+  ALONGSIDE ai:needs-approval (pure `needs_spec()`: NEEDS_APPROVAL ∧
+  human reporter ∧ actionable ∧ (FEATURE ∨ effort M/L), sweep-gated) →
+  `claude-issue-spec.yml` (Sonnet ≤40 turns, comment-only read-only
+  toolset, kill switch CLAUDE_SPEC_ENABLED) posts ONE `## Spec` comment
+  (approach grounded in real code, acceptance criteria, EVAL CASES,
+  HUMAN_ONLY flags, S-sized decomposition) BEFORE the human decides;
+  the same Telegram card approves w/ the spec attached; the approved
+  fixer reads it via `gh issue view --comments` as agreed scope.
+  SPEC_POSTED timeline stage (no migration). *Documented deviations*:
+  automated sub-issue decomposition deferred (needs its own approval
+  semantics — the spec's Decomposition section guides the fixer/human
+  instead); spec runs are not watchdog-covered (benign degradation: a
+  lost spec run just means the human decides without one). **Arming**:
+  repo variable `CLAUDE_SPEC_ENABLED=true`.
 
 ### S5 — Maintenance lane: scheduled janitor issues
 

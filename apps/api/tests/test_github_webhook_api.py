@@ -302,3 +302,22 @@ async def test_duplicate_delivery_noops(client, db_session: AsyncSession) -> Non
 async def test_unknown_issue_ignored(client, db_session: AsyncSession) -> None:
     resp = await _post(client, "issues", _issues_payload("labeled", label="ai:fixed"))
     assert resp.json()["ignored"] == "unmapped"
+
+
+async def test_spec_comment_recorded_timeline_only(client, db_session: AsyncSession) -> None:
+    """Phase 15 S2: the spec agent's '## Spec' comment lands as a
+    SPEC_POSTED timeline event; the report STAYS NEEDS_APPROVAL — the
+    human decides WITH the spec, the spec never decides."""
+    report = _report(status="NEEDS_APPROVAL")
+    db_session.add(report)
+    await db_session.commit()
+    payload = _issues_payload("created")
+    payload["comment"] = {
+        "body": "## Spec\n**Problem** dark mode request.\n**Decomposition** two S steps."
+    }
+    resp = await _post(client, "issue_comment", payload)
+    assert resp.json()["stage"] == "SPEC_POSTED"
+    events = await _events(db_session, report.id)
+    assert "dark mode" in events[0].payload["excerpt"]
+    await db_session.refresh(report)
+    assert report.status == "NEEDS_APPROVAL"  # timeline-only, projection untouched
