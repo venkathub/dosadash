@@ -250,7 +250,7 @@ export type CrmReport = { computed_at: string | null; tiers: CrmTier[]; at_risk:
 export type AdminFeedback = {
   id: number;
   user_id: number | null;
-  reporter_tier: "ANON" | "CUSTOMER" | "STAFF";
+  reporter_tier: "ANON" | "CUSTOMER" | "STAFF" | "SYSTEM";
   type: "BUG" | "FEATURE";
   status: string;
   title: string;

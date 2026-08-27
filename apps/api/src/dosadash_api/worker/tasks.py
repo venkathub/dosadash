@@ -599,3 +599,69 @@ def feedback_fixer_watchdog(self: Any, limit: int = 20) -> dict[str, Any]:
         return {"error": "watchdog pass failed", "examined": 0, "stalled": 0, "retried": 0}
     logger.info("feedback_fixer_watchdog %s", result)
     return result
+
+
+# ------------------------------------------------------------- sentinel (Phase 15)
+
+
+async def _sentinel_scan() -> dict[str, Any]:
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from dosadash_api.services import sentinel
+    from dosadash_api.services.github_client import get_github_client
+
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            return await sentinel.scan(session, get_github_client())
+    finally:
+        await engine.dispose()
+
+
+@app.task(name="sentinel.scan", bind=True, max_retries=0)
+def sentinel_scan(self: Any) -> dict[str, Any]:
+    """Every 5 min: deterministic anomaly detection (healthz fleet, 5xx
+    burst, consecutive eval-gate reds) → SYSTEM feedback reports through
+    the EXISTING self-healing intake (dedupe collapses recurrences; the
+    triage policy routes SYSTEM to NEEDS_APPROVAL unconditionally in v1).
+    Watchdog style: no celery retry and no raise — the next beat IS the
+    retry; a transient failure is one warning line, never a crash loop."""
+    try:
+        result = asyncio.run(_sentinel_scan())
+    except Exception:  # noqa: BLE001 — the sentinel must never crash the beat
+        logger.exception("sentinel_scan failed — next beat retries")
+        return {"error": "sentinel pass failed", "anomalies": 0, "filed": 0}
+    logger.info("sentinel_scan %s", result)
+    return result
+
+
+# ------------------------------------------------------------- janitor (Phase 15)
+
+
+async def _janitor_scan() -> dict[str, Any]:
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from dosadash_api.services import janitor
+    from dosadash_api.services.github_client import get_github_client
+
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            return await janitor.scan(session, get_github_client())
+    finally:
+        await engine.dispose()
+
+
+@app.task(name="janitor.weekly", bind=True, max_retries=0)
+def janitor_weekly(self: Any) -> dict[str, Any]:
+    """Weekly (Sun 04:30 IST): deterministic maintenance-debt detection
+    (flaky-eval tally, translation DRAFT backlog, week-old pending
+    approvals) → SYSTEM reports through the sentinel spine. Watchdog
+    style: never crash the beat — next week IS the retry."""
+    try:
+        result = asyncio.run(_janitor_scan())
+    except Exception:  # noqa: BLE001 — the janitor must never crash the beat
+        logger.exception("janitor_weekly failed — next beat retries")
+        return {"error": "janitor pass failed", "anomalies": 0, "filed": 0}
+    logger.info("janitor_weekly %s", result)
+    return result

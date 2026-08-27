@@ -29,7 +29,7 @@ import {
 
 type Report = {
   id: number;
-  reporter_tier: "ANON" | "CUSTOMER" | "STAFF";
+  reporter_tier: "ANON" | "CUSTOMER" | "STAFF" | "SYSTEM";
   type: "BUG" | "FEATURE";
   status: string;
   title: string;
@@ -66,6 +66,14 @@ type Metrics = {
   latency: Record<string, { p50: number | null; p90: number | null; count: number }>;
   weekly: { week: string; reports: number; fixed: number; verified: number }[];
   runs: Record<string, Record<string, number>>;
+  spend?: Record<string, number | null>;
+  autonomy?: {
+    max_auto_effort: string;
+    merged_fixes: number;
+    verification_rate: number | null;
+    min_merged_fixes: number;
+    min_verification_rate: number;
+  } | null;
 };
 
 type Ops = {
@@ -165,6 +173,7 @@ const TIER_ICON: Record<Report["reporter_tier"], string> = {
   ANON: "👤",
   CUSTOMER: "🛒",
   STAFF: "🧑‍🍳",
+  SYSTEM: "🛰️",
 };
 
 /** DB timestamps are naive UTC — pin the zone before Date.parse. */
@@ -687,7 +696,10 @@ function MetricsStrip({ metrics }: { metrics: Metrics }) {
     {
       label: "Reports",
       value: String(totalReports),
-      sub: `${metrics.window_days}d window`,
+      sub:
+        metrics.rates.sentinel_fp_rate != null
+          ? `${metrics.window_days}d · sentinel FP ${pct(metrics.rates.sentinel_fp_rate)}`
+          : `${metrics.window_days}d window`,
     },
     { label: "Auto-fix rate", value: pct(metrics.rates.auto_fix_rate) },
     { label: "Merge rate", value: pct(metrics.rates.merge_rate) },
@@ -711,9 +723,30 @@ function MetricsStrip({ metrics }: { metrics: Metrics }) {
       value: `${metrics.runs.fix?.success ?? 0}/${metrics.runs.fix?.total ?? 0} ok`,
       sub: `verify ${metrics.runs.verify?.total ?? 0}`,
     },
+    {
+      // Phase 15 S7: loop TCO + within-run prompt-cache share from run
+      // telemetry. "—" until a run reports usage (honest null, never 0).
+      label: "Agent spend",
+      value:
+        metrics.spend?.total_cost_usd != null
+          ? `$${metrics.spend.total_cost_usd.toFixed(2)}`
+          : "—",
+      sub: `cached ${pct(metrics.rates.fix_cached_token_share ?? null)}`,
+    },
+    {
+      // S6 capability ladder: the M rung is EARNED from loop outcomes
+      // (≥20 merged @ ≥90% verified), never configured.
+      label: "Autonomy",
+      value: metrics.autonomy?.max_auto_effort === "M" ? "S+M auto" : "S auto",
+      sub: metrics.autonomy
+        ? `${metrics.autonomy.merged_fixes}/${metrics.autonomy.min_merged_fixes} merged · verif ${pct(
+            metrics.autonomy.verification_rate,
+          )}`
+        : undefined,
+    },
   ];
   return (
-    <section className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
+    <section className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
       {cards.map((card) => (
         <div
           key={card.label}

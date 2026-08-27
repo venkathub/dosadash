@@ -22,9 +22,11 @@ from dosadash_shared import (
     FEEDBACK_TRIAGE_PROMPT_VERSION,
     LABEL_AI_AUTO_FIX,
     LABEL_AI_NEEDS_APPROVAL,
+    LABEL_AI_SPEC,
     FeedbackTriageRequest,
     FeedbackTriageResponse,
     FeedbackType,
+    ReporterTier,
     TriageAssessment,
     TriageVerdict,
 )
@@ -36,6 +38,45 @@ VERDICT_LABELS: dict[TriageVerdict, list[str]] = {
     TriageVerdict.NEEDS_APPROVAL: [LABEL_AI_NEEDS_APPROVAL],
     TriageVerdict.DISMISS: [],  # nothing for the fixer to trigger on
 }
+
+
+def needs_spec(
+    request: FeedbackTriageRequest,
+    assessment: TriageAssessment,
+    verdict: TriageVerdict,
+) -> bool:
+    """S2: should the spec agent draft scope BEFORE the human decides?
+
+    Only for NEEDS_APPROVAL (an auto-fix is small enough not to need one;
+    a dismissal has nothing to spec), only for human reporters (SYSTEM
+    incidents need investigation, not a feature spec), and only when the
+    work is feature-shaped or larger than S. Advisory by construction:
+    `ai:spec` dispatches a read-only commenter, never the fixer."""
+    if verdict != TriageVerdict.NEEDS_APPROVAL:
+        return False
+    if request.reporter_tier == ReporterTier.SYSTEM:
+        return False
+    if not assessment.actionable:
+        return False
+    return (
+        request.type == FeedbackType.FEATURE
+        or assessment.type == FeedbackType.FEATURE
+        or assessment.effort in ("M", "L")
+    )
+
+
+def labels_for(
+    request: FeedbackTriageRequest,
+    assessment: TriageAssessment | None,
+    verdict: TriageVerdict,
+) -> list[str]:
+    """Verdict labels + the advisory spec label when earned. The ONLY
+    label composer — triage() and the asset gates share it so golden
+    expectations can never drift from the shipped composition."""
+    labels = list(VERDICT_LABELS[verdict])
+    if assessment is not None and needs_spec(request, assessment, verdict):
+        labels.append(LABEL_AI_SPEC)
+    return labels
 
 
 def build_messages(request: FeedbackTriageRequest) -> list[dict[str, str]]:
@@ -59,8 +100,20 @@ def decide(
     """Deterministic policy — the ONLY writer of verdicts.
 
     Returns (verdict, violations). Violations record why an assessment was
-    denied AUTO_FIX so the admin tab can show the reasoning."""
+    denied AUTO_FIX so the admin tab can show the reasoning.
+
+    S6 capability ladder: `request.max_auto_effort` is a CEILING the api
+    computed from measured loop outcomes ("S" structural, "M" earned) —
+    the policy never widens it, and L effort can never auto-fix at any
+    rung."""
     violations: list[str] = []
+    if request.reporter_tier == ReporterTier.SYSTEM:
+        # Phase 15 v1 policy: sentinel-filed incidents ALWAYS go to a human
+        # — no auto-fix AND no LLM-decided dismissal. Detector precision is
+        # measured first (dismissed-rate on the metrics rollup); loosening
+        # is a deliberate later step, never a default.
+        violations.append("sentinel reports always need approval (v1 policy)")
+        return TriageVerdict.NEEDS_APPROVAL, violations
     if not assessment.actionable:
         return TriageVerdict.DISMISS, violations
     if request.type != FeedbackType.BUG:
@@ -69,8 +122,12 @@ def decide(
     if assessment.type != FeedbackType.BUG:
         violations.append("model reads this as a feature disguised as a bug")
         return TriageVerdict.NEEDS_APPROVAL, violations
-    if assessment.effort != "S":
-        violations.append(f"effort {assessment.effort} needs a human")
+    allowed_efforts = {"S"} if request.max_auto_effort == "S" else {"S", "M"}
+    if assessment.effort not in allowed_efforts:
+        violations.append(
+            f"effort {assessment.effort} exceeds the current autonomy "
+            f"ceiling ({request.max_auto_effort}) — needs a human"
+        )
         return TriageVerdict.NEEDS_APPROVAL, violations
     if assessment.risk != "LOW":
         violations.append("HIGH risk never auto-fixes")
@@ -99,11 +156,13 @@ async def triage(request: FeedbackTriageRequest) -> FeedbackTriageResponse:
             violations=[f"llm unavailable: {exc}"[:300]],
         )
     verdict, violations = decide(request, assessment)
+    ladder_level = f"AUTO_FIX_{assessment.effort}" if verdict == TriageVerdict.AUTO_FIX else None
     return FeedbackTriageResponse(
         report_id=request.report_id,
         verdict=verdict,
         assessment=assessment,
-        labels=VERDICT_LABELS[verdict],
+        labels=labels_for(request, assessment, verdict),
         violations=violations,
         model=model,
+        ladder_level=ladder_level,
     )

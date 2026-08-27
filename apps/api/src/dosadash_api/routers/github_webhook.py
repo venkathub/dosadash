@@ -42,6 +42,7 @@ from dosadash_shared import (
     LABEL_AI_NEEDS_APPROVAL,
     LABEL_AI_VERIFIED,
     RCA_COMMENT_MARKER,
+    SPEC_COMMENT_MARKER,
     VERIFICATION_COMMENT_MARKER,
     FeedbackEventStage,
     FeedbackStatus,
@@ -148,6 +149,10 @@ def _handle_issue_comment(payload: dict[str, Any]) -> tuple[Stage, dict[str, Any
         return Stage.RCA_POSTED, {"excerpt": _excerpt(body)}
     if body.startswith(VERIFICATION_COMMENT_MARKER):
         return Stage.VERIFICATION_POSTED, {"excerpt": _excerpt(body)}
+    if body.startswith(SPEC_COMMENT_MARKER):
+        # Phase 15 S2: the spec agent's scope draft — timeline-only (the
+        # report stays NEEDS_APPROVAL; the human decides WITH the spec).
+        return Stage.SPEC_POSTED, {"excerpt": _excerpt(body)}
     return None
 
 

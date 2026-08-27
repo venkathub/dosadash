@@ -38,6 +38,7 @@ from dosadash_api.routers.feedback import router as feedback_router
 from dosadash_api.routers.fixer_runs import router as fixer_runs_router
 from dosadash_api.routers.github_webhook import router as github_webhook_router
 from dosadash_api.routers.internal_mcp import router as internal_mcp_router
+from dosadash_api.routers.internal_sentinel import router as internal_sentinel_router
 from dosadash_api.routers.menu import router as menu_router
 from dosadash_api.routers.orders import router as orders_router
 from dosadash_api.routers.payments import router as payments_router
@@ -46,11 +47,15 @@ from dosadash_api.routers.recs import router as recs_router
 from dosadash_api.routers.reviews import router as reviews_router
 from dosadash_api.routers.support import router as support_router
 from dosadash_api.routers.ws import router as ws_router
+from dosadash_api.sentinel_counters import ServerErrorCounterMiddleware
 from dosadash_shared import HealthStatus
 
 app = FastAPI(title="DosaDash API", version="0.1.0")
 # Phase 9 hardening: inbound rate limiting (pure ASGI — SSE-safe, fail-open).
 app.add_middleware(RateLimitMiddleware)
+# Phase 15 sentinel: per-minute 5xx counters (pure ASGI, fire-and-forget —
+# a Redis outage never adds latency or failures to the request path).
+app.add_middleware(ServerErrorCounterMiddleware)
 app.include_router(auth_router)
 app.include_router(aggregator_router)
 app.include_router(admin_combos_router)
@@ -81,6 +86,7 @@ app.include_router(feedback_internal_router)
 app.include_router(fixer_runs_router)
 app.include_router(github_webhook_router)
 app.include_router(internal_mcp_router)
+app.include_router(internal_sentinel_router)
 app.include_router(menu_router)
 app.include_router(orders_router)
 app.include_router(payments_router)

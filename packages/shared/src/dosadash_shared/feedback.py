@@ -18,7 +18,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-FEEDBACK_TRIAGE_PROMPT_VERSION = "feedback_triage_v1"
+FEEDBACK_TRIAGE_PROMPT_VERSION = "feedback_triage_v2"
 
 # ------------------------------------------------------------------- labels
 # The GitHub label registry — single source of truth for the api (creates
@@ -27,10 +27,12 @@ FEEDBACK_TRIAGE_PROMPT_VERSION = "feedback_triage_v1"
 # between this dict and .github/workflows/claude-issue-fix.yml is eval-gated.
 
 LABEL_USER_REPORTED = "user-reported"
+LABEL_SENTINEL = "sentinel"  # Phase 15: filed by the production sentinel, not a human
 LABEL_BUG = "bug"
 LABEL_FEATURE = "feature"
 LABEL_AI_AUTO_FIX = "ai:auto-fix"
 LABEL_AI_NEEDS_APPROVAL = "ai:needs-approval"
+LABEL_AI_SPEC = "ai:spec"  # Phase 15 S2: spec agent dispatch (advisory, never a fixer trigger)
 LABEL_AI_APPROVED = "ai:approved"
 LABEL_AI_REJECTED = "ai:rejected"
 LABEL_AI_FIXED = "ai:fixed"
@@ -39,10 +41,12 @@ LABEL_AI_VERIFIED = "ai:verified"
 # name -> (color hex without '#', description)
 GITHUB_LABELS: dict[str, tuple[str, str]] = {
     LABEL_USER_REPORTED: ("1B1B3A", "Raised from the DosaDash GUI feedback button"),
+    LABEL_SENTINEL: ("0E7490", "Filed automatically by the production sentinel (telemetry)"),
     LABEL_BUG: ("D6336C", "User-reported defect"),
     LABEL_FEATURE: ("F2B705", "User-requested feature"),
     LABEL_AI_AUTO_FIX: ("5BD69B", "Triage verdict: small low-risk bug — fixer may auto-merge"),
     LABEL_AI_NEEDS_APPROVAL: ("FF8B8B", "Triage verdict: human approval required to run fixer"),
+    LABEL_AI_SPEC: ("7B61C4", "Feature/M-L work: spec agent drafts scope before the human decides"),
     LABEL_AI_APPROVED: ("2DA44E", "Admin approved via Telegram/backoffice — fixer may run"),
     LABEL_AI_REJECTED: ("6E7781", "Admin rejected — fixer must not run"),
     LABEL_AI_FIXED: ("8250DF", "Fixer PR merged"),
@@ -52,6 +56,36 @@ GITHUB_LABELS: dict[str, tuple[str, str]] = {
 # The fixer workflow may only trigger on these two labels. Kept here so the
 # asset gate can assert the workflow file and the registry never drift.
 FIXER_TRIGGER_LABELS: tuple[str, str] = (LABEL_AI_AUTO_FIX, LABEL_AI_APPROVED)
+
+# ------------------------------------------------- capability ladder (S6)
+# Phase 15: the loop's autonomy is a LADDER, not a switch — each rung is
+# either structural (deterministic policy) or EARNED from measured loop
+# outcomes, never configured by vibes:
+#   AUTO_FIX_S  bug·S·LOW, human reporter        — structural (Phase 13)
+#   AUTO_FIX_M  bug·M·LOW, human reporter        — earned: unlocked only
+#               once ≥ AUTO_FIX_M_MIN_MERGED_FIXES fixes have merged AND
+#               the concluded-verification rate (verified / (verified +
+#               reopened)) is ≥ AUTO_FIX_M_MIN_VERIFICATION_RATE
+#   APPROVAL    everything else triage can route  — human decides intent
+#   HUMAN_ONLY  the zones below                   — never agent-modifiable
+# The api computes the unlock (services/feedback_autonomy.py) and passes
+# `max_auto_effort` into the triage request; the pure policy enforces it.
+AUTO_FIX_M_MIN_MERGED_FIXES = 20
+AUTO_FIX_M_MIN_VERIFICATION_RATE = 0.90
+
+# Zones no agent may modify at ANY ladder level — the fixer workflow's
+# hard-limits prompt must name every one of these (eval-gated).
+HUMAN_ONLY_ZONES: tuple[str, ...] = (
+    ".github/workflows/",
+    "infra/",
+    "apps/api/migrations/",
+    "lockfiles",
+    "secret",
+)
+
+# Sentinel detector precision (S1/S6): FP-rate = dismissed-or-rejected
+# share of decided SYSTEM reports — honestly null below this sample floor.
+SENTINEL_FP_MIN_SAMPLES = 10
 
 # ---------------------------------------------------------- untrusted fence
 # Issue-body markers around raw user text. The fixer prompt instructs the
@@ -69,11 +103,15 @@ class FeedbackType(StrEnum):
 
 class ReporterTier(StrEnum):
     """Who raised it — drives triage trust (STAFF feature requests are
-    auto-implementation candidates; ANON reports never are)."""
+    auto-implementation candidates; ANON reports never are). SYSTEM is the
+    production sentinel (Phase 15): machine-filed telemetry reports — the
+    triage policy routes them to NEEDS_APPROVAL unconditionally in v1
+    (measure detector precision first, loosen later)."""
 
     ANON = "ANON"
     CUSTOMER = "CUSTOMER"
     STAFF = "STAFF"
+    SYSTEM = "SYSTEM"
 
 
 class FeedbackStatus(StrEnum):
@@ -140,6 +178,7 @@ class FeedbackEventStage(StrEnum):
     FIX_STALLED = "FIX_STALLED"  # watchdog: dispatched run queued-dead / startup_failure / lost
     FIX_RETRIED = "FIX_RETRIED"  # watchdog re-dispatched the trigger label
     RCA_POSTED = "RCA_POSTED"  # "## Root cause analysis" comment
+    SPEC_POSTED = "SPEC_POSTED"  # Phase 15 S2: "## Spec" comment landed
     ESCALATED = "ESCALATED"  # fixer hit a hard limit → back to approval
     FIX_FAILED = "FIX_FAILED"  # fixer run died without a PR (run ingest)
     PR_OPENED = "PR_OPENED"  # fix PR opened
@@ -180,6 +219,26 @@ FIX_BRANCH_PREFIX = "fix/issue-"
 # Existence of the file under .github/workflows is gate-checked.
 FIXER_WORKFLOW_FILE = "claude-issue-fix.yml"
 
+# S3 (Phase 15): the independent AI reviewer — a SECOND model (never the
+# fixer's) reads every fixer PR against the issue intent + the Hard-Rules
+# checklist and posts ONE comment whose last line is a machine-parseable
+# verdict. The verdict is COMPUTED by a deterministic workflow step from
+# that marker (dish-QC philosophy) — only REQUEST_CHANGES (or a missing
+# verdict: fail-closed) fails the check; notes never block.
+REVIEW_WORKFLOW_FILE = "claude-pr-review.yml"
+REVIEW_COMMENT_MARKER = "## AI review"
+REVIEW_VERDICTS: tuple[str, str, str] = ("APPROVE", "APPROVE_WITH_NOTES", "REQUEST_CHANGES")
+
+# S2 (Phase 15): the spec agent — a READ-ONLY run dispatched by `ai:spec`
+# (applied by triage ALONGSIDE ai:needs-approval for actionable features
+# and M/L-effort work) that posts ONE "## Spec" comment (requirements,
+# acceptance criteria, EVAL CASES to add, risks, S-sized decomposition)
+# BEFORE the human decides. The approval flow itself is untouched: the
+# human still taps approve/reject on the same card — now with a spec to
+# read. ai:spec must never enter FIXER_TRIGGER_LABELS (gate-pinned).
+SPEC_WORKFLOW_FILE = "claude-issue-spec.yml"
+SPEC_COMMENT_MARKER = "## Spec"
+
 
 class FeedbackEventOut(BaseModel):
     """One timeline entry (portal drill-down + Telegram lifecycle feed)."""
@@ -206,16 +265,38 @@ class FeedbackEventListOut(BaseModel):
 # metric set will grow — the portal renders what it gets).
 
 
-class FixerRunIn(BaseModel):
-    """workflow → api ingest payload (X-Internal-Token protected)."""
+class SentinelIncidentIn(BaseModel):
+    """CI/deploy → api internal incident intake (Phase 15 S4) — rides the
+    sentinel filing spine (SYSTEM report → issue → triage → approval).
+    `kind` is an allowlist: external callers name a detector, they never
+    invent one."""
 
-    workflow: Literal["fix", "verify"]
+    kind: Literal["deploy_canary_failed"]
+    subject: str = Field(min_length=1, max_length=80)
+    title: str = Field(min_length=5, max_length=120)
+    evidence: dict = {}
+
+
+class FixerRunIn(BaseModel):
+    """workflow → api ingest payload (X-Internal-Token protected).
+
+    The usage fields (Phase 15 S7) are parsed best-effort from the
+    action's execution file — they measure the run's within-run prompt
+    cache share and real spend. All optional: a run whose execution file
+    is missing/unreadable still lands (outcome truth outranks telemetry)."""
+
+    workflow: Literal["fix", "verify", "review", "spec"]
     run_id: int
     run_attempt: int = 1
     issue_number: int | None = None  # verify runs cover a queue → None
     conclusion: str = Field(max_length=30)  # success | failure | cancelled
     trigger_label: str | None = Field(default=None, max_length=40)
     model: str | None = Field(default=None, max_length=60)
+    cost_usd: float | None = None
+    input_tokens: int | None = None  # uncached input (after the last cache point)
+    cache_read_tokens: int | None = None
+    cache_creation_tokens: int | None = None
+    output_tokens: int | None = None
 
 
 class FixerRunOut(BaseModel):
@@ -230,6 +311,11 @@ class FixerRunOut(BaseModel):
     conclusion: str
     trigger_label: str | None = None
     model: str | None = None
+    cost_usd: float | None = None
+    input_tokens: int | None = None
+    cache_read_tokens: int | None = None
+    cache_creation_tokens: int | None = None
+    output_tokens: int | None = None
     created_at: datetime
     duplicate: bool = False
 
@@ -240,7 +326,9 @@ class FeedbackMetricsOut(BaseModel):
     All counts are within the requested window. `latency` values are
     seconds: {metric: {"p50": …, "p90": …, "count": n}}; a metric with no
     completed samples reports p50/p90 = None. `rates` are 0..1 or None
-    when the denominator is empty (never fake a 0% from no data)."""
+    when the denominator is empty (never fake a 0% from no data). `spend`
+    (Phase 15 S7) is USD totals from run telemetry — None when no run in
+    the window carried cost data (same honesty rule)."""
 
     window_days: int
     totals_by_status: dict[str, int]
@@ -251,6 +339,11 @@ class FeedbackMetricsOut(BaseModel):
     latency: dict[str, dict[str, float | None]]
     weekly: list[dict]
     runs: dict[str, dict[str, int]]
+    spend: dict[str, float | None] = {}
+    # S6: all-time earned-autonomy state ({max_auto_effort, merged_fixes,
+    # verification_rate, thresholds…}) — None when the caller didn't
+    # compute it (summarize() stays pure; the endpoint injects it).
+    autonomy: dict | None = None
     generated_at: datetime
 
 
@@ -348,13 +441,18 @@ class TriageAssessment(BaseModel):
 
 class FeedbackTriageRequest(BaseModel):
     """api/worker → ai: one report (text already redacted api-side; the ai
-    redacts again defensively before the LLM — Rule 8 twice over)."""
+    redacts again defensively before the LLM — Rule 8 twice over).
+
+    `max_auto_effort` is the caller's current capability-ladder rung
+    (S6): "S" always; "M" only when the api's earned-autonomy computation
+    unlocked it. The pure policy treats it as a ceiling, never a floor."""
 
     report_id: int
     type: FeedbackType
     title: str = Field(max_length=120)
     description: str = Field(max_length=2000)
     reporter_tier: ReporterTier
+    max_auto_effort: Literal["S", "M"] = "S"
 
 
 class FeedbackTriageResponse(BaseModel):
@@ -366,3 +464,6 @@ class FeedbackTriageResponse(BaseModel):
     violations: list[str] = []
     model: str | None = None
     prompt_version: str = FEEDBACK_TRIAGE_PROMPT_VERSION
+    # S6: which ladder rung produced an AUTO_FIX ("AUTO_FIX_S"/"AUTO_FIX_M"),
+    # None for every non-auto verdict — provenance for the portal chip.
+    ladder_level: str | None = None

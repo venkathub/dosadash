@@ -198,3 +198,93 @@ async def test_compute_loads_window(db_session: AsyncSession) -> None:
     assert out.totals_by_status.get("TRACKED") == 1
     assert out.funnel["received"] == 1
     assert out.runs["fix"]["total"] == 1
+
+
+# ------------------------------------------------------- S7 usage telemetry
+
+
+def test_summarize_spend_and_cache_share() -> None:
+    """Phase 15 S7: cached-token share over fix runs THAT reported usage;
+    spend sums per workflow. 90k cached of 100k total input → 0.9."""
+    runs = [
+        _run("fix", "success", 1),  # no telemetry — excluded from the share
+        FixerRun(
+            workflow="fix",
+            run_id=2,
+            run_attempt=1,
+            conclusion="success",
+            created_at=T0,
+            cost_usd=0.62,
+            input_tokens=1000,
+            cache_read_tokens=90_000,
+            cache_creation_tokens=9_000,
+            output_tokens=4_000,
+        ),
+        FixerRun(
+            workflow="verify",
+            run_id=3,
+            run_attempt=1,
+            conclusion="success",
+            created_at=T0,
+            cost_usd=0.05,
+        ),
+    ]
+    out = summarize([], [], runs, window_days=90, now=T0)
+    assert out.rates["fix_cached_token_share"] == 0.9
+    assert out.spend["fix_cost_usd"] == 0.62
+    assert out.spend["verify_cost_usd"] == 0.05
+    assert out.spend["total_cost_usd"] == 0.67
+
+
+def test_summarize_spend_honest_none_without_telemetry() -> None:
+    """No run carried usage → None everywhere, never a fake $0 / 0%.
+    Shape-robust on purpose: new agent workflows join the spend map
+    without this test needing to know them by name."""
+    out = summarize([], [], [_run("fix", "success", 1)], window_days=90, now=T0)
+    assert out.rates["fix_cached_token_share"] is None
+    assert {"fix_cost_usd", "total_cost_usd"} <= set(out.spend)
+    assert all(v is None for v in out.spend.values())
+
+
+# --------------------------------------------------- S6 sentinel FP + autonomy
+
+
+def _system_report(status: str, n: int) -> FeedbackReport:
+    return FeedbackReport(
+        id=9000 + n,
+        reporter_tier="SYSTEM",
+        type="BUG",
+        status=status,
+        title=f"sentinel {n}",
+        description="evidence",
+        dedupe_hash=str(n).ljust(64, "f")[:64],
+        created_at=T0,
+    )
+
+
+def test_sentinel_fp_rate_needs_a_sample_floor() -> None:
+    """9 decided SYSTEM reports → None (one dismissal means nothing);
+    at the floor the rate is real: 3 FP of 10 decided = 0.3."""
+    reports = [_system_report("DISMISSED", i) for i in range(3)] + [
+        _system_report("APPROVED", 10 + i) for i in range(6)
+    ]
+    out = summarize(reports, [], [], window_days=90, now=T0)
+    assert out.rates["sentinel_fp_rate"] is None  # 9 decided < floor 10
+
+    reports.append(_system_report("VERIFIED", 30))
+    out = summarize(reports, [], [], window_days=90, now=T0)
+    assert out.rates["sentinel_fp_rate"] == 0.3
+
+
+def test_sentinel_fp_ignores_pending_and_human_reports() -> None:
+    reports = [_system_report("NEEDS_APPROVAL", i) for i in range(20)]  # all pending
+    out = summarize(reports, [], [], window_days=90, now=T0)
+    assert out.rates["sentinel_fp_rate"] is None
+
+
+def test_summarize_passes_autonomy_through() -> None:
+    autonomy = {"max_auto_effort": "S", "merged_fixes": 3, "verification_rate": None}
+    out = summarize([], [], [], window_days=90, now=T0, autonomy=autonomy)
+    assert out.autonomy == autonomy
+    out = summarize([], [], [], window_days=90, now=T0)
+    assert out.autonomy is None

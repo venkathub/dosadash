@@ -21,11 +21,18 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.db.models import FeedbackEvent, FeedbackReport, FixerRun
-from dosadash_shared import FeedbackEventStage, FeedbackMetricsOut
+from dosadash_api.services import feedback_autonomy
+from dosadash_shared import (
+    SENTINEL_FP_MIN_SAMPLES,
+    FeedbackEventStage,
+    FeedbackMetricsOut,
+    FeedbackStatus,
+)
 
 IST = ZoneInfo("Asia/Kolkata")
 
 Stage = FeedbackEventStage
+Status = FeedbackStatus
 
 # Funnel = distinct reports that ever reached each stage (within window).
 _FUNNEL_STAGES: tuple[Stage, ...] = (
@@ -72,6 +79,34 @@ def _rate(numerator: int, denominator: int) -> float | None:
     return round(numerator / denominator, 4) if denominator else None
 
 
+# S6: sentinel detector precision. A decided SYSTEM report is either a
+# false positive (a human threw it away) or a true positive (a human acted
+# on it). Undecided reports are pending, not evidence; below the sample
+# floor the rate is honestly None — ten dismissals mean something, one
+# means nothing.
+_SENTINEL_FP_STATUSES = frozenset({Status.REJECTED.value, Status.DISMISSED.value})
+_SENTINEL_TP_STATUSES = frozenset(
+    {
+        Status.APPROVED.value,
+        Status.FIXING.value,
+        Status.PR_OPEN.value,
+        Status.FIXED.value,
+        Status.VERIFIED.value,
+        Status.REOPENED.value,
+    }
+)
+
+
+def _sentinel_fp_rate(reports: list[FeedbackReport]) -> float | None:
+    system = [r for r in reports if str(r.reporter_tier) == "SYSTEM"]
+    fp = sum(1 for r in system if str(r.status) in _SENTINEL_FP_STATUSES)
+    tp = sum(1 for r in system if str(r.status) in _SENTINEL_TP_STATUSES)
+    decided = fp + tp
+    if decided < SENTINEL_FP_MIN_SAMPLES:
+        return None
+    return round(fp / decided, 4)
+
+
 def _week_key(dt: datetime) -> str:
     """ISO-Monday of the IST week the (naive-UTC) timestamp falls in."""
     ist = dt.replace(tzinfo=UTC).astimezone(IST)
@@ -86,6 +121,7 @@ def summarize(
     *,
     window_days: int,
     now: datetime | None = None,
+    autonomy: dict | None = None,
 ) -> FeedbackMetricsOut:
     now = now or datetime.now(UTC).replace(tzinfo=None)
 
@@ -125,6 +161,15 @@ def summarize(
         if Stage.PR_MERGED.value in stages or Stage.FIXED.value in stages
     )
     fix_runs = [r for r in runs if r.workflow == "fix"]
+    # Phase 15 S7: within-run prompt-cache share, over fix runs that
+    # actually reported usage (execution-file parse is best-effort — a
+    # window with zero telemetry reports None, never a fake 0%).
+    usage_runs = [r for r in fix_runs if r.cache_read_tokens is not None]
+    cached = sum(r.cache_read_tokens or 0 for r in usage_runs)
+    total_input = sum(
+        (r.cache_read_tokens or 0) + (r.cache_creation_tokens or 0) + (r.input_tokens or 0)
+        for r in usage_runs
+    )
     rates: dict[str, float | None] = {
         "auto_fix_rate": _rate(verdicts.get("AUTO_FIX", 0), triaged),
         "approval_rate": _rate(funnel["approved"], decided),
@@ -136,6 +181,8 @@ def summarize(
         "verification_rate": _rate(funnel["verified"], fixed_ever),
         "reopen_rate": _rate(funnel["reopened"], fixed_ever),
         "triage_fallback_rate": _rate(fallbacks, triaged),
+        "fix_cached_token_share": _rate(cached, total_input),
+        "sentinel_fp_rate": _sentinel_fp_rate(reports),
     }
 
     latency: dict[str, dict[str, float | None]] = {}
@@ -174,6 +221,15 @@ def summarize(
         bucket["total"] += 1
         bucket[run.conclusion] = bucket.get(run.conclusion, 0) + 1
 
+    # Phase 15 S7: loop TCO as a number, not a vibe. None when no run in
+    # the window carried cost telemetry (empty-denominator honesty rule).
+    spend: dict[str, float | None] = {}
+    for workflow in ("fix", "verify", "review", "spec"):
+        costs = [r.cost_usd for r in runs if r.workflow == workflow and r.cost_usd is not None]
+        spend[f"{workflow}_cost_usd"] = round(sum(costs), 4) if costs else None
+    all_costs = [v for v in spend.values() if v is not None]
+    spend["total_cost_usd"] = round(sum(all_costs), 4) if all_costs else None
+
     return FeedbackMetricsOut(
         window_days=window_days,
         totals_by_status=dict(totals_by_status),
@@ -184,6 +240,8 @@ def summarize(
         latency=latency,
         weekly=weekly,
         runs=runs_summary,
+        spend=spend,
+        autonomy=autonomy,
         generated_at=now,
     )
 
@@ -213,4 +271,7 @@ async def compute(session: AsyncSession, *, window_days: int = 90) -> FeedbackMe
         .scalars()
         .all()
     )
-    return summarize(list(reports), list(events), list(runs), window_days=window_days)
+    autonomy = await feedback_autonomy.compute(session)
+    return summarize(
+        list(reports), list(events), list(runs), window_days=window_days, autonomy=autonomy
+    )

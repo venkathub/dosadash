@@ -34,6 +34,8 @@ from dosadash_shared import (
 _WORKFLOWS = Path(__file__).resolve().parents[2] / ".github" / "workflows"
 FIX_WORKFLOW = _WORKFLOWS / "claude-issue-fix.yml"
 VERIFY_WORKFLOW = _WORKFLOWS / "claude-fix-verify.yml"
+REVIEW_WORKFLOW = _WORKFLOWS / "claude-pr-review.yml"
+SPEC_WORKFLOW = _WORKFLOWS / "claude-issue-spec.yml"
 
 
 def test_every_status_bearing_label_in_precedence_exactly_once() -> None:
@@ -115,6 +117,32 @@ def test_fix_workflow_reports_runs_best_effort() -> None:
     assert "secrets.FIXER_INGEST_URL" in text  # never a hardcoded URL
 
 
+def test_ingest_carries_cache_telemetry() -> None:
+    """Phase 15 S7: both workflows parse the action's execution file for
+    cache/cost usage — and DEGRADE to the base payload on any parse
+    failure (telemetry must never break outcome reporting, and outcome
+    reporting must never break the run)."""
+    for workflow in (FIX_WORKFLOW, VERIFY_WORKFLOW, REVIEW_WORKFLOW, SPEC_WORKFLOW):
+        text = workflow.read_text()
+        assert "steps.claude.outputs.execution_file" in text, (
+            f"{workflow.name}: ingest must read the action's execution file"
+        )
+        for field in (
+            "cost_usd",
+            "cache_read_tokens",
+            "cache_creation_tokens",
+            "input_tokens",
+            "output_tokens",
+        ):
+            assert field in text, f"{workflow.name}: ingest must extract {field}"
+        assert 'PAYLOAD="$BASE"' in text, (
+            f"{workflow.name}: a jq failure must degrade to the base payload"
+        )
+        assert "USAGE='{}'" in text, (
+            f"{workflow.name}: a missing/unreadable execution file must degrade to no usage"
+        )
+
+
 def test_verify_workflow_reports_runs_conditionally() -> None:
     text = VERIFY_WORKFLOW.read_text()
     assert "FIXER_INGEST_URL" in text and "X-Internal-Token" in text
@@ -124,9 +152,18 @@ def test_verify_workflow_reports_runs_conditionally() -> None:
 
 
 def test_ingest_model_matches_pin() -> None:
-    for workflow in (FIX_WORKFLOW, VERIFY_WORKFLOW):
+    for workflow in (FIX_WORKFLOW, VERIFY_WORKFLOW, REVIEW_WORKFLOW, SPEC_WORKFLOW):
         text = workflow.read_text()
         assert _ingest_model(text) == _model_pin(text), (
             f"{workflow.name}: ingest reports a different model than --model pins — "
             "update both together"
         )
+
+
+def test_spec_marker_matches_spec_workflow() -> None:
+    """Phase 15 S2: the webhook's SPEC_POSTED mapping and the spec
+    workflow must agree on the comment marker byte-for-byte."""
+    from dosadash_shared import SPEC_COMMENT_MARKER
+
+    assert SPEC_COMMENT_MARKER == "## Spec"
+    assert SPEC_COMMENT_MARKER in SPEC_WORKFLOW.read_text()

@@ -85,6 +85,11 @@ async def ingest_fixer_run(
         conclusion=body.conclusion,
         trigger_label=body.trigger_label,
         model=body.model,
+        cost_usd=body.cost_usd,
+        input_tokens=body.input_tokens,
+        cache_read_tokens=body.cache_read_tokens,
+        cache_creation_tokens=body.cache_creation_tokens,
+        output_tokens=body.output_tokens,
     )
     session.add(run)
 

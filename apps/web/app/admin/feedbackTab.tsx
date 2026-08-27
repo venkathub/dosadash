@@ -64,6 +64,7 @@ const TIER_ICON: Record<AdminFeedback["reporter_tier"], string> = {
   ANON: "👤",
   CUSTOMER: "🛒",
   STAFF: "🧑‍🍳",
+  SYSTEM: "🛰️",
 };
 
 export function FeedbackTab() {

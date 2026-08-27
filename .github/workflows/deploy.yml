@@ -62,3 +62,113 @@ jobs:
             done
             echo "✗ healthz still failing after 60s — deploy is genuinely broken"
             exit 1
+
+  # Phase 15 S4 (docs/15): deterministic post-deploy canary — $0, no LLM.
+  # 10 minutes of public-surface probing; a breach mechanically reverts the
+  # deploy (revert PR + auto-merge behind the FULL branch-protection stack)
+  # and files a SYSTEM incident through the sentinel intake (issue →
+  # triage → Telegram approval card) so a human sees WHY it rolled back.
+  # Oscillation guard: a deploy that is itself an auto-rollback never
+  # auto-reverts again (transparency only) — revert wars are worse than
+  # a bad deploy. Canary breach fails this run, which also keeps the
+  # verifier away (it triggers on successful deploys only).
+  canary:
+    name: Post-deploy canary (10 min)
+    needs: deploy
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: https://dosadash.venkateshs.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CLAUDE_FIX_GH_TOKEN }}
+
+      - name: Probe public surfaces
+        id: probe
+        run: |
+          # 20 rounds × 30s ≈ 10 min; each round probes three public paths.
+          # Breach = 3 CONSECUTIVE failing rounds (sustained outage, stops
+          # early) OR ≥10% failed probes over the window (flapping).
+          total=0; failures=0; consecutive=0; breach=false
+          for round in $(seq 1 20); do
+            round_fail=0
+            for path in "/healthz" "/api/v1/menu" "/"; do
+              total=$((total+1))
+              if ! curl -fsS -m 10 -o /dev/null "$BASE_URL$path"; then
+                failures=$((failures+1)); round_fail=1
+                echo "round $round: FAIL $path"
+              fi
+            done
+            if [ "$round_fail" = "1" ]; then
+              consecutive=$((consecutive+1))
+            else
+              consecutive=0
+            fi
+            if [ "$consecutive" -ge 3 ]; then
+              echo "3 consecutive failing rounds — sustained breach, stopping early"
+              breach=true
+              break
+            fi
+            [ "$round" -lt 20 ] && sleep 30
+          done
+          if [ "$breach" = "false" ] && [ $((failures * 10)) -ge "$total" ]; then
+            echo "error rate ≥10% over the canary window — breach"
+            breach=true
+          fi
+          echo "probes: $total, failures: $failures, breach: $breach"
+          echo "breach=$breach" >> "$GITHUB_OUTPUT"
+          echo "total=$total" >> "$GITHUB_OUTPUT"
+          echo "failures=$failures" >> "$GITHUB_OUTPUT"
+
+      - name: Auto-rollback (mechanical revert PR, merge gates decide)
+        id: rollback
+        if: steps.probe.outputs.breach == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_FIX_GH_TOKEN }}
+        run: |
+          sha="${{ github.sha }}"
+          subject=$(git log -1 --format=%s "$sha")
+          # Oscillation guard: never auto-revert an auto-rollback.
+          case "$subject" in
+            "revert: auto-rollback"*)
+              echo "deployed commit is itself an auto-rollback — refusing a revert war"
+              echo "rolled_back=refused_oscillation" >> "$GITHUB_OUTPUT"
+              exit 0 ;;
+          esac
+          git config user.name "dosadash-canary"
+          git config user.email "canary@users.noreply.github.com"
+          branch="revert/deploy-${sha:0:12}"
+          git checkout -b "$branch"
+          git revert --no-edit "$sha"
+          git push origin "$branch"
+          pr_url=$(gh pr create \
+            --title "revert: auto-rollback deploy ${sha:0:12} (canary breach)" \
+            --body "Deterministic canary breach (${{ steps.probe.outputs.failures }}/${{ steps.probe.outputs.total }} probes failed) — mechanical \`git revert\` of ${sha}. Auto-merge is enabled; the full branch-protection stack decides. See the SYSTEM incident report for evidence and follow-up.")
+          gh pr merge --auto --squash "$pr_url"
+          echo "rolled_back=pr_opened" >> "$GITHUB_OUTPUT"
+          echo "revert PR: $pr_url"
+
+      # Best-effort incident intake (sentinel spine → issue → triage →
+      # Telegram). Unset secret or dead api never masks the rollback.
+      - name: File SYSTEM incident report (best-effort)
+        if: steps.probe.outputs.breach == 'true'
+        env:
+          CANARY_REPORT_URL: ${{ secrets.CANARY_REPORT_URL }}
+          INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
+        run: |
+          if [ -z "$CANARY_REPORT_URL" ]; then
+            echo "CANARY_REPORT_URL unset — skipping incident report"
+            exit 0
+          fi
+          curl -sS -m 15 -X POST "$CANARY_REPORT_URL" \
+            -H "X-Internal-Token: $INTERNAL_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"kind":"deploy_canary_failed","subject":"${{ github.sha }}","title":"deploy canary breach — auto-rollback engaged","evidence":{"deploy_sha":"${{ github.sha }}","probes":${{ steps.probe.outputs.total }},"failures":${{ steps.probe.outputs.failures }},"rollback":"${{ steps.rollback.outputs.rolled_back }}","run_id":${{ github.run_id }}}}' \
+            || echo "incident report failed (non-blocking)"
+
+      - name: Fail the deploy run on breach
+        if: steps.probe.outputs.breach == 'true'
+        run: |
+          echo "canary breach — failing the Deploy run (verifier stays away)"
+          exit 1

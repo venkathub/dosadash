@@ -25,7 +25,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.config import get_settings
 from dosadash_api.db.models import FeedbackReport
-from dosadash_api.services import feedback_events, feedback_notify, feedback_service
+from dosadash_api.services import (
+    feedback_autonomy,
+    feedback_events,
+    feedback_notify,
+    feedback_service,
+)
 from dosadash_api.services.ai_client import AIClient, AIServiceError
 from dosadash_api.services.github_client import GitHubClient, GitHubError
 from dosadash_shared import (
@@ -151,6 +156,9 @@ async def triage_pending(
     skipped = 0
     label_failures = 0
     notified = 0
+    # S6: current capability-ladder ceiling, computed ONCE per pass from
+    # measured loop outcomes (earned autonomy — never configured).
+    autonomy = await feedback_autonomy.compute(session)
     for report in rows:
         try:
             result = await ai.triage_feedback(
@@ -160,6 +168,7 @@ async def triage_pending(
                     title=report.title,
                     description=report.description,
                     reporter_tier=report.reporter_tier,
+                    max_auto_effort=autonomy["max_auto_effort"],
                 )
             )
         except AIServiceError as exc:
@@ -176,6 +185,8 @@ async def triage_pending(
             "fallback": result.fallback,
             "model": result.model,
             "prompt_version": result.prompt_version,
+            "ladder_level": result.ladder_level,
+            "max_auto_effort": autonomy["max_auto_effort"],
             "at": datetime.now(UTC).isoformat(),
         }
         report.status = _VERDICT_STATUS[result.verdict]

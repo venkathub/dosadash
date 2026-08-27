@@ -758,7 +758,7 @@ class FeedbackReport(TimestampMixin, Base):
         ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
     reporter_tier: Mapped[str] = mapped_column(
-        Enum("ANON", "CUSTOMER", "STAFF", name="feedback_reporter_tier")
+        Enum("ANON", "CUSTOMER", "STAFF", "SYSTEM", name="feedback_reporter_tier")
     )
     type: Mapped[str] = mapped_column(Enum("BUG", "FEATURE", name="feedback_type"))
     status: Mapped[str] = mapped_column(
@@ -865,4 +865,12 @@ class FixerRun(Base):
     conclusion: Mapped[str] = mapped_column(String(30))
     trigger_label: Mapped[str | None] = mapped_column(String(40))
     model: Mapped[str | None] = mapped_column(String(60))
+    # Phase 15 S7: cache/cost telemetry parsed best-effort from the
+    # action's execution file (all nullable — outcome truth outranks
+    # telemetry; a run without a readable execution file still lands).
+    cost_usd: Mapped[float | None] = mapped_column()
+    input_tokens: Mapped[int | None] = mapped_column(BigInteger)
+    cache_read_tokens: Mapped[int | None] = mapped_column(BigInteger)
+    cache_creation_tokens: Mapped[int | None] = mapped_column(BigInteger)
+    output_tokens: Mapped[int | None] = mapped_column(BigInteger)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)

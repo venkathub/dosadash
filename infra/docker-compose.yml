@@ -138,6 +138,10 @@ services:
       # Phase 13: the feedback triage beat applies GitHub labels
       API_GITHUB_TOKEN: ${GITHUB_FEEDBACK_TOKEN:-}
       API_GITHUB_REPO: ${GITHUB_FEEDBACK_REPO:-}
+      # Phase 15: the sentinel beat probes the fleet's /healthz (ai/bot
+      # URLs above; the api's own URL here — hotfix-#57 lesson: worker
+      # env is explicit, never assumed).
+      API_SELF_BASE_URL: http://api:8000
     depends_on:
       postgres:
         condition: service_healthy
