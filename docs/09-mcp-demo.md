@@ -80,13 +80,15 @@ from openai import OpenAI
 client = OpenAI()  # OPENAI_API_KEY
 resp = client.responses.create(
     model="gpt-4o-mini",
-    tools=[{
-        "type": "mcp",
-        "server_label": "dosadash",
-        "server_url": "https://dosadash.venkateshs.dev/mcp",
-        "headers": {"Authorization": "Bearer ddk_…"},
-        "require_approval": "never",
-    }],
+    tools=[
+        {
+            "type": "mcp",
+            "server_label": "dosadash",
+            "server_url": "https://dosadash.venkateshs.dev/mcp",
+            "headers": {"Authorization": "Bearer ddk_…"},
+            "require_approval": "never",
+        }
+    ],
     input="What dosas are under ₹150? Order me one Masala Dosa.",
 )
 print(resp.output_text)
