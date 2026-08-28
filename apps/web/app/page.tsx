@@ -410,11 +410,11 @@ export default function Home() {
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <h3 className="flex items-center gap-1.5">
-                        <FssaiMark veg={m.is_veg} />
+                      <h3 className="flex items-start gap-1.5">
+                        <FssaiMark veg={m.is_veg} className="mt-[2px] shrink-0" />
                         <span
                           className={cx(
-                            "truncate font-display text-[15px] font-bold",
+                            "break-words font-display text-[15px] font-bold leading-snug",
                             off ? "text-faint" : "text-ink",
                           )}
                         >
