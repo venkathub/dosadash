@@ -84,14 +84,19 @@ apps/api/
 ### 2.2 AI Service (FastAPI)
 ```
 apps/ai/
-├── agents/   order_agent (LangGraph) · inventory_agent · support_agent
+├── agents/   order_agent (LangGraph) · inventory_agent · support_agent ·
+│             promo_agent · sql copilot · feedback triage
 ├── rag/      ingestion · chunking · hybrid retrieval · rerank
 ├── llm/      litellm router · semantic cache · structured-output helpers
-├── guardrails/  input (injection/PII) · output (hallucination/policy)
-├── ml_inference/  eta · recommender · forecast reader · vision QC
-├── speech/   Groq Whisper STT · edge-tts TTS
-├── prompts/  versioned prompt files (tagged in Langfuse)
-└── mcp/      MCP server: get_menu · place_order · check_inventory
+├── guardrails/  input (injection/PII) · output (hallucination/policy ·
+│             serving-notes · self-correction retry)
+├── ml_inference/  eta · recommender · forecast reader · vision QC ·
+│             INT8 ONNX sentiment · invoice OCR · image gen · translation
+├── speech/   Groq Whisper STT
+├── prompts/  versioned prompt files (tagged in Langfuse) — order_agent_v5,
+│             feedback_triage_v2, review_sentiment_v1, … (see apps/ai/prompts/)
+└── mcp/      MCP server: get_menu · place_order · check_inventory (stdio,
+              runs client-side — zero VPS RAM)
 ```
 
 **Order Agent (LangGraph):**
@@ -115,6 +120,13 @@ apps/ai/
 - Same graph serves web chat and Telegram; channel adapters translate I/O only.
 - Agent context auto-injects logged-in user's preferences (diet/allergens/spice).
 - Respects live business state: 86'd items and kitchen-pause via event subscriptions.
+- Serving windows (Phase 11): the agent's menu context lists ORDERABLE dishes only
+  (presence = orderability); deterministic `serving_notes` append the window/sold-out
+  story to replies, and a one-round self-correction retry catches contradiction
+  signatures — the model never sees raw serving-hours vocabulary (every design that
+  exposed it caused hallucinated refusals, measured across 15 live-gate runs).
+- Long-term memory: per-order episodes → "my usual" derived deterministically and
+  injected as volatile state (cache-stable prefix untouched).
 
 **RAG pipeline:**
 ```
@@ -145,30 +157,91 @@ Push: order status / OTP / PO approvals via Redis pub/sub → bot send
 Commands: /start (link account) · /menu · /myorders · voice note = order
 ```
 
-### 2.4 Celery Worker + Beat
+### 2.4 Celery Worker + Beat (as-built schedule, IST)
 | Schedule | Job |
 |---|---|
-| nightly 02:00 | per-dish demand forecast (14-day) → `forecasts` |
-| nightly 02:30 | inventory agent: stock vs forecast → draft PO → owner approval |
-| nightly 03:00 | CRM segments: RFM + churn-risk scoring |
-| weekly | recommender + forecast retrain → MLflow (promote via `champion` alias) |
-| on-event | review sentiment scoring · RAG re-ingestion · notifications |
+| nightly 02:00 | per-dish demand forecast (14-day recursive) → `forecasts` |
+| nightly 02:30 | inventory agent: stock vs forecast → draft PO → owner approval (open-PO dedup) |
+| nightly 03:00 | CRM segments: RFM + personal-rhythm churn + LTV |
+| nightly 03:30 | review scoring: local INT8 first, unconfident residue → OpenAI Batch API |
+| hourly @ :20 | review batch poll (ingest completed Batch API jobs) |
+| every 15 min | feedback triage (LLM assessment → deterministic decide()) |
+| every 15 min (offset :05) | GitHub reconciler: label/PR truth-sync for the feedback loop |
+| every 5 min (offset :02) | fixer dispatch watchdog (stall detect + auto-resume after Actions outages) |
+| every 5 min (offset :04) | sentinel scan: healthz fleet probes, 5xx bursts, consecutive eval-gate reds |
+| hourly | worker heartbeat |
+| weekly Sun 04:30 | janitor: computed flaky-eval list, translation backlog, stale approvals |
+| weekly (local/CI) | recommender + forecast retrain → MLflow (promote via `champion` alias) |
+| on-event | RAG re-ingestion · notifications · re-embed cascade |
 
-### 2.5 Frontend (Next.js — one app, three surfaces)
-- `/` customer: menu, semantic search, cart, chat widget, OTP login, account (history, reorder, addresses, preferences, loyalty), live tracking with AI ETA, recommendations + combo upsell
-- `/kds` kitchen: live WS queue, AI priority + predicted prep time, bump buttons
-- `/admin` owner: Dashboard (revenue/AOV/anomaly flags) · Orders · Menu ops · Inventory+PO approvals · Promos · CRM · Reviews inbox (AI-drafted replies) · Reports (GST CSV) · Settings (hours/zones/pause/staff) · Eval scoreboard
+### 2.5 Frontend (Next.js — one app, six surfaces, "Madras Pop" design system)
+- `/` customer: menu (60 dishes, serving-window annotation + ⏰ badges, EN/தமிழ் toggle, ✨ AI photos, high-protein filter), semantic search, cart, Dosa-Genie chat widget, OTP login, account (history, reorder, addresses, preferences, loyalty), live tracking with AI ETA, recommendations + combo upsell, 🐞 feedback FAB
+- `/orders` history + reviews (★ rate delivered orders) + 🛟 support chat
+- `/kds` kitchen: live WS queue with channel badges + elapsed timers, bump buttons, 📷 dish-photo QC
+- `/admin` owner: Dashboard · Orders · Menu ops · Inventory+PO approvals+invoices · Promos+Coupons · CRM · Reviews inbox (AI-drafted replies) · Reports (GST CSV) · Translations · Images · Copilot · Evals scoreboard · Costs+cache panel · Feedback · Settings — grouped Operations / Growth / AI Studio / System
+- `/demo` demo guide: credentials, Razorpay test cards, feature tour
+- `/fixer` self-healing portal: 6-lane pipeline board with inline approve/reject, funnel metrics (MTTR, verification rate, agent spend), live WS feed, outage/stall banners
 
 ## 3. Event Cascade (signature architecture move)
 
 Redis pub/sub keeps AI layer consistent with business state:
 ```
-menu.updated      → re-embed RAG chunks + bust bot/menu caches
+menu.updated      → re-embed RAG chunks + bust bot/menu caches + semantic-cache flush
+menu.translation  → translation overlay refresh (approved Tamil names → agent aliases)
+menu.image        → menu photo publish/unpublish
 item.86d          → agent's check_availability excludes instantly
 kitchen.paused    → agent refuses new orders gracefully (web + Telegram)
 order.status.*    → WS fan-out + Telegram push
 po.drafted        → owner Telegram approval message
+pubsub:inventory  → stock changes (deliberately OFF pubsub:menu — stock moves
+                    never re-embed RAG)
+pubsub:feedback   → self-healing-loop lifecycle events → /fixer portal WS +
+                    Telegram anchor cards (own channel — never touches RAG/KDS)
 ```
+
+## 3b. Self-Healing SDLC Loop (Phases 13–15)
+
+Production maintains itself through an eval-gated autonomous loop; full design
+records live in `docs/14` and `docs/15`.
+
+```
+🐞 GUI reports (customer/staff/anon)          sentinel beat (every 5 min):
+        │                                     healthz fleet · 5xx bursts ·
+        ▼                                     ≥2 consecutive eval-gate reds
+feedback_reports (PII-redacted, deduped) ◄────┘
+        │  GitHub issue mirror (labels, UNTRUSTED-fenced body)
+        ▼
+LLM triage (feedback_triage_v2) — model OBSERVES, deterministic decide() DECIDES:
+  AUTO_FIX iff BUG ∧ effort S ∧ risk LOW ∧ actionable (SYSTEM reports NEVER auto-fix)
+  autonomy is an EARNED ladder: AUTO_FIX_M unlocks only at ≥20 merged fixes with
+  ≥0.90 verification rate; HUMAN_ONLY zones (migrations/workflows/secrets) are structural
+        │
+        ▼
+owner approval via Telegram card (+ AI-drafted ## Spec comment for features/M+)
+        │  ai:approved / ai:auto-fix label
+        ▼
+Claude fixer (claude-code-action, pinned Sonnet, 60-turn budget, tool allowlist,
+kill switch): RCA comment → fix on fix/issue-N → PR through the FULL merge-gate
+stack (ruff+pytest · web build · eval suites · LIVE eval gate · UI smoke ·
+independent Haiku AI-review verdict — required checks on main)
+        │  auto-merge (S/LOW) or human merge
+        ▼
+deploy + deterministic canary (20×30s public probes; breach → mechanical
+git-revert PR via auto-merge, oscillation-guarded)
+        │
+        ▼
+Haiku prod verifier (read-only tools) probes the fix live → ai:verified or REOPENS
+        │
+        ▼
+observability: feedback_events timeline · fixer_runs (cost + cached-token
+telemetry) · Telegram lifecycle anchors · /fixer portal · GitHub webhook (HMAC)
++ 15-min reconciler so a missed delivery is never permanent drift · dispatch
+watchdog (survives GitHub Actions outages, 3-retry cap)
+```
+
+The loop has closed for real: the fixer RCA'd and shipped a React hydration
+bug fix and a customer-facing feature (high-protein filter), both through the
+live eval gate, human-approved via Telegram, deployed and verified in prod.
 
 ## 4. Deployment (4 GB memory budget)
 

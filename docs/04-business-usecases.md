@@ -84,3 +84,29 @@ POST /auth/otp/verify → JWT access (15m) + rotating refresh (30d, httpOnly)
 3. **O14 explicit cut** — knowing what NOT to build.
 4. **Recipe mapping as single source of truth** — one table drives inventory math AND the RAG knowledge base.
 5. **Event cascade** — business state and AI layer can never drift.
+
+## F. As-Built Addendum (2026-08-27)
+
+All ✅ Core use cases above shipped to production; deviations and additions:
+
+- **O12 shipped** as planned: HMAC-verified mock-aggregator webhook → the same
+  order state machine, idempotent retries, KDS channel badges, admin simulate button.
+- **O19 shipped Tamil-first**: LLM-drafted translations → owner approval →
+  served on `?lang=ta` + web toggle + agent aliases, with a per-language eval
+  floor (ta ≥ 0.80, currently 1.00). Other languages are a registry entry away.
+- **O13 remains schema-ready/UI-deferred** and **O14 remains cut**, as planned.
+- **Menu rebuilt (Phase 11)**: 60 dishes from real Chennai–Trichy highway
+  kitchens (millet specials, non-veg mess meals) with **per-dish serving
+  windows** enforced across menu annotation, checkout (409 with the window),
+  web cards, and the order agent (deterministic serving notes).
+- **New surface — feedback & self-healing (Phases 13–15)**: anyone can file a
+  🐞 bug/feature report from the GUI; reports (plus a production sentinel) flow
+  through LLM triage, owner Telegram approval, and a cloud coding agent that
+  ships fixes through the full eval-gated CI. Owner observability via the
+  `/fixer` portal (pipeline board, MTTR/spend metrics) and Telegram lifecycle
+  cards. This use case wasn't in the original matrix — it emerged as O21-class
+  "the platform maintains itself."
+- **Reviews (O8) went further than planned**: local INT8 LoRA model scores
+  ~97% of reviews at ₹0 on-VPS, the residue escalates to the LLM nightly via
+  the provider Batch API; AI-drafted replies carry a compensation-promise
+  guardrail with published-verbatim provenance (AI_DRAFT vs MANUAL).

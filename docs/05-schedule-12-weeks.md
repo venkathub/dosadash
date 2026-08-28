@@ -1,5 +1,7 @@
 # 05 — 12-Week Build Schedule (v4, final)
 
+> **Status: ALL 12 WEEKS / 10 PHASES COMPLETE (2026-08-20) — every phase deployed to production before the next began, and nothing on the cut line was cut.** Six post-schedule phases followed (table at the bottom). The current phase is always the latest post-schedule entry; new work continues as small feat/* PRs into a phase branch per docs/08.
+
 Cadence: 10–15 hrs/week. **Milestone rule: end of Week 6 = deployed, eval-gated conversational ordering — already resume-worthy.** Cut line if slipping: mock-aggregator → multi-brand UI → vision QC → image gen → localization beyond Tamil. Never cut evals.
 
 **Branching (see docs/08):** each phase is built on its own `phase/N-*` branch (feat/* PRs into it) and lands in protected `main` (= production) via a squash-merged Phase PR with CI + eval gates.
@@ -18,6 +20,17 @@ Cadence: 10–15 hrs/week. **Milestone rule: end of Week 6 = deployed, eval-gate
 | **12** | Phase 9 — Hardening + Story<br>`phase/9-hardening` | Rate limiting · semantic + prompt cache tuning · locust load test · README with architecture diagram + metrics table · 3-min demo video (customer journey AND owner journey) · blog post · resume bullets with real numbers · demo credentials + test card numbers on demo page |
 
 **Buffer**: if any phase slips >1 week, apply the cut line (top of page) rather than extending — a finished 90% beats an unfinished 100%.
+
+## Post-Schedule Phases (as-built)
+
+| Phase / Branch | Deliverables (all COMPLETE + deployed) |
+|---|---|
+| **10** — UI "Heritage Luxe"<br>`phase/10-ui-premium` | First premium redesign (banana-leaf green/brass/cream): token layer, self-hosted fonts, shared UI primitives, all 5 routes restyled. Visual-only — zero API changes. Spec: docs/12 |
+| **11** — Highway menu + serving windows<br>`phase/11-highway-menu` | Catalog rebuilt from two real Chennai–Trichy NH-45 kitchens → 60 dishes (millet specials, non-veg mess meals, Sukku Coffee) · **per-dish serving windows enforced end-to-end** (menu annotation, checkout 409, web ⏰ badges, agent) · prompt `order_agent_v5` + deterministic serving notes + one-round self-correction (the 15-run design lesson: never expose serving-hours vocabulary to the model) · golden set → 175 w/ serving-window floor · recsys v4 retrain |
+| **12** — UI "Madras Pop"<br>`phase/12` (PRs #104–#110) | Second redesign from scratch (indigo/magenta/turmeric, hard offset shadows, Space Grotesk): design assets in `design/madras-pop/`, all 6 surfaces, legacy token layer deleted. Spec: docs/13 |
+| **13** — Self-Healing Loop<br>`phase/13` (PRs #112–#118) | 🐞 GUI reports → GitHub issues → LLM triage (`feedback_triage_v1`) → Telegram approval → **claude-code-action fixer** (RCA, fix, PR, auto-merge for S/LOW behind full merge gates) + Haiku prod verifier. First real loop closed: fixed its own hydration bug + shipped a feature. Design: docs/14 |
+| **14** — Fixer/Verifier Observability<br>`phase/14-fixer-observability` | `feedback_events` timeline + GitHub webhook (HMAC) + 15-min reconciler · Telegram lifecycle anchor cards · funnel/latency/MTTR metrics + `fixer_runs` ingest · **/fixer portal** (pipeline board, inline approvals, live WS feed) · dispatch watchdog (GitHub-outage resilience) |
+| **15** — SDLC Loop v2<br>`phase/15` (PRs #142–#150) | Production **sentinel** (healthz/5xx/eval-red detectors → SYSTEM reports, never auto-fixed) · **earned autonomy ladder** (AUTO_FIX_M unlocks at ≥20 merged fixes + ≥0.90 verification rate) · independent **AI reviewer** (required check) · **deploy canary + mechanical auto-rollback PRs** · AI-drafted **spec lane** for features · weekly janitor (computed flaky list) · per-run cost/cache telemetry · prompt `feedback_triage_v2`. Design: docs/15 |
 
 ## Definition of Done (per phase)
 

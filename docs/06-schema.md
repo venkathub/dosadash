@@ -1,5 +1,9 @@
 # 06 — Data Architecture & Schema
 
+> Original planning doc. The core shape below shipped as designed; the
+> **As-Built Additions** section at the bottom lists tables/keyspaces/events
+> added by later phases. Ground truth = `apps/api` models + Alembic migrations.
+
 ## Postgres (single instance: OLTP + vectors + FTS)
 
 ```
@@ -78,3 +82,54 @@ eval_runs        (suite, score, model, git_sha, ran_at)        -- CI writes
 - ~500 users with taste personas (veg-only, spice-lover, filter-coffee-daily, ...)
 - Reviews with planted aspect patterns (for fine-tune training labels)
 - Deterministic seed → reproducible; documented as a portfolio talking point
+
+## As-Built Additions (Phases 5–15)
+
+### New / extended tables
+
+```
+suppliers               (Phase 6 — backfilled from free-text ingredients.supplier)
+purchase_orders + purchase_order_items   (agent provenance, state machine
+                        DRAFT→PENDING_APPROVAL→APPROVED→RECEIVED +REJECTED/CANCELLED)
+wastage_log             (stock_after snapshots, clamp-at-0 audited)
+invoices                (VLM extraction + arithmetic-verifier confidence, review queue)
+escalations             (support agent — refunds are NEVER agent-executed)
+user_memories           (EPISODE per placed order → "my usual")
+eval_runs               (+ per-case reports; CI live-gate ingest, admin scoreboard)
+menu_item_translations  (PK item_id+lang, DRAFT/APPROVED/REJECTED, provenance;
+                        prices/allergens NEVER stored — canonical row stays SoT)
+menu_image_drafts       (+ menu_items.image_ai — permanent ✨ AI label)
+aggregator_orders       (UNIQUE aggregator+external_order_id → idempotent webhooks)
+reviews                 (as planned + scoring provenance: deterministic:rating /
+                        local:<int8-champion> / live model / batch:<model>)
+review_batch_jobs       (durable OpenAI Batch API job state + chunk mapping)
+coupons                 (+is_active, min_subtotal, max_discount, per_user_limit,
+                        source MANUAL|AI_SUGGESTED) + orders.discount
+forecasts, customer_segments, orders.delivered_at   (Phase 5, as planned)
+menu_items.schedule     (multi-window serving schedule {day:[{start,end}…]} —
+                        Phase 11 "Dosa is not available at lunch" enforcement)
+feedback_reports        (Phase 13 — tiers ANON/CUSTOMER/STAFF/SYSTEM, dedupe
+                        hash, PII-redacted, triage JSONB provenance, fix_pr_number)
+feedback_events         (append-only lifecycle timeline)
+feedback_notifications  (Telegram anchor-card state per admin)
+fixer_runs              (workflow run outcomes + cost/cached-token telemetry)
+```
+
+### Redis keyspace additions
+
+| Prefix | Purpose |
+|---|---|
+| `semcache:rag:*` | semantic cache (cosine ≥ 0.95, cascade-flushed on menu events) |
+| `cachestats:semcache`, `cachestats:prompt` | cache observability counters (outside the flush prefix) |
+| `sentinel:5xx:<minute>` | 5xx-burst counters for the sentinel |
+| `ratelimit:*` | fixed-60s-window tiers (chat 20/min · auth 10/min · write 60/min · read 240/min · feedback 5/min) |
+| dedicated second Redis (`redis-celery`) | Celery broker — `noeviction` (cache redis is allkeys-lru, unsafe for a broker) |
+
+### Event cascade additions
+
+| Event/Channel | Consumers |
+|---|---|
+| `menu.translation`, `menu.image` | translation/photo overlay refresh |
+| `pubsub:inventory` | stock changes — deliberately OFF `pubsub:menu` (never re-embeds RAG) |
+| `pubsub:feedback` | /fixer portal WS + Telegram lifecycle anchors (own channel) |
+| GitHub webhook (HMAC) + 15-min reconciler | feedback lifecycle truth-sync — a missed delivery is never permanent drift |

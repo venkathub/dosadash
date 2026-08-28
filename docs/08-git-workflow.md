@@ -20,7 +20,7 @@ hotfix/* ───────────────────────�
 | Branch | Purpose | Lifetime | Merges via |
 |---|---|---|---|
 | `main` | Production. Every commit is deployed. | Permanent | PR only (squash) |
-| `phase/N-name` | One per schedule phase (`phase/0-foundation` … `phase/7-hardening`) | Weeks | PR → `main` at phase completion |
+| `phase/N-name` | One per schedule phase (`phase/0-foundation` … `phase/15-*`) | Weeks | PR → `main` at phase completion |
 | `feat/*`, `fix/*`, `evals/*`, `docs/*` | Small units of work | Days | PR → current `phase/*` |
 | `hotfix/*` | Production emergency | Hours | PR → `main`, then back-merge to active phase |
 
@@ -56,9 +56,19 @@ hotfix/* ───────────────────────�
 ## Branch Protection (`main`) — applied via gh api
 
 - Require pull request before merging (no direct pushes)
-- Require status checks to pass (`ci` workflow, once it exists)
+- **Required status checks (since Phase 13 arming): Python lint+tests · Web build · Eval suites · Live eval gate** (the live gate reports on EVERY PR — skip counts as satisfied when no AI paths changed); UI smoke and the AI-review verdict run as additional checks
+- Auto-merge enabled — used by the self-healing fixer for S/LOW bug fixes (`gh pr merge --auto --squash`; branch protection decides)
 - Enforce for administrators
 - No force pushes, no deletions
+
+## Autonomous PRs (Phases 13–15)
+
+The self-healing loop's fixer opens PRs from `fix/issue-N` branches via a PAT
+(so CI triggers) and faces the **same required checks as a human PR**, plus an
+independent AI-review verdict from a different model. Deploys run a
+deterministic canary; a breach opens a mechanical `git revert` PR through the
+same gates. Nothing about this section weakens rule 1: `main` still only moves
+by PR + green checks.
 
 ## Phase → Branch Map
 
@@ -74,6 +84,13 @@ hotfix/* ───────────────────────�
 | 7 Voice/Vision/Recsys/Promos (wk 10) | `phase/7-multimodal-recsys` |
 | 8 Fine-tune + Reviews (wk 11) | `phase/8-finetune-reviews` |
 | 9 Hardening + Story (wk 12) | `phase/9-hardening` |
+| 10 UI Heritage Luxe (post-schedule) | `phase/10-ui-premium` |
+| 11 Highway menu + serving windows | `phase/11-highway-menu` |
+| 12 UI Madras Pop | `phase/12-*` (PRs #104–#110) |
+| 13 Self-Healing Loop | `phase/13-*` (PRs #112–#118) |
+| 14 Fixer/Verifier Observability | `phase/14-fixer-observability` |
+| 15 SDLC Loop v2 | `phase/15-*` (PRs #142–#150) |
+| — Autonomous fixes | `fix/issue-N` → PR straight to `main` through full gates |
 
 ## Why This Is Interview Gold
 

@@ -20,10 +20,10 @@ that came out the other side.
 
 ## 1. Evals are merge gates, not dashboards
 
-The single highest-leverage decision: a golden set of conversations (now 168,
-across English, Hinglish, Tanglish and Tamil script, with 45 adversarial cases)
-runs **live against every PR that touches an AI path**, and the merge is blocked
-if order-extraction accuracy drops below 95%.
+The single highest-leverage decision: a golden set of conversations (now 175,
+across English, Hinglish, Tanglish and Tamil script, with 45 safety-tagged
+adversarial cases) runs **live against every PR that touches an AI path**, and
+the merge is blocked if order-extraction accuracy drops below 95%.
 
 This is not theater. The gate has blocked two real regressions:
 
@@ -34,8 +34,9 @@ This is not theater. The gate has blocked two real regressions:
 
 Both were fixed *before* merge, with the fixes themselves becoming new eval
 cases. The scoreboard keeps the red runs on display — they're the proof the
-gate earns its keep. Current standing: **96.4% accuracy, 100% tool correctness,
-0 guardrail bypasses**.
+gate earns its keep. Current standing: **97.1% accuracy, 100% tool correctness,
+0 guardrail bypasses**. And the gate outlived the schedule: it now also blocks
+the *autonomous* fixer's PRs (more on that below).
 
 [SCREENSHOT: eval scoreboard with the two red runs]
 
@@ -83,6 +84,8 @@ Every time I trusted intuition over measurement, the measurement won:
   (Recall@10 0.363 vs 0.378). log1p scaling flipped it to **0.417** — and more
   importantly, tail-Recall@10 of **0.345 vs a structural 0.000** for
   popularity. On a 52-item menu, the long tail *is* the personalization story.
+  (The menu later grew to 60 dishes; the retrained champion still beats
+  popularity — 0.387 vs 0.352 — because that comparison is a CI gate now.)
 - **Combo suggester**: my carefully-chosen fixed category priority *lost to
   random* in the simulated A/B (11.8% vs 12.8% attach). Letting the score pick
   the category won (15.6%).
@@ -142,6 +145,25 @@ And one honest postmortem: the first Phase 7 deploy crash-looped the api on a
 root-owned Docker volume — caught in minutes by the deploy pipeline's own
 health-check smoke. The fix became a standing pattern: *nice-to-have mounts
 degrade; they never take checkout down.*
+
+## Postscript: the gate outlived the schedule
+
+After the 12 weeks, the project kept going — and the eval gate became the
+foundation of something better: a **self-healing loop**. Production bug reports
+(and a telemetry sentinel) become GitHub issues; an LLM triages them (the model
+observes, deterministic policy decides — SYSTEM reports and risky changes can
+*never* auto-fix); an owner approves via Telegram; and a cloud coding agent
+root-causes and ships the fix as a PR — **through the exact same merge gates a
+human faces**, including the live eval gate and an independent AI reviewer on a
+different model. A deterministic deploy canary can open a mechanical revert PR;
+a read-only verifier probes the fix in production and either labels it verified
+or reopens the issue.
+
+The loop has closed for real: the agent fixed a documented React hydration bug
+(8 lines, correct RCA) and shipped a customer-facing feature, both deployed and
+verified live. That only felt safe because of decision #1: when your merge gate
+actually measures behavior, "let the machine open PRs" stops being reckless and
+starts being just another contributor.
 
 ## What I'd tell past me
 

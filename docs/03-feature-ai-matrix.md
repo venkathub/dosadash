@@ -2,6 +2,12 @@
 
 Every product feature maps to a named AI concept you can defend in interviews.
 
+> **As-built note (2026-08-27): all 28 rows below shipped to production.** Where
+> the plan offered options, the shipped choice is noted: #9 fine-tune =
+> DistilBERT + LoRA → INT8 ONNX; #10 vision QC = VLM (not YOLO/CLIP); #28
+> localization = Tamil live end-to-end (Telugu/Kannada/Hindi = registry
+> entries by design). Post-schedule phases added rows 29–33 below.
+
 | # | Product Feature | AI Concept Demonstrated |
 |---|---|---|
 | 1 | Conversational ordering ("2 masala dosa, less spicy, no onion") — web chat + Telegram | LLM app, **structured outputs / function calling** (Pydantic `OrderDraft` schema) |
@@ -32,6 +38,16 @@ Every product feature maps to a named AI concept you can defend in interviews.
 | 26 | System-prompt + menu-context reuse via provider prompt caching | **Prompt caching** (distinct from semantic caching — both implemented, both explained) |
 | 27 | Auto-computed nutrition/calorie estimates per dish from recipe mapping | **LLM structured enrichment** (batch, human-verified) |
 | 28 | Menu localization: Tamil/Telugu/Kannada/Hindi menu + bot replies | **Multilingual generation/translation** (eval'd per language) |
+
+## Post-Schedule Additions (Phases 11–15)
+
+| # | Product Feature | AI Concept Demonstrated |
+|---|---|---|
+| 29 | Per-dish serving windows the agent explains without hallucinating ("Dosa is not available at lunch") | **Context engineering under adversarial measurement** — presence-=-orderability menu payloads, deterministic serving notes, one-round self-correction (15 live-gate design iterations documented) |
+| 30 | 🐞 GUI + sentinel bug reports → LLM triage → Telegram approval → cloud coding agent ships the fix as a PR | **Agentic SDLC / self-healing loop** (claude-code-action fixer, RCA-before-code, tool allowlists, kill switches, HUMAN_ONLY zones) |
+| 31 | Fixer PRs face the same merge gates as humans; an independent AI reviewer (different model) posts a required verdict; a read-only verifier probes the fix in prod | **Multi-model checks and balances** (no self-review, fail-closed verdicts, verify-or-reopen) |
+| 32 | Deploy canary with mechanical auto-rollback PRs; autonomy unlocked only by measured verification rate | **Earned autonomy / progressive delivery** (deterministic $0 canary, oscillation guard, capability ladder) |
+| 33 | Per-run agent cost + cached-token telemetry; computed flaky-eval lists from run history | **AgentOps** (spend observability, janitor-computed eval hygiene) |
 
 ## Stretch (documented as "considered — deferred", itself an interview signal)
 
@@ -71,4 +87,5 @@ Every product feature maps to a named AI concept you can defend in interviews.
 - [x] Prompt caching (provider-level)
 - [x] Multilingual generation & localization
 - [x] Synthetic data generation (documented generator)
+- [x] Agentic SDLC (self-healing loop: triage, fixer, reviewer, verifier, canary)
 - [~] GraphRAG, A2A, DPO — consciously deferred with written rationale (see Stretch table)
