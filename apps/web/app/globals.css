@@ -131,8 +131,7 @@
     background-repeat: repeat-x;
   }
 
-  /* Ticker strip (decorative static text — deliberately NOT animated; if ever
-     animated, gate on prefers-reduced-motion) */
+  /* Ticker strip — scrolling marquee; animation gated on prefers-reduced-motion */
   .ticker {
     background: var(--indigo-900);
     color: var(--turmeric-400);
@@ -144,6 +143,22 @@
     padding: 6px 0;
     overflow: hidden;
     white-space: nowrap;
+  }
+  /* Inner span contains text duplicated for a seamless loop; translateX(-50%)
+     scrolls exactly one copy width, then restarts invisibly. */
+  .ticker__inner {
+    display: inline-block;
+    white-space: nowrap;
+    animation: ticker-scroll 30s linear infinite;
+  }
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ticker__inner {
+      animation: none;
+    }
   }
 
   /* Poster block (color-blocked section header) */
