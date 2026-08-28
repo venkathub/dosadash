@@ -1,5 +1,7 @@
 # 01 — Plan Overview & Deep Analysis
 
+> **Status (as-built, 2026-08-27): ALL 12 weeks / 10 scheduled phases COMPLETE and deployed — nothing cut — plus six post-schedule phases (10–15): two full UI redesigns (Heritage Luxe → Madras Pop), the 60-dish highway menu rebuild with per-dish serving windows, and the self-healing SDLC loop (GUI/sentinel reports → LLM triage → Telegram approval → Claude fixer → AI review → canary deploy → prod verification). See the outcome section at the bottom and `docs/05` for the phase map.**
+
 ## Goal
 
 Build and production-deploy one cohesive AI-native product (South Indian cloud kitchen) that demonstrates every AI engineering concept hiring managers scan for in 2026 — production RAG, agents, evals, structured outputs, fine-tuning, classical ML, LLMOps — with a live URL, real metrics, and a defensible architecture.
@@ -51,3 +53,27 @@ Build and production-deploy one cohesive AI-native product (South Indian cloud k
 - Owner can: manage menu, approve AI-drafted POs, view forecasts/CRM/reports, respond to reviews with AI drafts
 - CI blocks merges when eval scores regress; Langfuse dashboards show cost/latency/quality
 - README with architecture diagram, metrics table, 3-min demo video, blog post
+
+## Outcome (as-built)
+
+Every success criterion above is met in production except the two human-only
+tasks (recording the demo video per docs/10, publishing the blog per docs/11 —
+both scripts/drafts are complete). Highlights vs plan:
+
+- **Nothing was cut.** The cut-line candidates (mock-aggregator, vision QC,
+  image gen, localization) all shipped. Localization shipped Tamil-first as
+  planned; Telugu/Kannada/Hindi remain a registry entry away by design.
+- **The eval gate earned its keep**: the CI live gate blocked two real
+  regressions pre-merge (85% and 92.7% runs) and now stands at **97.1% order
+  accuracy / 100% tool correctness / 0 guardrail bypasses** on a
+  175-conversation golden set with per-language floors (Tamil 1.00).
+- **Every model beat its baseline before promotion** (forecast WAPE 0.421 vs
+  0.555; ALS Recall@10 0.387 vs 0.352 popularity; LoRA sentiment 0.9944 vs
+  0.9926 zero-shot at ₹0 vs ₹3.20 per 1k reviews) — and the losses along the
+  way are documented in the committed artifacts.
+- **Post-schedule, the platform became self-maintaining** (Phases 13–15): bug
+  reports and production telemetry flow through an eval-gated autonomous fix
+  loop; the fixer has shipped a real bug fix and a real feature to production,
+  through the same merge gates humans face.
+- Cost stayed inside budget; the fixer was pinned to Sonnet after a cost
+  postmortem, with per-run spend telemetry on the /fixer portal.
