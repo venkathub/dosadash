@@ -71,9 +71,7 @@ async def test_bad_key_401_both_shapes() -> None:
     async with _mcp_client() as client:
         bearer = {**HEADERS, "Authorization": "Bearer ddk_wrong"}
         assert (await client.post("/mcp", json=INIT, headers=bearer)).status_code == 401
-        assert (
-            await client.post("/mcp/ddk_wrong", json=INIT, headers=HEADERS)
-        ).status_code == 401
+        assert (await client.post("/mcp/ddk_wrong", json=INIT, headers=HEADERS)).status_code == 401
 
 
 async def test_bearer_header_handshake() -> None:
