@@ -5,7 +5,8 @@ DosaDash exposes an MCP server with three tools — `get_menu`,
 
 | Client | Transport | Setup |
 |---|---|---|
-| ChatGPT (developer-mode connector) | remote Streamable HTTP | tokenized URL |
+| ChatGPT (developer-mode connector — Plus/Pro+, **not Free/Go**) | remote Streamable HTTP | tokenized URL |
+| OpenAI API / Playground (**any plan** — Responses API MCP tool) | remote Streamable HTTP | URL + Bearer header |
 | Claude Code — **Web & CLI** | remote Streamable HTTP | `.mcp.json` / one command |
 | Cursor | remote Streamable HTTP | one-click deeplink / `.cursor/mcp.json` |
 | Claude Desktop | remote connector **or** local stdio | URL / `claude_desktop_config.json` |
@@ -47,13 +48,51 @@ renders all of the snippets below with your fresh key pre-filled.
 
 ### ChatGPT
 
-1. Settings → **Apps & Connectors** → Advanced → enable **Developer mode**
-   (Plus/Pro/Business).
+> **Plan requirement**: custom MCP connectors need Developer mode, which
+> is **not available on Free or Go**. Individual **Plus/Pro** plans get
+> Developer mode with limits (per OpenAI's current docs, custom
+> connectors on individual plans may be restricted to **read-only**
+> tools — `get_menu`/`check_inventory` work, `place_order` may be
+> blocked or prompt-gated); full read+write MCP is guaranteed on
+> **Business/Enterprise/Edu**. If Settings → Apps & Connectors →
+> Advanced shows no "Developer mode" toggle, your plan can't add custom
+> servers — use the [any-plan fallback](#no-chatgpt-plan-openai-api--playground)
+> below instead.
+
+1. Settings → **Apps & Connectors** → Advanced → enable **Developer mode**.
 2. Create connector → MCP Server URL:
    `https://dosadash.venkateshs.dev/mcp/<your ddk_… key>`
    → Authentication: **None** (the key travels in the URL).
 3. In a chat, enable the connector under the tools menu and ask:
    *“Order me a Masala Dosa from DosaDash.”*
+
+### No ChatGPT plan? OpenAI API / Playground
+
+The **Responses API is a full MCP client independent of any ChatGPT
+subscription** — a pay-per-use API key from platform.openai.com is
+enough, and write tools work. Zero-code: Playground → Tools → **MCP
+server** → paste the `/mcp` URL + `Authorization: Bearer ddk_…` header
+(or just the tokenized URL). In code:
+
+```python
+from openai import OpenAI
+
+client = OpenAI()  # OPENAI_API_KEY
+resp = client.responses.create(
+    model="gpt-4o-mini",
+    tools=[
+        {
+            "type": "mcp",
+            "server_label": "dosadash",
+            "server_url": "https://dosadash.venkateshs.dev/mcp",
+            "headers": {"Authorization": "Bearer ddk_…"},
+            "require_approval": "never",
+        }
+    ],
+    input="What dosas are under ₹150? Order me one Masala Dosa.",
+)
+print(resp.output_text)
+```
 
 ### Claude Code (Web & CLI)
 
@@ -108,6 +147,34 @@ Local stdio (the Phase 6 path — useful against a local stack):
    shows stock vs reorder point.
 3. *"Order me one Masala Dosa and a filter coffee."* → `place_order` →
    real order id + GST total; it pops up on the KDS (`/kds`) live.
+
+## Paying & tracking MCP orders
+
+Every MCP `place_order` lands on **one dedicated customer account**:
+`+91 90000 00099` — **"Claude (MCP demo)"**. By design: the MCP key
+authenticates the *client*, not a customer, so the server pins the
+identity server-side (same trust model as the internal token).
+
+To pay and track:
+
+1. Open https://dosadash.venkateshs.dev and log in with phone
+   **`9000000099`** — the OTP appears **in the on-page banner** (no SMS
+   gateway in this deployment; accounts without a Telegram link use the
+   DEMO channel, same as the `/demo` accounts).
+2. Go to **`/orders`**: every MCP-placed order is there with live status
+   tracking (WebSocket) and the **Pay** button → Razorpay **TEST**
+   checkout. Test cards are on the `/demo` page (Visa
+   `4386 2894 0766 0153` / MC `2305 3242 5784 8228`, any future expiry,
+   mock-bank "Success").
+
+Staff surfaces see the same orders like any other channel: **`/admin` →
+Orders** (management, refunds) and **`/kds`** (live board — advance
+COOKING → READY → …).
+
+Caveat: all MCP keys share this one account, so anyone holding a key
+sees the same order history — a documented demo trade-off. Per-key
+customer binding (a nullable `user_id` on `mcp_api_keys`) is the
+follow-up if that ever matters.
 
 ## Notes
 
