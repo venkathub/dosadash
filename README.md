@@ -13,7 +13,7 @@ flowchart LR
   subgraph clients [Clients]
     W["Web — customer / KDS / admin / fixer<br/>(Next.js)"]
     TG[Telegram]
-    CD["Claude Desktop<br/>(MCP server)"]
+    CD["ChatGPT · Cursor · Claude Code/Desktop<br/>(remote MCP /mcp + stdio)"]
     AGG[Aggregator webhook<br/>HMAC]
     GH["GitHub<br/>(issues · fixer PRs · webhook)"]
   end
@@ -140,7 +140,7 @@ uv run pytest evals -q              # key-free eval-asset gates
 | [docs/06-schema.md](docs/06-schema.md) | DB schema (Postgres + pgvector + Redis keyspaces) |
 | [docs/07-resume-bullets.md](docs/07-resume-bullets.md) | Resume bullets with the measured numbers |
 | [docs/08-git-workflow.md](docs/08-git-workflow.md) | Phase branches → protected `main` (= prod), PR gates |
-| [docs/09-mcp-demo.md](docs/09-mcp-demo.md) | Claude Desktop orders a dosa via MCP |
+| [docs/09-mcp-demo.md](docs/09-mcp-demo.md) | MCP everywhere: ChatGPT / Cursor / Claude Code / Claude Desktop order a dosa (remote Streamable HTTP + admin-issued keys) |
 | [docs/10-demo-video-script.md](docs/10-demo-video-script.md) | 3-minute demo video, shot-by-shot |
 | [docs/11-blog-post.md](docs/11-blog-post.md) | Blog draft: "Evals Are Merge Gates" |
 | [docs/13-ui-madras-pop-design.md](docs/13-ui-madras-pop-design.md) | Madras Pop design system spec |

@@ -16,6 +16,7 @@ import { CouponsTab } from "./couponsTab";
 import { FeedbackTab } from "./feedbackTab";
 import { ImagesTab } from "./imagesTab";
 import { InventoryTab } from "./inventoryTab";
+import { McpTab } from "./mcpTab";
 import { CrmTab, ReportsTab } from "./reportsTabs";
 import { ReviewsTab } from "./reviewsTab";
 import { SupportInboxTab } from "./supportInboxTab";
@@ -25,11 +26,11 @@ import { AuditTab, CombosTab, CostsTab, EvalsTab, MenuTab, NutritionTab, OrdersT
 const TAB_GROUPS = [
   { label: "Operations", tabs: ["Menu", "Orders", "Inventory", "Support", "Reviews"] },
   { label: "Growth", tabs: ["Coupons", "Combos", "CRM", "Reports"] },
-  { label: "AI Studio", tabs: ["Copilot", "Nutrition", "Translations", "Images", "Evals", "Costs"] },
+  { label: "AI Studio", tabs: ["Copilot", "Nutrition", "Translations", "Images", "MCP", "Evals", "Costs"] },
   { label: "System", tabs: ["Feedback", "Settings", "Audit"] },
 ] as const;
 
-const TABS = ["Menu", "Orders", "Inventory", "Support", "Reviews", "Coupons", "Combos", "CRM", "Reports", "Copilot", "Nutrition", "Translations", "Images", "Evals", "Costs", "Feedback", "Settings", "Audit"] as const;
+const TABS = ["Menu", "Orders", "Inventory", "Support", "Reviews", "Coupons", "Combos", "CRM", "Reports", "Copilot", "Nutrition", "Translations", "Images", "MCP", "Evals", "Costs", "Feedback", "Settings", "Audit"] as const;
 type Tab = (typeof TABS)[number];
 
 /** Sidebar icons — the product's emoji icon language (docs/13 §4). */
@@ -47,6 +48,7 @@ const TAB_ICON: Record<Tab, string> = {
   Nutrition: "🥗",
   Translations: "🌐",
   Images: "🖼️",
+  MCP: "🔌",
   Evals: "🎯",
   Costs: "💸",
   Feedback: "🐞",
@@ -203,6 +205,7 @@ export default function Admin() {
           {tab === "Nutrition" && <NutritionTab />}
           {tab === "Translations" && <TranslationsTab />}
           {tab === "Images" && <ImagesTab />}
+          {tab === "MCP" && <McpTab />}
           {tab === "Evals" && <EvalsTab />}
           {tab === "Costs" && <CostsTab />}
           {tab === "Feedback" && <FeedbackTab />}

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "dosadash": {
+      "type": "http",
+      "url": "https://dosadash.venkateshs.dev/mcp",
+      "headers": {
+        "Authorization": "Bearer ${DOSADASH_MCP_KEY}"
+      }
+    }
+  }
+}
