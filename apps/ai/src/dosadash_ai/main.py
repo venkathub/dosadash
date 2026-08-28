@@ -10,6 +10,7 @@ from fastapi import FastAPI
 
 from dosadash_ai.config import get_settings
 from dosadash_ai.llm import configure_tracing
+from dosadash_ai.mcp_http import McpDispatchMiddleware, mcp_http_lifespan
 from dosadash_ai.routers.agent import router as agent_router
 from dosadash_ai.routers.copilot import router as copilot_router
 from dosadash_ai.routers.costs import router as costs_router
@@ -61,7 +62,10 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         asyncio.create_task(run_menu_listener(), name="menu-cascade"),  # Hard Rule 4
     ]
     try:
-        yield
+        # Streamable HTTP MCP session manager (Phase 16) — FastAPI never
+        # runs mounted sub-app lifespans, so it rides ours.
+        async with mcp_http_lifespan():
+            yield
     finally:
         for task in tasks:
             task.cancel()
@@ -69,6 +73,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="DosaDash AI", version="0.1.0", lifespan=lifespan)
+# Remote MCP endpoint (Phase 16): auth-wrapped Streamable HTTP transport,
+# intercepted pure-ASGI so POST /mcp never sees a router redirect.
+app.add_middleware(McpDispatchMiddleware)
 app.include_router(nutrition_router)
 app.include_router(rag_router)
 app.include_router(agent_router)

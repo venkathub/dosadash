@@ -19,6 +19,7 @@ from dosadash_api.routers.admin_feedback import router as admin_feedback_router
 from dosadash_api.routers.admin_ingredients import router as admin_ingredients_router
 from dosadash_api.routers.admin_inventory import router as admin_inventory_router
 from dosadash_api.routers.admin_invoices import router as admin_invoices_router
+from dosadash_api.routers.admin_mcp_keys import router as admin_mcp_keys_router
 from dosadash_api.routers.admin_menu import router as admin_menu_router
 from dosadash_api.routers.admin_menu_images import router as admin_menu_images_router
 from dosadash_api.routers.admin_nutrition import router as admin_nutrition_router
@@ -68,6 +69,7 @@ app.include_router(admin_feedback_router)
 app.include_router(admin_ingredients_router)
 app.include_router(admin_inventory_router)
 app.include_router(admin_invoices_router)
+app.include_router(admin_mcp_keys_router)
 app.include_router(admin_menu_router)
 app.include_router(admin_menu_images_router)
 app.include_router(admin_nutrition_router)

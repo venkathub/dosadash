@@ -24,6 +24,12 @@
 		reverse_proxy ai:8001
 	}
 
+	# Remote MCP endpoint (Phase 16) — hosted Streamable HTTP MCP server
+	# (admin-issued key auth lives in the ai service, not here)
+	handle /mcp* {
+		reverse_proxy ai:8001
+	}
+
 	# Telegram webhook (aiogram bot adapter)
 	handle /tg/* {
 		reverse_proxy bot:8081

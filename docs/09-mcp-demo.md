@@ -1,31 +1,90 @@
-# 09 — MCP Server Demo: Claude Desktop Orders a Dosa
+# 09 — MCP Everywhere: Order a Dosa from Any AI Tool
 
-Phase 6 deliverable: DosaDash exposes an MCP server with three tools —
-`get_menu`, `check_inventory`, `place_order` — so any MCP client (Claude
-Desktop, Claude Code, …) can browse the menu and place a real order.
+DosaDash exposes an MCP server with three tools — `get_menu`,
+`check_inventory`, `place_order` — reachable from **every MCP client**:
+
+| Client | Transport | Setup |
+|---|---|---|
+| ChatGPT (developer-mode connector) | remote Streamable HTTP | tokenized URL |
+| Claude Code — **Web & CLI** | remote Streamable HTTP | `.mcp.json` / one command |
+| Cursor | remote Streamable HTTP | one-click deeplink / `.cursor/mcp.json` |
+| Claude Desktop | remote connector **or** local stdio | URL / `claude_desktop_config.json` |
 
 ## Architecture
 
-The MCP server (`apps/ai/src/dosadash_ai/mcp_server.py`, console script
-`dosadash-mcp`) is a **thin stdio adapter** that talks HTTP to the core api:
+One server, two transports (Phase 6 + Phase 16):
 
-| Tool | Backend | Auth |
-|---|---|---|
-| `get_menu` | `GET /api/v1/menu` (public) | none |
-| `check_inventory` | `GET /api/v1/internal/mcp/inventory` | `X-Internal-Token` |
-| `place_order` | `POST /api/v1/internal/mcp/place` | `X-Internal-Token` |
+- **stdio** (`dosadash-mcp` console script) — runs wherever the client runs.
+- **Streamable HTTP** — the SAME server hosted by `apps/ai` at
+  `https://dosadash.venkateshs.dev/mcp` (stateless, JSON-response mode;
+  Caddy routes `/mcp*` → ai; zero extra RAM — Hard Rule 7).
 
-No business logic lives in the adapter (same rule as the Telegram bot):
-`place_order` runs through the real `order_service` — item ids are
-DB-validated (Hard Rule 2), the state machine, kitchen-pause and business
-hours all apply. Orders are placed as the dedicated demo customer
-(`Claude (MCP demo)`, +919000000099) on the WEB channel, so they appear on
-the KDS and admin dashboards like any other order.
+The server is a **thin adapter** over the core api (same rule as the
+Telegram bot — no business logic in adapters): `place_order` runs through
+the real `order_service` — item ids are DB-validated (Hard Rule 2), the
+state machine, kitchen-pause, serving windows and business hours all
+apply. Orders are placed as the dedicated demo customer
+(`Claude (MCP demo)`, +919000000099) and appear on the KDS live.
 
-## Claude Desktop setup
+### Auth: admin-issued API keys
 
-`~/.config/Claude/claude_desktop_config.json` (macOS:
-`~/Library/Application Support/Claude/claude_desktop_config.json`):
+Keys are generated in the **admin GUI → AI Studio → MCP tab** (LLM-provider
+key UX: plaintext `ddk_…` shown exactly once, only the SHA-256 hash is
+stored, revoke any time — clients disconnect within ~60s). Two accepted
+shapes, because not every client can send headers:
+
+- `Authorization: Bearer ddk_…` — Cursor, Claude Code, Claude Desktop
+- tokenized URL `https://…/mcp/<ddk_…>` — ChatGPT (its connector UI has
+  no header field)
+
+Key verification fails **closed**: if the ai service cannot reach the api,
+`/mcp` denies — it places real orders.
+
+## Setup per client
+
+Generate a key first (admin → MCP tab → “🔑 Generate key”). The tab also
+renders all of the snippets below with your fresh key pre-filled.
+
+### ChatGPT
+
+1. Settings → **Apps & Connectors** → Advanced → enable **Developer mode**
+   (Plus/Pro/Business).
+2. Create connector → MCP Server URL:
+   `https://dosadash.venkateshs.dev/mcp/<your ddk_… key>`
+   → Authentication: **None** (the key travels in the URL).
+3. In a chat, enable the connector under the tools menu and ask:
+   *“Order me a Masala Dosa from DosaDash.”*
+
+### Claude Code (Web & CLI)
+
+The repo commits a project-scoped **`.mcp.json`** that reads the key from
+the environment — set `DOSADASH_MCP_KEY` and the server is available in
+any checkout (Claude Code Web included):
+
+```bash
+export DOSADASH_MCP_KEY=ddk_…
+```
+
+Or add it user-wide with one command:
+
+```bash
+claude mcp add --transport http dosadash https://dosadash.venkateshs.dev/mcp \
+  --header "Authorization: Bearer ddk_…"
+```
+
+### Cursor
+
+Click the **one-click install deeplink** from the admin MCP tab
+(`cursor://anysphere.cursor-deeplink/mcp/install?…`), or set
+`DOSADASH_MCP_KEY` in your environment — the repo commits
+**`.cursor/mcp.json`** which references `${env:DOSADASH_MCP_KEY}`.
+
+### Claude Desktop
+
+Remote (no local process): Settings → Connectors → **Add custom
+connector** → URL `https://dosadash.venkateshs.dev/mcp/<ddk_… key>`.
+
+Local stdio (the Phase 6 path — useful against a local stack):
 
 ```json
 {
@@ -34,7 +93,7 @@ the KDS and admin dashboards like any other order.
       "command": "uv",
       "args": ["run", "--project", "/path/to/dosadash", "dosadash-mcp"],
       "env": {
-        "DOSADASH_API_URL": "https://dosadash.venkateshs.dev",
+        "DOSADASH_API_URL": "http://localhost:8000",
         "DOSADASH_INTERNAL_TOKEN": "<INTERNAL_API_TOKEN from infra/.env>"
       }
     }
@@ -42,12 +101,9 @@ the KDS and admin dashboards like any other order.
 }
 ```
 
-For a local stack use `"DOSADASH_API_URL": "http://localhost:8000"`.
+## Demo script (3 turns, any client)
 
-## Demo script (3 turns)
-
-1. *"What dosas does DosaDash have under ₹150?"* → Claude calls `get_menu`,
-   filters, quotes real prices.
+1. *"What dosas does DosaDash have under ₹150?"* → `get_menu`, real prices.
 2. *"Is there enough batter rice in the kitchen?"* → `check_inventory`
    shows stock vs reorder point.
 3. *"Order me one Masala Dosa and a filter coffee."* → `place_order` →
@@ -55,7 +111,10 @@ For a local stack use `"DOSADASH_API_URL": "http://localhost:8000"`.
 
 ## Notes
 
-- The internal token is a demo-grade shared secret (same trust boundary as
-  bot→api). Rotating `INTERNAL_API_TOKEN` in `infra/.env` revokes access.
-- The server never runs on the VPS — it runs wherever the MCP client runs
-  (zero RAM budget impact, Hard Rule 7).
+- **Never commit a key** — `.mcp.json` / `.cursor/mcp.json` only reference
+  the `DOSADASH_MCP_KEY` env var; plaintext keys exist in the admin GUI
+  for one render.
+- Revocation (admin MCP tab) takes effect within the ai-side verify-cache
+  TTL (~60s). Rotating `INTERNAL_API_TOKEN` still revokes the stdio path.
+- The hosted endpoint is stateless JSON (no session affinity) — safe
+  behind Caddy/the front proxy, friendly to every client's HTTP stack.

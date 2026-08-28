@@ -874,3 +874,25 @@ class FixerRun(Base):
     cache_creation_tokens: Mapped[int | None] = mapped_column(BigInteger)
     output_tokens: Mapped[int | None] = mapped_column(BigInteger)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)
+
+
+class McpApiKey(Base):
+    """Admin-issued API key for the hosted remote MCP endpoint (Phase 16).
+
+    LLM-provider key UX: plaintext is returned exactly once at creation and
+    only the SHA-256 hash lands here (`dosadash_shared.hash_mcp_key`); the
+    list view shows `key_prefix`. Revocation = stamping `revoked_at`
+    (rows are never deleted — the key's audit story outlives the key).
+    `last_used_at` is stamped by the internal verify endpoint, throttled
+    to ~once a minute so MCP traffic never turns into write load."""
+
+    __tablename__ = "mcp_api_keys"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    name: Mapped[str] = mapped_column(String(80))
+    key_prefix: Mapped[str] = mapped_column(String(16))
+    key_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
