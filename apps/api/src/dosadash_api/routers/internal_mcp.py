@@ -1,17 +1,21 @@
-"""Internal endpoints backing the MCP server (Phase 6).
+"""Internal endpoints backing the MCP server (Phase 6 + Phase 16).
 
-The MCP server is a thin stdio adapter (runs wherever Claude Desktop runs);
-these endpoints keep ALL business rules server-side:
+The MCP server is a thin adapter (stdio wherever Claude Desktop runs, or
+Streamable HTTP hosted by apps/ai at /mcp); these endpoints keep ALL
+business rules server-side:
 
-- GET  /api/v1/internal/mcp/inventory — ingredient stock snapshot
-- POST /api/v1/internal/mcp/place     — place an order as the MCP demo
+- GET  /api/v1/internal/mcp/inventory  — ingredient stock snapshot
+- POST /api/v1/internal/mcp/place      — place an order as the MCP demo
   user via order_service (item validation = Hard Rule 2, state machine,
   hours/pause enforcement all re-run here)
+- POST /api/v1/internal/mcp/verify-key — hosted-/mcp auth: check an
+  admin-issued key (Phase 16); the api owns the key table, ai only asks.
 
 X-Internal-Token guarded, same trust boundary as bot→api.
 """
 
 import secrets
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -20,13 +24,21 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.config import get_settings
-from dosadash_api.db.models import Ingredient, User
+from dosadash_api.db.models import Ingredient, McpApiKey, User
 from dosadash_api.db.session import get_session
 from dosadash_api.providers import PaymentProvider
 from dosadash_api.routers import orders as orders_router
 from dosadash_api.routers.orders import get_payment_provider
 from dosadash_api.services import order_service
-from dosadash_shared import ChannelType, OrderItemIn, OrderOut, Role
+from dosadash_shared import (
+    ChannelType,
+    McpKeyVerifyIn,
+    McpKeyVerifyOut,
+    OrderItemIn,
+    OrderOut,
+    Role,
+    hash_mcp_key,
+)
 
 router = APIRouter(prefix="/api/v1/internal/mcp", tags=["internal:mcp"])
 
@@ -100,3 +112,29 @@ async def place(
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     loaded = await orders_router._load_order(session, order.id)
     return await orders_router._order_out(session, loaded)
+
+
+# How often verify stamps last_used_at — MCP traffic must never turn the
+# key table into per-request write load.
+LAST_USED_STAMP_INTERVAL = timedelta(seconds=60)
+
+
+@router.post("/verify-key", response_model=McpKeyVerifyOut)
+async def verify_key(
+    body: McpKeyVerifyIn,
+    session: SessionDep,
+    x_internal_token: Annotated[str, Header()] = "",
+) -> McpKeyVerifyOut:
+    """Hosted-/mcp auth check (Phase 16). Always 200: `ok=False` covers
+    unknown AND revoked so responses never leak whether a key existed."""
+    _check_internal_token(x_internal_token)
+    row = await session.scalar(
+        select(McpApiKey).where(McpApiKey.key_hash == hash_mcp_key(body.key))
+    )
+    if row is None or row.revoked_at is not None:
+        return McpKeyVerifyOut(ok=False)
+    now = datetime.now(UTC)
+    if row.last_used_at is None or now - row.last_used_at >= LAST_USED_STAMP_INTERVAL:
+        row.last_used_at = now
+        await session.commit()
+    return McpKeyVerifyOut(ok=True, name=row.name)

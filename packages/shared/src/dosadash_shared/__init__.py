@@ -195,6 +195,17 @@ from dosadash_shared.invoice import (
     InvoiceStatus,
     InvoiceUploadIn,
 )
+from dosadash_shared.mcp import (
+    MCP_KEY_DISPLAY_CHARS,
+    MCP_KEY_PREFIX,
+    McpKeyCreatedOut,
+    McpKeyIn,
+    McpKeyOut,
+    McpKeyVerifyIn,
+    McpKeyVerifyOut,
+    generate_mcp_key,
+    hash_mcp_key,
+)
 from dosadash_shared.menu import (
     CategoryOut,
     CustomizationOut,
@@ -628,6 +639,15 @@ __all__ = [
     "SentinelIncidentIn",
     "TriageAssessment",
     "TriageVerdict",
+    "MCP_KEY_DISPLAY_CHARS",
+    "MCP_KEY_PREFIX",
+    "McpKeyCreatedOut",
+    "McpKeyIn",
+    "McpKeyOut",
+    "McpKeyVerifyIn",
+    "McpKeyVerifyOut",
+    "generate_mcp_key",
+    "hash_mcp_key",
     "REDACTED",
     "redact_phones",
 ]
