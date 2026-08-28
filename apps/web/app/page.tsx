@@ -51,7 +51,7 @@ function currentMealPeriod(date = new Date()): MealPeriod {
 
 export default function Home() {
   const [menu, setMenu] = useState<MenuItem[]>([]);
-  const [vegOnly, setVegOnly] = useState(false);
+  const [dietFilter, setDietFilter] = useState<"all" | "veg" | "nonveg">("all");
   const [highProtein, setHighProtein] = useState(false);
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<Record<number, CartLine>>({});
@@ -104,13 +104,13 @@ export default function Home() {
     () =>
       menu.filter(
         (m) =>
-          (!vegOnly || m.is_veg) &&
+          (dietFilter === "all" || (dietFilter === "veg" ? m.is_veg : !m.is_veg)) &&
           (!highProtein || (m.protein_g ?? 0) >= HIGH_PROTEIN_G) &&
           (search.length < 2 ||
             m.name.toLowerCase().includes(search.toLowerCase()) ||
             (m.canonical_name ?? "").toLowerCase().includes(search.toLowerCase()))
       ),
-    [menu, vegOnly, highProtein, search]
+    [menu, dietFilter, highProtein, search]
   );
   // Current meal period's categories first; within a category, matching items first.
   const categories = useMemo(() => {
@@ -244,22 +244,30 @@ export default function Home() {
                 தமிழ்
               </span>
             </button>
-            <label
-              className={cx(
-                "flex cursor-pointer items-center gap-1.5 rounded-full border-2 px-2.5 py-0.5 text-xs font-semibold transition-colors duration-150",
-                vegOnly
-                  ? "border-indigo-900 bg-veg text-white"
-                  : "border-indigo-600 text-indigo-100 hover:border-turmeric-400",
-              )}
+            <div
+              role="group"
+              aria-label="Diet filter"
+              className="flex overflow-hidden rounded-full border-2 border-indigo-600 font-display text-[11.5px] font-bold"
             >
-              <input
-                type="checkbox"
-                className="accent-[#1E8A5A]"
-                checked={vegOnly}
-                onChange={(e) => setVegOnly(e.target.checked)}
-              />
-              <span>Veg</span>
-            </label>
+              {(["all", "veg", "nonveg"] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  aria-pressed={dietFilter === f}
+                  className={cx(
+                    "px-2.5 py-0.5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-magenta-500",
+                    dietFilter === f
+                      ? f === "veg"
+                        ? "bg-veg text-white"
+                        : "bg-turmeric-500 text-indigo-900"
+                      : "text-indigo-200 hover:bg-indigo-700",
+                  )}
+                  onClick={() => setDietFilter(f)}
+                >
+                  {f === "all" ? "All" : f === "veg" ? "🌿 Veg" : "🍖 Non-veg"}
+                </button>
+              ))}
+            </div>
             {hasProteinData && (
               <button
                 type="button"
@@ -511,10 +519,11 @@ export default function Home() {
           </section>
           );
         })}
-        {highProtein && visible.length === 0 && (
+        {visible.length === 0 && (highProtein || dietFilter !== "all") && (
           <p className="mt-8 rounded-xl border-2 border-indigo-900 bg-sand-200 p-4 text-sm text-muted">
-            No dish on today&apos;s menu is scored at {HIGH_PROTEIN_G} g protein or more
-            {vegOnly && " among the veg dishes"}. Switch the 💪 filter off to see everything.
+            {highProtein
+              ? <>No dish on today&apos;s menu is scored at {HIGH_PROTEIN_G} g protein or more{dietFilter !== "all" && ` among the ${dietFilter} dishes`}. Switch the 💪 filter off to see everything.</>
+              : <>No {dietFilter === "veg" ? "veg" : "non-veg"} dishes match your search. Switch the diet filter to <strong>All</strong> to see everything.</>}
           </p>
         )}
       </div>
