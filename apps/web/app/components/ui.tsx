@@ -348,12 +348,21 @@ export function Chip({
 
 /* --------------------------- Madras Pop signatures --------------------------- */
 
-/** Indigo ticker strip under the customer header (decorative static text). */
+/** Indigo ticker strip under the customer header — scrolling marquee. */
 export function Ticker({
   className,
+  children,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ticker", className)} aria-hidden="true" {...props} />;
+  return (
+    <div className={cx("ticker", className)} aria-hidden="true" {...props}>
+      {/* Text duplicated so translateX(-50%) creates a seamless scroll loop. */}
+      <span className="ticker__inner">
+        <span>{children}</span>
+        <span aria-hidden="true">{children}</span>
+      </span>
+    </div>
+  );
 }
 
 /** Kanchipuram zari stripe section divider. */
