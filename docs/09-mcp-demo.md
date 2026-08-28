@@ -5,7 +5,8 @@ DosaDash exposes an MCP server with three tools — `get_menu`,
 
 | Client | Transport | Setup |
 |---|---|---|
-| ChatGPT (developer-mode connector) | remote Streamable HTTP | tokenized URL |
+| ChatGPT (developer-mode connector — Plus/Pro+, **not Free/Go**) | remote Streamable HTTP | tokenized URL |
+| OpenAI API / Playground (**any plan** — Responses API MCP tool) | remote Streamable HTTP | URL + Bearer header |
 | Claude Code — **Web & CLI** | remote Streamable HTTP | `.mcp.json` / one command |
 | Cursor | remote Streamable HTTP | one-click deeplink / `.cursor/mcp.json` |
 | Claude Desktop | remote connector **or** local stdio | URL / `claude_desktop_config.json` |
@@ -47,13 +48,49 @@ renders all of the snippets below with your fresh key pre-filled.
 
 ### ChatGPT
 
-1. Settings → **Apps & Connectors** → Advanced → enable **Developer mode**
-   (Plus/Pro/Business).
+> **Plan requirement**: custom MCP connectors need Developer mode, which
+> is **not available on Free or Go**. Individual **Plus/Pro** plans get
+> Developer mode with limits (per OpenAI's current docs, custom
+> connectors on individual plans may be restricted to **read-only**
+> tools — `get_menu`/`check_inventory` work, `place_order` may be
+> blocked or prompt-gated); full read+write MCP is guaranteed on
+> **Business/Enterprise/Edu**. If Settings → Apps & Connectors →
+> Advanced shows no "Developer mode" toggle, your plan can't add custom
+> servers — use the [any-plan fallback](#no-chatgpt-plan-openai-api--playground)
+> below instead.
+
+1. Settings → **Apps & Connectors** → Advanced → enable **Developer mode**.
 2. Create connector → MCP Server URL:
    `https://dosadash.venkateshs.dev/mcp/<your ddk_… key>`
    → Authentication: **None** (the key travels in the URL).
 3. In a chat, enable the connector under the tools menu and ask:
    *“Order me a Masala Dosa from DosaDash.”*
+
+### No ChatGPT plan? OpenAI API / Playground
+
+The **Responses API is a full MCP client independent of any ChatGPT
+subscription** — a pay-per-use API key from platform.openai.com is
+enough, and write tools work. Zero-code: Playground → Tools → **MCP
+server** → paste the `/mcp` URL + `Authorization: Bearer ddk_…` header
+(or just the tokenized URL). In code:
+
+```python
+from openai import OpenAI
+
+client = OpenAI()  # OPENAI_API_KEY
+resp = client.responses.create(
+    model="gpt-4o-mini",
+    tools=[{
+        "type": "mcp",
+        "server_label": "dosadash",
+        "server_url": "https://dosadash.venkateshs.dev/mcp",
+        "headers": {"Authorization": "Bearer ddk_…"},
+        "require_approval": "never",
+    }],
+    input="What dosas are under ₹150? Order me one Masala Dosa.",
+)
+print(resp.output_text)
+```
 
 ### Claude Code (Web & CLI)
 
