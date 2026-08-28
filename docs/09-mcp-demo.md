@@ -146,6 +146,34 @@ Local stdio (the Phase 6 path — useful against a local stack):
 3. *"Order me one Masala Dosa and a filter coffee."* → `place_order` →
    real order id + GST total; it pops up on the KDS (`/kds`) live.
 
+## Paying & tracking MCP orders
+
+Every MCP `place_order` lands on **one dedicated customer account**:
+`+91 90000 00099` — **"Claude (MCP demo)"**. By design: the MCP key
+authenticates the *client*, not a customer, so the server pins the
+identity server-side (same trust model as the internal token).
+
+To pay and track:
+
+1. Open https://dosadash.venkateshs.dev and log in with phone
+   **`9000000099`** — the OTP appears **in the on-page banner** (no SMS
+   gateway in this deployment; accounts without a Telegram link use the
+   DEMO channel, same as the `/demo` accounts).
+2. Go to **`/orders`**: every MCP-placed order is there with live status
+   tracking (WebSocket) and the **Pay** button → Razorpay **TEST**
+   checkout. Test cards are on the `/demo` page (Visa
+   `4386 2894 0766 0153` / MC `2305 3242 5784 8228`, any future expiry,
+   mock-bank "Success").
+
+Staff surfaces see the same orders like any other channel: **`/admin` →
+Orders** (management, refunds) and **`/kds`** (live board — advance
+COOKING → READY → …).
+
+Caveat: all MCP keys share this one account, so anyone holding a key
+sees the same order history — a documented demo trade-off. Per-key
+customer binding (a nullable `user_id` on `mcp_api_keys`) is the
+follow-up if that ever matters.
+
 ## Notes
 
 - **Never commit a key** — `.mcp.json` / `.cursor/mcp.json` only reference
