@@ -248,6 +248,31 @@ _REMOVAL_WORDS = (
     "instead",
 )
 
+# Cross-lingual / Hinglish food terms the prompt maps to canonical dishes but
+# that don't appear in canonical names or approved aliases. Maps the alternate
+# term (lowercase) to the canonical item name prefix (lowercase).
+# Used by reply_draft_contradictions so self-correction fires even when the
+# customer uses a cross-lingual term the lexical key check doesn't cover.
+_CROSS_LINGUAL_TERMS: dict[str, str] = {
+    "anda biryani": "egg biryani",
+    "anda": "egg biryani",
+    "semya payasam": "semiya payasam",
+    "semya": "semiya payasam",
+    "chai": "masala chai",
+}
+
+
+def _cross_lingual_match(item_name_base: str, text: str) -> bool:
+    """Return True if *text* contains a cross-lingual term that resolves to
+    *item_name_base*.  Whole-word check (space-padding) prevents 'anda'
+    matching inside 'kanda' etc."""
+    padded = f" {text} "
+    return any(
+        canonical == item_name_base and f" {term} " in padded
+        for term, canonical in _CROSS_LINGUAL_TERMS.items()
+    )
+
+
 # Turns where an unnamed drafted dish is legitimate (model chooses for the
 # customer, or long-term memory supplies the items).
 _UNNAMED_DRAFT_OK_WORDS = (
@@ -305,10 +330,16 @@ def reply_draft_contradictions(ctx: AgentContext, message: str, turn: Any) -> li
     for item in ctx.items.values():
         if not item.orderable or item.id in drafted_ids:
             continue
+        name_base = item.name.split(" (")[0].casefold()
         keys = [k for k in _keys(item) if k]
-        if not any(_named_in(text, k) for k in keys):
+        named_in_msg = any(_named_in(text, k) for k in keys) or _cross_lingual_match(
+            name_base, text
+        )
+        if not named_in_msg:
             continue
-        if phrase_mode and any(k in reply for k in keys):
+        # Check reply: canonical name/alias OR cross-lingual term in the reply
+        named_in_reply = any(k in reply for k in keys) or _cross_lingual_match(name_base, reply)
+        if phrase_mode and named_in_reply:
             wrongly_refused.append(item.name)
         elif not removal_intent and item.category in drafted_unrequested_categories:
             wrongly_refused.append(item.name)  # substitution signature
