@@ -35,6 +35,17 @@
 # quality class at roughly a fifth of the price; turn cap tightened 80→60
 # (both real fixes finished well under 30 turns). The gate suite asserts a
 # model stays pinned so a silent default-bump can never re-inflate spend.
+#
+# Turn-budget postmortem (2026-08-30): the 60-turn cap was calibrated on
+# those two small fixes; the first two SENTINEL fixes (#165/#166) both
+# died at error_max_turns 61/60 — #166 had a complete, verified fix
+# locally and lost ALL of it because the push never happened ($1.92 spent
+# for nothing). Multi-file sentinel tasks + the mandated local web
+# verification (npm ci/build/playwright/ui-smoke) need headroom → cap is
+# now 90 (gate ceiling stays 100). Same postmortem: 6–10 permission
+# denials per run burned turns because the prompt says to build "in
+# apps/web" but `cd` was never allowlisted, so every `cd apps/web && …`
+# compound command was denied — cd/cat/sleep added below.
 # Prod verification after deploy runs separately on Haiku for pennies
 # (claude-fix-verify.yml).
 
@@ -77,8 +88,8 @@ jobs:
           track_progress: true
           claude_args: |
             --model claude-sonnet-4-6
-            --max-turns 60
-            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(uv run:*),Bash(uv sync:*),Bash(git:*),Bash(gh:*),Bash(npm run:*),Bash(npm ci:*),Bash(npx playwright:*),Bash(docker run:*),Bash(ls:*),Bash(mkdir:*)"
+            --max-turns 90
+            --allowedTools "Edit,Write,Read,Glob,Grep,Bash(uv run:*),Bash(uv sync:*),Bash(git:*),Bash(gh:*),Bash(npm run:*),Bash(npm ci:*),Bash(npx playwright:*),Bash(docker run:*),Bash(ls:*),Bash(mkdir:*),Bash(cd:*),Bash(cat:*),Bash(sleep:*)"
           prompt: |
             You are the DosaDash self-healing fixer working on issue #${{ github.event.issue.number }}.
             TRIGGER_LABEL: ${{ github.event.label.name }}
@@ -113,6 +124,11 @@ jobs:
                fix, following every rule in CLAUDE.md (conventional
                commits; if you touch `apps/ai/**`, prompts, or `evals/**`
                you MUST update eval cases — evals are merge gates).
+               PUSH EARLY: commit and push the branch as soon as the
+               implementation is complete, BEFORE the verification step —
+               a run that dies at its turn budget with unpushed work loses
+               everything (this happened; it is the expensive failure
+               mode). Further commits amend the same branch.
             4. VERIFY LOCALLY before pushing: run `uv run ruff check .` and
                the test files relevant to your change with
                `uv run pytest <paths> -q`; for `apps/web` changes run
