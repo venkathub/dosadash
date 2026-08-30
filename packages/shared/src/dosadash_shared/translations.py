@@ -142,3 +142,22 @@ class TranslationEditIn(BaseModel):
 
 class TranslationStatusIn(BaseModel):
     status: Literal["APPROVED", "REJECTED"]
+
+
+class TranslationBulkStatusIn(BaseModel):
+    """Bulk approve/reject all DRAFT rows for a language (or a specific list).
+    Rows already at the target status are silently skipped."""
+
+    lang: str = "ta"
+    status: Literal["APPROVED", "REJECTED"]
+    item_ids: list[int] | None = Field(default=None, min_length=1, max_length=500)
+
+    @field_validator("lang")
+    @classmethod
+    def _lang_supported(cls, v: str) -> str:
+        return _validate_lang(v)
+
+
+class TranslationBulkStatusOut(BaseModel):
+    changed: int
+    skipped: int

@@ -35,7 +35,7 @@ export function TranslationsTab() {
     [],
   );
   const { data, error, refresh, setError } = useLoad(load);
-  const [busy, setBusy] = useState<number | "all" | null>(null);
+  const [busy, setBusy] = useState<number | "all" | "bulk" | null>(null);
   const [edits, setEdits] = useState<Record<number, { name: string; description: string }>>({});
 
   const act = (key: number | "all", fn: () => Promise<unknown>) => {
@@ -80,16 +80,32 @@ export function TranslationsTab() {
       adminApi(`/admin/translations/${itemId}/${LANG}/status`, { method: "POST", body: { status } }),
     );
 
+  const bulkApproveAll = () =>
+    act("bulk", () =>
+      adminApi<{ changed: number; skipped: number }>("/admin/translations/bulk-status", {
+        method: "POST",
+        body: { lang: LANG, status: "APPROVED" },
+      }),
+    );
+
   const items = data?.items ?? [];
   const missing = items.filter((i) => !data?.byItem.has(i.id)).length;
+  const draftCount = Array.from(data?.byItem.values() ?? []).filter(
+    (t) => t.status === "DRAFT",
+  ).length;
 
   return (
     <div>
       <ErrorBar msg={error} />
-      <div className="mb-3 flex items-center gap-3">
+      <div className="mb-3 flex flex-wrap items-center gap-3">
         <Btn variant="turmeric" size="sm" disabled={busy !== null || missing === 0} onClick={draftMissing}>
           {busy === "all" ? "✨ Translating…" : `✨ Draft ${missing} missing (Tamil)`}
         </Btn>
+        {draftCount > 0 && (
+          <Btn variant="indigo" size="sm" disabled={busy !== null} onClick={bulkApproveAll}>
+            {busy === "bulk" ? "✓ Approving…" : `✓ Approve all ${draftCount} DRAFT`}
+          </Btn>
+        )}
         <span className="text-xs text-indigo-200/70">
           LLM drafts Tamil text — nothing is served without your approval. Prices and allergens
           always come from the English row.
