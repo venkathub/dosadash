@@ -257,6 +257,57 @@ def test_reply_draft_contradictions_substitution_signature():
     )
 
 
+def test_cross_lingual_self_correction_trigger():
+    """Cross-lingual / Hinglish food terms must activate the self-correction
+    trigger even when the canonical name doesn't appear in the customer's
+    message.  Covers the three cases that were wobbling in the live gate:
+    ord-074 (anda biryani → Egg Biryani), ord-093 (semya → Semiya Payasam),
+    ord-099 (chai → Masala Chai)."""
+    from dosadash_ai.agent.guardrail import reply_draft_contradictions
+    from dosadash_shared import AgentTurn
+
+    biryani = _item(1, "Egg Biryani", "220")
+    payasam = _item(2, "Semiya Payasam", "80")
+    chai = _item(3, "Masala Chai", "50")
+    ctx = AgentContext(items={1: biryani, 2: payasam, 3: chai})
+
+    # ord-074: "anda biryani" → model refuses using canonical name
+    refused_egg = AgentTurn(reply="Sorry, Egg Biryani is not available right now.", draft_items=[])
+    assert reply_draft_contradictions(ctx, "ek anda biryani dena", refused_egg) == ["Egg Biryani"]
+
+    # ord-074: "anda biryani" → model refuses using cross-lingual term in reply
+    refused_anda = AgentTurn(reply="We don't have anda biryani on our menu.", draft_items=[])
+    assert reply_draft_contradictions(ctx, "ek anda biryani dena", refused_anda) == ["Egg Biryani"]
+
+    # ord-093: "semya payasam" → model refuses using canonical name
+    refused_payasam = AgentTurn(reply="Semiya Payasam is not available right now.", draft_items=[])
+    assert reply_draft_contradictions(ctx, "one semya payasam", refused_payasam) == [
+        "Semiya Payasam"
+    ]
+
+    # ord-099: "chai" → model refuses using cross-lingual term
+    refused_chai = AgentTurn(
+        reply="I don't have chai on our menu.", draft_items=[DraftItemIn(item_id=1, qty=2)]
+    )
+    assert reply_draft_contradictions(ctx, "do biryani aur ek chai dena", refused_chai) == [
+        "Masala Chai"
+    ]
+
+    # correct turns must never trigger: canonical name drafted → no contradiction
+    correct = AgentTurn(reply="Added Egg Biryani!", draft_items=[DraftItemIn(item_id=1, qty=1)])
+    assert reply_draft_contradictions(ctx, "ek anda biryani dena", correct) == []
+
+    # "anda" must NOT match inside longer words (word-boundary check)
+    assert (
+        reply_draft_contradictions(
+            ctx,
+            "do onion dosa dena",  # "anda" not present at all
+            AgentTurn(reply="Sorry, Egg Biryani is not available.", draft_items=[]),
+        )
+        == []
+    )
+
+
 def test_contradictions_and_drops_are_alias_aware():
     """Post-deploy hotfix: Tamil alias mentions must count as naming the
     dish — for the self-correction trigger AND for drop_substitutions'
