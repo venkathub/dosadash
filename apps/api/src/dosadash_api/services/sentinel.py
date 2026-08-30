@@ -32,6 +32,7 @@ Deliberately NOT detected in v1 (docs/15 §S1): fixer-run failures
 own scheduler), Langfuse cost anomalies (v1.5).
 """
 
+import asyncio
 import json
 import logging
 from dataclasses import dataclass, field
@@ -75,6 +76,13 @@ FIVEXX_KEY_PREFIX = "sentinel:5xx:"
 # consecutive reds mean the gate, the provider chain, or the golden set is
 # genuinely broken and nobody may be looking.
 EVAL_CONSECUTIVE_FAILURES = 2
+
+# Probe retries: a single connection failure during a deploy-time container
+# restart is a transient — the same "flaky-first" philosophy as
+# EVAL_CONSECUTIVE_FAILURES.  Two attempts with a short delay between them
+# absorb restart-window blips; a genuinely-down service fails every attempt.
+PROBE_RETRIES = 2
+PROBE_RETRY_DELAY_SECONDS = 5.0
 
 # Single-flight advisory lock (watchdog pattern, distinct key).
 _ADVISORY_LOCK_KEY = 0x5E17_10E1
@@ -196,21 +204,28 @@ async def probe_services(settings: Settings) -> dict[str, dict[str, Any]]:
             if not base:
                 continue  # optional service disabled by config (e.g. bot)
             url = base.rstrip("/") + "/healthz"
-            try:
-                resp = await client.get(url)
-                results[name] = {
-                    "ok": resp.status_code == 200,
-                    "status": resp.status_code,
-                    "error": None,
-                    "url": url,
-                }
-            except Exception as exc:  # noqa: BLE001 — unreachable IS the signal
-                results[name] = {
-                    "ok": False,
-                    "status": None,
-                    "error": str(exc)[:200],
-                    "url": url,
-                }
+            last: dict[str, Any] = {"ok": False, "status": None, "error": None, "url": url}
+            for attempt in range(PROBE_RETRIES):
+                if attempt > 0:
+                    await asyncio.sleep(PROBE_RETRY_DELAY_SECONDS)
+                try:
+                    resp = await client.get(url)
+                    last = {
+                        "ok": resp.status_code == 200,
+                        "status": resp.status_code,
+                        "error": None,
+                        "url": url,
+                    }
+                except Exception as exc:  # noqa: BLE001 — unreachable IS the signal
+                    last = {
+                        "ok": False,
+                        "status": None,
+                        "error": str(exc)[:200],
+                        "url": url,
+                    }
+                if last["ok"]:
+                    break
+            results[name] = last
     return results
 
 
