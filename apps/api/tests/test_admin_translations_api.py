@@ -243,3 +243,93 @@ async def test_re_draft_resets_to_draft(client, admin, fake_ai, db_session):
 
     record = await db_session.get(MenuItemTranslation, (coffee, "ta"))
     assert record.status == "DRAFT"
+
+
+async def test_bulk_status_approves_all_drafts(client, admin, fake_ai, db_session):
+    items = await _item_ids(db_session)
+    # draft everything
+    await client.post(f"{TRANSLATIONS}/draft", headers=admin, json={"lang": "ta"})
+
+    resp = await client.post(
+        f"{TRANSLATIONS}/bulk-status",
+        headers=admin,
+        json={"lang": "ta", "status": "APPROVED"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["changed"] == len(items)
+    assert body["skipped"] == 0
+
+    # all rows now APPROVED
+    listing = (await client.get(TRANSLATIONS, headers=admin, params={"lang": "ta"})).json()
+    assert all(t["status"] == "APPROVED" for t in listing)
+    assert all(t["reviewed_by"] is not None for t in listing)
+
+    # audited
+    action = await db_session.scalar(
+        select(StaffAction).where(StaffAction.action == "translation.bulk_status")
+    )
+    assert action.detail["status"] == "APPROVED"
+    assert set(action.detail["item_ids"]) == set(items.values())
+
+
+async def test_bulk_status_explicit_ids(client, admin, fake_ai, db_session):
+    items = await _item_ids(db_session)
+    await client.post(f"{TRANSLATIONS}/draft", headers=admin, json={"lang": "ta"})
+    dosa = items["Masala Dosa"]
+    coffee = items["Filter Coffee"]
+
+    resp = await client.post(
+        f"{TRANSLATIONS}/bulk-status",
+        headers=admin,
+        json={"lang": "ta", "status": "APPROVED", "item_ids": [dosa, coffee]},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["changed"] == 2
+    assert body["skipped"] == 0
+
+    dosa_row = await db_session.get(MenuItemTranslation, (dosa, "ta"))
+    coffee_row = await db_session.get(MenuItemTranslation, (coffee, "ta"))
+    assert dosa_row.status == "APPROVED"
+    assert coffee_row.status == "APPROVED"
+
+
+async def test_bulk_status_skips_already_matching(client, admin, fake_ai, db_session):
+    items = await _item_ids(db_session)
+    await client.post(f"{TRANSLATIONS}/draft", headers=admin, json={"lang": "ta"})
+    # approve all once
+    await client.post(
+        f"{TRANSLATIONS}/bulk-status",
+        headers=admin,
+        json={"lang": "ta", "status": "APPROVED"},
+    )
+    # approve all again — everything is already APPROVED
+    resp = await client.post(
+        f"{TRANSLATIONS}/bulk-status",
+        headers=admin,
+        json={"lang": "ta", "status": "APPROVED"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["changed"] == 0
+    assert body["skipped"] == len(items)
+
+
+async def test_bulk_status_rbac(client, db_session):
+    # unauthenticated
+    assert (
+        await client.post(
+            f"{TRANSLATIONS}/bulk-status",
+            json={"lang": "ta", "status": "APPROVED"},
+        )
+    ).status_code == 401
+    # kitchen staff forbidden
+    kitchen = await _login_as(db_session, "+919555559003", Role.KITCHEN_STAFF)
+    assert (
+        await client.post(
+            f"{TRANSLATIONS}/bulk-status",
+            headers=kitchen,
+            json={"lang": "ta", "status": "APPROVED"},
+        )
+    ).status_code == 403
