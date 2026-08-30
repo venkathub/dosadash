@@ -145,8 +145,9 @@ class TranslationStatusIn(BaseModel):
 
 
 class TranslationBulkStatusIn(BaseModel):
-    """Bulk approve/reject all DRAFT rows for a language (or a specific list).
-    Rows already at the target status are silently skipped."""
+    """Bulk approve/reject DRAFT rows for a language (or a specific list).
+    Non-DRAFT rows (prior human decisions) are counted as skipped, never
+    flipped — deliberate flips use the single-row /status endpoint."""
 
     lang: str = "ta"
     status: Literal["APPROVED", "REJECTED"]

@@ -316,6 +316,34 @@ async def test_bulk_status_skips_already_matching(client, admin, fake_ai, db_ses
     assert body["skipped"] == len(items)
 
 
+async def test_bulk_approve_never_flips_human_rejections(client, admin, fake_ai, db_session):
+    """Review fix on the agent's draft: bulk-status is DRAFT-only — a bulk
+    'approve all DRAFT' click must never overturn a per-row human REJECTED
+    decision (the single-row /status endpoint exists for deliberate flips)."""
+    items = await _item_ids(db_session)
+    await client.post(f"{TRANSLATIONS}/draft", headers=admin, json={"lang": "ta"})
+    dosa = items["Masala Dosa"]
+    # human rejects one row deliberately
+    await client.post(
+        f"{TRANSLATIONS}/{dosa}/ta/status",
+        headers=admin,
+        json={"status": "REJECTED"},
+    )
+
+    resp = await client.post(
+        f"{TRANSLATIONS}/bulk-status",
+        headers=admin,
+        json={"lang": "ta", "status": "APPROVED"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["changed"] == len(items) - 1
+    assert body["skipped"] == 1
+
+    dosa_row = await db_session.get(MenuItemTranslation, (dosa, "ta"))
+    assert dosa_row.status == "REJECTED"  # the human decision survives
+
+
 async def test_bulk_status_rbac(client, db_session):
     # unauthenticated
     assert (

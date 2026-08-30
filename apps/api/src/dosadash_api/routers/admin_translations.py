@@ -67,8 +67,13 @@ async def bulk_status(
     session: SessionDep,
     admin: User = AdminUser,
 ) -> TranslationBulkStatusOut:
-    """Bulk approve or reject all rows for a language (or an explicit list).
-    Rows already at the target status are silently skipped."""
+    """Bulk approve or reject DRAFT rows for a language (or an explicit list).
+
+    DRAFT-only by design (review fix on the agent's draft): the UI promises
+    "Approve all N DRAFT", so a bulk click must never overturn a per-row
+    human decision — previously REJECTED/APPROVED rows are counted as
+    skipped, not flipped. Deliberate single-row flips use the /status
+    endpoint."""
     stmt = select(MenuItemTranslation).where(MenuItemTranslation.lang == body.lang)
     if body.item_ids is not None:
         stmt = stmt.where(MenuItemTranslation.item_id.in_(set(body.item_ids)))
@@ -77,7 +82,7 @@ async def bulk_status(
     changed_ids: list[int] = []
     skipped = 0
     for record in rows:
-        if record.status == body.status:
+        if record.status != "DRAFT":
             skipped += 1
             continue
         record.status = body.status
@@ -95,7 +100,9 @@ async def bulk_status(
         await session.commit()
         for item_id in changed_ids:
             await events.publish_menu_event(
-                "menu.translation", item_id=item_id, detail={"lang": body.lang, "status": body.status}
+                "menu.translation",
+                item_id=item_id,
+                detail={"lang": body.lang, "status": body.status},
             )
 
     return TranslationBulkStatusOut(changed=len(changed_ids), skipped=skipped)
