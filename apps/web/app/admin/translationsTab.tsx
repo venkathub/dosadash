@@ -38,7 +38,7 @@ export function TranslationsTab() {
   const [busy, setBusy] = useState<number | "all" | "bulk" | null>(null);
   const [edits, setEdits] = useState<Record<number, { name: string; description: string }>>({});
 
-  const act = (key: number | "all", fn: () => Promise<unknown>) => {
+  const act = (key: number | "all" | "bulk", fn: () => Promise<unknown>) => {
     setBusy(key);
     return fn()
       .then(refresh)
