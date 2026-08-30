@@ -7,6 +7,7 @@ are injectable, so no network is ever probed here.
 
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -236,6 +237,89 @@ async def test_scan_reads_eval_runs_from_db(db_session: AsyncSession) -> None:
     assert result["anomalies"] == 1
     report = (await db_session.execute(select(FeedbackReport))).scalar_one()
     assert report.context["detector"] == ANOMALY_EVAL_GATE
+
+
+# ------------------------------------------------------ probe_services retry
+
+
+async def test_probe_services_recovers_on_second_attempt(monkeypatch) -> None:
+    """A service that fails once but recovers on the retry must NOT be
+    classified as down — deploy-time container-restart blips are absorbed."""
+    from dosadash_api.config import Settings
+    from dosadash_api.services import sentinel as _sentinel
+    from dosadash_api.services.sentinel import probe_services
+
+    attempt_by_url: dict[str, int] = {}
+
+    class _FakeResp:
+        status_code = 200
+
+    async def _fake_get(url, **_kw):
+        n = attempt_by_url.get(url, 0) + 1
+        attempt_by_url[url] = n
+        if n == 1:
+            raise httpx.ConnectError("connection refused")
+        return _FakeResp()
+
+    monkeypatch.setattr(_sentinel, "PROBE_RETRY_DELAY_SECONDS", 0.0)
+
+    class _FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            pass
+
+        async def get(self, url, **kw):
+            return await _fake_get(url, **kw)
+
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_kw: _FakeClient())
+
+    # Single-service settings so the probe count is predictable.
+    settings = Settings(
+        self_base_url="http://test-api:8000",
+        ai_base_url="",
+        bot_base_url="",
+        sentinel_probe_timeout_seconds=1.0,
+    )
+    results = await probe_services(settings)
+    # Recovered on second attempt → must be ok, not filed as down.
+    assert results["api"]["ok"] is True
+    assert attempt_by_url["http://test-api:8000/healthz"] == 2
+
+
+async def test_probe_services_reports_down_when_all_attempts_fail(monkeypatch) -> None:
+    """Only when every retry also fails should the service be classified as down."""
+    from dosadash_api.config import Settings
+    from dosadash_api.services import sentinel as _sentinel
+    from dosadash_api.services.sentinel import probe_services
+
+    async def _always_fail(url, **_kw):
+        raise httpx.ConnectError("all connection attempts failed")
+
+    monkeypatch.setattr(_sentinel, "PROBE_RETRY_DELAY_SECONDS", 0.0)
+
+    class _FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            pass
+
+        async def get(self, url, **kw):
+            return await _always_fail(url, **kw)
+
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **_kw: _FakeClient())
+
+    settings = Settings(
+        self_base_url="http://test-api:8000",
+        ai_base_url="",
+        bot_base_url="",
+        sentinel_probe_timeout_seconds=1.0,
+    )
+    results = await probe_services(settings)
+    assert results["api"]["ok"] is False
+    assert "all connection" in (results["api"]["error"] or "")
 
 
 # -------------------------------------------------------------- middleware
