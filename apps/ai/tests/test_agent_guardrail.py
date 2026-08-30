@@ -272,21 +272,15 @@ def test_cross_lingual_self_correction_trigger():
     ctx = AgentContext(items={1: biryani, 2: payasam, 3: chai})
 
     # ord-074: "anda biryani" → model refuses using canonical name
-    refused_egg = AgentTurn(
-        reply="Sorry, Egg Biryani is not available right now.", draft_items=[]
-    )
+    refused_egg = AgentTurn(reply="Sorry, Egg Biryani is not available right now.", draft_items=[])
     assert reply_draft_contradictions(ctx, "ek anda biryani dena", refused_egg) == ["Egg Biryani"]
 
     # ord-074: "anda biryani" → model refuses using cross-lingual term in reply
-    refused_anda = AgentTurn(
-        reply="We don't have anda biryani on our menu.", draft_items=[]
-    )
+    refused_anda = AgentTurn(reply="We don't have anda biryani on our menu.", draft_items=[])
     assert reply_draft_contradictions(ctx, "ek anda biryani dena", refused_anda) == ["Egg Biryani"]
 
     # ord-093: "semya payasam" → model refuses using canonical name
-    refused_payasam = AgentTurn(
-        reply="Semiya Payasam is not available right now.", draft_items=[]
-    )
+    refused_payasam = AgentTurn(reply="Semiya Payasam is not available right now.", draft_items=[])
     assert reply_draft_contradictions(ctx, "one semya payasam", refused_payasam) == [
         "Semiya Payasam"
     ]
@@ -300,17 +294,18 @@ def test_cross_lingual_self_correction_trigger():
     ]
 
     # correct turns must never trigger: canonical name drafted → no contradiction
-    correct = AgentTurn(
-        reply="Added Egg Biryani!", draft_items=[DraftItemIn(item_id=1, qty=1)]
-    )
+    correct = AgentTurn(reply="Added Egg Biryani!", draft_items=[DraftItemIn(item_id=1, qty=1)])
     assert reply_draft_contradictions(ctx, "ek anda biryani dena", correct) == []
 
     # "anda" must NOT match inside longer words (word-boundary check)
-    assert reply_draft_contradictions(
-        ctx,
-        "do onion dosa dena",  # "anda" not present at all
-        AgentTurn(reply="Sorry, Egg Biryani is not available.", draft_items=[]),
-    ) == []
+    assert (
+        reply_draft_contradictions(
+            ctx,
+            "do onion dosa dena",  # "anda" not present at all
+            AgentTurn(reply="Sorry, Egg Biryani is not available.", draft_items=[]),
+        )
+        == []
+    )
 
 
 def test_contradictions_and_drops_are_alias_aware():
