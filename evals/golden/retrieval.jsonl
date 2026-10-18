@@ -16,3 +16,8 @@
 {"id": "ret-016", "language": "tanglish", "query": "onion garlic illama enna order pannalam?", "expect_docs": ["allergens.md", "faq.md", "menu-guide/dosas.md", "menu-guide/idli-vada-uttapam.md", "menu-guide/rice-pongal-biryani.md"], "note": "menu guides carry Jain-friendliness notes — any of these docs answers the question"}
 {"id": "ret-017", "language": "tanglish", "query": "sweet pongal la cashew iruka? nut allergy irukku", "expect_docs": ["allergens.md", "menu-guide/rice-pongal-biryani.md"]}
 {"id": "ret-018", "language": "tanglish", "query": "mutton biryani evlo neram aagum?", "expect_docs": ["menu-guide/rice-pongal-biryani.md", "faq.md"]}
+{"id": "ret-p0-serving-breakfast", "language": "en", "query": "Which dishes are served for breakfast?", "expect_docs": ["serving-hours.md"], "tags": ["serving_hours"]}
+{"id": "ret-p0-serving-tanglish", "language": "tanglish", "query": "Lunch time la dosa kidaikkuma?", "expect_docs": ["serving-hours.md"], "tags": ["serving_hours"]}
+{"id": "ret-p0-allergen-peanut", "language": "en", "query": "Which ingredients are marked as allergens?", "expect_docs": ["allergens.md"], "tags": ["allergens"]}
+{"id": "ret-p0-cancel-status", "language": "hinglish", "query": "Cooking start hone ke baad order cancel kar sakte hain?", "expect_docs": ["policies.md"], "tags": ["cancellation"]}
+{"id": "ret-p0-refund-method", "language": "en", "query": "Can a refund be paid in cash instead of the original payment method?", "expect_docs": ["policies.md"], "tags": ["refund"]}

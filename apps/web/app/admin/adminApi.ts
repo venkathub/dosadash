@@ -123,12 +123,29 @@ export type EvalCaseReport = {
   id: string;
   tags: string[];
   language: string;
+  suite?: string;
+  status?: "pass" | "fail" | "error";
+  error?: string | null;
   accuracy_problems: string[];
   tool_violations: string[];
   bypasses: string[];
 };
 
-export type EvalRunDetail = EvalRun & { case_reports: EvalCaseReport[] };
+export type EvalSuiteResult = {
+  name: string;
+  status: "pass" | "fail" | "error" | "skipped";
+  blocking: boolean;
+  calibrated: boolean;
+  reason: string | null;
+  metrics: Record<string, number>;
+  cases: Record<string, unknown>[];
+  duration_ms: number;
+};
+export type EvalRunDetail = EvalRun & {
+  case_reports: EvalCaseReport[];
+  suite_results: EvalSuiteResult[];
+  run_metadata: Record<string, unknown>;
+};
 
 export type ModelDailyCost = {
   model: string;

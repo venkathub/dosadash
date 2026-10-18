@@ -171,3 +171,16 @@ async def test_cached_payload_never_stores_cached_flag(patched):
     await answer_question(None, "can I cancel my order?")
     stored = next(iter(patched["semcache"].store.values()))
     assert "cached" not in stored  # flag is set at serve time, not stored
+
+
+async def test_evidence_capture_bypasses_warm_cache_and_preserves_exact_passages(patched):
+    await answer_question(None, "can I cancel?")
+    evidence = []
+    before = patched["calls"]
+    await answer_question(None, "can I cancel?", evidence_sink=evidence.extend)
+    assert patched["calls"] == before + 1
+    assert evidence[0] == {
+        "doc_path": "policies.md",
+        "heading": "Policies › Cancellation policy",
+        "content": "Cancel while PLACED.",
+    }

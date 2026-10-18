@@ -109,7 +109,7 @@ async def ensure_eval_user(session: AsyncSession, prefs: dict) -> int:
             "lang": prefs.get("language", "en"),
         },
     )
-    await session.commit()
+    await session.flush()
     return user_id
 
 
@@ -161,52 +161,28 @@ async def apply_setup(session: AsyncSession, case: dict, user_id: int | None = N
     seed = case.get("setup", {}).get("seed_usual_orders")
     if seed and user_id is not None:
         await _seed_usual_orders(session, user_id, seed)
-    await session.commit()
-
-
-async def restore(session: AsyncSession, case: dict, user_id: int | None = None) -> None:
-    await session.execute(text("UPDATE settings SET kitchen_paused = false WHERE id = 1"))
-    for name in case.get("setup", {}).get("make_unavailable", []):
-        await session.execute(
-            text("UPDATE menu_items SET is_available = true WHERE name = :n"), {"n": name}
-        )
-    for trans in case.get("setup", {}).get("seed_translations", []):
-        await session.execute(
-            text(
-                "DELETE FROM menu_item_translations WHERE lang = :lang AND item_id = "
-                "(SELECT id FROM menu_items WHERE name = :n)"
-            ),
-            {"lang": trans["lang"], "n": trans["name"]},
-        )
-    if case.get("setup", {}).get("seed_usual_orders") and user_id is not None:
-        await session.execute(
-            text(
-                "DELETE FROM order_items WHERE order_id IN "
-                "(SELECT id FROM orders WHERE user_id = :u)"
-            ),
-            {"u": user_id},
-        )
-        await session.execute(text("DELETE FROM orders WHERE user_id = :u"), {"u": user_id})
-        await session.execute(text("DELETE FROM user_memories WHERE user_id = :u"), {"u": user_id})
-    await session.commit()
+    await session.flush()
 
 
 async def run_case(session: AsyncSession, case: dict) -> CaseResult:
     """Execute one golden case against the live agent (setup + restore)."""
-    user_id = await ensure_eval_user(session, case["user"]) if case.get("user") else None
+    # Savepoint rollback restores exact values, including existing eval-user history,
+    # translations, availability and pause state. Never "restore" to guessed defaults.
+    transaction = await session.begin_nested()
     try:
+        user_id = await ensure_eval_user(session, case["user"]) if case.get("user") else None
         await apply_setup(session, case, user_id)
         request = AgentChatRequest(
             message=case["message"],
             history=[AgentMessage(**m) for m in case["history"]],
             draft=await resolve_draft(session, case["draft"]) if case["draft"] else None,
             user_id=user_id,
-            session_id=f"eval:{case['id']}",
+            session_id=f"eval:order:{case['id']}",
         )
         response = await run_turn(session, request)
+        return CaseResult(case=case, response=response)
     finally:
-        await restore(session, case, user_id)
-    return CaseResult(case=case, response=response)
+        await transaction.rollback()
 
 
 async def run_all(session: AsyncSession, cases: list[dict]) -> list[CaseResult]:

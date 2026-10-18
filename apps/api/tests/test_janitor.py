@@ -170,3 +170,11 @@ async def test_scan_weekly_rerun_collapses(db_session: AsyncSession) -> None:
     second = await janitor.scan(db_session, github, **kwargs)
     assert second["filed"] == 0
     assert second["skipped_open"] == 1  # open twin — no duplicate issue
+
+
+def test_execution_errors_count_as_failed_cases():
+    from dosadash_api.services.janitor import _case_failed
+
+    assert _case_failed({"status": "error", "error": "TimeoutError"})
+    assert _case_failed({"status": "fail"})
+    assert not _case_failed({"status": "pass"})

@@ -147,5 +147,5 @@ def test_tone_rubric_file_integrity():
     for anchor in ["**5**", "**4**", "**3**", "**2**", "**1**"]:
         assert anchor in text, f"rubric missing score anchor {anchor}"
     assert '"score"' in text and '"reason"' in text  # judge output contract
-    assert "tone_judge_v1" in text  # version tag (prompts are versioned)
+    assert "tone_judge_v2" in text  # version tag (prompts are versioned)
     assert "over-promising" in text

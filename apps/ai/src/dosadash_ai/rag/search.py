@@ -1,9 +1,9 @@
-"""Hybrid retrieval: BM25-style FTS + vector cosine, fused with RRF.
+"""Hybrid retrieval: PostgreSQL ts_rank FTS + vector cosine, fused with RRF.
 
 Two cheap indexed queries (GIN tsvector + exact vector scan over a small
 corpus), fused with Reciprocal Rank Fusion — no tuning weights to maintain,
 robust when one signal is silent (e.g. Tanglish queries rarely hit English
-FTS but embed fine). LLM rerank + citations layer on top in the answers
+FTS but embed fine). Answer-time source selection + citations layer on top in the answers
 endpoint (Task 3).
 """
 

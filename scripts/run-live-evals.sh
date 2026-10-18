@@ -29,10 +29,17 @@ export AI_DATABASE_URL="$EVAL_DATABASE_URL"
 export API_DATABASE_URL="$EVAL_DATABASE_URL"
 export AI_KNOWLEDGE_DIR="knowledge"
 
-echo "── eval DB: $EVAL_DATABASE_URL"
+export AI_SEMCACHE_ENABLED=false
+uv run --no-sync python - <<'PYGUARD'
+import sys
+sys.path.insert(0, "evals/suites")
+from _results import require_eval_database
+require_eval_database()
+print("Validated dedicated local evaluation database")
+PYGUARD
 
 echo "── [1/6] ensure database exists"
-uv run python - <<'PY'
+uv run --no-sync python - <<'PY'
 import asyncio, os, asyncpg
 url = os.environ["EVAL_DATABASE_URL"].replace("postgresql+asyncpg://", "postgresql://")
 base, _, dbname = url.rpartition("/")
@@ -41,7 +48,8 @@ async def main():
     try:
         exists = await conn.fetchval("SELECT 1 FROM pg_database WHERE datname = $1", dbname)
         if not exists:
-            await conn.execute(f'CREATE DATABASE "{dbname}"')
+            quoted_name = dbname.replace(chr(34), chr(34) * 2)
+            await conn.execute(f'CREATE DATABASE "{quoted_name}"')
             print(f"created database {dbname}")
         else:
             print(f"database {dbname} already exists")
@@ -51,33 +59,14 @@ asyncio.run(main())
 PY
 
 echo "── [2/6] migrations"
-(cd apps/api && uv run alembic upgrade head)
+(cd apps/api && uv run --no-sync alembic upgrade head)
 
 echo "── [3/6] seed menu + synthetic users/orders (skips if already seeded)"
-uv run python -m dosadash_api.seed
+uv run --no-sync python -m dosadash_api.seed --end-date 2026-08-20 --users 40
 
 echo "── [4/6] ingest knowledge/ (hash-diffed — cheap when unchanged)"
-uv run python -m dosadash_ai.rag.ingest --knowledge-dir knowledge
+uv run --no-sync python -m dosadash_ai.rag.ingest --knowledge-dir knowledge
 
-failures=()
-run_suite() {
-  echo
-  echo "══════════════════════ $1 ══════════════════════"
-  if ! uv run python "evals/suites/$1"; then
-    failures+=("$1")
-  fi
-}
-
-echo "── [5/6] RAG suites"
-run_suite retrieval_eval.py
-run_suite rag_answer_eval.py
-
-echo "── [6/6] order agent suite (order_accuracy)"
-run_suite order_agent_eval.py
-
-echo
-if [ "${#failures[@]}" -gt 0 ]; then
-  echo "✗ FAILED suites: ${failures[*]}"
-  exit 1
-fi
-echo "✓ all live eval suites passed — verify traces in Langfuse, then open the Phase PR."
+echo "── run combined suites (ordering, retrieval, RAG, support, inventory, SQL, tone)"
+uv run --no-sync python evals/suites/run_live_evals.py --profile "${EVAL_PROFILE:-pr}" \
+  --json "${EVAL_RESULTS_PATH:-live_eval_results.json}"

@@ -97,3 +97,23 @@ by PR + green checks.
 - Prod history reads as clean phase releases; phase branches preserve granular engineering process.
 - Eval-gated merges = "we don't ship prompt regressions" — most portfolios can't show this.
 - Documented solo-review discipline shows you understand *why* review exists, not just the ritual.
+
+## P0 live-evaluation gate
+
+The required check name remains `Live eval gate (order_accuracy >= 0.95)`.
+Change detection covers knowledge, AI/API/shared/ML code, dependency files,
+evaluation assets, and workflows. Detector failure fails the required check;
+unrelated changes report not-applicable. Ordering and tone run on relevant PRs;
+knowledge-only changes add retrieval/RAG, and broader changes add all business
+suites. Scheduled/manual runs use the full profile. All fixtures use a dedicated
+local `*_eval` database; result publication is best-effort and never overrides
+the runner verdict. New quality gates require reviewed calibration before being
+marked blocking in `evals/config.json`. Provider/judge execution failures and
+measured policy bypasses always fail. No branch-protection settings were changed
+by this source update. Apply the additive eval metadata migration before expecting
+the deployed scoreboard to retain the new report fields.
+
+P0 activation (2026-10-18): all seven suite quality gates are enabled after
+owner-reviewed calibration and baseline checks. The exact required GitHub check
+name above is unchanged. See `evals/baselines/p0-closure.md` for review evidence,
+threshold tradeoffs and delivery verification.

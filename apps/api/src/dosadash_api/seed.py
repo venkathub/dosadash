@@ -10,7 +10,7 @@ menu-safe inserts; intended for empty databases).
 
 import argparse
 import asyncio
-from datetime import UTC, timedelta
+from datetime import UTC, date, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -182,7 +182,12 @@ async def _seed_reviews(
 
 
 async def seed(
-    *, days: int = 365, users: int = 500, seed_val: int = 42, force: bool = False
+    *,
+    days: int = 365,
+    users: int = 500,
+    seed_val: int = 42,
+    force: bool = False,
+    end_date: date | None = None,
 ) -> None:
     validate_menu()
     async with get_sessionmaker()() as session:
@@ -192,7 +197,7 @@ async def seed(
             return
         brand, item_rows = await _seed_menu(session)
         synth_users = generate_users(n=users, seed=seed_val)
-        synth_orders = generate_orders(synth_users, days=days, seed=seed_val)
+        synth_orders = generate_orders(synth_users, days=days, seed=seed_val, end=end_date)
         user_rows = await _seed_users(session, synth_users)
         order_rows = await _seed_orders(session, brand, item_rows, user_rows, synth_orders)
         n_reviews = await _seed_reviews(
@@ -213,6 +218,9 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--force", action="store_true")
     parser.add_argument(
+        "--end-date", type=date.fromisoformat, help="Pin synthetic history for evals"
+    )
+    parser.add_argument(
         "--make-staff",
         metavar="PHONE",
         help="Promote (or create) this phone as kitchen_staff and exit",
@@ -229,7 +237,15 @@ def main() -> None:
     if args.demo_accounts:
         asyncio.run(ensure_demo_accounts())
         return
-    asyncio.run(seed(days=args.days, users=args.users, seed_val=args.seed, force=args.force))
+    asyncio.run(
+        seed(
+            days=args.days,
+            users=args.users,
+            seed_val=args.seed,
+            force=args.force,
+            end_date=args.end_date,
+        )
+    )
 
 
 async def make_staff(phone: str) -> None:

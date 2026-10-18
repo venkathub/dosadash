@@ -180,3 +180,15 @@ starts being just another contributor.
 [github.com/venkathub/dosadash](https://github.com/venkathub/dosadash). Yes,
 Claude Desktop can order a dosa. It appears on the kitchen display and
 everything.*
+
+## Evaluation coverage update (P0)
+
+The historical measurements above concern ordering and synthetic ML benchmarks.
+The current runner also executes retrieval, grounded answers, tone, support,
+inventory and SQL evaluation. All seven quality thresholds now block after
+owner-reviewed authored calibration and baseline checks (see
+`evals/baselines/p0-closure.md`); execution errors and measured policy bypasses
+fail closed. Reviewed regression examples do not constitute a blind holdout study. See `evals/README.md` for exact coverage. This does not
+claim live coverage of every multimodal path, real-customer uplift, or durable
+graph checkpointing. Original failed runs must be retained alongside diagnostic
+reruns rather than replaced with a selected successful run.

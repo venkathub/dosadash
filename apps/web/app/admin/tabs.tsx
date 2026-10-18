@@ -578,7 +578,7 @@ export function EvalsTab() {
     adminApi<EvalRunDetail>(`/admin/eval-runs/${id}`).then(setDetail).catch(() => setDetail(null));
 
   const problemCases = (detail?.case_reports ?? []).filter(
-    (c) => c.accuracy_problems.length || c.tool_violations.length || c.bypasses.length,
+    (c) => c.accuracy_problems.length || c.tool_violations.length || c.bypasses.length || c.status === "error",
   );
 
   return (
@@ -633,14 +633,30 @@ export function EvalsTab() {
           {detail.failures.length > 0 && (
             <p className="mb-2 text-[#FF8B8B]">gate failures: {detail.failures.join("; ")}</p>
           )}
+          {(detail.suite_results ?? []).map((suite) => (
+            <details key={suite.name} className="mb-2 border-t border-white/10 pt-2">
+              <summary className="cursor-pointer">
+                {suite.name}: {suite.status} · {suite.cases.length} cases · {suite.calibrated ? "calibrated" : "calibration pending"}
+                {suite.blocking ? " · quality gate" : " · advisory quality"}
+              </summary>
+              {suite.reason && <p className="text-[#FF8B8B]">{suite.reason}</p>}
+              <pre className="overflow-auto whitespace-pre-wrap">{JSON.stringify(suite.metrics, null, 2)}</pre>
+              <pre className="max-h-80 overflow-auto whitespace-pre-wrap">{JSON.stringify(suite.cases, null, 2)}</pre>
+            </details>
+          ))}
+          <details className="mb-3">
+            <summary className="cursor-pointer">Run provenance and usage (null means unavailable)</summary>
+            <pre className="max-h-80 overflow-auto whitespace-pre-wrap">{JSON.stringify(detail.run_metadata ?? {}, null, 2)}</pre>
+          </details>
           {problemCases.length === 0 ? (
-            <p className="text-[#5BD69B]">All {detail.cases} cases clean.</p>
+            <p className="text-[#5BD69B]">No recorded case problems. Check suite outcomes above for execution errors or advisory failures.</p>
           ) : (
             <ul className="space-y-1">
               {problemCases.map((c) => (
                 <li key={c.id} className="border-t border-white/5 pt-1">
                   <span className="text-turmeric-400">{c.id}</span>{" "}
                   <span className="text-indigo-300">({c.language} · {c.tags.join(", ")})</span>
+                  {c.error && <span className="text-[#FF8B8B]"> ERROR: {c.error}</span>}
                   {c.bypasses.length > 0 && <span className="text-[#FF8B8B]"> BYPASS: {c.bypasses.join("; ")}</span>}
                   {c.tool_violations.length > 0 && <span className="text-[#FF8B8B]"> tool: {c.tool_violations.join("; ")}</span>}
                   {c.accuracy_problems.length > 0 && <span className="text-indigo-200"> {c.accuracy_problems.join("; ")}</span>}

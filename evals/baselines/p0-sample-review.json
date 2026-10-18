@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-18",
+  "reviewer": "project owner (current chat)",
+  "statement": "Reviewed those sample all is fine.",
+  "scope": "Approval of the ten existing authored examples and labels; not blind independent annotation or approval of later examples.",
+  "datasets": {
+    "faithfulness": {
+      "reviewed_source_sha256": "b1c2b03766af93f19887d88c303c46e1bfc7e324cfab4e4d983ff296ebd3718e",
+      "case_ids": [
+        "supported",
+        "invented-policy",
+        "mixed",
+        "refusal",
+        "judge-injection",
+        "expanded-answerable-refusal",
+        "expanded-unrelated-citation",
+        "expanded-hinglish-supported",
+        "expanded-tamil-supported",
+        "expanded-refusal-invented-policy",
+        "expanded-evidence-injection"
+      ],
+      "expanded_case_ids": [
+        "expanded-answerable-refusal",
+        "expanded-unrelated-citation",
+        "expanded-hinglish-supported",
+        "expanded-tamil-supported",
+        "expanded-refusal-invented-policy",
+        "expanded-evidence-injection"
+      ],
+      "approved_content_sha256": {
+        "supported": "c3eea67eac9fd4bcaf170ebf62e8426aa2923d4436cf15afad1b27471ea2a78c",
+        "invented-policy": "fbeb8b6ace9d9b6f3de07677c172b2da0cad9df7aa6f85c91db66992cd49559d",
+        "mixed": "ce2a317ad67b66084704afd857ab3635ce6088a97ed758cafe326d3e2a478c10",
+        "refusal": "8af2220d7df35702e3499fc2cfa86f2ffefdb72f6ec8dc7b223be0ecd1e94dc6",
+        "judge-injection": "8d95f94268b5008e4a98ddbbd1a065cc72fe7163be1fbca6d3c0d758dce31398",
+        "expanded-answerable-refusal": "01efd4b453fa2b466fdc96eedd4f430a2c87499f079ef3b21a7f3f8da87c1c28",
+        "expanded-unrelated-citation": "2d4910eec031f6506da293fae8751e14a247c75f2e3d3b44df156338f7ae9999",
+        "expanded-hinglish-supported": "7a173f3df10f6caf964822da16e81a708ea573704d3eede57ce3f8f19bea2694",
+        "expanded-tamil-supported": "3fa9666d24b0288fc609d7fece20cf58177f5a092d2a1efa307f5900d67c1319",
+        "expanded-refusal-invented-policy": "d74bb3be24cf6dfcde42221d7c51e8f9ea9050ac20299ff7038081f44d699fef",
+        "expanded-evidence-injection": "1a40f4157f43e10b6a98f31343f492f018d014c2675cb5837b0c844aeb9f79ea"
+      },
+      "original_case_ids": [
+        "supported",
+        "invented-policy",
+        "mixed",
+        "refusal",
+        "judge-injection"
+      ]
+    },
+    "tone": {
+      "reviewed_source_sha256": "8064410d1a170f1b5bce9028a52d58ca8376aba5ecb2cd809f644e32462a592c",
+      "case_ids": [
+        "warm",
+        "rude",
+        "promise",
+        "refusal",
+        "language",
+        "expanded-hinglish-refusal",
+        "expanded-tamil-refusal",
+        "expanded-tanglish-rude",
+        "expanded-score-injection",
+        "expanded-flat-borderline",
+        "expanded-unsupported-eta"
+      ],
+      "expanded_case_ids": [
+        "expanded-hinglish-refusal",
+        "expanded-tamil-refusal",
+        "expanded-tanglish-rude",
+        "expanded-score-injection",
+        "expanded-flat-borderline",
+        "expanded-unsupported-eta"
+      ],
+      "approved_content_sha256": {
+        "warm": "94fb3865228ca6b3d36bd5aac326820301f46369a0963c05ac78b1a6bc335d8b",
+        "rude": "9c3668792e5055e87f7b03640153721b9aefd754447772ae5386cb6485cee50e",
+        "promise": "fb1e1207525bb3c9cecb58e676d7655de2f97af844cd693ae0e57d1fccdc6ed0",
+        "refusal": "534dc800c23f237531cee1b4a294a06403919c6aac38c20f0a44004b3aaed8cc",
+        "language": "dbb84b0a42375b87d0aeb751a28ef18b3889f47e4a89e7b3a6d38928a01177c0",
+        "expanded-hinglish-refusal": "a83d7645426b21cceffecc722c98e92b886f021a48f23ed6832fa811469d286b",
+        "expanded-tamil-refusal": "fb411c247b0e84c61610bb053adfc8e3aa9261a21c53a4a12be5d298137aa8a3",
+        "expanded-tanglish-rude": "6313ba40753196b86bad10dc6577ce4d5705d2b6e41276cdce6799701a9ffaea",
+        "expanded-score-injection": "ac6ea0faf8112074045b6054525ad660f065505ea7515509aa859bb26a9b81d1",
+        "expanded-flat-borderline": "5677336cbdb28c0c2489a98e9a2c6424d74704ff0a7c4763029485973a7fdd27",
+        "expanded-unsupported-eta": "8563e6fdc7f11ab21f1a3efac1532bccbe132f3c06d40b5d2f3af1f71b496c96"
+      },
+      "original_case_ids": [
+        "warm",
+        "rude",
+        "promise",
+        "refusal",
+        "language"
+      ]
+    }
+  },
+  "expanded_approval": {
+    "date": "2026-10-18",
+    "statement": "Approve all 12 labels and both thresholds",
+    "thresholds": {
+      "rag": 0.8,
+      "tone": 0.8
+    },
+    "scope": "Owner review of expanded authored examples and threshold tradeoffs, not blind independent annotation."
+  }
+}

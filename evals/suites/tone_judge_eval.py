@@ -1,7 +1,7 @@
 """Live tone eval — the project's first LLM-as-judge suite (Phase 4).
 
 A judge model (litellm chain, Hard Rules 1/3/6) scores agent replies
-against evals/rubrics/tone_v1.md on a 1–5 scale: warmth, brevity,
+against evals/rubrics/tone_v2.md on a 1–5 scale: warmth, brevity,
 language mirroring, graceful refusals, no over-promising. Content
 accuracy is order_accuracy's job — this suite only scores how replies
 read.
@@ -16,6 +16,7 @@ Metric = mean(score) / 5. Gate: >= 0.8 (i.e. average >= 4/5).
 """
 
 import asyncio
+import json
 import os
 import sys
 from pathlib import Path
@@ -23,14 +24,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _harness import CaseResult, load_cases, run_all  # noqa: E402
+from _results import judge_models  # noqa: E402
 from pydantic import BaseModel, Field
 
 from dosadash_ai.db import get_sessionmaker  # noqa: E402
 from dosadash_ai.llm import structured_completion  # noqa: E402
 from dosadash_ai.redaction import redact_phones  # noqa: E402
 
-RUBRIC = Path(__file__).resolve().parents[1] / "rubrics" / "tone_v1.md"
-TONE_PROMPT_VERSION = "tone_judge_v1"
+RUBRIC = Path(__file__).resolve().parents[1] / "rubrics" / "tone_v2.md"
+TONE_PROMPT_VERSION = "tone_judge_v2"
 PASS_THRESHOLD = float(os.environ.get("PASS_THRESHOLD", "0.8"))
 TONE_TAGS = {
     "basic",
@@ -70,19 +72,24 @@ async def judge_reply(case: dict, reply: str) -> ToneVerdict:
             {"role": "system", "content": RUBRIC.read_text()},
             {
                 "role": "user",
-                "content": (
-                    f"Customer message ({case['language']}): "
-                    f"{redact_phones(case['message'])}\n\n"
-                    f"Assistant reply: {redact_phones(reply)}\n\n"
-                    'Score per the rubric. JSON only: {"score": <1-5>, "reason": "..."}'
+                "content": redact_phones(
+                    json.dumps(
+                        {
+                            "language": case["language"],
+                            "customer_message": case["message"],
+                            "assistant_reply": reply,
+                        },
+                        ensure_ascii=False,
+                    )
                 ),
             },
         ],
         response_model=ToneVerdict,
+        models=judge_models(),
         trace_name="eval.tone_judge",
         prompt_version=TONE_PROMPT_VERSION,
         session_id=f"eval:{case['id']}",
-        max_tokens=200,
+        max_tokens=1500,
     )
     return verdict
 
@@ -105,6 +112,9 @@ async def report(results: list[CaseResult]) -> float:
 
 
 async def run() -> int:
+    from _results import require_eval_database
+
+    require_eval_database()
     cases = select_tone_cases(load_cases())
     print(f"judging {len(cases)} cases (tags capped at {MAX_PER_TAG} each)\n")
     async with get_sessionmaker()() as session:

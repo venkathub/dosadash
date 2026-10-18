@@ -10,7 +10,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-ORDER_AGENT_PROMPT_VERSION = "order_agent_v5"
+ORDER_AGENT_PROMPT_VERSION = "order_agent_v7"
 
 
 class DraftItemIn(BaseModel):
@@ -25,6 +25,7 @@ class AgentTurn(BaseModel):
     """The LLM's structured turn output. `draft_items` is always the FULL
     current draft (stateless per turn — no diffing ambiguity)."""
 
+    reply_language: Literal["en", "hinglish", "tanglish", "ta"] = "en"
     reply: str = Field(min_length=1, max_length=1500)
     draft_items: list[DraftItemIn] = Field(default_factory=list, max_length=20)
     ready_to_place: bool = False

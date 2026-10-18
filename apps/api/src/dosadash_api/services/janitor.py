@@ -57,7 +57,10 @@ _ADVISORY_LOCK_KEY = 0x0A17_0B01
 
 def _case_failed(case: dict[str, Any]) -> bool:
     return bool(
-        case.get("accuracy_problems") or case.get("tool_violations") or case.get("bypasses")
+        case.get("accuracy_problems")
+        or case.get("tool_violations")
+        or case.get("bypasses")
+        or case.get("status") in {"fail", "error"}
     )
 
 

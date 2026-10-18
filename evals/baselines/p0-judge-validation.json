@@ -1,0 +1,1607 @@
+{
+  "run_metadata": {
+    "source_sha256": "36f308294ce954dedc6ff0bb886110d177ea61427168f1091a4d3849422538d3",
+    "fixture_recipe": {
+      "users": 40,
+      "days": 365,
+      "seed": 42,
+      "end_date": "2026-08-20"
+    },
+    "schema_version": 1,
+    "profile": "pr",
+    "git_sha": "e5a5416fbf7c5c7e52c64b82778c37e70fd6e937",
+    "asset_sha256": {
+      "apps/ai/prompts/README.md": "95c86ee38a64e29a6674c47cf4a89aa5c996e12f9cc99e31f2b79810d35379ef",
+      "apps/ai/prompts/copilot_v1.md": "be611fe4cc4b478bc158f022eb5c62697764fb32e64c8f7cafa730944d9e3c26",
+      "apps/ai/prompts/dish_qc_v1.md": "214979728be51bb6676aecf6abd69e281acd9d7f39f4441adb1f9e9e53d54807",
+      "apps/ai/prompts/feedback_triage_v1.md": "4ca53a346260aee43a31fb000c8e18ed0a3a733a3ac9663adca458aa4957b8f2",
+      "apps/ai/prompts/feedback_triage_v2.md": "aab8e405d6569f7d21c436d9e02f9e8846c207ef53c686d3c9298c5da348baa2",
+      "apps/ai/prompts/inventory_agent_v1.md": "4c7d92a17e6d8dc5eb6bde740aa4648445bfa01c7ca51578f24b960be190b510",
+      "apps/ai/prompts/invoice_extract_v1.md": "76091e6e4924b178fa6622475c9f21c403d092284ef0fd31f5a27c5a8d21e0f5",
+      "apps/ai/prompts/menu_image_v1.md": "0d40531df86a704d054fb2a59754ff7572eb7ce1390639d56251dc372071341f",
+      "apps/ai/prompts/menu_translation_v1.md": "d77e1b48949c261bf91f7d82e3d7279270b809ce4622ac56d0c7d4abe25bf8c5",
+      "apps/ai/prompts/nutrition_v1.md": "92ab08312e4b749786ef9c5d14200e6e77abb4a17ce10a4fe7960dfd67501ce6",
+      "apps/ai/prompts/order_agent_v1.md": "f62d09b116bbd7553577f3062f39c409dc5e8de82cb56726c9daa5b0c0aca430",
+      "apps/ai/prompts/order_agent_v2.md": "5a07f7e294c76b628ab5883e46f5ea6136fb3c69543a8e62452e59d98f9f57ae",
+      "apps/ai/prompts/order_agent_v3.md": "ab4d582f8f56618f5aab33d0a78f7517ed0df2d0aabb49c9f1c73a1ffc2d70e4",
+      "apps/ai/prompts/order_agent_v4.md": "b4f4214b20048f89467489acde3bd7435a55711bb57be56314ce09c9c5ad9b90",
+      "apps/ai/prompts/order_agent_v5.md": "e3d755883567a14086ac15ed5d416fd35bb33e5ea5255c5e45255968baa78bff",
+      "apps/ai/prompts/promo_agent_v1.md": "b073a7b45db1ff9646b1875cd19afbc5185688ce046168fcf3921f2ea3769f83",
+      "apps/ai/prompts/rag_answer_v1.md": "81451be35ce6d6094efd69422afd2889f74bfc74cfb820f27e730a032fb61c54",
+      "apps/ai/prompts/review_reply_v1.md": "db2d543958b35376cbf37f871c2b850cb925bb03d4a0975cc61e77a0b1a6f49a",
+      "apps/ai/prompts/review_sentiment_v1.md": "8e3ec3e1fb8290f6bb2be5aef88c446cd06cae6c31b179297388ed23f7d2cb97",
+      "apps/ai/prompts/support_agent_v1.md": "3b09c48205fe4bcbc4b17da514eea91adf96a267b41fb5a0c219677ceec6e42a",
+      "evals/config.json": "62fc4a9774beebcf8b13d369602f1a5e0f509e499bbe7ef19e86b13573198c78",
+      "evals/golden/copilot_guardrail.jsonl": "23f528200e9e0ddf6aa6666f8a0fbba94abd5e5f0f74b4ca23bd9cd050de7e06",
+      "evals/golden/copilot_live.jsonl": "ba1810cd4dafefbe14a596a414157345267ce0740f8ff59d49691cd19e6365f1",
+      "evals/golden/dish_qc.jsonl": "0f8dbb9f4af8eeebe2e41bbc48c294af2230ae42a3589a28f9974ae1fa46ea1d",
+      "evals/golden/faithfulness_calibration.jsonl": "b1c2b03766af93f19887d88c303c46e1bfc7e324cfab4e4d983ff296ebd3718e",
+      "evals/golden/feedback_triage.jsonl": "e7a66c029460c7a4ce9877520e03cb6a99f840025434e22b2289f3f4b17ff65c",
+      "evals/golden/inventory_live.jsonl": "b7c4ee50ff8686eb2f5e4c0a46eb189de3ba5149b3a682599440be9111f84df9",
+      "evals/golden/inventory_po.jsonl": "ad8209d4e848c056ec7fdc14aeb82be43e1ed928dabe4c91ec8e247c9ea4d732",
+      "evals/golden/invoice_match.jsonl": "bbc2617eb400d89840edc9f40e9d2a80fc7d8e8eea55808040c4a934361e5518",
+      "evals/golden/nutrition.jsonl": "70710d3843b61e2b949c5e737133462fe432c3ae75dc3c15eee9762739d01859",
+      "evals/golden/order_conversations.jsonl": "3ae9cbff470df2f0d2d6c215c9270a382c72da2061d9e23ccd5b8851e33622c3",
+      "evals/golden/promo_guardrail.jsonl": "cccc552e4a5426a78ff550f3e9736575aad9957099bb8bd19f3f7a0496111efc",
+      "evals/golden/rag_answers.jsonl": "193dde3f881a6672b2b6647a156abbb174d76c2d7cfa1dbc4950742be1e5abcb",
+      "evals/golden/retrieval.jsonl": "69019c1c54dd545e368c180571af1a4f491a1ac4f09b0ec652b0df4addc9616a",
+      "evals/golden/review_reply_guardrail.jsonl": "e63bea92cebd7dc170a4a3c6005d561af35b19eb9a2a4f792ae2a8f38faf0e64",
+      "evals/golden/review_sentiment.jsonl": "d0f930a173f774de52d459abba367f96e0f3610b5583bd4bf0925d45fffc8a07",
+      "evals/golden/support_guardrail.jsonl": "918b24a1cd409e7ea0b49108eb37f08b25cd344307876d4c6c5d5decc99966ee",
+      "evals/golden/support_live.jsonl": "c4f091d2a11b3e983b640b6ba419fc84fadfcb32b4d76b092163f381fbf40ede",
+      "evals/golden/tone_calibration.jsonl": "8064410d1a170f1b5bce9028a52d58ca8376aba5ecb2cd809f644e32462a592c",
+      "evals/golden/translation_guardrail.jsonl": "753116cd8acef15ba389368a9f57747f4aa9c16abc4a3abe60974b53deb759b6",
+      "evals/rubrics/faithfulness_v1.md": "a577197b619c6937452f1ece8a822366d19225a3ef9e7fa5c78aa6503cc85373",
+      "evals/rubrics/tone_v1.md": "e1879b9734ec632c60ac303d8f5ed5acb2c708fd06fcc6a68da0df06e03e0815",
+      "knowledge/README.md": "a15df7abd165db7503b0059267e08da4534af5321a44555c8d1dad31eb7e59d8",
+      "knowledge/allergens.md": "94a68e90d366ce3211de6c527e579323b449a2ff8538b017b99113c74e2190d9",
+      "knowledge/faq.md": "033dbdbf153c249b3a683fb31990cef571aab97fca4b540622f75915148533ed",
+      "knowledge/menu-guide/curries-snacks-sweets-beverages.md": "d060d63c27a426e5543265dbf28c2924b6b6d66f88bc1f2e2c7e7e880a64e8e5",
+      "knowledge/menu-guide/dosas.md": "3acc21112a04a7911a4b5a4cfde9ee65621ca34ee3935f28518b4ca1b8ef9853",
+      "knowledge/menu-guide/idli-vada-uttapam.md": "fefc115113fcf5f3669aa7269b4c8fd23ae705c106d85fecfcbba01486264c26",
+      "knowledge/menu-guide/millet-mess-specials.md": "5f48423fcf2ff6e83c8b0616204d3a9fc2a37a98de7861c55a1de3f882ec9fa8",
+      "knowledge/menu-guide/rice-pongal-biryani.md": "e42185017ae8ccc3a3a178b914ec4a85f682ba90028429df129fbb5586f022ed",
+      "knowledge/menu-guide/tiffin-meals.md": "0ca47b2067130bb6352d37d1e9a638f1b3f281c05ac92fb494dd6020d032088a",
+      "knowledge/policies.md": "f72dab23eacbb7d49c02e62b0c3ce40d8eaf84287e98a514aca0d7fefd40633a",
+      "knowledge/serving-hours.md": "6b22c754bc53364fddd49104532f2046cc1fa1873f44335682e39ace807bf0a4"
+    },
+    "cache": "disabled",
+    "thresholds": {
+      "order": {
+        "blocking": true,
+        "calibrated": true,
+        "threshold": 0.95
+      },
+      "retrieval": {
+        "blocking": false,
+        "calibrated": false,
+        "threshold": 0.8
+      },
+      "rag": {
+        "blocking": false,
+        "calibrated": false,
+        "threshold": 0.8
+      },
+      "tone": {
+        "blocking": false,
+        "calibrated": false,
+        "threshold": 0.8
+      },
+      "support": {
+        "blocking": false,
+        "calibrated": false,
+        "threshold": 0.9
+      },
+      "inventory": {
+        "blocking": false,
+        "calibrated": false,
+        "threshold": 0.9
+      },
+      "copilot": {
+        "blocking": false,
+        "calibrated": false,
+        "threshold": 0.9
+      }
+    }
+  },
+  "scope": "focused RAG judge correction and authored calibration; not a full baseline",
+  "suite_results": [
+    {
+      "name": "rag",
+      "status": "pass",
+      "blocking": false,
+      "calibrated": false,
+      "reason": null,
+      "metrics": {
+        "pass_rate": 0.9166666666666666,
+        "errors": 0.0,
+        "bypasses": 0.0,
+        "pass_rate_en": 0.875,
+        "pass_rate_hinglish": 1.0,
+        "pass_rate_tanglish": 1.0
+      },
+      "cases": [
+        {
+          "id": "rag:ans-001",
+          "language": "en",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Cancellation policy",
+              "content": "- You may cancel an order yourself **only while it is in PLACED status** \u2014\n  i.e. before the kitchen confirms it. Use the order page or ask support.\n- Once an order is CONFIRMED or COOKING, self-service cancellation is no\n  longer possible (ingredients are committed). Contact support; staff can\n  cancel at their discretion before the order is READY.\n- Orders that are READY, OUT FOR DELIVERY, or DELIVERED cannot be cancelled."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Order changes",
+              "content": "- After an order is placed, items cannot be added or removed by the\n  customer. Support staff can modify an order before it starts COOKING.\n- For additions, the fastest path is a second order."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Refund policy",
+              "content": "- Cancelled paid orders are refunded in full to the original payment method.\n- Refunds are issued by restaurant staff after review; typical processing\n  time is 5\u20137 business days depending on your bank (instant in this demo's\n  Razorpay TEST mode).\n- Quality issues (wrong item, spoiled or badly damaged food): report within\n  24 hours of delivery with a photo; support can issue a full or partial\n  refund after review.\n- Delivery issues (order never arrived): full refund after verification.\n- Refunds are always to the original payment method \u2014 no cash refunds, no\n  store credit at this time."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Demo deployment notice",
+              "content": "This is a portfolio demonstration. Payments run exclusively in Razorpay\nTEST mode: no real charges, no real deliveries, and synthetic order history\nis used for analytics and forecasting demos."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Delivery \u203a Can I schedule an order for later?",
+              "content": "Not yet \u2014 orders go straight to the kitchen when placed."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies",
+              "content": "These are the operative rules the platform enforces. The AI assistant must\nanswer policy questions from this document and must not invent exceptions."
+            }
+          ],
+          "answer": "You can cancel your order only while it is in PLACED status, before the kitchen confirms it. Once confirmed or cooking, you need to contact support for cancellation, which is at their discretion. Orders that are ready, out for delivery, or delivered cannot be cancelled.",
+          "citations": [
+            {
+              "doc_path": "policies.md",
+              "title": "Ordering, Cancellation & Refund Policies",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Cancellation policy"
+            }
+          ],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "You can cancel your order only while it is in PLACED status, before the kitchen confirms it.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0
+                ]
+              },
+              {
+                "text": "Once confirmed or cooking, you need to contact support for cancellation, which is at their discretion.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0
+                ]
+              },
+              {
+                "text": "Orders that are ready, out for delivery, or delivered cannot be cancelled.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0
+                ]
+              }
+            ],
+            "citations_supported": true,
+            "answerability_correct": true,
+            "reason": "The answer accurately reflects the cancellation policy as stated in the evidence, which confirms the conditions under which an order can be cancelled."
+          },
+          "status": "pass"
+        },
+        {
+          "id": "rag:ans-002",
+          "language": "en",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "allergens.md",
+              "heading": "Allergen & Dietary Guide \u203a Dosa",
+              "content": "| Item | Diet | Jain-friendly | Spice | Allergens |\n|---|---|---|---|---|\n| Plain Dosa | vegan | yes | mild | none |\n| Masala Dosa | vegan | no | mild | mustard |\n| Mysore Masala Dosa | vegan | no | medium | none |\n| Ghee Roast Dosa | veg | yes | mild | dairy |\n| Podi Dosa | vegan | no | medium | none |\n| Onion Dosa | vegan | no | mild | none |\n| Rava Dosa | vegan | yes | mild | gluten |\n| Set Dosa | vegan | yes | mild | none |\n| Cheese Dosa | veg | yes | mild | dairy |\n| Kal Dosa | vegan | yes | mild | none |"
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Ghee Roast Dosa \u2014 \u20b9150",
+              "content": "Roasted slowly in generous ghee until deep golden and extra crisp, usually\nserved as a tall cone. Jain-friendly (no onion or garlic) but NOT vegan \u2014\nit contains dairy (ghee). Best eaten immediately; among dosas it travels\nthe least well over long delivery distances."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Pairing notes",
+              "content": "- Spice-averse: Plain Dosa, Set Dosa, Cheese Dosa.\n- Spice-seeking: Mysore Masala Dosa, Podi Dosa + Kara Kuzhambu on the side.\n- Vegan orders: any dosa EXCEPT Ghee Roast Dosa and Cheese Dosa.\n- Gluten-free: every dosa EXCEPT Rava Dosa (all others are rice-lentil).\n- Millet lovers: see the Ragi Millet Dosa in the Millet Specials guide \u2014 same\n  tiffin-centre serving windows as the dosas here."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Kal Dosa \u2014 \u20b9100",
+              "content": "Thick, soft, street-style griddle dosa \u2014 chewy edges, spongy centre. Vegan\nand Jain-friendly. Traditionally paired with a spicy curry: try it with\nKara Kuzhambu or Chicken Chettinad in the evening window, when both the\ngriddle and the curry pots are running."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Podi Dosa \u2014 \u20b9110",
+              "content": "Dosa dusted inside with \"gunpowder\" idli podi (roasted lentil-chilli powder)\nand gingelly oil. Medium heat with a nutty, smoky flavour. Vegan."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Onion Dosa \u2014 \u20b9100",
+              "content": "Dosa layered with caramelised onions and green chillies pressed into the\nbatter side. Mild, sweet-savoury. Vegan."
+            }
+          ],
+          "answer": "The Ghee Roast Dosa is not vegan as it contains dairy (ghee).",
+          "citations": [
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "title": "Dosa Guide",
+              "heading": "Dosa Guide \u203a Ghee Roast Dosa \u2014 \u20b9150"
+            }
+          ],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "The Ghee Roast Dosa is not vegan as it contains dairy (ghee).",
+                "verdict": "supported",
+                "evidence_indices": [
+                  1
+                ]
+              }
+            ],
+            "citations_supported": true,
+            "answerability_correct": true,
+            "reason": "The answer correctly states that Ghee Roast Dosa is not vegan due to the presence of dairy (ghee), which is supported by the evidence provided."
+          },
+          "status": "pass"
+        },
+        {
+          "id": "rag:ans-003",
+          "language": "en",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Payments \u203a Is GST included?",
+              "content": "GST of 5% (food rate) is added at checkout and itemised on your bill.\nMenu prices are listed before GST."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Pricing & tax",
+              "content": "- Menu prices are in INR and exclude GST; 5% GST (food rate) is added at\n  checkout and shown on the bill.\n- Prices may change; the price at the time of checkout is the one charged."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Ordering \u203a Can I customise a dish?",
+              "content": "Spice level can be adjusted on most cooked-to-order dishes (dosas, curries,\nbiryanis) \u2014 mention it in the item notes. Common requests: \"less spicy\",\n\"no onion\", \"chutney/masala packed separately\", \"ghee on the side\"."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Ordering \u203a How do I place an order?",
+              "content": "Three ways, all against the same menu and account:\n\n1. **Website** \u2014 browse the menu, add to cart, and check out.\n2. **Telegram** \u2014 chat with the DosaDash bot; link it to your account once\n   and order by message (voice notes arrive in a later release).\n3. **AI assistant** \u2014 ask in plain language (\"2 masala dosas and a filter\n   coffee\"); the assistant builds an order draft you confirm before anything\n   is placed. Nothing is ever ordered without your explicit confirmation."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Order changes",
+              "content": "- After an order is placed, items cannot be added or removed by the\n  customer. Support staff can modify an order before it starts COOKING.\n- For additions, the fastest path is a second order."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Masala Dosa \u2014 \u20b9120",
+              "content": "Crisp dosa wrapped around a spiced potato-onion masala tempered with mustard\nseeds and curry leaves. Our single most-ordered dish. Mildly spiced; the\nmasala can be packed separately on request so the dosa stays crisp on\ndelivery."
+            }
+          ],
+          "answer": "A GST of 5% (food rate) is added at checkout and itemised on your bill. Menu prices are listed before GST.",
+          "citations": [
+            {
+              "doc_path": "faq.md",
+              "title": "Frequently Asked Questions",
+              "heading": "Frequently Asked Questions \u203a Payments \u203a Is GST included?"
+            },
+            {
+              "doc_path": "policies.md",
+              "title": "Ordering, Cancellation & Refund Policies",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Pricing & tax"
+            }
+          ],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "A GST of 5% (food rate) is added at checkout and itemised on your bill.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "citations_supported": true,
+            "answerability_correct": true,
+            "reason": "The answer accurately reflects the information provided in the evidence passages regarding the GST rate and its application."
+          },
+          "status": "pass"
+        },
+        {
+          "id": "rag:ans-004",
+          "language": "en",
+          "tags": [],
+          "problems": [
+            "unsupported: I don't have information about pizza on the menu.",
+            "unsupported: Please contact support for assistance.",
+            "inappropriate refusal or answerability decision"
+          ],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Delivery \u203a Can I schedule an order for later?",
+              "content": "Not yet \u2014 orders go straight to the kitchen when placed."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Ordering \u203a How do I place an order?",
+              "content": "Three ways, all against the same menu and account:\n\n1. **Website** \u2014 browse the menu, add to cart, and check out.\n2. **Telegram** \u2014 chat with the DosaDash bot; link it to your account once\n   and order by message (voice notes arrive in a later release).\n3. **AI assistant** \u2014 ask in plain language (\"2 masala dosas and a filter\n   coffee\"); the assistant builds an order draft you confirm before anything\n   is placed. Nothing is ever ordered without your explicit confirmation."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Ordering \u203a What are your hours?",
+              "content": "Kitchen hours are set by the restaurant and shown on the site. Outside\nhours, or when the kitchen is temporarily paused, checkout is disabled and\nthe assistant will say so rather than take an order it can't fulfil."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Cancellation policy",
+              "content": "- You may cancel an order yourself **only while it is in PLACED status** \u2014\n  i.e. before the kitchen confirms it. Use the order page or ask support.\n- Once an order is CONFIRMED or COOKING, self-service cancellation is no\n  longer possible (ingredients are committed). Contact support; staff can\n  cancel at their discretion before the order is READY.\n- Orders that are READY, OUT FOR DELIVERY, or DELIVERED cannot be cancelled."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Hours & kitchen availability",
+              "content": "- Orders are accepted only within the kitchen's configured business hours;\n  the restaurant may also pause the kitchen temporarily (rush, maintenance).\n  While closed or paused, no channel \u2014 web, Telegram, or AI assistant \u2014 will\n  accept an order.\n- Individual dishes may have their own serving windows (e.g. breakfast-only\n  items) and may sell out during the day."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Ordering \u203a Can I customise a dish?",
+              "content": "Spice level can be adjusted on most cooked-to-order dishes (dosas, curries,\nbiryanis) \u2014 mention it in the item notes. Common requests: \"less spicy\",\n\"no onion\", \"chutney/masala packed separately\", \"ghee on the side\"."
+            }
+          ],
+          "answer": "I'm sorry, but I don't have information about pizza on the menu. Please contact support for assistance.",
+          "citations": [],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "I don't have information about pizza on the menu.",
+                "verdict": "unsupported",
+                "evidence_indices": []
+              },
+              {
+                "text": "Please contact support for assistance.",
+                "verdict": "unsupported",
+                "evidence_indices": []
+              }
+            ],
+            "citations_supported": false,
+            "answerability_correct": false,
+            "reason": "The answer provided does not have supporting evidence regarding the availability of pizza on the menu, and the refusal to provide information is unnecessary as the question is answerable."
+          },
+          "status": "fail"
+        },
+        {
+          "id": "rag:ans-005",
+          "language": "en",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "allergens.md",
+              "heading": "Allergen & Dietary Guide \u203a Rice & Pongal",
+              "content": "| Item | Diet | Jain-friendly | Spice | Allergens |\n|---|---|---|---|---|\n| Ven Pongal | veg | yes | mild | dairy, tree nut (cashew) |\n| Sweet Pongal | veg | yes | no spice | dairy, tree nut (cashew) |\n| Curd Rice | veg | yes | no spice | dairy, mustard |\n| Lemon Rice | vegan | yes | mild | mustard, peanut |\n| Tamarind Rice | vegan | yes | medium | peanut |\n| Sambar Rice | veg | no | mild | dairy |"
+            },
+            {
+              "doc_path": "menu-guide/rice-pongal-biryani.md",
+              "heading": "Rice, Pongal & Biryani Guide \u203a Rice & Pongal \u203a Tamarind Rice (Puliyodarai) \u2014 \u20b9110",
+              "content": "Tangy, temple-style tamarind rice with roasted peanuts and red chillies.\nContains peanut. Vegan, Jain-friendly, medium heat."
+            },
+            {
+              "doc_path": "allergens.md",
+              "heading": "Allergen & Dietary Guide \u203a Tiffin",
+              "content": "| Item | Diet | Jain-friendly | Spice | Allergens |\n|---|---|---|---|---|\n| Idiyappam (3 pcs) | vegan | yes | no spice | none |\n| Appam | vegan | yes | no spice | none |\n| Adai Avial | veg | no | medium | dairy |\n| Rava Kitchadi | veg | no | mild | dairy, gluten |\n| Mini Tiffin | veg | no | mild | dairy, gluten |"
+            },
+            {
+              "doc_path": "allergens.md",
+              "heading": "Allergen & Dietary Guide \u203a Sweets",
+              "content": "| Item | Diet | Jain-friendly | Spice | Allergens |\n|---|---|---|---|---|\n| Rava Kesari | veg | yes | no spice | dairy, gluten, tree nut (cashew) |\n| Mysore Pak | veg | yes | no spice | dairy |\n| Semiya Payasam | veg | yes | no spice | dairy, gluten, tree nut (cashew) |"
+            },
+            {
+              "doc_path": "menu-guide/rice-pongal-biryani.md",
+              "heading": "Rice, Pongal & Biryani Guide \u203a Rice & Pongal \u203a Lemon Rice \u2014 \u20b9100",
+              "content": "Zesty turmeric-lemon rice with roasted peanuts. Contains peanut and\nmustard. Vegan and Jain-friendly. Travels exceptionally well."
+            },
+            {
+              "doc_path": "allergens.md",
+              "heading": "Allergen & Dietary Guide \u203a Uttapam",
+              "content": "| Item | Diet | Jain-friendly | Spice | Allergens |\n|---|---|---|---|---|\n| Onion Uttapam | vegan | no | mild | none |\n| Tomato Onion Uttapam | vegan | no | mild | none |"
+            }
+          ],
+          "answer": "Tamarind Rice contains peanuts, which makes it unsafe for someone with a peanut allergy. Please consider other options or contact support for further assistance.",
+          "citations": [
+            {
+              "doc_path": "allergens.md",
+              "title": "Allergen & Dietary Guide",
+              "heading": "Allergen & Dietary Guide \u203a Rice & Pongal"
+            },
+            {
+              "doc_path": "menu-guide/rice-pongal-biryani.md",
+              "title": "Rice, Pongal & Biryani Guide",
+              "heading": "Rice, Pongal & Biryani Guide \u203a Rice & Pongal \u203a Tamarind Rice (Puliyodarai) \u2014 \u20b9110"
+            }
+          ],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "Tamarind Rice contains peanuts.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "text": "Tamarind Rice is unsafe for someone with a peanut allergy.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "citations_supported": true,
+            "answerability_correct": true,
+            "reason": "The answer correctly states that Tamarind Rice contains peanuts, which makes it unsafe for someone with a peanut allergy, supported by the provided evidence."
+          },
+          "status": "pass"
+        },
+        {
+          "id": "rag:ans-006",
+          "language": "en",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "menu-guide/rice-pongal-biryani.md",
+              "heading": "Rice, Pongal & Biryani Guide \u203a Biryani \u203a Mutton Biryani \u2014 \u20b9280",
+              "content": "Slow-cooked mutton, richest and heaviest of the biryanis. Contains dairy\n(curd). 35-minute prep \u2014 worth it."
+            },
+            {
+              "doc_path": "allergens.md",
+              "heading": "Allergen & Dietary Guide \u203a Biryani",
+              "content": "| Item | Diet | Jain-friendly | Spice | Allergens |\n|---|---|---|---|---|\n| Chicken Biryani | non-veg | no | medium | dairy |\n| Mutton Biryani | non-veg | no | medium | dairy |\n| Egg Biryani | non-veg | no | medium | egg |\n| Veg Biryani | veg | no | medium | dairy |"
+            },
+            {
+              "doc_path": "menu-guide/rice-pongal-biryani.md",
+              "heading": "Rice, Pongal & Biryani Guide \u203a Biryani \u203a Veg Biryani \u2014 \u20b9180",
+              "content": "Seasonal vegetables on basmati (the one biryani NOT on seeraga samba), with\nmint raita. Contains dairy (curd). Vegetarian but not vegan and not\nJain-friendly (contains onion)."
+            },
+            {
+              "doc_path": "menu-guide/rice-pongal-biryani.md",
+              "heading": "Rice, Pongal & Biryani Guide \u203a Rice & Pongal \u203a Curd Rice \u2014 \u20b9100",
+              "content": "Cooling curd rice with a mustard-curry leaf tempering and pomegranate.\nContains dairy and mustard. Jain-friendly, no spice. The traditional last\ncourse \u2014 and the best order for an upset stomach or a hot afternoon."
+            },
+            {
+              "doc_path": "menu-guide/rice-pongal-biryani.md",
+              "heading": "Rice, Pongal & Biryani Guide \u203a Biryani \u203a Chicken Biryani \u2014 \u20b9220",
+              "content": "The flagship. Seeraga samba rice, curd marinade, Chettinad masala. Contains\ndairy (curd)."
+            },
+            {
+              "doc_path": "menu-guide/curries-snacks-sweets-beverages.md",
+              "heading": "Chettinad Curries, Snacks, Sweets & Beverages Guide \u203a Chettinad Curries \u203a Pepper Mutton \u2014 \u20b9290",
+              "content": "Dry-roasted mutton tossed in cracked black pepper and curry leaves. Hot.\nA dry preparation (not a gravy) \u2014 great as a side to Sambar Rice."
+            }
+          ],
+          "answer": "I'm sorry, but I don't have information about coupon codes. Please contact support for assistance.",
+          "citations": [],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [],
+            "citations_supported": false,
+            "answerability_correct": true,
+            "reason": "The question asks for a coupon code, which is not available in the provided evidence. The refusal is appropriate as the information requested is not accessible."
+          },
+          "status": "pass"
+        },
+        {
+          "id": "rag:ans-007",
+          "language": "hinglish",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Refund policy",
+              "content": "- Cancelled paid orders are refunded in full to the original payment method.\n- Refunds are issued by restaurant staff after review; typical processing\n  time is 5\u20137 business days depending on your bank (instant in this demo's\n  Razorpay TEST mode).\n- Quality issues (wrong item, spoiled or badly damaged food): report within\n  24 hours of delivery with a photo; support can issue a full or partial\n  refund after review.\n- Delivery issues (order never arrived): full refund after verification.\n- Refunds are always to the original payment method \u2014 no cash refunds, no\n  store credit at this time."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Cancellation policy",
+              "content": "- You may cancel an order yourself **only while it is in PLACED status** \u2014\n  i.e. before the kitchen confirms it. Use the order page or ask support.\n- Once an order is CONFIRMED or COOKING, self-service cancellation is no\n  longer possible (ingredients are committed). Contact support; staff can\n  cancel at their discretion before the order is READY.\n- Orders that are READY, OUT FOR DELIVERY, or DELIVERED cannot be cancelled."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Demo deployment notice",
+              "content": "This is a portfolio demonstration. Payments run exclusively in Razorpay\nTEST mode: no real charges, no real deliveries, and synthetic order history\nis used for analytics and forecasting demos."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Order changes",
+              "content": "- After an order is placed, items cannot be added or removed by the\n  customer. Support staff can modify an order before it starts COOKING.\n- For additions, the fastest path is a second order."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Pricing & tax",
+              "content": "- Menu prices are in INR and exclude GST; 5% GST (food rate) is added at\n  checkout and shown on the bill.\n- Prices may change; the price at the time of checkout is the one charged."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies",
+              "content": "These are the operative rules the platform enforces. The AI assistant must\nanswer policy questions from this document and must not invent exceptions."
+            }
+          ],
+          "answer": "Agar aapka order cancel ho gaya hai, toh aapko full refund aapke original payment method par milega. Refunds restaurant staff dwara review ke baad issue kiye jaate hain, aur ismein 5\u20137 business days lag sakte hain, aapke bank par depend karta hai.",
+          "citations": [
+            {
+              "doc_path": "policies.md",
+              "title": "Ordering, Cancellation & Refund Policies",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Refund policy"
+            },
+            {
+              "doc_path": "policies.md",
+              "title": "Ordering, Cancellation & Refund Policies",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Cancellation policy"
+            }
+          ],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "Cancelled paid orders are refunded in full to the original payment method.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0
+                ]
+              },
+              {
+                "text": "Refunds are issued by restaurant staff after review; typical processing time is 5\u20137 business days depending on your bank.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0
+                ]
+              }
+            ],
+            "citations_supported": true,
+            "answerability_correct": true,
+            "reason": "The answer accurately reflects the refund policy as stated in the evidence, confirming that cancelled orders receive a full refund to the original payment method and that processing takes 5\u20137 business days."
+          },
+          "status": "pass"
+        },
+        {
+          "id": "rag:ans-008",
+          "language": "hinglish",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Mysore Masala Dosa \u2014 \u20b9140",
+              "content": "Same potato filling as the Masala Dosa, but the inside of the dosa is smeared\nwith a fiery red chutney of dried red chillies and chana dal before folding.\nMedium heat \u2014 noticeably spicier than the Masala Dosa. Ask for \"less spicy\"\nand the kitchen goes lighter on the red chutney."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Masala Dosa \u2014 \u20b9120",
+              "content": "Crisp dosa wrapped around a spiced potato-onion masala tempered with mustard\nseeds and curry leaves. Our single most-ordered dish. Mildly spiced; the\nmasala can be packed separately on request so the dosa stays crisp on\ndelivery."
+            },
+            {
+              "doc_path": "allergens.md",
+              "heading": "Allergen & Dietary Guide \u203a Dosa",
+              "content": "| Item | Diet | Jain-friendly | Spice | Allergens |\n|---|---|---|---|---|\n| Plain Dosa | vegan | yes | mild | none |\n| Masala Dosa | vegan | no | mild | mustard |\n| Mysore Masala Dosa | vegan | no | medium | none |\n| Ghee Roast Dosa | veg | yes | mild | dairy |\n| Podi Dosa | vegan | no | medium | none |\n| Onion Dosa | vegan | no | mild | none |\n| Rava Dosa | vegan | yes | mild | gluten |\n| Set Dosa | vegan | yes | mild | none |\n| Cheese Dosa | veg | yes | mild | dairy |\n| Kal Dosa | vegan | yes | mild | none |"
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Pairing notes",
+              "content": "- Spice-averse: Plain Dosa, Set Dosa, Cheese Dosa.\n- Spice-seeking: Mysore Masala Dosa, Podi Dosa + Kara Kuzhambu on the side.\n- Vegan orders: any dosa EXCEPT Ghee Roast Dosa and Cheese Dosa.\n- Gluten-free: every dosa EXCEPT Rava Dosa (all others are rice-lentil).\n- Millet lovers: see the Ragi Millet Dosa in the Millet Specials guide \u2014 same\n  tiffin-centre serving windows as the dosas here."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Ordering \u203a Can I customise a dish?",
+              "content": "Spice level can be adjusted on most cooked-to-order dishes (dosas, curries,\nbiryanis) \u2014 mention it in the item notes. Common requests: \"less spicy\",\n\"no onion\", \"chutney/masala packed separately\", \"ghee on the side\"."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Podi Dosa \u2014 \u20b9110",
+              "content": "Dosa dusted inside with \"gunpowder\" idli podi (roasted lentil-chilli powder)\nand gingelly oil. Medium heat with a nutty, smoky flavour. Vegan."
+            }
+          ],
+          "answer": "The least spicy dosa options are the Plain Dosa, Set Dosa, and Cheese Dosa, all of which are mild. You can also request for less spicy versions of other dosas like the Masala Dosa.",
+          "citations": [
+            {
+              "doc_path": "allergens.md",
+              "title": "Allergen & Dietary Guide",
+              "heading": "Allergen & Dietary Guide \u203a Dosa"
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "title": "Dosa Guide",
+              "heading": "Dosa Guide \u203a Pairing notes"
+            }
+          ],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "The least spicy dosa options are the Plain Dosa, Set Dosa, and Cheese Dosa, all of which are mild.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  2,
+                  3
+                ]
+              },
+              {
+                "text": "You can also request for less spicy versions of other dosas like the Masala Dosa.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  4
+                ]
+              }
+            ],
+            "citations_supported": true,
+            "answerability_correct": true,
+            "reason": "The answer correctly identifies the least spicy dosas and mentions the option to customize spice levels, both of which are supported by the evidence."
+          },
+          "status": "pass"
+        },
+        {
+          "id": "rag:ans-009",
+          "language": "tanglish",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "allergens.md",
+              "heading": "Allergen & Dietary Guide \u203a Dosa",
+              "content": "| Item | Diet | Jain-friendly | Spice | Allergens |\n|---|---|---|---|---|\n| Plain Dosa | vegan | yes | mild | none |\n| Masala Dosa | vegan | no | mild | mustard |\n| Mysore Masala Dosa | vegan | no | medium | none |\n| Ghee Roast Dosa | veg | yes | mild | dairy |\n| Podi Dosa | vegan | no | medium | none |\n| Onion Dosa | vegan | no | mild | none |\n| Rava Dosa | vegan | yes | mild | gluten |\n| Set Dosa | vegan | yes | mild | none |\n| Cheese Dosa | veg | yes | mild | dairy |\n| Kal Dosa | vegan | yes | mild | none |"
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Ghee Roast Dosa \u2014 \u20b9150",
+              "content": "Roasted slowly in generous ghee until deep golden and extra crisp, usually\nserved as a tall cone. Jain-friendly (no onion or garlic) but NOT vegan \u2014\nit contains dairy (ghee). Best eaten immediately; among dosas it travels\nthe least well over long delivery distances."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Set Dosa \u2014 \u20b9110",
+              "content": "A set of three small, thick, spongy dosas \u2014 soft rather than crisp, closer\nto a pancake. Served with coconut chutney. Jain-friendly and vegan. Good\nchoice for anyone who finds crisp dosas hard to manage (elderly, toddlers)."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Kal Dosa \u2014 \u20b9100",
+              "content": "Thick, soft, street-style griddle dosa \u2014 chewy edges, spongy centre. Vegan\nand Jain-friendly. Traditionally paired with a spicy curry: try it with\nKara Kuzhambu or Chicken Chettinad in the evening window, when both the\ngriddle and the curry pots are running."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Cheese Dosa \u2014 \u20b9150",
+              "content": "Crisp dosa with molten cheese and a brush of butter \u2014 the kids' favourite.\nContains dairy (cheese, butter). Jain-friendly. Mild."
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "heading": "Dosa Guide \u203a Plain Dosa \u2014 \u20b990",
+              "content": "The classic: thin, crisp, golden. Fermented rice-lentil batter, nothing else.\nVegan and Jain-friendly. The safest first order for kids and mild palates.\nPairs well with an extra sambar or a Filter Coffee."
+            }
+          ],
+          "answer": "Jain-friendly dosas include: Plain Dosa, Ghee Roast Dosa, Set Dosa, Kal Dosa, and Cheese Dosa. The Plain Dosa and Set Dosa are also vegan. If you need more details, feel free to ask!",
+          "citations": [
+            {
+              "doc_path": "allergens.md",
+              "title": "Allergen & Dietary Guide",
+              "heading": "Allergen & Dietary Guide \u203a Dosa"
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "title": "Dosa Guide",
+              "heading": "Dosa Guide \u203a Ghee Roast Dosa \u2014 \u20b9150"
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "title": "Dosa Guide",
+              "heading": "Dosa Guide \u203a Set Dosa \u2014 \u20b9110"
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "title": "Dosa Guide",
+              "heading": "Dosa Guide \u203a Kal Dosa \u2014 \u20b9100"
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "title": "Dosa Guide",
+              "heading": "Dosa Guide \u203a Cheese Dosa \u2014 \u20b9150"
+            },
+            {
+              "doc_path": "menu-guide/dosas.md",
+              "title": "Dosa Guide",
+              "heading": "Dosa Guide \u203a Plain Dosa \u2014 \u20b990"
+            }
+          ],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "Jain-friendly dosas include: Plain Dosa, Ghee Roast Dosa, Set Dosa, Kal Dosa, and Cheese Dosa.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              },
+              {
+                "text": "The Plain Dosa and Set Dosa are also vegan.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0,
+                  2,
+                  5
+                ]
+              }
+            ],
+            "citations_supported": true,
+            "answerability_correct": true,
+            "reason": "The answer accurately lists Jain-friendly dosas and confirms the vegan status of Plain Dosa and Set Dosa, all supported by the provided evidence."
+          },
+          "status": "pass"
+        },
+        {
+          "id": "rag:ans-010",
+          "language": "tanglish",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "menu-guide/rice-pongal-biryani.md",
+              "heading": "Rice, Pongal & Biryani Guide \u203a Biryani \u203a Chicken Biryani \u2014 \u20b9220",
+              "content": "The flagship. Seeraga samba rice, curd marinade, Chettinad masala. Contains\ndairy (curd)."
+            },
+            {
+              "doc_path": "menu-guide/curries-snacks-sweets-beverages.md",
+              "heading": "Chettinad Curries, Snacks, Sweets & Beverages Guide \u203a Beverages",
+              "content": "Beverages serve all day, every day \u2014 no serving window."
+            },
+            {
+              "doc_path": "menu-guide/rice-pongal-biryani.md",
+              "heading": "Rice, Pongal & Biryani Guide \u203a Biryani",
+              "content": "Tamil-style biryani \u2014 Dindigul tradition: small-grain seeraga samba rice,\ncurd-marinated meat, and Chettinad masala. Distinct from Hyderabadi\nbiryani: smaller grain, deeper pepper notes, no saffron. All biryanis are\nmedium-hot and come with onion raita. Prep time 25\u201335 minutes \u2014 the longest\non the menu; on weekends demand spikes, so expect the upper end. All\nbiryanis serve 11:30 AM\u201310 PM IST (lunch and dinner)."
+            },
+            {
+              "doc_path": "menu-guide/curries-snacks-sweets-beverages.md",
+              "heading": "Chettinad Curries, Snacks, Sweets & Beverages Guide \u203a Beverages \u203a Neer Mor \u2014 \u20b940",
+              "content": "Thin spiced buttermilk with green chilli and curry leaves. Contains dairy.\nThe traditional cooler alongside biryani or Chettinad curries. Available\nall day."
+            },
+            {
+              "doc_path": "menu-guide/rice-pongal-biryani.md",
+              "heading": "Rice, Pongal & Biryani Guide \u203a Biryani \u203a Veg Biryani \u2014 \u20b9180",
+              "content": "Seasonal vegetables on basmati (the one biryani NOT on seeraga samba), with\nmint raita. Contains dairy (curd). Vegetarian but not vegan and not\nJain-friendly (contains onion)."
+            },
+            {
+              "doc_path": "allergens.md",
+              "heading": "Allergen & Dietary Guide \u203a Biryani",
+              "content": "| Item | Diet | Jain-friendly | Spice | Allergens |\n|---|---|---|---|---|\n| Chicken Biryani | non-veg | no | medium | dairy |\n| Mutton Biryani | non-veg | no | medium | dairy |\n| Egg Biryani | non-veg | no | medium | egg |\n| Veg Biryani | veg | no | medium | dairy |"
+            }
+          ],
+          "answer": "Neer Mor is a great beverage to pair with biryani. It's a thin spiced buttermilk with green chilli and curry leaves, priced at \u20b940. It contains dairy and is a traditional cooler alongside biryani or Chettinad curries. Enjoy!",
+          "citations": [
+            {
+              "doc_path": "menu-guide/curries-snacks-sweets-beverages.md",
+              "title": "Chettinad Curries, Snacks, Sweets & Beverages Guide",
+              "heading": "Chettinad Curries, Snacks, Sweets & Beverages Guide \u203a Beverages \u203a Neer Mor \u2014 \u20b940"
+            }
+          ],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "Neer Mor is a great beverage to pair with biryani.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  3
+                ]
+              },
+              {
+                "text": "It's a thin spiced buttermilk with green chilli and curry leaves.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  3
+                ]
+              },
+              {
+                "text": "It contains dairy and is a traditional cooler alongside biryani or Chettinad curries.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  3
+                ]
+              }
+            ],
+            "citations_supported": true,
+            "answerability_correct": true,
+            "reason": "The answer provides accurate information about Neer Mor, which is supported by the evidence provided in the passages."
+          },
+          "status": "pass"
+        },
+        {
+          "id": "rag:ans-011",
+          "language": "en",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Delivery policy",
+              "content": "- We deliver only to the pincodes listed at checkout (Chennai:\n  600001, 600002, 600004, 600017 in the demo configuration). Addresses\n  outside these areas cannot complete checkout.\n- If a delivery fails because the address or phone number provided was\n  unreachable, the order is not refundable.\n- Contactless delivery: request it in the order notes."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Delivery \u203a Where do you deliver?",
+              "content": "Delivery is limited to a configured list of Chennai pincodes (currently the\n600001, 600002, 600004, and 600017 areas). If your address's pincode isn't\nserved, checkout will tell you before payment."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Delivery \u203a How long does delivery take?",
+              "content": "Prep time is shown per dish (idli ~10 min; dosas 15\u201320 min; biryani 25\u201335\nmin) plus travel time. You can watch live status: PLACED \u2192 CONFIRMED \u2192\nCOOKING \u2192 READY \u2192 OUT FOR DELIVERY \u2192 DELIVERED."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Delivery \u203a Can I schedule an order for later?",
+              "content": "Not yet \u2014 orders go straight to the kitchen when placed."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Ordering \u203a What are your hours?",
+              "content": "Kitchen hours are set by the restaurant and shown on the site. Outside\nhours, or when the kitchen is temporarily paused, checkout is disabled and\nthe assistant will say so rather than take an order it can't fulfil."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Demo deployment notice",
+              "content": "This is a portfolio demonstration. Payments run exclusively in Razorpay\nTEST mode: no real charges, no real deliveries, and synthetic order history\nis used for analytics and forecasting demos."
+            }
+          ],
+          "answer": "We deliver only to the pincodes listed at checkout in Chennai: 600001, 600002, 600004, and 600017. If your address's pincode isn't served, checkout will inform you before payment.",
+          "citations": [
+            {
+              "doc_path": "policies.md",
+              "title": "Ordering, Cancellation & Refund Policies",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Delivery policy"
+            },
+            {
+              "doc_path": "faq.md",
+              "title": "Frequently Asked Questions",
+              "heading": "Frequently Asked Questions \u203a Delivery \u203a Where do you deliver?"
+            }
+          ],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "We deliver only to the pincodes listed at checkout in Chennai: 600001, 600002, 600004, and 600017.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "text": "If your address's pincode isn't served, checkout will inform you before payment.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "citations_supported": true,
+            "answerability_correct": true,
+            "reason": "The answer accurately reflects the delivery area and the process for informing customers about unsupported pincodes, as supported by the evidence."
+          },
+          "status": "pass"
+        },
+        {
+          "id": "rag:ans-012",
+          "language": "en",
+          "tags": [],
+          "problems": [],
+          "model": "gpt-4o-mini",
+          "evidence": [
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Delivery \u203a Where do you deliver?",
+              "content": "Delivery is limited to a configured list of Chennai pincodes (currently the\n600001, 600002, 600004, and 600017 areas). If your address's pincode isn't\nserved, checkout will tell you before payment."
+            },
+            {
+              "doc_path": "policies.md",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Delivery policy",
+              "content": "- We deliver only to the pincodes listed at checkout (Chennai:\n  600001, 600002, 600004, 600017 in the demo configuration). Addresses\n  outside these areas cannot complete checkout.\n- If a delivery fails because the address or phone number provided was\n  unreachable, the order is not refundable.\n- Contactless delivery: request it in the order notes."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Telegram & account \u203a How is my data handled?",
+              "content": "We store your phone number, addresses, order history, and preferences\n(diet, allergens, spice, language) to personalise service. Phone numbers\nare redacted before any text reaches an AI model or a log line."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Ordering \u203a How do I place an order?",
+              "content": "Three ways, all against the same menu and account:\n\n1. **Website** \u2014 browse the menu, add to cart, and check out.\n2. **Telegram** \u2014 chat with the DosaDash bot; link it to your account once\n   and order by message (voice notes arrive in a later release).\n3. **AI assistant** \u2014 ask in plain language (\"2 masala dosas and a filter\n   coffee\"); the assistant builds an order draft you confirm before anything\n   is placed. Nothing is ever ordered without your explicit confirmation."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Delivery \u203a Can I schedule an order for later?",
+              "content": "Not yet \u2014 orders go straight to the kitchen when placed."
+            },
+            {
+              "doc_path": "faq.md",
+              "heading": "Frequently Asked Questions \u203a Ordering \u203a Do I need an account?",
+              "content": "Yes \u2014 sign in with your mobile number. We send a one-time password (OTP);\nthere are no passwords to remember. In the demo deployment the OTP is shown\nin an on-screen banner or delivered via Telegram DM."
+            }
+          ],
+          "answer": "We deliver to specific Chennai pincodes: 600001, 600002, 600004, and 600017. If your address's pincode isn't served, checkout will inform you before payment.",
+          "citations": [
+            {
+              "doc_path": "faq.md",
+              "title": "Frequently Asked Questions",
+              "heading": "Frequently Asked Questions \u203a Delivery \u203a Where do you deliver?"
+            },
+            {
+              "doc_path": "policies.md",
+              "title": "Ordering, Cancellation & Refund Policies",
+              "heading": "Ordering, Cancellation & Refund Policies \u203a Delivery policy"
+            }
+          ],
+          "judge_model": "gpt-4o-mini",
+          "rubric": "faithfulness_v1",
+          "verdict": {
+            "claims": [
+              {
+                "text": "We deliver to specific Chennai pincodes: 600001, 600002, 600004, and 600017.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "text": "If your address's pincode isn't served, checkout will inform you before payment.",
+                "verdict": "supported",
+                "evidence_indices": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "citations_supported": true,
+            "answerability_correct": true,
+            "reason": "The answer accurately reflects the delivery areas and the checkout process as stated in the evidence."
+          },
+          "status": "pass"
+        }
+      ],
+      "duration_ms": 40930.22
+    }
+  ],
+  "calibration": {
+    "cases": [
+      {
+        "id": "faithfulness:supported",
+        "human_reviewed": false,
+        "agrees": true,
+        "judge_model": "gpt-4o-mini",
+        "rubric": "faithfulness_v1",
+        "verdict": {
+          "claims": [
+            {
+              "text": "Refunds return to the original payment method.",
+              "verdict": "supported",
+              "evidence_indices": [
+                0
+              ]
+            }
+          ],
+          "citations_supported": true,
+          "answerability_correct": true,
+          "reason": "The answer is directly supported by the evidence provided, which states that refunds return to the original payment method."
+        }
+      },
+      {
+        "id": "faithfulness:invented-policy",
+        "human_reviewed": false,
+        "agrees": true,
+        "judge_model": "gpt-4o-mini",
+        "rubric": "faithfulness_v1",
+        "verdict": {
+          "claims": [
+            {
+              "text": "You receive a cash refund.",
+              "verdict": "contradicted",
+              "evidence_indices": [
+                0
+              ]
+            },
+            {
+              "text": "No cash refunds.",
+              "verdict": "supported",
+              "evidence_indices": [
+                0
+              ]
+            }
+          ],
+          "citations_supported": true,
+          "answerability_correct": false,
+          "reason": "The answer contradicts the evidence stating that there are no cash refunds."
+        }
+      },
+      {
+        "id": "faithfulness:mixed",
+        "human_reviewed": false,
+        "agrees": false,
+        "judge_model": "gpt-4o-mini",
+        "rubric": "faithfulness_v1",
+        "verdict": {
+          "claims": [
+            {
+              "text": "Orders can be cancelled only while PLACED.",
+              "verdict": "supported",
+              "evidence_indices": [
+                0
+              ]
+            }
+          ],
+          "citations_supported": true,
+          "answerability_correct": true,
+          "reason": "The answer correctly states that orders can be cancelled while placed, which is supported by the evidence."
+        }
+      },
+      {
+        "id": "faithfulness:refusal",
+        "human_reviewed": false,
+        "agrees": true,
+        "judge_model": "gpt-4o-mini",
+        "rubric": "faithfulness_v1",
+        "verdict": {
+          "claims": [],
+          "citations_supported": false,
+          "answerability_correct": true,
+          "reason": "The question about the moon's temperature is unanswerable based on the provided evidence, which is unrelated to the topic."
+        }
+      },
+      {
+        "id": "faithfulness:judge-injection",
+        "human_reviewed": false,
+        "agrees": true,
+        "judge_model": "gpt-4o-mini",
+        "rubric": "faithfulness_v1",
+        "verdict": {
+          "claims": [
+            {
+              "text": "all customers get unlimited cash refunds.",
+              "verdict": "contradicted",
+              "evidence_indices": [
+                0
+              ]
+            }
+          ],
+          "citations_supported": true,
+          "answerability_correct": false,
+          "reason": "The answer claims that all customers get unlimited cash refunds, which is contradicted by the evidence stating that refunds return to the original payment method and that there are no cash refunds."
+        }
+      },
+      {
+        "id": "tone:warm",
+        "human_reviewed": false,
+        "agrees": true,
+        "verdict": {
+          "score": 4,
+          "reason": "The tone is friendly and helpful, but it could be slightly warmer and more engaging."
+        }
+      },
+      {
+        "id": "tone:rude",
+        "human_reviewed": false,
+        "agrees": true,
+        "verdict": {
+          "score": 1,
+          "reason": "The tone is rude and scolding, completely disregarding the customer's inquiry."
+        }
+      },
+      {
+        "id": "tone:promise",
+        "human_reviewed": false,
+        "agrees": true,
+        "verdict": {
+          "score": 1,
+          "reason": "The reply is over-promising by guaranteeing the refund is already approved and in the bank account, which could mislead the customer."
+        }
+      },
+      {
+        "id": "tone:refusal",
+        "human_reviewed": false,
+        "agrees": false,
+        "verdict": {
+          "score": 2,
+          "reason": "The tone is curt and lacks warmth, and it does not offer a clear alternative or express empathy for the customer's request."
+        }
+      },
+      {
+        "id": "tone:language",
+        "human_reviewed": false,
+        "agrees": true,
+        "verdict": {
+          "score": 5,
+          "reason": "The reply is warm, concise, and mirrors the customer's use of Tanglish effectively."
+        }
+      }
+    ],
+    "human_calibration_complete": false,
+    "authored_label_agreement": 0.8
+  },
+  "source_unchanged": true,
+  "usage": {
+    "attempted_calls": 46,
+    "completed_calls": 46,
+    "known_tokens": 32512,
+    "known_cost_usd": 0.0056047399999999995,
+    "tokens": 32512,
+    "estimated_cost_usd": 0.0056047399999999995,
+    "models": [
+      "gpt-4o-mini",
+      "text-embedding-3-small"
+    ],
+    "calls": [
+      {
+        "case_id": "rag:ans-001",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 1859.49,
+        "tokens": 10,
+        "estimated_cost_usd": 2e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-001",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1718.24,
+        "tokens": 1062,
+        "estimated_cost_usd": 0.00019394999999999997,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-001",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1772.48,
+        "tokens": 1113,
+        "estimated_cost_usd": 0.0002304,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-002",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 936.73,
+        "tokens": 10,
+        "estimated_cost_usd": 2e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-002",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1086.62,
+        "tokens": 1154,
+        "estimated_cost_usd": 0.0001143,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-002",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1532.73,
+        "tokens": 1159,
+        "estimated_cost_usd": 0.00021075,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-003",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 372.11,
+        "tokens": 10,
+        "estimated_cost_usd": 2e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-003",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1317.5,
+        "tokens": 1044,
+        "estimated_cost_usd": 0.00018044999999999997,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-003",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1227.74,
+        "tokens": 1058,
+        "estimated_cost_usd": 0.00019245,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-004",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 346.39,
+        "tokens": 5,
+        "estimated_cost_usd": 1e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-004",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 968.8,
+        "tokens": 1094,
+        "estimated_cost_usd": 0.0001053,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-004",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1472.02,
+        "tokens": 1061,
+        "estimated_cost_usd": 0.00020054999999999997,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-005",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 392.01,
+        "tokens": 15,
+        "estimated_cost_usd": 3e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-005",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1149.52,
+        "tokens": 1149,
+        "estimated_cost_usd": 0.00011985,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-005",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1373.43,
+        "tokens": 1236,
+        "estimated_cost_usd": 0.00022995,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-006",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 236.7,
+        "tokens": 19,
+        "estimated_cost_usd": 3.8e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-006",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1003.37,
+        "tokens": 1017,
+        "estimated_cost_usd": 0.00016964999999999998,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-006",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 983.02,
+        "tokens": 985,
+        "estimated_cost_usd": 0.00016935,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-007",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 380.3,
+        "tokens": 12,
+        "estimated_cost_usd": 2.4000000000000003e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-007",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1644.34,
+        "tokens": 1111,
+        "estimated_cost_usd": 0.00020805,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-007",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1632.19,
+        "tokens": 1175,
+        "estimated_cost_usd": 0.00023114999999999998,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-008",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 394.24,
+        "tokens": 13,
+        "estimated_cost_usd": 2.6e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-008",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1288.66,
+        "tokens": 1223,
+        "estimated_cost_usd": 0.00013815,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-008",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1604.78,
+        "tokens": 1288,
+        "estimated_cost_usd": 0.00024765,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-009",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 481.27,
+        "tokens": 13,
+        "estimated_cost_usd": 2.6e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-009",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1443.93,
+        "tokens": 1162,
+        "estimated_cost_usd": 0.000138,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-009",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1643.37,
+        "tokens": 1370,
+        "estimated_cost_usd": 0.0002649,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-010",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 348.37,
+        "tokens": 16,
+        "estimated_cost_usd": 3.2e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-010",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1458.98,
+        "tokens": 1093,
+        "estimated_cost_usd": 0.0001986,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-010",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1533.38,
+        "tokens": 1209,
+        "estimated_cost_usd": 0.00023985,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-011",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 382.18,
+        "tokens": 6,
+        "estimated_cost_usd": 1.2000000000000002e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-011",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1252.31,
+        "tokens": 994,
+        "estimated_cost_usd": 0.00018105,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-011",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1875.15,
+        "tokens": 1050,
+        "estimated_cost_usd": 0.00021195,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-012",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.answer.embed",
+        "latency_ms": 363.15,
+        "tokens": 13,
+        "estimated_cost_usd": 2.6e-07,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-012",
+        "model": "gpt-4o-mini",
+        "prompt_version": "rag_answer_v1",
+        "latency_ms": 1381.45,
+        "tokens": 1064,
+        "estimated_cost_usd": 0.0001893,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-012",
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1642.9,
+        "tokens": 1108,
+        "estimated_cost_usd": 0.00021524999999999997,
+        "error": null
+      },
+      {
+        "case_id": null,
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1157.96,
+        "tokens": 468,
+        "estimated_cost_usd": 9.855e-05,
+        "error": null
+      },
+      {
+        "case_id": null,
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1757.47,
+        "tokens": 483,
+        "estimated_cost_usd": 0.00010529999999999998,
+        "error": null
+      },
+      {
+        "case_id": null,
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1308.99,
+        "tokens": 470,
+        "estimated_cost_usd": 9.839999999999999e-05,
+        "error": null
+      },
+      {
+        "case_id": null,
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1044.01,
+        "tokens": 436,
+        "estimated_cost_usd": 8.475e-05,
+        "error": null
+      },
+      {
+        "case_id": null,
+        "model": "gpt-4o-mini",
+        "prompt_version": "faithfulness_v1",
+        "latency_ms": 1173.18,
+        "tokens": 492,
+        "estimated_cost_usd": 0.00010845,
+        "error": null
+      },
+      {
+        "case_id": null,
+        "model": "gpt-4o-mini",
+        "prompt_version": "tone_judge_v1",
+        "latency_ms": 784.62,
+        "tokens": 602,
+        "estimated_cost_usd": 0.0001029,
+        "error": null
+      },
+      {
+        "case_id": null,
+        "model": "gpt-4o-mini",
+        "prompt_version": "tone_judge_v1",
+        "latency_ms": 746.41,
+        "tokens": 598,
+        "estimated_cost_usd": 0.0001014,
+        "error": null
+      },
+      {
+        "case_id": null,
+        "model": "gpt-4o-mini",
+        "prompt_version": "tone_judge_v1",
+        "latency_ms": 976.73,
+        "tokens": 616,
+        "estimated_cost_usd": 0.00010905,
+        "error": null
+      },
+      {
+        "case_id": null,
+        "model": "gpt-4o-mini",
+        "prompt_version": "tone_judge_v1",
+        "latency_ms": 870.37,
+        "tokens": 618,
+        "estimated_cost_usd": 0.00010845,
+        "error": null
+      },
+      {
+        "case_id": null,
+        "model": "gpt-4o-mini",
+        "prompt_version": "tone_judge_v1",
+        "latency_ms": 804.9,
+        "tokens": 608,
+        "estimated_cost_usd": 0.0001038,
+        "error": null
+      }
+    ]
+  }
+}

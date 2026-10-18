@@ -142,3 +142,19 @@ def test_run_live_evals_payload_shape_validates():
     parsed = EvalRunIn.model_validate(SAMPLE_RUN)
     assert parsed.metrics["order_accuracy"] == 0.9625
     assert parsed.case_reports[0].id == "ord-035"
+
+
+async def test_suite_results_and_unknown_usage_survive_roundtrip(client, internal_token, admin):
+    payload = {
+        **SAMPLE_RUN,
+        "run_metadata": {"schema_version": 1, "usage": {"tokens": None}},
+        "suite_results": [
+            {"name": "order", "status": "pass", "blocking": True},
+            {"name": "rag", "status": "fail", "blocking": False, "metrics": {"pass_rate": 0.5}},
+        ],
+    }
+    response = await client.post(EVAL_RUNS, json=payload, headers=internal_token)
+    assert response.status_code == 201, response.text
+    detail = (await client.get(f"{EVAL_RUNS}/{response.json()['id']}", headers=admin)).json()
+    assert detail["suite_results"][1]["metrics"] == {"pass_rate": 0.5}
+    assert detail["run_metadata"]["usage"]["tokens"] is None

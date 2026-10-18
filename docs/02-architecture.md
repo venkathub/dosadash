@@ -86,7 +86,7 @@ apps/api/
 apps/ai/
 ├── agents/   order_agent (LangGraph) · inventory_agent · support_agent ·
 │             promo_agent · sql copilot · feedback triage
-├── rag/      ingestion · chunking · hybrid retrieval · rerank
+├── rag/      ingestion · chunking · hybrid retrieval · source selection
 ├── llm/      litellm router · semantic cache · structured-output helpers
 ├── guardrails/  input (injection/PII) · output (hallucination/policy ·
 │             serving-notes · self-correction retry)
@@ -99,24 +99,13 @@ apps/ai/
               runs client-side — zero VPS RAM)
 ```
 
-**Order Agent (LangGraph):**
+**Order agent (as implemented):**
 ```
- msg ─► Guardrails (inject/PII) ─fail─► refusal
-          │
-          ▼
-       Intent Router ── menu_qa ──► RAG node ─► grounded answer + citations
-          │ order intent
-          ▼
-       Order Builder (tool loop): search_menu · get_item_details ·
-         add_to_cart · apply_customization · check_availability
-          ▼
-       Validator: Pydantic OrderDraft — every item_id validated vs DB
-         ⇒ ZERO hallucinated dishes (hard guardrail)
-          ▼
-       Confirm gate (web button / Telegram inline keyboard, human-in-loop)
-          ─► place_order tool ─► Core API ─► payment link
+load_context → retrieve_knowledge → structured LLM turn → validate_draft
 ```
-- State (cart, preferences, language) checkpointed in Postgres → survives restarts.
+- A fixed LangGraph invokes one structured completion, with bounded self-correction.
+- Adapters supply history and the last draft; the graph has no persistent checkpointer.
+- Business order submission remains in the core API behind confirmation and validation.
 - Same graph serves web chat and Telegram; channel adapters translate I/O only.
 - Agent context auto-injects logged-in user's preferences (diet/allergens/spice).
 - Respects live business state: 86'd items and kitchen-pause via event subscriptions.
@@ -131,23 +120,23 @@ apps/ai/
 **RAG pipeline:**
 ```
 Sources: knowledge/ (recipes, ingredients/allergens, FAQs, policies)
-  → semantic chunking (400 tok, 15% overlap, dish metadata)
-  → text-embedding-3-small → pgvector (HNSW)
+  → heading-aware chunking (see rag/chunking.py for limits and overlap)
+  → text-embedding-3-small → pgvector (exact vector search)
 Query: embed ─┐
-              ├─► RRF fusion (top-20) → LLM rerank (top-4) → answer + citations
-  BM25 (FTS) ─┘
-Menu edits publish event → Celery re-embeds affected chunks (no drift).
+              ├─► RRF fusion (12 candidates/signal, default top-6) → source selection + answer + citations
+  PostgreSQL FTS (FTS) ─┘
+Menu edits publish events → AI cascade re-ingests knowledge and invalidates caches.
 ```
 
 **LLM routing (litellm):**
 | Tier | Model | Use |
 |---|---|---|
 | Primary | gpt-4o-mini | agent reasoning, structured extraction |
-| Fast/free | Groq gpt-oss-120b (Llama 3.3 retired 2026-08-16) | intent routing, rerank, casual chat |
+| Fast/free | Groq gpt-oss-120b (Llama 3.3 retired 2026-08-16) | structured-completion fallback |
 | Fallback | Groq → Gemini Flash | outage chain |
 | STT | Groq whisper-large-v3 | Telegram voice notes |
 
-Semantic cache: Redis, cosine ≥ 0.95 on cached Q&A (~40% cost cut). All calls traced to Langfuse (tokens/cost/latency/session). Daily budget kill-switch.
+Semantic cache: Redis, cosine ≥ 0.95 on cached Q&A (measure hit rate rather than assume cost savings). Calls are traced to Langfuse (tokens/cost/latency/session). Evaluation runs have explicit request/token/known-cost ceilings; production-wide budget enforcement is not claimed here.
 
 ### 2.3 Telegram Bot (aiogram) — thin adapter
 ```
@@ -171,7 +160,7 @@ Commands: /start (link account) · /menu · /myorders · voice note = order
 | every 5 min (offset :04) | sentinel scan: healthz fleet probes, 5xx bursts, consecutive eval-gate reds |
 | hourly | worker heartbeat |
 | weekly Sun 04:30 | janitor: computed flaky-eval list, translation backlog, stale approvals |
-| weekly (local/CI) | recommender + forecast retrain → MLflow (promote via `champion` alias) |
+| manual, outside beat | recommender + forecast training scripts → MLflow registration/export |
 | on-event | RAG re-ingestion · notifications · re-embed cascade |
 
 ### 2.5 Frontend (Next.js — one app, six surfaces, "Madras Pop" design system)
