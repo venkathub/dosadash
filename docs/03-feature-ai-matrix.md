@@ -111,3 +111,13 @@ Historical phase plans describe intent; this table and evals/README.md describe 
 | MCP / multimodal / batch | `apps/ai/src/dosadash_ai/mcp_server.py`, `llm/`, `routers/` | existing unit/asset tests | Integrations implemented; comprehensive live multimodal evaluation deferred |
 | SDLC coordination | `.github/workflows/claude-*.yml` | fixer workflow asset tests | Workflow coordination; independent deployment validation required |
 | Online experiments / distributed training | No implementation claimed | No measurement claimed | Deferred |
+
+### Independent benchmark tooling
+
+`evals/benchmarks/` adds independently annotated review dataset contracts, overlap
+audits, frozen validation/test fingerprints, component comparisons and source-group
+bootstrap intervals. Sentiment training now selects on comparable validation F1;
+legacy test-based champion scores cannot authorize a promotion. **Independent data
+collection and published generalization measurements remain pending.** See
+`evals/benchmarks/README.md` for collection and execution instructions. This does
+not add live audio/invoice benchmarks, durable checkpoints or model retraining.

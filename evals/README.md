@@ -170,3 +170,11 @@ every regression and replay case to pass, with unchanged source/assets and a
 $0.50 known-cost ceiling (one in-flight request may exceed it). This is judge
 validation on retained outputs, not fresh generation or a substitute for CI.
 See [the refusal correction evidence](baselines/faithfulness-refusal-fix.md).
+
+## Independent generalization evidence
+
+The [independent review benchmark tooling](benchmarks/README.md) supports collection
+audits, independent annotations, lexical/template overlap detection, frozen
+validation/test protocols, ONNX-versus-LLM comparison and group-bootstrap uncertainty.
+No independent dataset has been supplied yet; this is tooling readiness, not a new
+quality claim. Existing synthetic results and blocking regression gates are unchanged.

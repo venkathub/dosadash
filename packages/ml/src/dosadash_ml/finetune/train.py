@@ -14,7 +14,9 @@ tuned model matches zero-shot LLM accuracy at CPU-serving cost.
 Evaluation (val during training, test only at the end): micro/macro F1 at
 0.5, exact-match on the label set, and overall-sentiment accuracy via the
 same deterministic rollup the serving guardrail uses. Promotion: `champion`
-alias moves iff macro-F1 improves — same contract as forecasting/ETA/recsys.
+alias moves only when validation macro-F1 improves on the same validation
+fingerprint. Legacy test-based champions require validation rescoring first.
+Test scores are computed only after selection, for reporting, never promotion.
 
 Export: ONLY the LoRA adapter + head (a few MB — committed to git) plus
 meta.json. The frozen DistilBERT base is pulled from the hub by name; the
@@ -22,6 +24,7 @@ INT8 CPU-serving artifact is built from this champion in the serving slice.
 """
 
 import argparse
+import hashlib
 import json
 import time
 from datetime import UTC, datetime
@@ -30,18 +33,15 @@ from pathlib import Path
 import mlflow
 import numpy as np
 import torch
-from mlflow.tracking import MlflowClient
 from peft import LoraConfig, TaskType, get_peft_model
 from torch.utils.data import DataLoader
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from dosadash_ml.finetune.dataset import LABELS, Example, build_examples, multi_hot
 from dosadash_ml.finetune.metrics import label_set_metrics
+from dosadash_ml.finetune.selection import MODEL_NAME, register_and_maybe_promote
 
-MODEL_NAME = "dosadash-sentiment"
-CHAMPION = "champion"
 BASE_MODEL = "distilbert-base-uncased"
-PROMOTE_METRIC = "macro_f1"
 THRESHOLD = 0.5
 
 
@@ -121,39 +121,6 @@ def train(
         )
 
 
-def _current_champion_metric(client: MlflowClient) -> float | None:
-    try:
-        version = client.get_model_version_by_alias(MODEL_NAME, CHAMPION)
-    except Exception:
-        return None
-    tag = version.tags.get(PROMOTE_METRIC)
-    return float(tag) if tag is not None else None
-
-
-def register_and_maybe_promote(
-    metrics: dict[str, float], params: dict[str, object]
-) -> tuple[str, bool]:
-    client = MlflowClient()
-    try:
-        client.create_registered_model(MODEL_NAME)
-    except Exception:
-        pass
-    with mlflow.start_run(run_name=f"sentiment-{datetime.now(UTC):%Y%m%d-%H%M}") as run:
-        mlflow.log_params(params)
-        mlflow.log_metrics(metrics)
-        version = client.create_model_version(
-            name=MODEL_NAME, source=run.info.artifact_uri, run_id=run.info.run_id
-        ).version
-    client.set_model_version_tag(
-        MODEL_NAME, version, PROMOTE_METRIC, f"{metrics[PROMOTE_METRIC]:.6f}"
-    )
-    incumbent = _current_champion_metric(client)
-    promote = incumbent is None or metrics[PROMOTE_METRIC] >= incumbent
-    if promote:
-        client.set_registered_model_alias(MODEL_NAME, CHAMPION, version)
-    return str(version), promote
-
-
 def export_champion(
     model: torch.nn.Module,
     metrics: dict[str, float],
@@ -226,9 +193,16 @@ def main() -> None:
     )
     train_seconds = round(time.time() - started, 1)
 
-    test_metrics = metrics_from_probs(predict_probs(model, loaders["test"]), splits["test"])
-    test_metrics["train_seconds"] = train_seconds
-    print(f"test: {json.dumps(test_metrics, indent=2)}")
+    validation_metrics = metrics_from_probs(predict_probs(model, loaders["val"]), splits["val"])
+    validation_metrics["train_seconds"] = train_seconds
+    validation_sha256 = hashlib.sha256(
+        json.dumps(
+            [(e.text, e.labels) for e in splits["val"]],
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()
+    print(f"validation: {json.dumps(validation_metrics, indent=2)}")
 
     params: dict[str, object] = {
         "base_model": BASE_MODEL,
@@ -240,11 +214,17 @@ def main() -> None:
         "lora_r": 8,
         "lora_alpha": 16,
         "trainable_params": trainable,
+        "validation_sha256": validation_sha256,
+        "selection_split": "val",
     }
-    version, promoted = register_and_maybe_promote(test_metrics, params)
+    version, promoted = register_and_maybe_promote(validation_metrics, params)
     print(f"registered {MODEL_NAME} v{version} (champion={'yes' if promoted else 'no'})")
     if promoted:
-        path = export_champion(model, test_metrics, version, params, args.export_dir)
+        # Selection is already complete. Test scores are reporting-only.
+        test_metrics = metrics_from_probs(predict_probs(model, loaders["test"]), splits["test"])
+        print(f"final test (not used for promotion): {json.dumps(test_metrics, indent=2)}")
+        export_metrics = {**validation_metrics, **{f"test_{k}": v for k, v in test_metrics.items()}}
+        path = export_champion(model, export_metrics, version, params, args.export_dir)
         print(f"exported champion → {path}")
 
 

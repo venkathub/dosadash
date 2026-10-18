@@ -98,3 +98,12 @@ and the unchanged judge thresholds. See `evals/baselines/p0-closure.md` for the
 review record, negative controls, baseline evidence and deployment boundary.
 Execution errors and measured policy bypasses fail closed. Durable graph checkpoints, learned CRM/bandits, online experiments,
 and automated drift/retraining remain deferred. Scheduled forecasting is inference.
+
+### Independent evaluation tooling
+
+`evals/benchmarks/` provides review-source/permission and independent-annotation
+contracts, overlap audits, frozen validation/test execution and grouped uncertainty
+reports. No independent dataset or generalization measurement has been supplied.
+New sentiment training uses comparable validation F1 for selection; historical
+champion artifacts remain unchanged. See `evals/benchmarks/README.md` for the
+collection requirements and remaining evidence boundary.
