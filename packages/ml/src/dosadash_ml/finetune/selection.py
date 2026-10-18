@@ -36,14 +36,13 @@ def may_promote(
 
 
 def _current_champion_tags(client: MlflowClient) -> dict[str, str] | None:
-    from mlflow.exceptions import MlflowException
-
-    try:
-        return dict(client.get_model_version_by_alias(MODEL_NAME, CHAMPION).tags)
-    except MlflowException as exc:
-        if exc.error_code == "RESOURCE_DOES_NOT_EXIST":
-            return None
-        raise  # registry/network errors must never look like an empty registry
+    # MLflow reports a missing alias as INVALID_PARAMETER_VALUE, the same code
+    # used for other invalid requests. Inspect explicit alias metadata instead
+    # of treating exceptions as proof that the registry has no champion.
+    registered = client.get_registered_model(MODEL_NAME)
+    if CHAMPION not in registered.aliases:
+        return None
+    return dict(client.get_model_version_by_alias(MODEL_NAME, CHAMPION).tags)
 
 
 def register_and_maybe_promote(

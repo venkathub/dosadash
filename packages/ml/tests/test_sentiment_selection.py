@@ -44,7 +44,7 @@ def test_registry_unavailable_cannot_be_treated_as_empty():
     from dosadash_ml.finetune.selection import _current_champion_tags
 
     class BrokenRegistry:
-        def get_model_version_by_alias(self, *args):
+        def get_registered_model(self, *args):
             raise MlflowException("network unavailable", error_code="INTERNAL_ERROR")
 
     with pytest.raises(MlflowException):
@@ -72,6 +72,9 @@ def test_registry_selection_records_validation_and_retains_legacy_champion(monke
 
         def set_model_version_tag(self, name, version, key, value):
             tags[key] = value
+
+        def get_registered_model(self, *args):
+            return SimpleNamespace(aliases={"champion": "old"})
 
         def get_model_version_by_alias(self, *args):
             return SimpleNamespace(tags={"macro_f1": "0.1"})  # historical TEST score
@@ -102,3 +105,18 @@ def test_registry_selection_records_validation_and_retains_legacy_champion(monke
     }
     with pytest.raises(ValueError):
         register_and_maybe_promote({"macro_f1": 1}, {"selection_split": "test"})
+
+
+def test_new_registry_without_alias_is_explicitly_empty():
+    from types import SimpleNamespace
+
+    from dosadash_ml.finetune.selection import _current_champion_tags
+
+    class EmptyRegistry:
+        def get_registered_model(self, *args):
+            return SimpleNamespace(aliases={})
+
+        def get_model_version_by_alias(self, *args):
+            raise AssertionError("must not probe an alias known to be absent")
+
+    assert _current_champion_tags(EmptyRegistry()) is None
