@@ -1,5 +1,8 @@
 # P0 closure record — 2026-10-18
 
+The retained judge false rejections below are addressed by the later
+[refusal-judge correction](faithfulness-refusal-fix.md). Historical reports remain unchanged.
+
 The owner approved the original ten calibration examples, then explicitly approved
 all twelve expanded labels and the unchanged RAG/tone thresholds in this chat.
 [The review record](p0-sample-review.json) identifies the reviewer, statements,

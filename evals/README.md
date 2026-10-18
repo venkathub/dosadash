@@ -111,7 +111,7 @@ coverage is claimed by these evaluations.
 
 ## Judge and response corrections
 
-The `faithfulness_v3` rubric assesses numbered spans covering the entire answer.
+The `faithfulness_v4` rubric assesses numbered spans covering the entire answer.
 The scorer rejects omitted, duplicated, or rewritten spans as judge execution
 errors. Non-factual refusal/help text is classified separately from restaurant
 policy claims. Span coverage prevents silent omissions; it cannot prove that the
@@ -145,7 +145,28 @@ a dish alone is not ordering it. Partial-name matching may resolve a bare catego
 request, but a category word inside an explicitly named dish cannot authorize an
 unrequested sibling dish.
 
-`faithfulness_v3` separately assesses whether the evidence answers the question.
-The scorer rejects a refusal when evidence is answerable even if the judge calls
-that refusal correct. The 22 approved calibration labels are content-hashed in
-`baselines/p0-sample-review.json` so later fixture edits cannot inherit approval.
+`faithfulness_v4` separates three decisions: question/evidence answerability,
+answer-unit classification without evidence, and grounding only the factual units.
+Pure limitation statements do not need a passage proving the assistant lacks
+knowledge. Mixed statements retain their factual claims for grounding. Refusal
+correctness is computed from evidence answerability and the actual response flag;
+a second model boolean cannot contradict it. Every stage receives its generated
+Pydantic JSON schema and retains its result and any bounded structural repairs.
+The 22 approved calibration labels remain unchanged and content-hashed in
+`baselines/p0-sample-review.json`.
+
+Exact failed replies can be re-evaluated without regenerating answers:
+
+```bash
+uv run python evals/suites/validate_faithfulness.py \
+  --source-report path/to/live_eval_results.json \
+  --json judge_validation.json --repeats 5
+```
+
+This runs the approved calibration, five repetitions of each retained refusal
+regression, and all retained RAG replies. It requires the report's actual
+`not_found` flags; it never substitutes expected fixture labels. Success requires
+every regression and replay case to pass, with unchanged source/assets and a
+$0.50 known-cost ceiling (one in-flight request may exceed it). This is judge
+validation on retained outputs, not fresh generation or a substitute for CI.
+See [the refusal correction evidence](baselines/faithfulness-refusal-fix.md).

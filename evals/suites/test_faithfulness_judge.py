@@ -137,29 +137,50 @@ def test_refusal_of_answerable_question_fails_even_if_judge_calls_it_correct():
     assert "refusal flag disagrees with evidence answerability" in assess(v, 1, not_found=True)
 
 
+def stage_verdicts(module, answer, *, answerable=True):
+    return (
+        module.EvidenceDecision(
+            decision="answerable" if answerable else "insufficient",
+            evidence_indices=[0] if answerable else [],
+            reason="Question evidence",
+        ),
+        module.AnswerKinds(
+            units=[
+                module.UnitKind(source_unit=i, text=text, kind="factual")
+                for i, text in enumerate(answer_units(answer))
+            ]
+        ),
+    )
+
+
 async def test_structural_omission_gets_one_repair_but_quality_failure_does_not(monkeypatch):
     import faithfulness_judge as module
 
     answer = "Refunds return to the original payment method and include a bonus."
     units = answer_units(answer)
-    first = verdict()
-    first.claims[0].text = units[0]
+    decision, kinds = stage_verdicts(module, answer)
+    first = module.GroundedFacts(
+        claims=[
+            module.FactualClaim(
+                source_unit=0, text=units[0], verdict="supported", evidence_indices=[0]
+            )
+        ],
+        citations_supported=True,
+        addresses_question=True,
+        reason="Compared policy",
+    )
     repaired = first.model_copy(deep=True)
     repaired.claims.append(
-        first.claims[0].model_copy(
-            update={
-                "source_unit": 1,
-                "text": units[1],
-                "verdict": "unsupported",
-                "evidence_indices": [],
-            }
+        module.FactualClaim(
+            source_unit=1, text=units[1], verdict="unsupported", evidence_indices=[]
         )
     )
+    responses = iter([decision, kinds, first, repaired])
     calls = []
 
     async def fake_completion(**kwargs):
         calls.append(kwargs)
-        return (first if len(calls) == 1 else repaired), "judge-model"
+        return next(responses), "judge-model"
 
     monkeypatch.setattr(module, "structured_completion", fake_completion)
     problems, detail = await module.judge_answer(
@@ -170,10 +191,13 @@ async def test_structural_omission_gets_one_repair_but_quality_failure_does_not(
         not_found=False,
         case_id="repair",
     )
-    assert len(calls) == 2
+    assert len(calls) == 4
     assert problems == ["unsupported: include a bonus."]
-    assert detail["judge_attempts"] == 2 and len(detail["contract_errors"]) == 1
+    assert detail["judge_attempts"] == 4 and len(detail["contract_errors"]) == 1
     assert calls[0]["models"] == module.judge_models()
+    for call in calls:
+        assert '"properties"' in call["messages"][0]["content"]
+        assert call["response_model"].__name__ in call["messages"][0]["content"]
 
 
 async def test_repeated_structural_error_remains_an_execution_error(monkeypatch):
@@ -183,19 +207,115 @@ async def test_repeated_structural_error_remains_an_execution_error(monkeypatch)
 
     async def fake_completion(**kwargs):
         calls.append(kwargs)
-        return verdict(indices=[9]), "judge-model"
+        return module.EvidenceDecision(
+            decision="answerable", evidence_indices=[9], reason="Invalid index"
+        ), "judge-model"
 
     monkeypatch.setattr(module, "structured_completion", fake_completion)
     with pytest.raises(ValueError, match="invalid_evidence_index"):
         await module.judge_answer(
             "Refund policy?",
-            verdict().claims[0].text,
+            "Refunds return to the original method.",
             [{"content": "policy"}],
             [],
             not_found=False,
             case_id="invalid",
         )
     assert len(calls) == 2
+
+
+@pytest.mark.parametrize("subject", ["pizza on the menu", "coupon codes"])
+async def test_limitation_is_not_graded_as_a_restaurant_fact(monkeypatch, subject):
+    import json
+
+    import faithfulness_judge as module
+
+    answer = f"I'm sorry, but I don't have information about {subject}. Please contact support."
+    units = answer_units(answer)
+    responses = iter(
+        [
+            module.EvidenceDecision(
+                decision="insufficient", evidence_indices=[], reason="Unrelated menu"
+            ),
+            module.AnswerKinds(
+                units=[
+                    module.UnitKind(source_unit=i, text=text, kind=kind)
+                    for i, (text, kind) in enumerate(
+                        zip(units, ["conversation", "limitation", "conversation"], strict=True)
+                    )
+                ]
+            ),
+        ]
+    )
+    calls = []
+
+    async def fake_completion(**kwargs):
+        calls.append(kwargs)
+        return next(responses), "judge-model"
+
+    monkeypatch.setattr(module, "structured_completion", fake_completion)
+    problems, details = await module.judge_answer(
+        "Question", answer, [{"content": "Dosa"}], [], not_found=True, case_id="refusal"
+    )
+    assert problems == []
+    assert len(calls) == 2  # Pure limitations do not need factual grounding.
+    assert set(json.loads(calls[0]["messages"][1]["content"])) == {"question", "evidence"}
+    assert set(json.loads(calls[1]["messages"][1]["content"])) == {"answer", "answer_units"}
+    assert not details["verdict"]["evidence_answers_question"]
+    assert details["verdict"]["answerability_correct"]
+    assert len(details["verdict"]["claims"]) == len(units)
+
+
+async def test_factual_tail_inside_refusal_is_still_grounded(monkeypatch):
+    import faithfulness_judge as module
+
+    answer = "I don't have coupon information. Everyone gets a free meal."
+    units = answer_units(answer)
+    responses = iter(
+        [
+            module.EvidenceDecision(
+                decision="insufficient", evidence_indices=[], reason="No coupons"
+            ),
+            module.AnswerKinds(
+                units=[
+                    module.UnitKind(source_unit=0, text=units[0], kind="limitation"),
+                    module.UnitKind(source_unit=1, text=units[1], kind="factual"),
+                ]
+            ),
+            module.GroundedFacts(
+                claims=[
+                    module.FactualClaim(
+                        source_unit=1, text=units[1], verdict="unsupported", evidence_indices=[]
+                    )
+                ],
+                citations_supported=False,
+                addresses_question=True,
+                reason="Invented benefit",
+            ),
+        ]
+    )
+
+    async def fake_completion(**kwargs):
+        return next(responses), "judge-model"
+
+    monkeypatch.setattr(module, "structured_completion", fake_completion)
+    problems, details = await module.judge_answer(
+        "Coupon?", answer, [{"content": "Dosa"}], [], not_found=True, case_id="mixed-refusal"
+    )
+    assert problems == ["unsupported: Everyone gets a free meal."]
+    assert len(details["verdict"]["claims"]) == 2
+
+
+def test_classification_cannot_drop_or_rewrite_a_factual_tail():
+    import faithfulness_judge as module
+
+    v = module.AnswerKinds(
+        units=[module.UnitKind(source_unit=0, text="Sorry", kind="conversation")]
+    )
+    with pytest.raises(ValueError, match="incomplete_or_duplicate"):
+        module.validate_selected_units(v, v.units, {0: "Sorry", 1: "Free meals for everyone"})
+    with pytest.raises(ValueError, match="rewritten"):
+        module.validate_selected_units(v, v.units, {0: "Sorry, all meals are free"})
 
 
 async def test_calibration_continues_after_error_without_claiming_agreement(monkeypatch):

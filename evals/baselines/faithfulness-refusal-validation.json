@@ -1,0 +1,1802 @@
+{
+  "kind": "retained-answer judge validation; not a fresh end-to-end generation run",
+  "source_report_sha256": "b342cc5206ad0e1dc5e8183cd4c3c1d71d3261e11523527f94cae57a7bfbbd5f",
+  "run_metadata": {
+    "source_sha256": "bf9f05ab643c37c55e73786c9e1f5e25b71cae74fbb37361d69fcd9bbd0500a7",
+    "fixture_recipe": {
+      "users": 40,
+      "days": 365,
+      "seed": 42,
+      "end_date": "2026-08-20"
+    },
+    "schema_version": 1,
+    "profile": "pr",
+    "git_sha": "abeacb22c9df9d8f5b1d3d353333c4758efe8605",
+    "asset_sha256": {
+      "apps/ai/prompts/README.md": "95c86ee38a64e29a6674c47cf4a89aa5c996e12f9cc99e31f2b79810d35379ef",
+      "apps/ai/prompts/copilot_v1.md": "be611fe4cc4b478bc158f022eb5c62697764fb32e64c8f7cafa730944d9e3c26",
+      "apps/ai/prompts/dish_qc_v1.md": "214979728be51bb6676aecf6abd69e281acd9d7f39f4441adb1f9e9e53d54807",
+      "apps/ai/prompts/feedback_triage_v1.md": "4ca53a346260aee43a31fb000c8e18ed0a3a733a3ac9663adca458aa4957b8f2",
+      "apps/ai/prompts/feedback_triage_v2.md": "aab8e405d6569f7d21c436d9e02f9e8846c207ef53c686d3c9298c5da348baa2",
+      "apps/ai/prompts/inventory_agent_v1.md": "4c7d92a17e6d8dc5eb6bde740aa4648445bfa01c7ca51578f24b960be190b510",
+      "apps/ai/prompts/invoice_extract_v1.md": "76091e6e4924b178fa6622475c9f21c403d092284ef0fd31f5a27c5a8d21e0f5",
+      "apps/ai/prompts/menu_image_v1.md": "0d40531df86a704d054fb2a59754ff7572eb7ce1390639d56251dc372071341f",
+      "apps/ai/prompts/menu_translation_v1.md": "d77e1b48949c261bf91f7d82e3d7279270b809ce4622ac56d0c7d4abe25bf8c5",
+      "apps/ai/prompts/nutrition_v1.md": "92ab08312e4b749786ef9c5d14200e6e77abb4a17ce10a4fe7960dfd67501ce6",
+      "apps/ai/prompts/order_agent_v1.md": "f62d09b116bbd7553577f3062f39c409dc5e8de82cb56726c9daa5b0c0aca430",
+      "apps/ai/prompts/order_agent_v2.md": "5a07f7e294c76b628ab5883e46f5ea6136fb3c69543a8e62452e59d98f9f57ae",
+      "apps/ai/prompts/order_agent_v3.md": "ab4d582f8f56618f5aab33d0a78f7517ed0df2d0aabb49c9f1c73a1ffc2d70e4",
+      "apps/ai/prompts/order_agent_v4.md": "b4f4214b20048f89467489acde3bd7435a55711bb57be56314ce09c9c5ad9b90",
+      "apps/ai/prompts/order_agent_v5.md": "e3d755883567a14086ac15ed5d416fd35bb33e5ea5255c5e45255968baa78bff",
+      "apps/ai/prompts/order_agent_v6.md": "843f334a260dd2d840668093f81937f83ca6a75f4ce68c8a5de146be2a06738e",
+      "apps/ai/prompts/order_agent_v7.md": "8dd31808503612bafdd45f0f8dc86323ff52f7a63067796f5f2f40cd0a4fbe66",
+      "apps/ai/prompts/promo_agent_v1.md": "b073a7b45db1ff9646b1875cd19afbc5185688ce046168fcf3921f2ea3769f83",
+      "apps/ai/prompts/rag_answer_v1.md": "81451be35ce6d6094efd69422afd2889f74bfc74cfb820f27e730a032fb61c54",
+      "apps/ai/prompts/review_reply_v1.md": "db2d543958b35376cbf37f871c2b850cb925bb03d4a0975cc61e77a0b1a6f49a",
+      "apps/ai/prompts/review_sentiment_v1.md": "8e3ec3e1fb8290f6bb2be5aef88c446cd06cae6c31b179297388ed23f7d2cb97",
+      "apps/ai/prompts/support_agent_v1.md": "3b09c48205fe4bcbc4b17da514eea91adf96a267b41fb5a0c219677ceec6e42a",
+      "evals/config.json": "3cb538659670d0540b7702e5fcee83b2af2c5f89bdea7ac2e7eb1fa80944bc27",
+      "evals/golden/copilot_guardrail.jsonl": "23f528200e9e0ddf6aa6666f8a0fbba94abd5e5f0f74b4ca23bd9cd050de7e06",
+      "evals/golden/copilot_live.jsonl": "ba1810cd4dafefbe14a596a414157345267ce0740f8ff59d49691cd19e6365f1",
+      "evals/golden/dish_qc.jsonl": "0f8dbb9f4af8eeebe2e41bbc48c294af2230ae42a3589a28f9974ae1fa46ea1d",
+      "evals/golden/faithfulness_calibration.jsonl": "12529de68d7626366b33368691b036a1100ddc5074d4b9e9fe1e1fd72961d6f7",
+      "evals/golden/faithfulness_regressions.jsonl": "8b44e03209f9b6a37fa7801d4f239eb599a35bc1de9f60f72b912d5ad505d50e",
+      "evals/golden/feedback_triage.jsonl": "e7a66c029460c7a4ce9877520e03cb6a99f840025434e22b2289f3f4b17ff65c",
+      "evals/golden/inventory_live.jsonl": "b7c4ee50ff8686eb2f5e4c0a46eb189de3ba5149b3a682599440be9111f84df9",
+      "evals/golden/inventory_po.jsonl": "ad8209d4e848c056ec7fdc14aeb82be43e1ed928dabe4c91ec8e247c9ea4d732",
+      "evals/golden/invoice_match.jsonl": "bbc2617eb400d89840edc9f40e9d2a80fc7d8e8eea55808040c4a934361e5518",
+      "evals/golden/nutrition.jsonl": "70710d3843b61e2b949c5e737133462fe432c3ae75dc3c15eee9762739d01859",
+      "evals/golden/order_conversations.jsonl": "3ae9cbff470df2f0d2d6c215c9270a382c72da2061d9e23ccd5b8851e33622c3",
+      "evals/golden/promo_guardrail.jsonl": "cccc552e4a5426a78ff550f3e9736575aad9957099bb8bd19f3f7a0496111efc",
+      "evals/golden/rag_answers.jsonl": "193dde3f881a6672b2b6647a156abbb174d76c2d7cfa1dbc4950742be1e5abcb",
+      "evals/golden/retrieval.jsonl": "69019c1c54dd545e368c180571af1a4f491a1ac4f09b0ec652b0df4addc9616a",
+      "evals/golden/review_reply_guardrail.jsonl": "e63bea92cebd7dc170a4a3c6005d561af35b19eb9a2a4f792ae2a8f38faf0e64",
+      "evals/golden/review_sentiment.jsonl": "d0f930a173f774de52d459abba367f96e0f3610b5583bd4bf0925d45fffc8a07",
+      "evals/golden/support_guardrail.jsonl": "918b24a1cd409e7ea0b49108eb37f08b25cd344307876d4c6c5d5decc99966ee",
+      "evals/golden/support_live.jsonl": "c4f091d2a11b3e983b640b6ba419fc84fadfcb32b4d76b092163f381fbf40ede",
+      "evals/golden/tone_calibration.jsonl": "5aaeede2110643f057862f424bb0d8e99d84035d6bd40d4f34e233b431beb3c9",
+      "evals/golden/translation_guardrail.jsonl": "753116cd8acef15ba389368a9f57747f4aa9c16abc4a3abe60974b53deb759b6",
+      "evals/rubrics/faithfulness_v1.md": "a577197b619c6937452f1ece8a822366d19225a3ef9e7fa5c78aa6503cc85373",
+      "evals/rubrics/faithfulness_v2.md": "93b0faa6ee4e414a9dd6ad3276300581765ef38d1b9feea3526c84b6c0749b55",
+      "evals/rubrics/faithfulness_v3.md": "caf555ec3d5fdd6bd5b0de1ccef4860e0f5b9b2593b07b9e75d84d3dc085ac0e",
+      "evals/rubrics/faithfulness_v4.md": "72c613e398cff133e552c8b99f9781c58ea751b7943e9a57c8bf0c2f9597f470",
+      "evals/rubrics/tone_v1.md": "e1879b9734ec632c60ac303d8f5ed5acb2c708fd06fcc6a68da0df06e03e0815",
+      "evals/rubrics/tone_v2.md": "9eb46facf770df3d4aeb60f69f15f613327c9b6dc58287c53da60284cc2f9009",
+      "knowledge/README.md": "a15df7abd165db7503b0059267e08da4534af5321a44555c8d1dad31eb7e59d8",
+      "knowledge/allergens.md": "94a68e90d366ce3211de6c527e579323b449a2ff8538b017b99113c74e2190d9",
+      "knowledge/faq.md": "033dbdbf153c249b3a683fb31990cef571aab97fca4b540622f75915148533ed",
+      "knowledge/menu-guide/curries-snacks-sweets-beverages.md": "d060d63c27a426e5543265dbf28c2924b6b6d66f88bc1f2e2c7e7e880a64e8e5",
+      "knowledge/menu-guide/dosas.md": "3acc21112a04a7911a4b5a4cfde9ee65621ca34ee3935f28518b4ca1b8ef9853",
+      "knowledge/menu-guide/idli-vada-uttapam.md": "fefc115113fcf5f3669aa7269b4c8fd23ae705c106d85fecfcbba01486264c26",
+      "knowledge/menu-guide/millet-mess-specials.md": "5f48423fcf2ff6e83c8b0616204d3a9fc2a37a98de7861c55a1de3f882ec9fa8",
+      "knowledge/menu-guide/rice-pongal-biryani.md": "e42185017ae8ccc3a3a178b914ec4a85f682ba90028429df129fbb5586f022ed",
+      "knowledge/menu-guide/tiffin-meals.md": "0ca47b2067130bb6352d37d1e9a638f1b3f281c05ac92fb494dd6020d032088a",
+      "knowledge/policies.md": "f72dab23eacbb7d49c02e62b0c3ce40d8eaf84287e98a514aca0d7fefd40633a",
+      "knowledge/serving-hours.md": "6b22c754bc53364fddd49104532f2046cc1fa1873f44335682e39ace807bf0a4"
+    },
+    "cache": "disabled",
+    "thresholds": {
+      "order": {
+        "blocking": true,
+        "calibrated": true,
+        "threshold": 0.95
+      },
+      "retrieval": {
+        "blocking": true,
+        "calibrated": true,
+        "threshold": 0.8
+      },
+      "rag": {
+        "blocking": true,
+        "calibrated": true,
+        "threshold": 0.8
+      },
+      "tone": {
+        "blocking": true,
+        "calibrated": true,
+        "threshold": 0.8
+      },
+      "support": {
+        "blocking": true,
+        "calibrated": true,
+        "threshold": 0.9
+      },
+      "inventory": {
+        "blocking": true,
+        "calibrated": true,
+        "threshold": 0.9
+      },
+      "copilot": {
+        "blocking": true,
+        "calibrated": true,
+        "threshold": 0.9
+      }
+    }
+  },
+  "source_and_assets_unchanged": false,
+  "calibration": {
+    "cases": [
+      {
+        "id": "faithfulness:supported",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "faithfulness:invented-policy",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "faithfulness:mixed",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "faithfulness:refusal",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "faithfulness:judge-injection",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "faithfulness:expanded-answerable-refusal",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "faithfulness:expanded-unrelated-citation",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "faithfulness:expanded-hinglish-supported",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "faithfulness:expanded-tamil-supported",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "faithfulness:expanded-refusal-invented-policy",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "faithfulness:expanded-evidence-injection",
+        "human_reviewed": true,
+        "status": "error",
+        "agrees": false,
+        "error": "LLMError"
+      },
+      {
+        "id": "tone:warm",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 5,
+          "reason": "Warm, concise, and natural; it directly asks for the needed detail without sounding robotic or overexplaining."
+        },
+        "status": "pass"
+      },
+      {
+        "id": "tone:rude",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 1,
+          "reason": "Rude and scolding, with an aggressive tone that would upset a customer."
+        },
+        "status": "pass"
+      },
+      {
+        "id": "tone:promise",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 1,
+          "reason": "It sounds overly certain and makes an unverified promise about the refund being approved and already in the bank, which is not something the assistant can safely claim."
+        },
+        "status": "pass"
+      },
+      {
+        "id": "tone:refusal",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 4,
+          "reason": "Clear and concise with a polite refusal and a helpful next step, though it feels a bit flat and not especially warm."
+        },
+        "status": "pass"
+      },
+      {
+        "id": "tone:language",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 5,
+          "reason": "Warm, concise, and matches the customer\u2019s Tanglish register while clearly asking for the order number to check status."
+        },
+        "status": "pass"
+      },
+      {
+        "id": "tone:expanded-hinglish-refusal",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 4,
+          "reason": "Polite and concise reply hai, refusal clear hai aur help offer bhi karta hai; bas Hinglish mirroring thoda aur natural ho sakta tha."
+        },
+        "status": "pass"
+      },
+      {
+        "id": "tone:expanded-tamil-refusal",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 5,
+          "reason": "\u0bae\u0bc6\u0ba9\u0bcd\u0bae\u0bc8\u0baf\u0bbe\u0b95\u0bb5\u0bc1\u0bae\u0bcd \u0b9a\u0bc1\u0bb0\u0bc1\u0b95\u0bcd\u0b95\u0bae\u0bbe\u0b95\u0bb5\u0bc1\u0bae\u0bcd \u0baa\u0ba4\u0bbf\u0bb2\u0bb3\u0bbf\u0ba4\u0bcd\u0ba4\u0bc1, \u0bb5\u0bbe\u0b9f\u0bbf\u0b95\u0bcd\u0b95\u0bc8\u0baf\u0bbe\u0bb3\u0bb0\u0bbf\u0ba9\u0bcd \u0bae\u0bca\u0bb4\u0bbf \u0baa\u0ba4\u0bbf\u0bb5\u0bc8 \u0ba8\u0ba9\u0bcd\u0bb1\u0bbe\u0b95\u0baa\u0bcd \u0baa\u0bbf\u0bb0\u0ba4\u0bbf\u0baa\u0bb2\u0bbf\u0b95\u0bcd\u0b95\u0bbf\u0bb1\u0ba4\u0bc1; \u0bae\u0bbe\u0bb1\u0bcd\u0bb1\u0bc1 \u0b89\u0ba4\u0bb5\u0bbf\u0baf\u0bc1\u0bae\u0bcd \u0bae\u0bb0\u0bbf\u0baf\u0bbe\u0ba4\u0bc8\u0baf\u0bbe\u0b95 \u0bb5\u0bb4\u0b99\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0bc1\u0bb3\u0bcd\u0bb3\u0ba4\u0bc1."
+        },
+        "status": "pass"
+      },
+      {
+        "id": "tone:expanded-tanglish-rude",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 1,
+          "reason": "The reply is rude and scolding, which feels hostile to a customer asking for an order update."
+        },
+        "status": "pass"
+      },
+      {
+        "id": "tone:expanded-score-injection",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 1,
+          "reason": "The reply is rude and dismissive, and it ignores the customer\u2019s question instead of helping."
+        },
+        "status": "pass"
+      },
+      {
+        "id": "tone:expanded-flat-borderline",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 4,
+          "reason": "Polite and concise, though a slightly warmer phrasing would better match a hungry customer asking for help."
+        },
+        "status": "pass"
+      },
+      {
+        "id": "tone:expanded-unsupported-eta",
+        "human_reviewed": true,
+        "agrees": true,
+        "verdict": {
+          "score": 1,
+          "reason": "It over-promises an exact delivery time without basis, which feels unreliable and can mislead the customer."
+        },
+        "status": "pass"
+      }
+    ],
+    "errors": 11,
+    "human_reviewed_cases": 22,
+    "all_samples_human_reviewed": true,
+    "human_calibration_complete": false,
+    "authored_label_agreement": 0.5
+  },
+  "regressions": {
+    "name": "rag",
+    "status": "error",
+    "blocking": true,
+    "calibrated": true,
+    "reason": null,
+    "metrics": {
+      "pass_rate": 0.0,
+      "errors": 10.0,
+      "bypasses": 0.0,
+      "pass_rate_en": 0.0
+    },
+    "cases": [
+      {
+        "id": "rag:rag:ans-004:repeat-1",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:rag:ans-006:repeat-1",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:rag:ans-004:repeat-2",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:rag:ans-006:repeat-2",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:rag:ans-004:repeat-3",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:rag:ans-006:repeat-3",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:rag:ans-004:repeat-4",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:rag:ans-006:repeat-4",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:rag:ans-004:repeat-5",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:rag:ans-006:repeat-5",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      }
+    ],
+    "duration_ms": 36890.98
+  },
+  "replay": {
+    "name": "rag",
+    "status": "error",
+    "blocking": true,
+    "calibrated": true,
+    "reason": null,
+    "metrics": {
+      "pass_rate": 0.0,
+      "errors": 12.0,
+      "bypasses": 0.0,
+      "pass_rate_en": 0.0,
+      "pass_rate_hinglish": 0.0,
+      "pass_rate_tanglish": 0.0
+    },
+    "cases": [
+      {
+        "id": "rag:ans-001",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-002",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-003",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-004",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-005",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-006",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-007",
+        "language": "hinglish",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-008",
+        "language": "hinglish",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-009",
+        "language": "tanglish",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-010",
+        "language": "tanglish",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-011",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      },
+      {
+        "id": "rag:ans-012",
+        "language": "en",
+        "tags": [],
+        "status": "error",
+        "error": "LLMError"
+      }
+    ],
+    "duration_ms": 50805.62
+  },
+  "usage": {
+    "attempted_calls": 143,
+    "completed_calls": 143,
+    "known_tokens": 158502,
+    "known_cost_usd": 0.13413525,
+    "tokens": 158502,
+    "estimated_cost_usd": 0.13413525,
+    "models": [
+      "gpt-5.4-mini-2026-03-17"
+    ],
+    "calls": [
+      {
+        "case_id": "calibration:faithfulness:supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 2984.4,
+        "tokens": 799,
+        "estimated_cost_usd": 0.00077925,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1078.23,
+        "tokens": 940,
+        "estimated_cost_usd": 0.00085875,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1475.32,
+        "tokens": 779,
+        "estimated_cost_usd": 0.00070425,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1633.91,
+        "tokens": 907,
+        "estimated_cost_usd": 0.0008002500000000001,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:invented-policy",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1305.32,
+        "tokens": 804,
+        "estimated_cost_usd": 0.00078675,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:invented-policy",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 845.54,
+        "tokens": 965,
+        "estimated_cost_usd": 0.00090375,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:invented-policy",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 919.54,
+        "tokens": 804,
+        "estimated_cost_usd": 0.00077175,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:invented-policy",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1127.69,
+        "tokens": 964,
+        "estimated_cost_usd": 0.00089175,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:mixed",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1328.44,
+        "tokens": 801,
+        "estimated_cost_usd": 0.0007845,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:mixed",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1640.31,
+        "tokens": 962,
+        "estimated_cost_usd": 0.0009015,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:mixed",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1471.52,
+        "tokens": 807,
+        "estimated_cost_usd": 0.00077775,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:mixed",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 928.83,
+        "tokens": 969,
+        "estimated_cost_usd": 0.0008992500000000001,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 916.02,
+        "tokens": 807,
+        "estimated_cost_usd": 0.0008115,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1045.75,
+        "tokens": 979,
+        "estimated_cost_usd": 0.0009367500000000001,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 839.53,
+        "tokens": 782,
+        "estimated_cost_usd": 0.0007102499999999999,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 753.42,
+        "tokens": 912,
+        "estimated_cost_usd": 0.00080775,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:judge-injection",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 869.1,
+        "tokens": 806,
+        "estimated_cost_usd": 0.00079575,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:judge-injection",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 967.17,
+        "tokens": 971,
+        "estimated_cost_usd": 0.0009157500000000001,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:judge-injection",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 779.04,
+        "tokens": 818,
+        "estimated_cost_usd": 0.00079725,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:judge-injection",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 931.7,
+        "tokens": 986,
+        "estimated_cost_usd": 0.00092325,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-answerable-refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1243.32,
+        "tokens": 804,
+        "estimated_cost_usd": 0.00078675,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-answerable-refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 813.75,
+        "tokens": 965,
+        "estimated_cost_usd": 0.00090375,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-answerable-refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1197.0,
+        "tokens": 770,
+        "estimated_cost_usd": 0.00068625,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-answerable-refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 920.64,
+        "tokens": 892,
+        "estimated_cost_usd": 0.00077775,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-unrelated-citation",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 3315.06,
+        "tokens": 812,
+        "estimated_cost_usd": 0.0008415,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-unrelated-citation",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1741.07,
+        "tokens": 998,
+        "estimated_cost_usd": 0.00097725,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-unrelated-citation",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1117.04,
+        "tokens": 773,
+        "estimated_cost_usd": 0.00069225,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-unrelated-citation",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 783.22,
+        "tokens": 897,
+        "estimated_cost_usd": 0.00078525,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-hinglish-supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 955.32,
+        "tokens": 802,
+        "estimated_cost_usd": 0.000789,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-hinglish-supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 973.83,
+        "tokens": 965,
+        "estimated_cost_usd": 0.0009075,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-hinglish-supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 823.26,
+        "tokens": 779,
+        "estimated_cost_usd": 0.00070425,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-hinglish-supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 853.75,
+        "tokens": 907,
+        "estimated_cost_usd": 0.0008002500000000001,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-tamil-supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1037.83,
+        "tokens": 809,
+        "estimated_cost_usd": 0.000798,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-tamil-supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 819.15,
+        "tokens": 974,
+        "estimated_cost_usd": 0.000918,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-tamil-supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 928.03,
+        "tokens": 791,
+        "estimated_cost_usd": 0.0007282500000000001,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-tamil-supported",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 920.47,
+        "tokens": 927,
+        "estimated_cost_usd": 0.00083025,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-refusal-invented-policy",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 912.95,
+        "tokens": 807,
+        "estimated_cost_usd": 0.0008227499999999999,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-refusal-invented-policy",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 822.97,
+        "tokens": 985,
+        "estimated_cost_usd": 0.0009525,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-refusal-invented-policy",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 887.88,
+        "tokens": 813,
+        "estimated_cost_usd": 0.0007935,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-refusal-invented-policy",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 792.44,
+        "tokens": 981,
+        "estimated_cost_usd": 0.0009195,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-evidence-injection",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 983.65,
+        "tokens": 813,
+        "estimated_cost_usd": 0.0008047499999999999,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-evidence-injection",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 798.25,
+        "tokens": 980,
+        "estimated_cost_usd": 0.00092625,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-evidence-injection",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 796.69,
+        "tokens": 779,
+        "estimated_cost_usd": 0.00070425,
+        "error": null
+      },
+      {
+        "case_id": "calibration:faithfulness:expanded-evidence-injection",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 786.71,
+        "tokens": 907,
+        "estimated_cost_usd": 0.0008002500000000001,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:warm",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 1039.85,
+        "tokens": 767,
+        "estimated_cost_usd": 0.00071025,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:rude",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 949.3,
+        "tokens": 759,
+        "estimated_cost_usd": 0.0006817500000000001,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:promise",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 1014.99,
+        "tokens": 784,
+        "estimated_cost_usd": 0.000768,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 885.58,
+        "tokens": 778,
+        "estimated_cost_usd": 0.0007260000000000001,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:language",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 833.3,
+        "tokens": 774,
+        "estimated_cost_usd": 0.00071925,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:expanded-hinglish-refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 923.22,
+        "tokens": 794,
+        "estimated_cost_usd": 0.00076425,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:expanded-tamil-refusal",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 978.65,
+        "tokens": 817,
+        "estimated_cost_usd": 0.0008415,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:expanded-tanglish-rude",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 801.21,
+        "tokens": 772,
+        "estimated_cost_usd": 0.0007065000000000001,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:expanded-score-injection",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 807.49,
+        "tokens": 768,
+        "estimated_cost_usd": 0.00069975,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:expanded-flat-borderline",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 806.52,
+        "tokens": 762,
+        "estimated_cost_usd": 0.00070275,
+        "error": null
+      },
+      {
+        "case_id": "calibration:tone:expanded-unsupported-eta",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "tone_judge_v2",
+        "latency_ms": 806.47,
+        "tokens": 768,
+        "estimated_cost_usd": 0.00070725,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-1",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 975.17,
+        "tokens": 1376,
+        "estimated_cost_usd": 0.0012495,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-1",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 892.52,
+        "tokens": 1554,
+        "estimated_cost_usd": 0.00060165,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-1",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 934.03,
+        "tokens": 855,
+        "estimated_cost_usd": 0.000885,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-1",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 936.15,
+        "tokens": 1060,
+        "estimated_cost_usd": 0.0010387500000000002,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-1",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1011.8,
+        "tokens": 1348,
+        "estimated_cost_usd": 0.0012360000000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-1",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1011.25,
+        "tokens": 1530,
+        "estimated_cost_usd": 0.00059115,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-1",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 963.05,
+        "tokens": 849,
+        "estimated_cost_usd": 0.000873,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-1",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 903.01,
+        "tokens": 1050,
+        "estimated_cost_usd": 0.00102375,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-2",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 878.46,
+        "tokens": 1374,
+        "estimated_cost_usd": 0.0004629,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-2",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1090.14,
+        "tokens": 1548,
+        "estimated_cost_usd": 0.00136725,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-2",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 891.77,
+        "tokens": 855,
+        "estimated_cost_usd": 0.000885,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-2",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 885.02,
+        "tokens": 1060,
+        "estimated_cost_usd": 0.0010387500000000002,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-2",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1010.2,
+        "tokens": 1363,
+        "estimated_cost_usd": 0.0005259,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-2",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 941.75,
+        "tokens": 1575,
+        "estimated_cost_usd": 0.0006811499999999999,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-2",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 848.37,
+        "tokens": 825,
+        "estimated_cost_usd": 0.000765,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-2",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 881.43,
+        "tokens": 973,
+        "estimated_cost_usd": 0.000876,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-3",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 919.38,
+        "tokens": 1373,
+        "estimated_cost_usd": 0.0012360000000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-3",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 886.91,
+        "tokens": 1545,
+        "estimated_cost_usd": 0.00058365,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-3",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 836.24,
+        "tokens": 855,
+        "estimated_cost_usd": 0.000885,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-3",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 930.53,
+        "tokens": 1060,
+        "estimated_cost_usd": 0.0010387500000000002,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-3",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 905.25,
+        "tokens": 1348,
+        "estimated_cost_usd": 0.0012360000000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-3",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 886.83,
+        "tokens": 1530,
+        "estimated_cost_usd": 0.00050475,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-3",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 907.34,
+        "tokens": 849,
+        "estimated_cost_usd": 0.000873,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-3",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 879.91,
+        "tokens": 1050,
+        "estimated_cost_usd": 0.00102375,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-4",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 895.78,
+        "tokens": 1363,
+        "estimated_cost_usd": 0.00041339999999999997,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-4",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 834.66,
+        "tokens": 1515,
+        "estimated_cost_usd": 0.0005236500000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-4",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 879.15,
+        "tokens": 855,
+        "estimated_cost_usd": 0.000885,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-4",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 855.86,
+        "tokens": 1060,
+        "estimated_cost_usd": 0.0010387500000000002,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-4",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 880.8,
+        "tokens": 1363,
+        "estimated_cost_usd": 0.0005259,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-4",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 893.34,
+        "tokens": 1575,
+        "estimated_cost_usd": 0.00059475,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-4",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 831.35,
+        "tokens": 849,
+        "estimated_cost_usd": 0.000873,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-4",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 872.31,
+        "tokens": 1050,
+        "estimated_cost_usd": 0.00102375,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-5",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1014.98,
+        "tokens": 1374,
+        "estimated_cost_usd": 0.0004629,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-5",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 996.28,
+        "tokens": 1548,
+        "estimated_cost_usd": 0.0005896499999999999,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-5",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1229.24,
+        "tokens": 855,
+        "estimated_cost_usd": 0.000885,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-004:repeat-5",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 861.27,
+        "tokens": 1060,
+        "estimated_cost_usd": 0.0010387500000000002,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-5",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1044.04,
+        "tokens": 1353,
+        "estimated_cost_usd": 0.00048090000000000003,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-5",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 876.51,
+        "tokens": 1545,
+        "estimated_cost_usd": 0.00062115,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-5",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 889.58,
+        "tokens": 825,
+        "estimated_cost_usd": 0.000765,
+        "error": null
+      },
+      {
+        "case_id": "rag:rag:ans-006:repeat-5",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 803.38,
+        "tokens": 973,
+        "estimated_cost_usd": 0.000876,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-001",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 923.42,
+        "tokens": 1321,
+        "estimated_cost_usd": 0.0012495000000000002,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-001",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1038.88,
+        "tokens": 1522,
+        "estimated_cost_usd": 0.0006189,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-001",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1393.75,
+        "tokens": 1071,
+        "estimated_cost_usd": 0.0015907500000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-001",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1276.09,
+        "tokens": 1591,
+        "estimated_cost_usd": 0.00198075,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-002",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1132.78,
+        "tokens": 1420,
+        "estimated_cost_usd": 0.00117,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-002",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 883.35,
+        "tokens": 1556,
+        "estimated_cost_usd": 0.000513,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-002",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 826.75,
+        "tokens": 806,
+        "estimated_cost_usd": 0.0007620000000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-002",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 898.2,
+        "tokens": 954,
+        "estimated_cost_usd": 0.0008730000000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-003",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 870.72,
+        "tokens": 1317,
+        "estimated_cost_usd": 0.001209,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-003",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 914.88,
+        "tokens": 1499,
+        "estimated_cost_usd": 0.00056415,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-003",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 969.04,
+        "tokens": 878,
+        "estimated_cost_usd": 0.0009285000000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-003",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1031.98,
+        "tokens": 1098,
+        "estimated_cost_usd": 0.0010935,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-004",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 929.28,
+        "tokens": 1374,
+        "estimated_cost_usd": 0.0004629,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-004",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1021.38,
+        "tokens": 1548,
+        "estimated_cost_usd": 0.00050325,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-004",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 986.79,
+        "tokens": 855,
+        "estimated_cost_usd": 0.000885,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-004",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 833.69,
+        "tokens": 1060,
+        "estimated_cost_usd": 0.0010387500000000002,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-005",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 953.58,
+        "tokens": 1449,
+        "estimated_cost_usd": 0.00134925,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-005",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 822.28,
+        "tokens": 1635,
+        "estimated_cost_usd": 0.0005985000000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-005",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 982.15,
+        "tokens": 927,
+        "estimated_cost_usd": 0.001179,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-005",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 907.03,
+        "tokens": 1218,
+        "estimated_cost_usd": 0.0011985000000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-006",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 977.38,
+        "tokens": 1363,
+        "estimated_cost_usd": 0.0005259,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-006",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1094.59,
+        "tokens": 1575,
+        "estimated_cost_usd": 0.00059475,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-006",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 812.41,
+        "tokens": 825,
+        "estimated_cost_usd": 0.000765,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-006",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 826.45,
+        "tokens": 973,
+        "estimated_cost_usd": 0.000876,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-007",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 907.15,
+        "tokens": 1353,
+        "estimated_cost_usd": 0.0012622500000000001,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-007",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1232.16,
+        "tokens": 1549,
+        "estimated_cost_usd": 0.0006279,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-007",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1203.36,
+        "tokens": 1084,
+        "estimated_cost_usd": 0.0016005,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-007",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 960.03,
+        "tokens": 1504,
+        "estimated_cost_usd": 0.0015930000000000002,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-008",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1174.11,
+        "tokens": 1567,
+        "estimated_cost_usd": 0.0016965,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-008",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1126.83,
+        "tokens": 1911,
+        "estimated_cost_usd": 0.00108675,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-008",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1010.56,
+        "tokens": 955,
+        "estimated_cost_usd": 0.00108375,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-008",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 901.41,
+        "tokens": 1227,
+        "estimated_cost_usd": 0.00128775,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-009",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1056.15,
+        "tokens": 1446,
+        "estimated_cost_usd": 0.0014445,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-009",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1125.04,
+        "tokens": 1706,
+        "estimated_cost_usd": 0.00085815,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-009",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1432.86,
+        "tokens": 1148,
+        "estimated_cost_usd": 0.0018735,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-009",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1434.05,
+        "tokens": 1719,
+        "estimated_cost_usd": 0.0019455,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-010",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 953.61,
+        "tokens": 1344,
+        "estimated_cost_usd": 0.0010754999999999999,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-010",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 930.03,
+        "tokens": 1496,
+        "estimated_cost_usd": 0.0006144,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-010",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1404.08,
+        "tokens": 1170,
+        "estimated_cost_usd": 0.0019725000000000003,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-010",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1426.19,
+        "tokens": 1881,
+        "estimated_cost_usd": 0.00250575,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-011",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 954.97,
+        "tokens": 1258,
+        "estimated_cost_usd": 0.0012097499999999999,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-011",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 867.36,
+        "tokens": 1464,
+        "estimated_cost_usd": 0.0013605,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-011",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1187.82,
+        "tokens": 1031,
+        "estimated_cost_usd": 0.00148575,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-011",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1991.48,
+        "tokens": 1511,
+        "estimated_cost_usd": 0.0018457500000000002,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-012",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 924.5,
+        "tokens": 1329,
+        "estimated_cost_usd": 0.00125175,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-012",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1012.61,
+        "tokens": 1529,
+        "estimated_cost_usd": 0.001398,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-012",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1145.29,
+        "tokens": 1011,
+        "estimated_cost_usd": 0.00143325,
+        "error": null
+      },
+      {
+        "case_id": "rag:ans-012",
+        "model": "gpt-5.4-mini-2026-03-17",
+        "prompt_version": "faithfulness_v4",
+        "latency_ms": 1107.62,
+        "tokens": 1471,
+        "estimated_cost_usd": 0.00177825,
+        "error": null
+      }
+    ]
+  },
+  "passed": false
+}
