@@ -146,7 +146,13 @@ export function InventoryTab() {
               onClick={() => act(() => adminApi(`/admin/purchase-orders/workflows/resume?key=${encodeURIComponent(run.key)}`, { method: "POST" }))}>
               Resume run
             </Btn>}
-            {run.stage === "FAILED" && <span className="text-indigo-200">Three attempts failed. Review the run before starting again.</span>}
+            {run.stage === "FAILED" && <>
+              <span className="text-indigo-200">Three attempts failed. Review the run before starting again.</span>
+              <Btn size="sm" variant="ghost" disabled={busy} onClick={() => {
+                requestKey.current = null;
+                void draftNow();
+              }}>Start new run</Btn>
+            </>}
           </div>
         ))}
       </section>
