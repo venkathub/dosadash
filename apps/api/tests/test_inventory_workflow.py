@@ -40,6 +40,8 @@ async def test_replay_after_restart_never_duplicates_or_regenerates(db_session):
         run, fresh = await wf.advance(other, key="restart", coverage_days=7, planner=planner)
         assert not fresh and run.po_ids == original
     assert planner.await_count == 1
+    assert planner.await_args.args[0].session_id != "inventory:restart"
+    assert len(planner.await_args.args[0].session_id) == len("inventory:") + 32
     assert await db_session.scalar(select(func.count()).select_from(PurchaseOrder)) == 1
     with pytest.raises(ValueError, match="different coverage"):
         await wf.advance(db_session, key="restart", coverage_days=3, planner=planner)

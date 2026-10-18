@@ -7,6 +7,7 @@ is still best-effort; the admin queue is the durable approval surface.
 
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 from uuid import uuid4
 
 from sqlalchemy import select
@@ -106,7 +107,10 @@ async def advance(
         await session.commit()
         try:
             result = await planner(
-                InventoryDraftRequest(coverage_days=coverage_days, session_id=f"inventory:{key}")
+                InventoryDraftRequest(
+                    coverage_days=coverage_days,
+                    session_id=f"inventory:{sha256(key.encode()).hexdigest()[:32]}",
+                )
             )
         except Exception as exc:
             run = await _locked(session, key)

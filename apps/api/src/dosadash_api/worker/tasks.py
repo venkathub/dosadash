@@ -401,7 +401,7 @@ async def _recover_inventory() -> dict[str, int]:
             except WorkflowBusy:
                 continue
             except Exception:
-                logger.exception("inventory recovery failed for %s", run.key)
+                logger.exception("inventory recovery failed; see admin workflow status")
         return {"checked": len(runs), "resumed": resumed}
     finally:
         await engine.dispose()
