@@ -188,7 +188,33 @@ def build_response(
     attempted = tuple(line.item_id for line in turn.draft_items)
     notes = serving_notes(ctx, user_message, attempted)
     reply = turn.reply
-    if notes:
+    removed_ids = set(attempted) - {line.item_id for line in draft.items}
+    if removed_ids or (notes and draft.items):
+        # The model's original reply may promise a removed item or an invalid
+        # subtotal. Rebuild from validated state instead of appending a contradiction.
+        explanation = " ".join(notes) or "Some requested items aren't available right now."
+        summary = ", ".join(f"{line.qty}× {line.name}" for line in draft.items)
+        language = turn.reply_language
+        phrases = {
+            "en": ("Sorry,", "Your order has", "Would you like something else?"),
+            "hinglish": ("Maaf kijiye,", "Aapke order mein", "Kuch aur chahiye?"),
+            "tanglish": ("Sorry,", "Unga order-la", "Vera edhaavadhu venuma?"),
+            "ta": ("மன்னிக்கவும்,", "உங்கள் ஆர்டரில்", "வேறு ஏதாவது வேண்டுமா?"),
+        }
+        apology, order_prefix, offer = phrases[language]
+        if language == "hinglish":
+            explanation = explanation.replace("is sold out right now", "abhi sold out hai")
+        elif language == "tanglish":
+            explanation = explanation.replace("is sold out right now", "ippo sold out")
+        elif language == "ta":
+            explanation = explanation.replace("is sold out right now", "இப்போது கிடைக்கவில்லை")
+        reply = f"{apology} {explanation}"
+        if summary:
+            reply += f" {order_prefix} {summary} (subtotal ₹{draft.subtotal:.2f})."
+        if ctx.kitchen_open:
+            reply += f" {offer}"
+
+    elif notes:
         # deterministic availability verdicts (Phase 11) — appended AFTER the
         # model's text so the serving-hours story is always present, always
         # true, and never the model's to hallucinate

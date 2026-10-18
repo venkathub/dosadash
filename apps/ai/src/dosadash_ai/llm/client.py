@@ -19,6 +19,7 @@ import litellm
 from pydantic import BaseModel, ValidationError
 
 from dosadash_ai.config import get_settings
+from dosadash_ai.llm.eval_telemetry import active_telemetry
 from dosadash_ai.llm.usage_stats import get_usage_stats
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,8 @@ async def structured_completion[T: BaseModel](
         rate_limit_budget = _RATE_LIMIT_RETRIES_PER_MODEL
         attempt = 0
         while attempt < _REPAIR_ATTEMPTS_PER_MODEL:
+            telemetry = active_telemetry.get()
+            started = telemetry.before_call() if telemetry else 0.0
             try:
                 response = await litellm.acompletion(
                     model=model,
@@ -78,6 +81,8 @@ async def structured_completion[T: BaseModel](
                     metadata=metadata,
                 )
             except litellm.RateLimitError as exc:
+                if telemetry:
+                    telemetry.record(started, model, prompt_version, error="rate_limit")
                 # 429s are usually seconds-long (TPM windows) — a brief same-model
                 # retry beats falling through the chain (caught by the live eval
                 # gate: a 150-case run brushed OpenAI's TPM ceiling mid-run).
@@ -90,14 +95,19 @@ async def structured_completion[T: BaseModel](
                 last_error = exc
                 break
             except Exception as exc:  # noqa: BLE001 — provider error → next model
+                if telemetry:
+                    telemetry.record(started, model, prompt_version, error=type(exc).__name__)
                 logger.warning("llm call failed on %s: %s", model, exc)
                 last_error = exc
                 break
+            if telemetry:
+                telemetry.record(started, model, prompt_version, response)
             # Phase 9 observability: accumulate prompt-cache token counters
             # (best-effort, never raises). Streaming path is not counted —
             # providers omit usage on streamed chunks; Langfuse stays the
             # billing source of truth.
-            await get_usage_stats().record_response(response)
+            if telemetry is None:
+                await get_usage_stats().record_response(response)
             raw = response.choices[0].message.content or ""
             try:
                 return response_model.model_validate_json(raw), model
@@ -176,11 +186,22 @@ async def embed_texts(
     """
     if not texts:
         return []
-    response = await litellm.aembedding(
-        model=get_settings().embedding_model,
-        input=texts,
-        metadata={"generation_name": trace_name},
-    )
+    telemetry = active_telemetry.get()
+    started = telemetry.before_call() if telemetry else 0.0
+    try:
+        response = await litellm.aembedding(
+            model=get_settings().embedding_model,
+            input=texts,
+            metadata={"generation_name": trace_name},
+        )
+    except Exception as exc:
+        if telemetry:
+            telemetry.record(
+                started, get_settings().embedding_model, trace_name, error=type(exc).__name__
+            )
+        raise
+    if telemetry:
+        telemetry.record(started, get_settings().embedding_model, trace_name, response)
     data = sorted(response.data, key=lambda d: d["index"])
     if len(data) != len(texts):
         raise LLMError(f"embedding count mismatch: {len(data)} != {len(texts)}")

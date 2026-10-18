@@ -9,7 +9,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from dosadash_shared.menu import MenuItemDetail
 from dosadash_shared.schemas import Role
@@ -288,9 +288,23 @@ class EvalCaseReport(BaseModel):
     id: str
     tags: list[str] = []
     language: str
+    suite: str = "order"
+    status: Literal["pass", "fail", "error"] | None = None
+    error: str | None = None
     accuracy_problems: list[str] = []
     tool_violations: list[str] = []
     bypasses: list[str] = []
+
+
+class EvalSuiteResult(BaseModel):
+    name: str
+    status: Literal["pass", "fail", "error", "skipped"]
+    blocking: bool = False
+    calibrated: bool = False
+    reason: str | None = None
+    metrics: dict[str, float] = Field(default_factory=dict)
+    cases: list[dict[str, Any]] = Field(default_factory=list)
+    duration_ms: float = 0
 
 
 class EvalRunIn(BaseModel):
@@ -300,12 +314,29 @@ class EvalRunIn(BaseModel):
 
     ran_at: datetime
     git_sha: str | None = Field(default=None, max_length=40)
-    trigger: Literal["ci", "manual"] = "ci"
-    cases: int = Field(ge=1)
+    trigger: Literal["ci", "manual", "scheduled"] = "ci"
+    cases: int = Field(ge=0)
     metrics: dict[str, float]
     gates_passed: bool
     failures: list[str] = []
     case_reports: list[EvalCaseReport] = []
+
+    suite_results: list[EvalSuiteResult] = Field(default_factory=list)
+    run_metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def consistent_verdict(self) -> "EvalRunIn":
+        if self.run_metadata.get("schema_version") == 1 and self.gates_passed:
+            ordering = [s for s in self.suite_results if s.name == "order"]
+            if len(ordering) != 1 or ordering[0].status != "pass" or self.cases == 0:
+                raise ValueError("versioned successful reports require passing ordering cases")
+            if any(
+                s.status in {"error", "skipped"}
+                or (s.status == "fail" and (s.blocking or s.metrics.get("bypasses", 0) > 0))
+                for s in self.suite_results
+            ):
+                raise ValueError("successful report contradicts suite outcomes")
+        return self
 
 
 class EvalRunOut(BaseModel):
@@ -327,3 +358,5 @@ class EvalRunOut(BaseModel):
 
 class EvalRunDetailOut(EvalRunOut):
     case_reports: list[EvalCaseReport] = []
+    suite_results: list[EvalSuiteResult] = Field(default_factory=list)
+    run_metadata: dict[str, Any] = Field(default_factory=dict)

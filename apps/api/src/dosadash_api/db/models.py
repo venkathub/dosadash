@@ -450,6 +450,8 @@ class EvalRun(TimestampMixin, Base):
     gates_passed: Mapped[bool] = mapped_column(Boolean, index=True)
     failures: Mapped[list[str]] = mapped_column(JSONB, default=list)
     case_reports: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    suite_results: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    run_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
 
 class UserMemory(Base):

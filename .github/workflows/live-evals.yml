@@ -1,18 +1,10 @@
-# Live eval merge gate (Hard Rule 5). Runs the full agent (real LLM chain +
-# real DB) over all 80 golden conversations and fails the check if
-# order_accuracy < 0.95, tool_correctness < 1.0, or any guardrail bypass
-# occurs. Runs on every PR so the check can be a REQUIRED status check
-# (Phase 13: the fixer's auto-merge waits on required checks — a
-# path-filtered workflow would never report on unrelated PRs and starve
-# them forever). The expensive job itself still only runs when agents,
-# prompts, shared schemas, or evals changed: the `changes` job diffs the
-# PR and unrelated PRs skip the gate, which GitHub counts as success.
-
 name: Live evals
 
 on:
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "30 20 * * *" # 02:00 IST, full profile
 
 concurrency:
   group: live-evals-${{ github.ref }}
@@ -25,8 +17,10 @@ env:
   LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
   LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
   LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST }}
-  API_DATABASE_URL: postgresql+asyncpg://dosadash:dosadash@localhost:5433/dosadash
-  AI_DATABASE_URL: postgresql+asyncpg://dosadash:dosadash@localhost:5433/dosadash
+  EVAL_DATABASE_URL: postgresql+asyncpg://dosadash:dosadash@localhost:5433/dosadash_eval
+  AI_SEMCACHE_ENABLED: "false"
+  API_DATABASE_URL: postgresql+asyncpg://dosadash:dosadash@localhost:5433/dosadash_eval
+  AI_DATABASE_URL: postgresql+asyncpg://dosadash:dosadash@localhost:5433/dosadash_eval
 
 jobs:
   changes:
@@ -35,6 +29,7 @@ jobs:
     if: github.event_name == 'pull_request'
     outputs:
       relevant: ${{ steps.diff.outputs.relevant }}
+      suites: ${{ steps.diff.outputs.suites }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,29 +37,23 @@ jobs:
       - id: diff
         run: |
           git fetch origin "${{ github.base_ref }}" --depth=1
-          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
-              | grep -E '^(apps/ai/|packages/shared/|evals/|\.github/workflows/live-evals\.yml)'; then
-            echo "relevant=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "relevant=false" >> "$GITHUB_OUTPUT"
-            echo "No agent/prompt/shared/eval changes — live gate skipped (counts as pass)."
-          fi
+          git diff --name-only "origin/${{ github.base_ref }}...HEAD" > changed_paths.txt
+          python3 evals/select_suites.py changed_paths.txt >> "$GITHUB_OUTPUT"
+
 
   live-evals:
     name: Live eval gate (order_accuracy >= 0.95)
     needs: changes
-    if: >-
-      always() &&
-      (github.event_name == 'workflow_dispatch' || needs.changes.outputs.relevant == 'true')
+    if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     services:
       postgres:
         image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: dosadash
           POSTGRES_PASSWORD: dosadash
-          POSTGRES_DB: dosadash
+          POSTGRES_DB: dosadash_eval
         ports:
           - 5433:5432
         options: >-
@@ -73,7 +62,18 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
+      - name: Require successful change detection
+        if: github.event_name == 'pull_request' && needs.changes.result != 'success'
+        run: |
+          echo "::error::Change detection failed; required live gate cannot pass."
+          exit 1
+
+      - name: No relevant changes
+        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant == 'false'
+        run: echo "Live suites not applicable; no AI dependencies changed."
+
       - name: Require LLM keys
+        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
         run: |
           if [ -z "$OPENAI_API_KEY" ]; then
             echo "::error::OPENAI_API_KEY secret is not configured — the live eval gate cannot run (Hard Rule 5: evals are merge gates)."
@@ -83,25 +83,34 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install uv
+        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
 
       - name: Sync workspace
+        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
         run: uv sync --all-packages --group dev
 
       - name: Migrate database
+        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
         working-directory: apps/api
         run: uv run alembic upgrade head
 
       - name: Seed menu + settings
-        run: uv run python -m dosadash_api.seed
+        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
+        run: uv run python -m dosadash_api.seed --end-date 2026-08-20 --users 40
 
       - name: Ingest knowledge base (RAG)
+        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
         run: uv run python -m dosadash_ai.rag.ingest --knowledge-dir knowledge
 
       - name: Run live eval suites (one pass, all metrics)
-        run: uv run python evals/suites/run_live_evals.py --json live_eval_results.json
+        if: github.event_name != 'pull_request' || needs.changes.outputs.relevant == 'true'
+        env:
+          EVAL_PROFILE: ${{ github.event_name == 'pull_request' && 'pr' || 'full' }}
+          EVAL_SUITES: ${{ github.event_name == 'pull_request' && needs.changes.outputs.suites || 'retrieval,rag,support,inventory,copilot' }}
+        run: uv run python evals/suites/run_live_evals.py --profile "$EVAL_PROFILE" --suites "$EVAL_SUITES" --json live_eval_results.json
 
       # Scoreboard ingest (Phase 4): POST the results to the production API —
       # pass or fail, regressions belong on the scoreboard too. Non-fatal:
@@ -120,7 +129,7 @@ jobs:
             echo "::notice::EVAL_INGEST_URL / INTERNAL_API_TOKEN not configured — skipping scoreboard ingest"
             exit 0
           fi
-          jq --arg sha "$GITHUB_SHA" '. + {git_sha: $sha, trigger: "ci"}' \
+          jq --arg sha "$GITHUB_SHA" --arg trigger "${{ github.event_name == 'schedule' && 'scheduled' || 'ci' }}" '. + {git_sha: $sha, trigger: $trigger}' \
             live_eval_results.json > ingest_payload.json
           curl --fail-with-body -sS -X POST "$EVAL_INGEST_URL" \
             -H "Content-Type: application/json" \

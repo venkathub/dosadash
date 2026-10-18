@@ -4,7 +4,7 @@
 
 ## Goal
 
-Build and production-deploy one cohesive AI-native product (South Indian cloud kitchen) that demonstrates every AI engineering concept hiring managers scan for in 2026 — production RAG, agents, evals, structured outputs, fine-tuning, classical ML, LLMOps — with a live URL, real metrics, and a defensible architecture.
+Build and production-deploy one cohesive AI-native product (South Indian cloud kitchen) that demonstrates a broad set of applied AI engineering skills — production RAG, agents, evals, structured outputs, fine-tuning, classical ML, LLMOps — with a live URL, real metrics, and a defensible architecture.
 
 ## Research Findings (Aug 2026)
 
@@ -14,7 +14,7 @@ Build and production-deploy one cohesive AI-native product (South Indian cloud k
 
 **What AI Engineer portfolios need in 2026**: production RAG (not notebooks), agentic workflows, eval pipelines in CI, structured outputs, fine-tuning comparisons, LLMOps observability, deployed URL. One cohesive product > five disconnected demos.
 
-**Key insight**: Don't build "a food app with a chatbot bolted on." Build a food platform where every subsystem is AI-driven, each mapping to a named AI concept defensible in interviews.
+**Key insight**: Don't build "a food app with a chatbot bolted on." Build a food platform with AI integrated into ordering and operations, each mapping to a named AI concept defensible in interviews.
 
 ## Locked Decisions
 

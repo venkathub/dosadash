@@ -59,6 +59,8 @@ async def ingest_eval_run(body: EvalRunIn, request: Request, session: SessionDep
         gates_passed=body.gates_passed,
         failures=body.failures,
         case_reports=[report.model_dump() for report in body.case_reports],
+        suite_results=[suite.model_dump() for suite in body.suite_results],
+        run_metadata=body.run_metadata,
     )
     session.add(run)
     await session.commit()

@@ -146,7 +146,20 @@ def drop_substitutions(
             )
             continue
         last_word = line_base.split()[-1]
-        partially_named = len(last_word) >= 4 and _named_in(text, last_word)
+        # A bare "a coffee" may mean Filter Coffee. But the word "biryani"
+        # inside an explicitly named Chicken/Veg Biryani is not permission to
+        # substitute Egg Biryani. Remove other specific names before checking
+        # whether a genuinely bare category reference remains.
+        remaining_text = text
+        other_names = [
+            other.name.split(" (")[0].casefold()
+            for other in ctx.items.values()
+            if other.id != line.item_id
+        ]
+        for other_name in sorted(other_names, key=len, reverse=True):
+            if len(other_name.split()) > 1 and last_word in other_name:
+                remaining_text = remaining_text.replace(other_name, " ")
+        partially_named = len(last_word) >= 4 and _named_in(remaining_text, last_word)
         alias_named = any(
             _named_in(text, a.casefold())
             for a in (ctx.items[line.item_id].aliases if line.item_id in ctx.items else ())
@@ -316,6 +329,8 @@ def reply_draft_contradictions(ctx: AgentContext, message: str, turn: Any) -> li
     def _keys(item: Any) -> list[str]:
         return [item.name.split(" (")[0].casefold(), *(a.casefold() for a in item.aliases)]
 
+    if not ctx.kitchen_open:
+        return []  # Never tell the model to add items while the kitchen is paused/closed.
     text = message.casefold()
     reply = turn.reply.casefold()
     removal_intent = any(w in text for w in _REMOVAL_WORDS)

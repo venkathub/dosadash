@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "profiles": {
+    "pr": {
+      "case_timeout_seconds": 120,
+      "suite_timeout_seconds": 1800,
+      "max_provider_calls": 1000,
+      "max_tokens": 2000000,
+      "max_cost_usd": 5.0
+    },
+    "full": {
+      "case_timeout_seconds": 180,
+      "suite_timeout_seconds": 2400,
+      "max_provider_calls": 1800,
+      "max_tokens": 4000000,
+      "max_cost_usd": 10.0
+    }
+  },
+  "suites": {
+    "order": {
+      "blocking": true,
+      "calibrated": true,
+      "threshold": 0.95
+    },
+    "retrieval": {
+      "blocking": true,
+      "calibrated": true,
+      "threshold": 0.8
+    },
+    "rag": {
+      "blocking": true,
+      "calibrated": true,
+      "threshold": 0.8
+    },
+    "tone": {
+      "blocking": true,
+      "calibrated": true,
+      "threshold": 0.8
+    },
+    "support": {
+      "blocking": true,
+      "calibrated": true,
+      "threshold": 0.9
+    },
+    "inventory": {
+      "blocking": true,
+      "calibrated": true,
+      "threshold": 0.9
+    },
+    "copilot": {
+      "blocking": true,
+      "calibrated": true,
+      "threshold": 0.9
+    }
+  },
+  "note": "All seven quality suites block. Owner approved all 22 calibration examples and unchanged RAG/tone thresholds on 2026-10-18. Deterministic oracle suites passed repeated baselines and negative controls. Judge validation is retained in baselines/faithfulness-refusal-fix.md. Errors and measured safety bypasses always block. Budgets are ceilings, not measured costs.",
+  "judges": {
+    "models": [
+      "gpt-5.4-mini-2026-03-17"
+    ],
+    "note": "Pinned separate grading model with no silent fallback. faithfulness_v4 separates evidence answerability, speech-act classification and factual grounding. Owner-approved calibration labels and thresholds are unchanged; this is regression calibration, not independent blind holdout evidence."
+  }
+}

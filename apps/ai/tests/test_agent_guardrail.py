@@ -332,3 +332,93 @@ def test_contradictions_and_drops_are_alias_aware():
     kept, warnings = drop_substitutions(ctx, "ஒரு மட்டன் சுக்கா மற்றும் ஒரு thinai pongal", draft)
     assert [i.name for i in kept.items] == ["Mutton Chukka"]
     assert warnings == []
+
+
+def test_removed_items_do_not_leave_false_added_claim_or_total():
+    from dosadash_ai.agent.graph import build_response
+    from dosadash_shared import AgentTurn
+
+    response = build_response(
+        _ctx(),
+        AgentTurn(
+            reply="Added Mysore Pak and a dosa, total ₹220!",
+            draft_items=[DraftItemIn(item_id=3, qty=1), DraftItemIn(item_id=1, qty=1)],
+        ),
+        "test-model",
+        "one Mysore Pak and one Masala Dosa",
+    )
+    assert "Added Mysore Pak" not in response.reply
+    assert "₹220" not in response.reply
+    assert "sold out" in response.reply
+    assert "1× Masala Dosa" in response.reply and "₹120.00" in response.reply
+    assert [item.item_id for item in response.draft.items] == [1]
+    assert response.warnings
+
+
+def test_paused_kitchen_never_triggers_add_item_self_correction():
+    from dosadash_ai.agent.guardrail import reply_draft_contradictions
+    from dosadash_shared import AgentTurn
+
+    assert (
+        reply_draft_contradictions(
+            _ctx(kitchen_paused=True),
+            "one Masala Dosa",
+            AgentTurn(reply="Masala Dosa is not available while the kitchen is paused."),
+        )
+        == []
+    )
+
+
+def test_unavailable_promise_removed_even_when_model_did_not_draft_it():
+    from dosadash_ai.agent.graph import build_response
+    from dosadash_shared import AgentTurn
+
+    response = build_response(
+        _ctx(),
+        AgentTurn(
+            reply="Added Mysore Pak and Masala Dosa!",
+            draft_items=[DraftItemIn(item_id=1, qty=1)],
+        ),
+        "test-model",
+        "one Mysore Pak and one Masala Dosa",
+    )
+    assert "Added Mysore Pak" not in response.reply
+    assert "sold out" in response.reply and "1× Masala Dosa" in response.reply
+
+
+def test_named_biryani_does_not_authorize_another_biryani():
+    from dosadash_ai.agent.guardrail import drop_substitutions
+
+    ctx = AgentContext(
+        items={
+            1: _item(1, "Chicken Biryani", "220", available=False),
+            2: _item(2, "Veg Biryani", "170"),
+            3: _item(3, "Egg Biryani", "200"),
+        }
+    )
+    draft, _ = validate_draft(ctx, [DraftItemIn(item_id=2, qty=1), DraftItemIn(item_id=3, qty=1)])
+    corrected, warnings = drop_substitutions(ctx, "one chicken biryani and one veg biryani", draft)
+    assert [line.item_id for line in corrected.items] == [2]
+    assert warnings and corrected.subtotal == Decimal("170")
+
+
+def test_server_corrections_preserve_selected_register():
+    from dosadash_ai.agent.graph import build_response
+    from dosadash_shared import AgentTurn
+
+    for language, phrase in (
+        ("tanglish", "Vera edhaavadhu"),
+        ("hinglish", "Kuch aur"),
+        ("ta", "வேறு"),
+    ):
+        response = build_response(
+            _ctx(),
+            AgentTurn(
+                reply_language=language, reply="Added!", draft_items=[DraftItemIn(item_id=3, qty=1)]
+            ),
+            "test-model",
+            "Mysore Pak",
+        )
+        assert phrase in response.reply
+        assert "draft" not in response.reply.lower()
+        assert response.draft.items == []

@@ -55,3 +55,8 @@ def test_expected_docs_chunk_cleanly():
     for doc in {d for c in load_cases() for d in c["expect_docs"]}:
         chunks = chunk_document(doc, (KNOWLEDGE / doc).read_text())
         assert chunks, doc
+
+
+def test_serving_allergen_and_policy_categories_are_explicit():
+    tags = {tag for case in load_cases() for tag in case.get("tags", [])}
+    assert {"serving_hours", "allergens", "cancellation", "refund"} <= tags

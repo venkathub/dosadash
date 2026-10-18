@@ -5,27 +5,23 @@ Requires real LLM keys AND an ingested database:
     uv run python -m dosadash_ai.rag.ingest --knowledge-dir knowledge
     uv run python evals/suites/rag_answer_eval.py
 
-NOT run in CI (CI runs the key-free gates in test_rag_answer_assets.py);
-joins the merge gates in Phase 4 with an LLM-as-judge faithfulness rubric.
+Run by the combined CI runner. Quality thresholds and execution errors block
+the combined gate after owner-reviewed calibration.
 
-    PASS_THRESHOLD=0.85 uv run python evals/suites/rag_answer_eval.py
+Thresholds are configured in evals/config.json.
 """
 
 import asyncio
-import json
-import os
 import sys
-from pathlib import Path
 
 from dosadash_ai.db import get_sessionmaker
 from dosadash_ai.rag.answers import answer_question
 
-GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "rag_answers.jsonl"
-PASS_THRESHOLD = float(os.environ.get("PASS_THRESHOLD", "0.8"))
-
 
 def load_cases() -> list[dict]:
-    return [json.loads(line) for line in GOLDEN.read_text().splitlines() if line.strip()]
+    from _results import load_jsonl
+
+    return load_jsonl("rag_answers.jsonl")
 
 
 def score_case(case: dict, answer: str, citation_docs: list[str], not_found: bool) -> list[str]:
@@ -57,29 +53,62 @@ def score_case(case: dict, answer: str, citation_docs: list[str], not_found: boo
     return problems
 
 
-async def run() -> int:
-    cases = load_cases()
-    passed = 0
-    async with get_sessionmaker()() as session:
-        for case in cases:
-            resp = await answer_question(session, case["question"], session_id=f"eval:{case['id']}")
-            problems = score_case(
-                case, resp.answer, [c.doc_path for c in resp.citations], resp.not_found
-            )
-            status = "PASS" if not problems else "FAIL"
-            print(f"[{status}] {case['id']} ({case['language']}): {problems or 'ok'}")
-            if problems:
-                print(f"         answer: {resp.answer[:120]!r}")
-            passed += not problems
+async def evaluate_live(*, case_timeout: float = 120) -> object:
+    from _results import evaluate_cases
+    from faithfulness_judge import JudgeContractError, judge_answer
 
-    rate = passed / len(cases)
-    print(f"\nrag_answer eval: {passed}/{len(cases)} passed ({rate:.0%})")
-    print(f"threshold: {PASS_THRESHOLD:.0%}")
-    return 0 if rate >= PASS_THRESHOLD else 1
+    async def execute(case):
+        evidence = []
+        async with get_sessionmaker()() as session:
+            resp = await answer_question(
+                session,
+                case["question"],
+                session_id=f"eval:rag:{case['id']}",
+                evidence_sink=evidence.extend,
+            )
+        problems = score_case(
+            case, resp.answer, [c.doc_path for c in resp.citations], resp.not_found
+        )
+        try:
+            judged, details = await judge_answer(
+                case["question"],
+                resp.answer,
+                evidence,
+                [c.model_dump() for c in resp.citations],
+                not_found=resp.not_found,
+                case_id=case["id"],
+            )
+        except JudgeContractError as exc:
+            exc.eval_detail.update(
+                answer=resp.answer,
+                evidence=evidence,
+                citations=[c.model_dump() for c in resp.citations],
+            )
+            raise
+        return {
+            "problems": problems + judged,
+            "model": resp.model,
+            "evidence": evidence,
+            "answer": resp.answer,
+            "not_found": resp.not_found,
+            "citations": [c.model_dump() for c in resp.citations],
+            **details,
+        }
+
+    return await evaluate_cases("rag", load_cases(), execute, case_timeout=case_timeout)
+
+
+async def run() -> int:
+    from _results import require_eval_database
+
+    require_eval_database()
+    result = await evaluate_live()
+    print(result.model_dump_json(indent=2))
+    return 0 if result.status == "pass" else 1
 
 
 if __name__ == "__main__":
     from dosadash_ai.llm import configure_tracing
 
-    configure_tracing()  # trace live eval runs in Langfuse (Hard Rule 6)
+    configure_tracing()
     sys.exit(asyncio.run(run()))

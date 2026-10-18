@@ -64,7 +64,7 @@ Everything is deterministic where it matters: the LLM *observes* (triage assessm
 
 ## Measured results
 
-All LLM paths are eval-gated in CI; classical-ML numbers are measured against committed benchmark artifacts. Data is synthetic with planted signal (personas, festival multipliers) — noted where it matters.
+CI runs deterministic asset/guardrail checks and live ordering gates; additional live suites and their calibration status are documented in `evals/README.md`. Other LLM paths are not universally live-gated; classical-ML numbers are measured against committed benchmark artifacts. Data is synthetic with planted signal (personas, festival multipliers) — noted where it matters.
 
 | System | Result | Measured how |
 |---|---|---|
@@ -84,7 +84,7 @@ All LLM paths are eval-gated in CI; classical-ML numbers are measured against co
 
 - **Conversational ordering** (web chat, Telegram text + voice notes in EN/Tamil) on one LangGraph agent: structured `OrderDraft` output, every item DB-validated (**hallucinated dishes cannot reach checkout**), SSE streaming, prompt-caching-friendly stable prefix, "my usual" episodic memory, one-round self-correction on contradiction signatures.
 - **A real menu with serving windows**: 60 dishes researched from actual Chennai–Trichy highway kitchens (millet specials, non-veg mess meals), every dish on a per-day schedule ("Dosa is not available at lunch") enforced end-to-end — menu annotation, checkout 409, greyed cards, and an agent that explains the window deterministically instead of hallucinating refusals.
-- **Production RAG** over the knowledge base: BM25 + vector RRF → LLM rerank → citations; semantic cache with measured hit rate; re-embed cascade on menu events.
+- **Production RAG** over the knowledge base: PostgreSQL FTS + vector RRF → answer-time source selection → citations; semantic cache with measured hit rate; re-embed cascade on menu events.
 - **Agents with deterministic guardrails**: inventory agent (forecast-driven draft POs → owner approval via Telegram), support agent (refunds *never* agent-executed — human escalation inbox), promo agent, text-to-SQL analytics copilot (read-only DB role, SQL allowlist, self-correction).
 - **The self-healing SDLC loop**: 🐞 GUI reports + a production sentinel (healthz fleet probes, 5xx-burst detection, consecutive eval-gate reds) → GitHub issues → LLM triage (`feedback_triage_v2`) → Telegram approval cards (with an AI-drafted spec for features) → a Claude fixer that RCAs and opens PRs through the **full merge-gate stack** (incl. an independent AI reviewer on a different model) → deploy canary with mechanical auto-rollback PRs → a read-only Haiku verifier that probes the fix live and labels `ai:verified` or reopens → `/fixer` portal with pipeline board, honest funnel metrics (MTTR, verification rate, agent spend), and a dispatch watchdog that survives GitHub Actions outages.
 - **Evals as infrastructure**: golden sets are versioned assets with coverage-floor gates; order accuracy / tool correctness / guardrail bypass / RAG faithfulness / tone (LLM-as-judge) + per-language floors; results land in an `eval_runs` table with an admin scoreboard; a weekly janitor computes the flaky-case list from real run history.

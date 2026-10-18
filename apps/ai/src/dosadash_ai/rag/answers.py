@@ -1,13 +1,14 @@
 """Grounded, cited answers over the knowledge base.
 
 Pipeline: redact (Hard Rule 8) → embed → hybrid RRF retrieval → one
-structured LLM call that both reranks (`used_chunks`) and answers — folding
-the rerank into the answer call halves cost/latency at this corpus size.
+structured LLM call that selects supporting sources (`used_chunks`) and answers.
+There is no separate retrieval reranker.
 Citations are mapped server-side from `used_chunks` back to document
 provenance; the model never fabricates a citation shape (Hard Rule 3).
 """
 
 import json
+from collections.abc import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -70,6 +71,7 @@ async def answer_question(
     top_k: int = 6,
     session_id: str | None = None,
     user_id: str | None = None,
+    evidence_sink: Callable[[list[dict[str, str]]], None] | None = None,
 ) -> RagAnswerResponse:
     """Answer a knowledge question with citations. May raise LLMError.
 
@@ -80,11 +82,22 @@ async def answer_question(
     question = redact_phones(query)
     [query_embedding] = await embed_texts([question], trace_name="rag.answer.embed")
 
-    cached = await get_semcache().get(question, query_embedding)
+    cached = None if evidence_sink else await get_semcache().get(question, query_embedding)
     if cached is not None:
         return RagAnswerResponse.model_validate({**cached, "cached": True})
 
     scored = await hybrid_search(session, question, query_embedding, top_k=top_k)
+    if evidence_sink is not None:
+        evidence_sink(
+            [
+                {
+                    "doc_path": s.chunk.doc_path,
+                    "heading": s.chunk.heading,
+                    "content": s.chunk.content,
+                }
+                for s in scored
+            ]
+        )
     if not scored:  # empty corpus / nothing indexed — don't waste an LLM call
         return RagAnswerResponse(
             answer=_EMPTY_CORPUS_ANSWER, citations=[], not_found=True, model=""
@@ -111,6 +124,6 @@ async def answer_question(
     )
     # Cache only grounded, affirmative answers: refusals are cheap to
     # recompute and may become answerable after the next ingest.
-    if not response.not_found:
+    if not response.not_found and evidence_sink is None:
         await get_semcache().put(question, query_embedding, response.model_dump(exclude={"cached"}))
     return response

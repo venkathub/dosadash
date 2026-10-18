@@ -2,7 +2,7 @@
 
 Every product feature maps to a named AI concept you can defend in interviews.
 
-> **As-built note (2026-08-27): all 28 rows below shipped to production.** Where
+> **As-built note (2026-08-27): the product features below were recorded as shipped; this does not establish every originally named technique.** Where
 > the plan offered options, the shipped choice is noted: #9 fine-tune =
 > DistilBERT + LoRA → INT8 ONNX; #10 vision QC = VLM (not YOLO/CLIP); #28
 > localization = Tamil live end-to-end (Telugu/Kannada/Hindi = registry
@@ -11,22 +11,22 @@ Every product feature maps to a named AI concept you can defend in interviews.
 | # | Product Feature | AI Concept Demonstrated |
 |---|---|---|
 | 1 | Conversational ordering ("2 masala dosa, less spicy, no onion") — web chat + Telegram | LLM app, **structured outputs / function calling** (Pydantic `OrderDraft` schema) |
-| 2 | Menu Q&A: "Is sambar vegan? Allergens in Chettinad curry?" | **Production RAG** (hybrid BM25+vector, RRF fusion, LLM rerank, citations, faithfulness guardrail) |
+| 2 | Menu Q&A: "Is sambar vegan? Allergens in Chettinad curry?" | **Production RAG** (hybrid PostgreSQL FTS + vector, RRF fusion, answer-time source selection, citations, faithfulness guardrail) |
 | 3 | Voice ordering via Telegram voice notes (EN + 1 Indian language) | **Speech**: Groq Whisper STT, multilingual handling |
 | 4 | Personalized menu & combo recommendations | **Recommender system** (implicit ALS + embedding fallback for cold start) |
 | 5 | Daily demand forecast per dish → prep quantities | **Classical ML / time-series** (XGBoost: lag features, festival calendar — Pongal/Diwali, weekends, weather) |
-| 6 | Dynamic off-peak discount suggestions | **ML optimization / bandit-lite** (segment × offer suggestion) |
-| 7 | Inventory agent: monitors stock, consumes forecast, drafts POs, Telegram/UI approval | **Agentic AI** (LangGraph multi-step tool-using agent, human-in-the-loop) |
+| 6 | Dynamic off-peak discount suggestions | **Candidate mining + constrained generation** (co-order pairs and slow-day offers; no learned bandit policy) |
+| 7 | Inventory agent: monitors stock, consumes forecast, drafts POs, Telegram/UI approval | **Agentic AI** (deterministic needs calculation + structured LLM proposal, human-in-the-loop) |
 | 8 | Kitchen order prioritization + ETA prediction | **Regression model** (queue depth, prep complexity) + queue optimization |
 | 9 | Review analysis: dish-level aspect sentiment, trend alerts, AI-drafted owner replies | **NLP fine-tuning** (LoRA on DistilBERT/Llama-3.2-1B) benchmarked vs gpt-4o-mini zero-shot (accuracy vs cost) |
 | 10 | Dish-photo QC (plating completeness/presentation) | **Computer vision** (YOLO/CLIP or VLM endpoint) |
-| 11 | Support agent: refunds/order status with policy guardrails | **Multi-agent orchestration + guardrails** (injection defense, PII redaction, escalation to owner inbox) |
-| 12 | Semantic dish search ("something light and tangy") | **Vector search / embeddings** (pgvector HNSW) |
+| 11 | Support agent: refunds/order status with policy guardrails | **Bounded support workflow + guardrails** (injection defense, PII redaction, escalation to owner inbox) |
+| 12 | Semantic dish search ("something light and tangy") | **Vector search / embeddings** (pgvector exact cosine search) |
 | 13 | Eval suite: order accuracy, hallucinated items, RAG faithfulness, guardrail bypass | **LLM evals** (150+ golden conversations incl. Hinglish/Tanglish, LLM-as-judge, CI merge gates) |
-| 14 | Tracing, token-cost dashboards, prompt/model A/B | **LLMOps / observability** (Langfuse Cloud, litellm cost tracking, semantic cache) |
+| 14 | Tracing, token-cost dashboards, offline prompt/model comparisons | **LLMOps / observability** (Langfuse Cloud, litellm cost tracking, semantic cache) |
 | 15 | MCP server: `get_menu`, `place_order`, `check_inventory` — Claude Desktop orders a dosa | **MCP / tool ecosystems** |
 | 16 | Anomaly flag on owner dashboard ("sales 30% below forecast") | **Anomaly detection** (forecast residuals) |
-| 17 | Churn-risk & RFM customer segmentation | **Customer analytics ML** (nightly Celery scoring + clustering) |
+| 17 | Churn-risk & RFM customer segmentation | **Rule-based customer analytics** (nightly quintile RFM and churn-decay scoring) |
 | 18 | User preferences auto-injected into agent context (diet/allergen/spice) | **Context engineering / personalization** |
 | 19 | Token-streamed chat responses (web SSE + Telegram draft-editing) | **Streaming LLM responses** (UX + perceived latency) |
 | 20 | "My usual" — agent remembers preferences/orders across sessions ("less spicy like last time") | **Long-term agent memory** (episodic memory store, distinct from session checkpointing) |
@@ -62,21 +62,21 @@ Every product feature maps to a named AI concept you can defend in interviews.
 
 - [x] LLM applications & prompt engineering
 - [x] Structured outputs / function calling
-- [x] RAG (hybrid retrieval, reranking, citations, faithfulness)
+- [x] RAG (hybrid retrieval, source selection, citations; owner-reviewed faithfulness calibration complete)
 - [x] Embeddings & vector search
-- [x] Agents (LangGraph, tools, checkpointing, HITL)
-- [x] Multi-agent orchestration
+- [x] Agents (LangGraph ordering, guarded actions, HITL; durable checkpointing deferred)
+- [x] Multi-stage SDLC coordination (fixer/reviewer/verifier; no general business-agent delegation)
 - [x] MCP
 - [x] Guardrails & AI security (injection, PII, policy)
 - [x] Evals (golden sets, LLM-as-judge, CI gates)
-- [x] LLMOps (tracing, cost, A/B, semantic caching, model routing/fallback)
+- [x] LLMOps (tracing, cost, semantic caching, model routing/fallback; online A/B deferred)
 - [x] Fine-tuning (LoRA) + build-vs-API comparison
 - [x] Classical ML (XGBoost regression/forecasting)
 - [x] Time-series & feature engineering
 - [x] Recommender systems
 - [x] Speech (STT, multilingual)
 - [x] Computer vision
-- [x] MLOps (MLflow registry, retraining jobs, champion alias rollback)
+- [x] MLOps (MLflow registration, manual training/export, scheduled inference; automated retraining deferred)
 - [x] Streaming responses (SSE)
 - [x] Long-term agent memory
 - [x] Text-to-SQL / analytics agents
@@ -89,3 +89,25 @@ Every product feature maps to a named AI concept you can defend in interviews.
 - [x] Synthetic data generation (documented generator)
 - [x] Agentic SDLC (self-healing loop: triage, fixer, reviewer, verifier, canary)
 - [~] GraphRAG, A2A, DPO — consciously deferred with written rationale (see Stretch table)
+
+## Evidence audit (P0)
+
+Status describes demonstrated skills, not whether a product screen exists.
+Historical phase plans describe intent; this table and evals/README.md describe current coverage.
+
+| Capability | Implementation evidence | Evaluation evidence | Status / limitation |
+|---|---|---|---|
+| Structured LLM ordering | `apps/ai/src/dosadash_ai/agent/graph.py` | `evals/suites/run_live_evals.py` | Implemented; fixed graph, no durable checkpoints |
+| Hybrid retrieval | `apps/ai/src/dosadash_ai/rag/search.py` | `evals/suites/retrieval_eval.py` | Implemented: PostgreSQL ts_rank + exact vector search + RRF; no BM25/HNSW |
+| Grounded answers | `apps/ai/src/dosadash_ai/rag/answers.py` | `evals/suites/rag_answer_eval.py` | Implemented; source selection occurs in the answer call; owner-reviewed calibration complete; blocking gate enabled |
+| Support / inventory | `apps/ai/src/dosadash_ai/support/agent.py`, `inventory/agent.py` | live suites + existing guardrail fixtures | Bounded workflows; two frozen live baselines passed; deterministic quality gates enabled |
+| SQL copilot | `apps/ai/src/dosadash_ai/copilot/agent.py` | `evals/suites/copilot_eval.py` | Implemented; two frozen live baselines passed; SQL result-oracle gate enabled |
+| CRM | `apps/api/src/dosadash_api/worker/crm.py` | `apps/api/tests/test_crm.py` | RFM rules and decay heuristic, not clustering or a trained churn model |
+| Promotions | `apps/ai/src/dosadash_ai/promo/mining.py` | `evals/suites/test_promo_assets.py` | Mining + constrained generation, not a bandit |
+| LoRA / ONNX | `packages/ml/src/dosadash_ml/finetune/` | `packages/ml/artifacts/sentiment/benchmark.json` | Implemented; synthetic labels, external generalization unproven |
+| Forecasting / ETA / ALS | `packages/ml/src/dosadash_ml/` | committed champion metadata | Implemented; synthetic benchmarks; online uplift unproven |
+| Model lifecycle | training scripts + `apps/api/src/dosadash_api/worker/tasks.py` | ML tests / artifacts | Partial: manual training/export, scheduled inference; no automated drift/retraining loop |
+| Order memory | `apps/api/src/dosadash_api/services/memory_service.py` | agent memory tests | Implemented episodic memory, distinct from checkpoint/resume |
+| MCP / multimodal / batch | `apps/ai/src/dosadash_ai/mcp_server.py`, `llm/`, `routers/` | existing unit/asset tests | Integrations implemented; comprehensive live multimodal evaluation deferred |
+| SDLC coordination | `.github/workflows/claude-*.yml` | fixer workflow asset tests | Workflow coordination; independent deployment validation required |
+| Online experiments / distributed training | No implementation claimed | No measurement claimed | Deferred |
