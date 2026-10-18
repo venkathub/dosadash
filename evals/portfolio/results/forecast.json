@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "source_sha256": "2977196face7fc274f85f477be5bd3ba72ecd5ea85581c435b8e72dee281b184",
+  "runtime": {
+    "xgboost": "3.4.1",
+    "pandas": "2.3.3",
+    "numpy": "2.5.2"
+  },
+  "evidence": "synthetic_portfolio_demo",
+  "dataset_sha256": "904391beebbb36fc2fcc144f705447404b0d398ac7b313ac2277e44ec2a32b94",
+  "trained_through": "2026-05-20",
+  "validation": [
+    {
+      "origin": "2026-05-21",
+      "horizon": 14,
+      "candidate_wape": 0.16789040304840466,
+      "incumbent_wape": 0.19107273003337835,
+      "baseline_wape": 0.18365242947512045,
+      "actual_sum": 2043.3470207064909
+    },
+    {
+      "origin": "2026-06-04",
+      "horizon": 14,
+      "candidate_wape": 0.1868808445951021,
+      "incumbent_wape": 0.1955618584956663,
+      "baseline_wape": 0.1489083548859973,
+      "actual_sum": 2036.9191431539025
+    },
+    {
+      "origin": "2026-06-18",
+      "horizon": 14,
+      "candidate_wape": 0.1585793607139182,
+      "incumbent_wape": 0.2105816519938682,
+      "baseline_wape": 0.17868339408395947,
+      "actual_sum": 2001.4193092796443
+    }
+  ],
+  "policy": "3 folds; 2% improvement; beat lag7; <=5% fold regression",
+  "decision": "retain",
+  "final_test": {
+    "origin": "2026-07-02",
+    "horizon": 14,
+    "n": 42,
+    "wape": 0.1846806101520129,
+    "baseline_wape": 0.21219461416993132,
+    "absolute_error": 386.7804191169377,
+    "baseline_error": 444.4035664353061,
+    "actual_sum": 2094.320669606701
+  },
+  "limitations": [
+    "Synthetic data, not independent real-world accuracy.",
+    "Fixed candidates; no tuning on the final period.",
+    "Production deployment requires artifact PR review and CI."
+  ]
+}

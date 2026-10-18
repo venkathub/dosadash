@@ -98,3 +98,24 @@ and the unchanged judge thresholds. See `evals/baselines/p0-closure.md` for the
 review record, negative controls, baseline evidence and deployment boundary.
 Execution errors and measured policy bypasses fail closed. Durable graph checkpoints, learned CRM/bandits, online experiments,
 and automated drift/retraining remain deferred. Scheduled forecasting is inference.
+
+### Independent evaluation tooling
+
+`evals/benchmarks/` provides review-source/permission and independent-annotation
+contracts, overlap audits, frozen validation/test execution and grouped uncertainty
+reports. No independent dataset or generalization measurement has been supplied.
+New sentiment training uses comparable validation F1 for selection; historical
+champion artifacts remain unchanged. See `evals/benchmarks/README.md` for the
+collection requirements and remaining evidence boundary.
+
+### Portfolio reliability and evidence (2026-10-19)
+
+The portfolio implementation now includes synthetic review/audio/image component
+benchmarks, SQL-backed inventory checkpoints with recovery leases and concurrent
+receipt protection, immutable forecast observations and health reporting, and an
+offline XGBoost backtest/release/rollback demonstration. Admin Inventory exposes run
+recovery; Reports exposes forecast health. Migration `f1b3d5e7a902` is additive.
+Training remains off the VPS; production model activation remains PR-based. These
+updates supersede the older deferred inventory/monitoring statements for this
+scope, but do not claim LangGraph persistence, exactly-once notifications,
+independent real-world accuracy or unattended production retraining. See docs/16.

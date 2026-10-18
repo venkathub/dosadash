@@ -1,0 +1,388 @@
+{
+  "schema_version": 1,
+  "ran_at": "2026-10-18T18:51:43.923793+00:00",
+  "status": "partial",
+  "evidence": "synthetic_portfolio_demo",
+  "mode": "local",
+  "tasks": [
+    "audio",
+    "invoice",
+    "review"
+  ],
+  "fingerprint": "72e996e854784cd6745f76e5f6f3e36370048fe667f24d4e296734ce33bd4e39",
+  "inputs_unchanged": true,
+  "results": {
+    "audio": {
+      "overall": {
+        "n": 3,
+        "groups": 3,
+        "metrics": null,
+        "warning": "Incomplete predictions; aggregate quality unavailable."
+      },
+      "language": {
+        "en": {
+          "n": 3,
+          "groups": 3,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        }
+      },
+      "category": {
+        "clean": {
+          "n": 1,
+          "groups": 1,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        },
+        "correction": {
+          "n": 1,
+          "groups": 1,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        },
+        "noise": {
+          "n": 1,
+          "groups": 1,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        }
+      }
+    },
+    "invoice": {
+      "overall": {
+        "n": 3,
+        "groups": 1,
+        "metrics": null,
+        "warning": "Incomplete predictions; aggregate quality unavailable."
+      },
+      "language": {
+        "en": {
+          "n": 3,
+          "groups": 1,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        }
+      },
+      "category": {
+        "arithmetic_error": {
+          "n": 1,
+          "groups": 1,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        },
+        "clean": {
+          "n": 1,
+          "groups": 1,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        },
+        "rotated": {
+          "n": 1,
+          "groups": 1,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        }
+      }
+    },
+    "review": {
+      "overall": {
+        "n": 6,
+        "groups": 6,
+        "metrics": {
+          "label_f1": 0.4444444444444444,
+          "exact_match": 0.0
+        },
+        "warning": "Small artificial/regression sample; no generalization claim.",
+        "ci95": {
+          "label_f1": [
+            0.2222222222222222,
+            0.6666666666666666
+          ],
+          "exact_match": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "language": {
+        "en": {
+          "n": 4,
+          "groups": 4,
+          "metrics": {
+            "label_f1": 0.3333333333333333,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": {
+            "label_f1": [
+              0.0,
+              0.6666666666666666
+            ],
+            "exact_match": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "hinglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 0.6666666666666666,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "tanglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 0.6666666666666666,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        }
+      },
+      "category": {
+        "hinglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 0.6666666666666666,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "indirect": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 0.0,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "mixed": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 0.6666666666666666,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "negation": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 0.0,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "rating_conflict": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 0.6666666666666666,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "tanglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 0.6666666666666666,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        }
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "review-0",
+      "task": "review",
+      "group_id": "review-0",
+      "language": "en",
+      "category": "mixed",
+      "status": "ok",
+      "model": "dosadash-sentiment/v2-int8",
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "prediction": [
+        "temperature:NEGATIVE"
+      ],
+      "latency_ms": 357.79
+    },
+    {
+      "id": "review-1",
+      "task": "review",
+      "group_id": "review-1",
+      "language": "en",
+      "category": "negation",
+      "status": "ok",
+      "model": "dosadash-sentiment/v2-int8",
+      "metrics": {
+        "label_f1": 0.0,
+        "exact_match": false
+      },
+      "prediction": [
+        "taste:NEGATIVE"
+      ],
+      "latency_ms": 207.76
+    },
+    {
+      "id": "review-2",
+      "task": "review",
+      "group_id": "review-2",
+      "language": "tanglish",
+      "category": "tanglish",
+      "status": "ok",
+      "model": "dosadash-sentiment/v2-int8",
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "prediction": [
+        "delivery:NEGATIVE"
+      ],
+      "latency_ms": 204.08
+    },
+    {
+      "id": "review-3",
+      "task": "review",
+      "group_id": "review-3",
+      "language": "hinglish",
+      "category": "hinglish",
+      "status": "ok",
+      "model": "dosadash-sentiment/v2-int8",
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "prediction": [
+        "taste:POSITIVE"
+      ],
+      "latency_ms": 192.61
+    },
+    {
+      "id": "review-4",
+      "task": "review",
+      "group_id": "review-4",
+      "language": "en",
+      "category": "rating_conflict",
+      "status": "ok",
+      "model": "dosadash-sentiment/v2-int8",
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "prediction": [
+        "freshness:NEGATIVE"
+      ],
+      "latency_ms": 177.97
+    },
+    {
+      "id": "review-5",
+      "task": "review",
+      "group_id": "review-5",
+      "language": "en",
+      "category": "indirect",
+      "status": "ok",
+      "model": "dosadash-sentiment/v2-int8",
+      "metrics": {
+        "label_f1": 0.0,
+        "exact_match": false
+      },
+      "prediction": [],
+      "latency_ms": 176.91
+    },
+    {
+      "id": "audio-0",
+      "task": "audio",
+      "group_id": "tts-0",
+      "language": "en",
+      "category": "clean",
+      "status": "not_run",
+      "reason": "requires remote inference"
+    },
+    {
+      "id": "audio-1",
+      "task": "audio",
+      "group_id": "tts-1",
+      "language": "en",
+      "category": "correction",
+      "status": "not_run",
+      "reason": "requires remote inference"
+    },
+    {
+      "id": "audio-2",
+      "task": "audio",
+      "group_id": "tts-2",
+      "language": "en",
+      "category": "noise",
+      "status": "not_run",
+      "reason": "requires remote inference"
+    },
+    {
+      "id": "invoice-0",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "language": "en",
+      "category": "clean",
+      "status": "not_run",
+      "reason": "requires remote inference"
+    },
+    {
+      "id": "invoice-1",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "language": "en",
+      "category": "rotated",
+      "status": "not_run",
+      "reason": "requires remote inference"
+    },
+    {
+      "id": "invoice-2",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "language": "en",
+      "category": "arithmetic_error",
+      "status": "not_run",
+      "reason": "requires remote inference"
+    }
+  ],
+  "usage": {
+    "attempted_calls": 0,
+    "completed_calls": 0,
+    "known_tokens": 0,
+    "known_cost_usd": 0,
+    "tokens": null,
+    "estimated_cost_usd": null,
+    "models": [],
+    "calls": []
+  },
+  "audio_attempts": 0,
+  "audio_cost_usd": null,
+  "limitations": [
+    "Replay validates the scorer only; it does not run a model.",
+    "Local mode runs the real ONNX classifier; audio/invoices are not run.",
+    "Synthetic TTS and rendered invoices are not real-world audio or invoice evidence.",
+    "Command-term recall measures the transcript, not downstream order execution.",
+    "Audio cost is unmeasured; the $1 known-cost limit applies only to text/vision calls.",
+    "Small-group intervals are descriptive; no blocking quality threshold."
+  ]
+}

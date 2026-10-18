@@ -15,6 +15,7 @@ All mutations audit + publish inventory.* events (Hard Rule 4).
 
 import secrets
 from typing import Annotated, Literal
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
@@ -25,13 +26,12 @@ from sqlalchemy.orm import selectinload
 from dosadash_api import events
 from dosadash_api.auth.deps import require_role
 from dosadash_api.config import get_settings
-from dosadash_api.db.models import PurchaseOrder, User
+from dosadash_api.db.models import InventoryWorkflow, PurchaseOrder, User
 from dosadash_api.db.session import get_session
-from dosadash_api.services import audit, po_service
+from dosadash_api.services import audit, inventory_workflow, po_service
 from dosadash_api.services.ai_client import AIClient, AIServiceError, get_ai_client
 from dosadash_api.services.po_notify import notify_owners_po_drafted
 from dosadash_shared import (
-    InventoryDraftRequest,
     POItemPatchIn,
     POState,
     PurchaseOrderDetailOut,
@@ -121,28 +121,94 @@ async def draft_now(
     ai: Annotated[AIClient, Depends(get_ai_client)],
     admin: User = AdminUser,
     coverage_days: Annotated[int, Query(ge=1, le=14)] = 7,
+    idempotency_key: Annotated[str | None, Header(min_length=1, max_length=100)] = None,
 ) -> list[PurchaseOrderDetailOut]:
     """Run the inventory agent on demand (same path as the nightly task)."""
     try:
-        result = await ai.draft_inventory_pos(
-            InventoryDraftRequest(coverage_days=coverage_days, session_id=f"admin:{admin.id}")
+        run, fresh = await inventory_workflow.advance(
+            session,
+            key=f"admin:{admin.id}:{idempotency_key or uuid4()}",
+            coverage_days=coverage_days,
+            planner=ai.draft_inventory_pos,
         )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except AIServiceError as exc:
         raise HTTPException(status_code=502, detail="Inventory agent unavailable") from exc
+    if fresh:
+        audit.record(
+            session,
+            actor=admin,
+            action="po.draft_now",
+            entity="inventory_workflow",
+            detail={"key": run.key, "created": run.po_ids},
+        )
+        await session.commit()
+        for po_id in run.po_ids:
+            await events.publish_inventory_event("inventory.po_drafted", detail={"po_id": po_id})
+        await notify_owners_po_drafted(session, run.po_ids)
+    return [_po_detail(await _get_po(session, po_id)) for po_id in run.po_ids]
 
-    created, _skipped = await po_service.persist_agent_drafts(session, result)
+
+@router.get(PREFIX + "/workflows")
+async def list_workflows(session: SessionDep, admin: User = AdminUser) -> list[dict]:
+    runs = list(
+        (
+            await session.scalars(
+                select(InventoryWorkflow)
+                .order_by(InventoryWorkflow.created_at.desc())
+                .limit(50)
+                .with_for_update()
+            )
+        ).all()
+    )
+    for run in runs:
+        await inventory_workflow.refresh_stage(session, run)
+    await session.commit()
+    return [
+        {
+            "key": r.key,
+            "stage": r.stage,
+            "attempts": r.attempts,
+            "po_ids": r.po_ids,
+            "error": r.error,
+            "coverage_days": r.coverage_days,
+        }
+        for r in runs
+    ]
+
+
+@router.post(PREFIX + "/workflows/resume")
+async def resume_workflow(
+    key: str,
+    session: SessionDep,
+    ai: Annotated[AIClient, Depends(get_ai_client)],
+    admin: User = AdminUser,
+) -> dict:
+    run = await session.get(InventoryWorkflow, key)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    try:
+        run, fresh = await inventory_workflow.advance(
+            session, key=key, coverage_days=run.coverage_days, planner=ai.draft_inventory_pos
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except AIServiceError as exc:
+        raise HTTPException(status_code=502, detail="Inventory agent unavailable") from exc
     audit.record(
         session,
         actor=admin,
-        action="po.draft_now",
-        entity="purchase_order",
-        detail={"created": [po.id for po in created], "fallback": result.fallback},
+        action="po.resume",
+        entity="inventory_workflow",
+        detail={"key": key, "stage": run.stage},
     )
     await session.commit()
-    for po in created:
-        await events.publish_inventory_event("inventory.po_drafted", detail={"po_id": po.id})
-    await notify_owners_po_drafted(session, [po.id for po in created])
-    return [_po_detail(await _get_po(session, po.id)) for po in created]
+    if fresh:
+        for po_id in run.po_ids:
+            await events.publish_inventory_event("inventory.po_drafted", detail={"po_id": po_id})
+        await notify_owners_po_drafted(session, run.po_ids)
+    return {"key": key, "stage": run.stage, "po_ids": run.po_ids}
 
 
 @router.get(PREFIX + "/{po_id}", response_model=PurchaseOrderDetailOut)

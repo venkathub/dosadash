@@ -111,3 +111,23 @@ Historical phase plans describe intent; this table and evals/README.md describe 
 | MCP / multimodal / batch | `apps/ai/src/dosadash_ai/mcp_server.py`, `llm/`, `routers/` | existing unit/asset tests | Integrations implemented; comprehensive live multimodal evaluation deferred |
 | SDLC coordination | `.github/workflows/claude-*.yml` | fixer workflow asset tests | Workflow coordination; independent deployment validation required |
 | Online experiments / distributed training | No implementation claimed | No measurement claimed | Deferred |
+
+### Independent benchmark tooling
+
+`evals/benchmarks/` adds independently annotated review dataset contracts, overlap
+audits, frozen validation/test fingerprints, component comparisons and source-group
+bootstrap intervals. Sentiment training now selects on comparable validation F1;
+legacy test-based champion scores cannot authorize a promotion. **Independent data
+collection and published generalization measurements remain pending.** See
+`evals/benchmarks/README.md` for collection and execution instructions. This does
+not add live audio/invoice benchmarks, durable checkpoints or model retraining.
+
+### Portfolio completion evidence (2026-10-19)
+
+| Capability | Implemented demonstration | Evidence boundary |
+|---|---|---|
+| Evaluation across modalities | Review challenges, synthetic audio WER/term recall, rendered invoice extraction/arithmetic; real inference and scorer replay distinguished | Synthetic/regression evidence; no independent real-world accuracy claim |
+| Durable agent execution | PostgreSQL checkpoints, lease fencing, restart recovery, bounded retries, human approval, idempotent PO effects | Relational workflow, not a LangGraph checkpointer; notifications remain best-effort |
+| ML lifecycle | Immutable observations, degradation policy, recursive time-window backtests, guarded local promotion, hash-verified rollback | Training/release demonstration off VPS; production activation via artifact PR |
+
+Reproduce and review these paths using [docs/16](16-portfolio-evidence.md).

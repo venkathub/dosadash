@@ -79,6 +79,7 @@ def test_train_register_export_score_roundtrip(tmp_path):
         export_champion,
         register_and_maybe_promote,
         train,
+        validation_fingerprint,
     )
 
     mlflow.set_tracking_uri(f"sqlite:///{tmp_path}/mlflow.db")
@@ -89,7 +90,11 @@ def test_train_register_export_score_roundtrip(tmp_path):
     model, metrics = train(frame, valid_days=14, n_estimators=20)
     assert 0.0 < metrics["valid_wape"] < 2.0
 
-    version, promoted = register_and_maybe_promote(model, metrics, params={"test": True})
+    version, promoted = register_and_maybe_promote(
+        model,
+        metrics,
+        params={"test": True, "validation_sha256": validation_fingerprint(frame, 14)},
+    )
     assert promoted  # first version always takes the champion alias
     champ = MlflowClient().get_model_version_by_alias(MODEL_NAME, CHAMPION)
     assert str(champ.version) == version

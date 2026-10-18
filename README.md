@@ -151,3 +151,10 @@ uv run pytest evals -q              # key-free eval-asset gates
 ## Stack
 
 Python 3.12 · FastAPI · Pydantic v2 · SQLAlchemy 2 async · PostgreSQL 16 + pgvector · Redis · Celery · LangGraph · litellm (gpt-4o-mini → Groq `gpt-oss-120b` → Gemini Flash) · OpenAI embeddings · Groq Whisper · gpt-image-1 · XGBoost · implicit ALS · DistilBERT + LoRA → INT8 ONNX · MLflow · Langfuse · Next.js + Tailwind · aiogram · Docker Compose · Caddy · GitHub Actions · claude-code-action (fixer / spec / review / verify).
+
+### Reproduce the AI engineering evidence
+
+The [portfolio evidence runbook](docs/16-portfolio-evidence.md) covers synthetic
+multimodal benchmarks, inventory crash/replay drills, and forecast backtesting,
+promotion policy and rollback. It separates actual model inference from scorer
+replay and synthetic demonstrations from independent real-world evidence.

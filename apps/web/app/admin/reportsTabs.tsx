@@ -54,6 +54,12 @@ export function ReportsTab() {
   const sales = useLoad(loadSales);
   const pnl = useLoad(loadPnl);
   const forecast = useLoad(loadForecast);
+  const loadHealth = useCallback(() => adminApi<Array<{
+    day: string; status: string; recent_wape: number | null; baseline_wape: number | null;
+    complete_days: number;
+  }>>("/admin/reports/forecast-health"), []);
+  const health = useLoad(loadHealth);
+  const latestHealth = health.data?.[0];
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [csvError, setCsvError] = useState("");
 
@@ -124,6 +130,17 @@ export function ReportsTab() {
           )}
         </div>
         <ErrorBar msg={forecast.error} />
+        <ErrorBar msg={health.error} />
+        <div className="my-3 rounded-lg bg-indigo-800 p-3 text-sm">
+          <strong>Forecast health</strong>
+          <p className="mt-1 text-indigo-200">{!latestHealth ? "Waiting for the first nightly health check." :
+            latestHealth.status === "degraded" ? "Accuracy has declined. Prepare and backtest a candidate before replacing the model." :
+            latestHealth.status === "healthy" ? "No degradation detected across the two recent windows." :
+            `Not enough comparable forecasts yet (${latestHealth.complete_days}/28 complete days).`}</p>
+          {latestHealth?.recent_wape != null && <p className="mt-1 text-indigo-200">
+            Recent weighted error: {(latestHealth.recent_wape * 100).toFixed(1)}% · checked {latestHealth.day}
+          </p>}
+        </div>
         {forecast.data && forecast.data.points.length === 0 && (
           <EmptyState>No forecasts yet — the nightly scoring job (02:00 IST) hasn&apos;t run.</EmptyState>
         )}

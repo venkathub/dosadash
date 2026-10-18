@@ -12,7 +12,9 @@ on the VPS (docs/02).
 """
 
 import argparse
+import hashlib
 import json
+import math
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -71,19 +73,26 @@ def train(
     return model, metrics
 
 
-def _current_champion_wape(client: MlflowClient) -> float | None:
-    try:
-        version = client.get_model_version_by_alias(MODEL_NAME, CHAMPION)
-    except Exception:
+def validation_fingerprint(frame: pd.DataFrame, valid_days: int) -> str:
+    cutoff = pd.to_datetime(frame["date"]).max() - pd.Timedelta(days=valid_days)
+    valid = frame[pd.to_datetime(frame["date"]) > cutoff].sort_values(["date", "item_id"])
+    return hashlib.sha256(valid.to_csv(index=False).encode()).hexdigest()
+
+
+def _current_champion_tags(client: MlflowClient) -> dict[str, str] | None:
+    registered = client.get_registered_model(MODEL_NAME)
+    if CHAMPION not in registered.aliases:
         return None
-    tag = version.tags.get("wape")
-    return float(tag) if tag is not None else None
+    return dict(client.get_model_version_by_alias(MODEL_NAME, CHAMPION).tags)
 
 
 def register_and_maybe_promote(
     model: xgb.XGBRegressor, metrics: dict[str, float], *, params: dict[str, object]
 ) -> tuple[str, bool]:
     """Log run, register version, promote to champion if WAPE improves."""
+    validation_sha = params.get("validation_sha256")
+    if not validation_sha or not math.isfinite(metrics["valid_wape"]) or metrics["valid_wape"] < 0:
+        raise ValueError("finite WAPE and validation fingerprint required")
     client = MlflowClient()
     with mlflow.start_run(run_name=f"demand-forecast-{datetime.now(UTC):%Y%m%d-%H%M}"):
         mlflow.log_params(params)
@@ -92,8 +101,15 @@ def register_and_maybe_promote(
     version = str(info.registered_model_version)
     client.set_model_version_tag(MODEL_NAME, version, "wape", f"{metrics['valid_wape']:.6f}")
 
-    incumbent = _current_champion_wape(client)
-    promote = incumbent is None or metrics["valid_wape"] <= incumbent
+    client.set_model_version_tag(MODEL_NAME, version, "validation_sha256", str(validation_sha))
+    incumbent = _current_champion_tags(client)
+    promote = incumbent is None
+    if incumbent and incumbent.get("validation_sha256") == validation_sha:
+        try:
+            previous = float(incumbent["wape"])
+            promote = math.isfinite(previous) and previous >= 0 and metrics["valid_wape"] < previous
+        except (ValueError, KeyError):
+            promote = False
     if promote:
         client.set_registered_model_alias(MODEL_NAME, CHAMPION, version)
     return version, promote
@@ -144,6 +160,7 @@ def main() -> None:
         "valid_days": args.valid_days,
         "n_estimators": args.n_estimators,
         "features": ",".join(FEATURES),
+        "validation_sha256": validation_fingerprint(frame, args.valid_days),
     }
     version, promoted = register_and_maybe_promote(model, metrics, params=params)
     line = (
