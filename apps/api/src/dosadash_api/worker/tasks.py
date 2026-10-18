@@ -9,12 +9,12 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import text
+from sqlalchemy import delete, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from dosadash_api.config import get_settings
-from dosadash_api.db.models import Forecast
+from dosadash_api.db.models import Forecast, ForecastObservation
 from dosadash_api.worker.celery_app import app
 from dosadash_ml.forecasting.features import ItemMeta
 from dosadash_ml.forecasting.predict import ForecastRow, forecast_next_days, load_champion
@@ -70,7 +70,12 @@ async def _load_history(
                     GROUP BY oi.item_id, day
                     """
                 ),
-                {"start": start, "cutoff": end + timedelta(days=1)},
+                {
+                    "start": datetime.combine(start, datetime.min.time(), tzinfo=IST),
+                    "cutoff": datetime.combine(
+                        end + timedelta(days=1), datetime.min.time(), tzinfo=IST
+                    ),
+                },
             )
         ).fetchall()
 
@@ -85,7 +90,28 @@ async def _load_history(
 
 
 async def _upsert_forecasts(engine: AsyncEngine, rows: list[ForecastRow], version: str) -> None:
+    if not rows:
+        return
+    issued_day = datetime.now(IST).date()
     async with engine.begin() as conn:
+        snapshots = pg_insert(ForecastObservation).values(
+            [
+                {
+                    "item_id": r.item_id,
+                    "date": r.date,
+                    "issued_day": issued_day,
+                    "predicted_qty": r.predicted_qty,
+                    "model_version": version,
+                }
+                for r in rows
+            ]
+        )
+        await conn.execute(snapshots.on_conflict_do_nothing())
+        await conn.execute(
+            delete(ForecastObservation).where(
+                ForecastObservation.date < issued_day - timedelta(days=90)
+            )
+        )
         stmt = pg_insert(Forecast).values(
             [
                 {
@@ -109,6 +135,61 @@ async def _upsert_forecasts(engine: AsyncEngine, rows: list[ForecastRow], versio
         )
 
 
+async def _monitor_demand(engine: AsyncEngine, today: date) -> dict[str, Any]:
+    from dosadash_api.db.models import ForecastHealth
+    from dosadash_ml.forecasting.monitoring import degradation
+
+    start = today - timedelta(days=28)
+    history, metas = await _load_history(engine, start=start, end=today - timedelta(days=1))
+    async with engine.connect() as conn:
+        rows = (
+            await conn.execute(
+                text("""
+            SELECT DISTINCT ON (item_id, date) item_id, date, predicted_qty, model_version
+            FROM forecast_observations
+            WHERE date >= :start AND date < :today
+              AND published_at < (date::timestamp AT TIME ZONE 'Asia/Kolkata')
+            ORDER BY item_id, date, published_at DESC
+        """),
+                {"start": start, "today": today},
+            )
+        ).fetchall()
+    by_key = {(r.item_id, r.date): r for r in rows}
+    actual: list[list[float]] = [[], []]
+    predicted: list[list[float]] = [[], []]
+    versions: list[str] = []
+    complete_days = 0
+    for offset in range(28):
+        day = start + timedelta(days=offset)
+        if not metas or not all((item_id, day) in by_key for item_id in metas):
+            continue
+        complete_days += 1
+        window = int(offset >= 14)
+        for item_id in sorted(metas):
+            row = by_key[item_id, day]
+            actual[window].append(history[item_id][offset])
+            predicted[window].append(float(row.predicted_qty))
+            versions.append(row.model_version)
+    report = degradation(
+        actual[0],
+        predicted[0],
+        actual[1],
+        predicted[1],
+        complete_days=complete_days,
+        model_versions=versions,
+    )
+    report["window_end"] = (today - timedelta(days=1)).isoformat()
+    report["note"] = "Only forecasts recorded before the target day; no training runs on the VPS."
+    async with engine.begin() as conn:
+        stmt = pg_insert(ForecastHealth).values(day=today, report=report)
+        await conn.execute(
+            stmt.on_conflict_do_update(
+                index_elements=["day"], set_={"report": stmt.excluded.report}
+            )
+        )
+    return report
+
+
 async def _score_demand(horizon: int) -> dict[str, Any]:
     settings = get_settings()
     model = load_champion(settings.model_dir)
@@ -120,9 +201,15 @@ async def _score_demand(horizon: int) -> dict[str, Any]:
         )
         rows = forecast_next_days(model, history, metas, start=today, horizon=horizon)
         await _upsert_forecasts(engine, rows, model.version)
+        health = await _monitor_demand(engine, today)
     finally:
         await engine.dispose()
-    return {"model_version": model.version, "items": len(metas), "rows": len(rows)}
+    return {
+        "model_version": model.version,
+        "items": len(metas),
+        "rows": len(rows),
+        "health": health,
+    }
 
 
 @app.task(name="forecast.nightly_demand", bind=True, max_retries=2, default_retry_delay=300)
@@ -245,43 +332,84 @@ async def _publish_inventory(event_type: str, detail: dict[str, Any]) -> None:
         await redis.aclose()
 
 
-async def _draft_inventory_pos(coverage_days: int) -> dict[str, Any]:
-    """Call the ai inventory agent, persist drafts as PENDING_APPROVAL POs."""
+async def _draft_inventory_pos(coverage_days: int, key: str | None = None) -> dict[str, Any]:
     from sqlalchemy.ext.asyncio import async_sessionmaker
 
-    from dosadash_api.services import po_service
+    from dosadash_api.services import inventory_workflow
     from dosadash_api.services.ai_client import get_ai_client
-    from dosadash_shared import InventoryDraftRequest
-
-    result = await get_ai_client().draft_inventory_pos(
-        InventoryDraftRequest(coverage_days=coverage_days, session_id="inventory-nightly")
-    )
-    if not result.drafts:
-        return {"needs": len(result.needs), "created": 0, "skipped": 0, "fallback": result.fallback}
-
     from dosadash_api.services.po_notify import notify_owners_po_drafted
+
+    key = key or f"nightly:{datetime.now(IST).date()}:{coverage_days}"
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        async with async_sessionmaker(engine, expire_on_commit=False)() as session:
+            run, fresh = await inventory_workflow.advance(
+                session,
+                key=key,
+                coverage_days=coverage_days,
+                planner=get_ai_client().draft_inventory_pos,
+            )
+            notified = await notify_owners_po_drafted(session, run.po_ids) if fresh else 0
+            if fresh:
+                for po_id in run.po_ids:
+                    await _publish_inventory("inventory.po_drafted", {"po_id": po_id})
+            return {
+                "key": key,
+                "stage": run.stage,
+                "created": len(run.po_ids),
+                "po_ids": run.po_ids,
+                "skipped": len(run.skipped),
+                "notified": notified,
+            }
+    finally:
+        await engine.dispose()
+
+
+async def _recover_inventory() -> dict[str, int]:
+    from sqlalchemy import or_, select
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    from dosadash_api.db.models import InventoryWorkflow
+    from dosadash_api.services.inventory_workflow import WorkflowBusy
 
     engine = create_async_engine(get_settings().database_url)
     try:
         async with async_sessionmaker(engine, expire_on_commit=False)() as session:
-            created, skipped = await po_service.persist_agent_drafts(session, result)
-            await session.commit()
-            created_ids = [po.id for po in created]
-            notified = await notify_owners_po_drafted(session, created_ids)
+            runs = list(
+                (
+                    await session.scalars(
+                        select(InventoryWorkflow)
+                        .where(
+                            InventoryWorkflow.stage.in_(
+                                ["PLANNING", "READY", "AWAITING_APPROVAL", "AWAITING_RECEIPT"]
+                            ),
+                            or_(
+                                InventoryWorkflow.lease_until.is_(None),
+                                InventoryWorkflow.lease_until < datetime.now(UTC),
+                            ),
+                        )
+                        .order_by(InventoryWorkflow.updated_at)
+                        .limit(20)
+                    )
+                ).all()
+            )
+        resumed = 0
+        for run in runs:
+            try:
+                await _draft_inventory_pos(run.coverage_days, run.key)
+                resumed += 1
+            except WorkflowBusy:
+                continue
+            except Exception:
+                logger.exception("inventory recovery failed for %s", run.key)
+        return {"checked": len(runs), "resumed": resumed}
     finally:
         await engine.dispose()
 
-    for po_id in created_ids:
-        await _publish_inventory("inventory.po_drafted", {"po_id": po_id})
-    return {
-        "needs": len(result.needs),
-        "created": len(created_ids),
-        "po_ids": created_ids,
-        "skipped": len(skipped),
-        "fallback": result.fallback,
-        "violations": len(result.violations),
-        "notified": notified,
-    }
+
+@app.task(name="inventory.recover")
+def recover_inventory() -> dict[str, int]:
+    return asyncio.run(_recover_inventory())
 
 
 @app.task(name="inventory.nightly_po", bind=True, max_retries=2, default_retry_delay=300)

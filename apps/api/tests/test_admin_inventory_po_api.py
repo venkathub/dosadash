@@ -218,3 +218,41 @@ async def test_telegram_decision_rbac_and_auth(client, db_session, seeded_po, mo
         json={"tg_user_id": 777002, "po_id": seeded_po["po_id"], "action": "approve"},
     )
     assert bad.status_code == 403
+
+
+async def test_workflow_endpoints_are_admin_only_and_replay_request(client, admin, db_session):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    customer = await _login_as(db_session, "+919555569888", Role.CUSTOMER)
+    assert (await client.get(f"{POS}/workflows", headers=customer)).status_code == 403
+    assert (
+        await client.post(f"{POS}/workflows/resume?key=missing", headers=customer)
+    ).status_code == 403
+    rice = await db_session.scalar(select(Ingredient).where(Ingredient.name == "idli rice"))
+    planner = AsyncMock(
+        return_value=InventoryDraftResult(
+            coverage_days=7,
+            drafts=[
+                PODraft(
+                    lines=[PODraftLine(ingredient_id=rice.id, qty=Decimal("5"), reason="test")],
+                    rationale="test",
+                )
+            ],
+        )
+    )
+    app.dependency_overrides[get_ai_client] = lambda: SimpleNamespace(draft_inventory_pos=planner)
+    try:
+        headers = {**admin, "Idempotency-Key": "same-request"}
+        first = await client.post(f"{POS}/draft-now", headers=headers)
+        second = await client.post(f"{POS}/draft-now", headers=headers)
+        assert first.status_code == second.status_code == 200
+        assert first.json()[0]["id"] == second.json()[0]["id"]
+        assert planner.await_count == 1
+        workflows = await client.get(f"{POS}/workflows", headers=admin)
+        assert workflows.json()[0]["stage"] == "AWAITING_APPROVAL"
+        assert (
+            await client.post(f"{POS}/draft-now?coverage_days=3", headers=headers)
+        ).status_code == 409
+    finally:
+        app.dependency_overrides.pop(get_ai_client, None)

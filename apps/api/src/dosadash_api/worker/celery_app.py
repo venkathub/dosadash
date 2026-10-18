@@ -32,6 +32,10 @@ app.conf.update(
 )
 
 app.conf.beat_schedule = {
+    "inventory-recovery": {
+        "task": "inventory.recover",
+        "schedule": crontab(minute="7-59/15"),
+    },
     # Proof-of-life: hourly DB ping, visible in `docker compose logs worker`.
     "ops-heartbeat": {
         "task": "ops.heartbeat",

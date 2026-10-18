@@ -178,3 +178,11 @@ audits, independent annotations, lexical/template overlap detection, frozen
 validation/test protocols, ONNX-versus-LLM comparison and group-bootstrap uncertainty.
 No independent dataset has been supplied yet; this is tooling readiness, not a new
 quality claim. Existing synthetic results and blocking regression gates are unchanged.
+
+## Reproducible portfolio demonstrations
+
+`evals/portfolio/` contains explicitly synthetic review, TTS and rendered-invoice
+fixtures. Run local ONNX inference, remote component inference, or labeled scorer
+replay separately. These results never enter the independent-data benchmark or
+replace the existing live quality gates. See [the portfolio runbook](../docs/16-portfolio-evidence.md)
+for commands, lifecycle/recovery drills, evidence limits and deployment review.

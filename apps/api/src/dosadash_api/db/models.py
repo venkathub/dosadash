@@ -555,6 +555,47 @@ class Supplier(TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+class ForecastObservation(Base):
+    """First forecast per issue-day; immutable observations for honest monitoring."""
+
+    __tablename__ = "forecast_observations"
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("menu_items.id", ondelete="CASCADE"), primary_key=True
+    )
+    date: Mapped[date_type] = mapped_column(Date, primary_key=True, index=True)
+    issued_day: Mapped[date_type] = mapped_column(Date, primary_key=True)
+    predicted_qty: Mapped[float] = mapped_column(Float)
+    model_version: Mapped[str] = mapped_column(String(60))
+    published_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class ForecastHealth(Base):
+    __tablename__ = "forecast_health"
+
+    day: Mapped[date_type] = mapped_column(Date, primary_key=True)
+    report: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class InventoryWorkflow(TimestampMixin, Base):
+    """Durable draft checkpoint; approval and receipt remain in purchase_orders."""
+
+    __tablename__ = "inventory_workflows"
+
+    key: Mapped[str] = mapped_column(String(160), primary_key=True)
+    coverage_days: Mapped[int] = mapped_column()
+    stage: Mapped[str] = mapped_column(String(24), default="PLANNING", index=True)
+    lease_token: Mapped[str | None] = mapped_column(String(36))
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(default=0)
+    checkpoint: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    po_ids: Mapped[list[int]] = mapped_column(JSONB, default=list)
+    skipped: Mapped[list[int]] = mapped_column(JSONB, default=list)
+    error: Mapped[str | None] = mapped_column(String(100))
+
+
 class PurchaseOrder(TimestampMixin, Base):
     """Inventory-agent draft PO (or manual PO) — owner-approved before
     execution. State transitions only via `po_service` (mirrors the order

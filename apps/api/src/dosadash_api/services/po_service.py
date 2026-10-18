@@ -13,7 +13,7 @@ by line, closing the loop the wastage log opens.
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -55,6 +55,9 @@ async def persist_agent_drafts(
 
     Caller commits and publishes inventory.po_drafted events.
     """
+    # Serialize draft persistence across nightly/manual/recovery callers, including
+    # the unassigned supplier. The lock is released with the caller's transaction.
+    await session.execute(text("SELECT pg_advisory_xact_lock(187641, 1)"))
     open_supplier_ids = set(
         (
             await session.scalars(
@@ -112,6 +115,7 @@ async def persist_agent_drafts(
         )
         session.add(po)
         created.append(po)
+        open_supplier_ids.add(draft.supplier_id)
     await session.flush()
     return created, skipped
 
@@ -124,6 +128,8 @@ async def get_po(session: AsyncSession, po_id: int) -> PurchaseOrder | None:
             selectinload(PurchaseOrder.supplier),
         )
         .where(PurchaseOrder.id == po_id)
+        .with_for_update(of=PurchaseOrder)
+        .execution_options(populate_existing=True)
     )
 
 
@@ -149,9 +155,12 @@ def cancel(po: PurchaseOrder) -> None:
 
 async def receive(session: AsyncSession, po: PurchaseOrder) -> None:
     """Goods in: APPROVED → RECEIVED, stock incremented per line."""
+    # Re-read under lock even for callers holding an older ORM instance.
+    await session.flush()
+    await session.refresh(po, attribute_names=["status"], with_for_update=True)
     _transition(po, POState.RECEIVED)
     po.received_at = datetime.now(UTC)
-    for item in po.items:
+    for item in sorted(po.items, key=lambda item: item.ingredient_id):
         ingredient = await session.get(Ingredient, item.ingredient_id, with_for_update=True)
         if ingredient is not None:
             ingredient.stock_qty = ingredient.stock_qty + item.qty

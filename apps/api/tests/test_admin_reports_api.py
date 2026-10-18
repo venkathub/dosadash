@@ -161,3 +161,17 @@ async def test_forecast_vs_actual_flags_anomaly(client, admin, seeded_orders, db
     future = by_date[(yesterday + timedelta(days=2)).isoformat()]
     assert future["actual_qty"] is None and future["anomaly"] is False
     assert any(a["name"] == "Masala Dosa" for a in body["dish_anomalies"])
+
+
+async def test_forecast_health_admin_only(client, admin, customer, db_session):
+    from datetime import date
+
+    from dosadash_api.db.models import ForecastHealth
+
+    db_session.add(ForecastHealth(day=date(2026, 10, 18), report={"status": "insufficient_data"}))
+    await db_session.commit()
+    assert (
+        await client.get("/api/v1/admin/reports/forecast-health", headers=customer)
+    ).status_code == 403
+    response = await client.get("/api/v1/admin/reports/forecast-health", headers=admin)
+    assert response.status_code == 200 and response.json()[0]["status"] == "insufficient_data"

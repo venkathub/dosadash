@@ -1,0 +1,611 @@
+{
+  "schema_version": 1,
+  "status": "error",
+  "evidence": "synthetic_portfolio_demo",
+  "mode": "live",
+  "fingerprint": "563f07ac0c097fa30307f941bcbdb5403b6be25dfd8b00f9f583d490a9c0c354",
+  "inputs_unchanged": true,
+  "results": {
+    "audio": {
+      "overall": {
+        "n": 3,
+        "groups": 3,
+        "metrics": null,
+        "warning": "Incomplete predictions; aggregate quality unavailable."
+      },
+      "language": {
+        "en": {
+          "n": 3,
+          "groups": 3,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        }
+      },
+      "category": {
+        "clean": {
+          "n": 1,
+          "groups": 1,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        },
+        "correction": {
+          "n": 1,
+          "groups": 1,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        },
+        "noise": {
+          "n": 1,
+          "groups": 1,
+          "metrics": null,
+          "warning": "Incomplete predictions; aggregate quality unavailable."
+        }
+      }
+    },
+    "invoice": {
+      "overall": {
+        "n": 3,
+        "groups": 1,
+        "metrics": {
+          "line_precision": 1.0,
+          "line_recall": 1.0,
+          "line_f1": 1.0,
+          "header_accuracy": 1.0,
+          "arithmetic_ok": 0.6666666666666666,
+          "exact_match": 1.0
+        },
+        "warning": "Small artificial/regression sample; no generalization claim.",
+        "ci95": null
+      },
+      "language": {
+        "en": {
+          "n": 3,
+          "groups": 1,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 0.6666666666666666,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        }
+      },
+      "category": {
+        "arithmetic_error": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 0.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "clean": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "rotated": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        }
+      }
+    },
+    "review": {
+      "overall": {
+        "n": 6,
+        "groups": 6,
+        "metrics": {
+          "label_f1": 0.8888888888888888,
+          "exact_match": 0.6666666666666666
+        },
+        "warning": "Small artificial/regression sample; no generalization claim.",
+        "ci95": {
+          "label_f1": [
+            0.7777777777777777,
+            1.0
+          ],
+          "exact_match": [
+            0.3333333333333333,
+            1.0
+          ]
+        }
+      },
+      "language": {
+        "en": {
+          "n": 4,
+          "groups": 4,
+          "metrics": {
+            "label_f1": 0.8333333333333333,
+            "exact_match": 0.5
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": {
+            "label_f1": [
+              0.6666666666666666,
+              1.0
+            ],
+            "exact_match": [
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "hinglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "tanglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        }
+      },
+      "category": {
+        "hinglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "indirect": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "mixed": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 0.6666666666666666,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "negation": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "rating_conflict": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 0.6666666666666666,
+            "exact_match": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        },
+        "tanglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "ci95": null
+        }
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "review-0",
+      "task": "review",
+      "group_id": "review-0",
+      "language": "en",
+      "category": "mixed",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "prediction": [
+        "temperature:NEGATIVE"
+      ],
+      "latency_ms": 3758.18
+    },
+    {
+      "id": "review-1",
+      "task": "review",
+      "group_id": "review-1",
+      "language": "en",
+      "category": "negation",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "price:NEGATIVE",
+        "taste:POSITIVE"
+      ],
+      "latency_ms": 1464.26
+    },
+    {
+      "id": "review-2",
+      "task": "review",
+      "group_id": "review-2",
+      "language": "tanglish",
+      "category": "tanglish",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "delivery:NEGATIVE",
+        "packaging:POSITIVE"
+      ],
+      "latency_ms": 1397.77
+    },
+    {
+      "id": "review-3",
+      "task": "review",
+      "group_id": "review-3",
+      "language": "hinglish",
+      "category": "hinglish",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "portion:NEGATIVE",
+        "taste:POSITIVE"
+      ],
+      "latency_ms": 1812.59
+    },
+    {
+      "id": "review-4",
+      "task": "review",
+      "group_id": "review-4",
+      "language": "en",
+      "category": "rating_conflict",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "prediction": [
+        "freshness:NEGATIVE"
+      ],
+      "latency_ms": 1535.37
+    },
+    {
+      "id": "review-5",
+      "task": "review",
+      "group_id": "review-5",
+      "language": "en",
+      "category": "indirect",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "portion:POSITIVE",
+        "temperature:POSITIVE"
+      ],
+      "latency_ms": 1242.23
+    },
+    {
+      "id": "audio-0",
+      "task": "audio",
+      "group_id": "tts-0",
+      "language": "en",
+      "category": "clean",
+      "status": "error",
+      "error": "LLMError",
+      "latency_ms": 55.08
+    },
+    {
+      "id": "audio-1",
+      "task": "audio",
+      "group_id": "tts-1",
+      "language": "en",
+      "category": "correction",
+      "status": "error",
+      "error": "LLMError",
+      "latency_ms": 20.2
+    },
+    {
+      "id": "audio-2",
+      "task": "audio",
+      "group_id": "tts-2",
+      "language": "en",
+      "category": "noise",
+      "status": "error",
+      "error": "LLMError",
+      "latency_ms": 12.65
+    },
+    {
+      "id": "invoice-0",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "language": "en",
+      "category": "clean",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "line_precision": 1.0,
+        "line_recall": 1.0,
+        "line_f1": 1.0,
+        "header_accuracy": 1.0,
+        "arithmetic_ok": true,
+        "exact_match": true
+      },
+      "prediction": {
+        "supplier_name": "Portfolio Demo Supplies",
+        "invoice_number": "DEMO-1",
+        "invoice_date": "2026-10-01",
+        "lines": [
+          {
+            "name": "Idli rice",
+            "qty": "10",
+            "unit": "kg",
+            "unit_price": "60",
+            "amount": "600"
+          },
+          {
+            "name": "Milk",
+            "qty": "4",
+            "unit": "l",
+            "unit_price": "50",
+            "amount": "200"
+          }
+        ],
+        "total": "800",
+        "notes": null
+      },
+      "latency_ms": 1928.03
+    },
+    {
+      "id": "invoice-1",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "language": "en",
+      "category": "rotated",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "line_precision": 1.0,
+        "line_recall": 1.0,
+        "line_f1": 1.0,
+        "header_accuracy": 1.0,
+        "arithmetic_ok": true,
+        "exact_match": true
+      },
+      "prediction": {
+        "supplier_name": "Portfolio Demo Supplies",
+        "invoice_number": "DEMO-2",
+        "invoice_date": "2026-10-01",
+        "lines": [
+          {
+            "name": "Idli rice",
+            "qty": "10",
+            "unit": "kg",
+            "unit_price": "60",
+            "amount": "600"
+          },
+          {
+            "name": "Milk",
+            "qty": "4",
+            "unit": "l",
+            "unit_price": "50",
+            "amount": "200"
+          }
+        ],
+        "total": "800",
+        "notes": null
+      },
+      "latency_ms": 1657.51
+    },
+    {
+      "id": "invoice-2",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "language": "en",
+      "category": "arithmetic_error",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "line_precision": 1.0,
+        "line_recall": 1.0,
+        "line_f1": 1.0,
+        "header_accuracy": 1.0,
+        "arithmetic_ok": false,
+        "exact_match": true
+      },
+      "prediction": {
+        "supplier_name": "Portfolio Demo Supplies",
+        "invoice_number": "DEMO-3",
+        "invoice_date": "2026-10-01",
+        "lines": [
+          {
+            "name": "Idli rice",
+            "qty": "10",
+            "unit": "kg",
+            "unit_price": "60",
+            "amount": "600"
+          },
+          {
+            "name": "Milk",
+            "qty": "4",
+            "unit": "l",
+            "unit_price": "50",
+            "amount": "200"
+          }
+        ],
+        "total": "850",
+        "notes": null
+      },
+      "latency_ms": 1795.25
+    }
+  ],
+  "usage": {
+    "attempted_calls": 9,
+    "completed_calls": 9,
+    "known_tokens": 93471,
+    "known_cost_usd": 0.0143577,
+    "tokens": 93471,
+    "estimated_cost_usd": 0.0143577,
+    "models": [
+      "gpt-4o-mini"
+    ],
+    "calls": [
+      {
+        "case_id": "review-0",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 3676.11,
+        "tokens": 695,
+        "estimated_cost_usd": 0.0001281,
+        "error": null
+      },
+      {
+        "case_id": "review-1",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1464.06,
+        "tokens": 711,
+        "estimated_cost_usd": 0.00013769999999999999,
+        "error": null
+      },
+      {
+        "case_id": "review-2",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1397.57,
+        "tokens": 715,
+        "estimated_cost_usd": 0.00013874999999999998,
+        "error": null
+      },
+      {
+        "case_id": "review-3",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1812.33,
+        "tokens": 711,
+        "estimated_cost_usd": 0.00013769999999999999,
+        "error": null
+      },
+      {
+        "case_id": "review-4",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1535.14,
+        "tokens": 694,
+        "estimated_cost_usd": 0.0001284,
+        "error": null
+      },
+      {
+        "case_id": "review-5",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1241.97,
+        "tokens": 710,
+        "estimated_cost_usd": 0.0001371,
+        "error": null
+      },
+      {
+        "case_id": "invoice-0",
+        "model": "gpt-4o-mini",
+        "prompt_version": "invoice_extract_v1",
+        "latency_ms": 1927.45,
+        "tokens": 25967,
+        "estimated_cost_usd": 0.00394995,
+        "error": null
+      },
+      {
+        "case_id": "invoice-1",
+        "model": "gpt-4o-mini",
+        "prompt_version": "invoice_extract_v1",
+        "latency_ms": 1656.79,
+        "tokens": 37301,
+        "estimated_cost_usd": 0.005650049999999999,
+        "error": null
+      },
+      {
+        "case_id": "invoice-2",
+        "model": "gpt-4o-mini",
+        "prompt_version": "invoice_extract_v1",
+        "latency_ms": 1794.67,
+        "tokens": 25967,
+        "estimated_cost_usd": 0.00394995,
+        "error": null
+      }
+    ]
+  },
+  "audio_attempts": 3,
+  "audio_cost_usd": null,
+  "limitations": [
+    "Replay validates the scorer only; it does not run a model.",
+    "Local mode runs the real ONNX classifier; audio/invoices are not run.",
+    "Synthetic TTS and rendered invoices are not real-world audio or invoice evidence.",
+    "Command-term recall measures the transcript, not downstream order execution.",
+    "Audio cost is unmeasured; the $1 known-cost limit applies only to text/vision calls.",
+    "Small-group intervals are descriptive; no blocking quality threshold."
+  ]
+}

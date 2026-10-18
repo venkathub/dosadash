@@ -19,9 +19,10 @@ export const clearAdminToken = () => localStorage.removeItem(TOKEN_KEY);
 
 export async function adminApi<T>(
   path: string,
-  opts: { method?: string; body?: unknown } = {},
+  opts: { method?: string; body?: unknown; idempotencyKey?: string } = {},
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (opts.idempotencyKey) headers["Idempotency-Key"] = opts.idempotencyKey;
   const token = getAdminToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   const resp = await fetch(`/api/v1${path}`, {

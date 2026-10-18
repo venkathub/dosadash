@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "evidence": "synthetic_portfolio_demo",
+  "cases": [
+    {
+      "id": "review-0",
+      "task": "review",
+      "group_id": "review-0",
+      "text": "The lid stayed shut, yet the meal arrived cold.",
+      "rating": 5,
+      "expected": [
+        "packaging:POSITIVE",
+        "temperature:NEGATIVE"
+      ],
+      "language": "en",
+      "category": "mixed",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true
+    },
+    {
+      "id": "review-1",
+      "task": "review",
+      "group_id": "review-1",
+      "text": "Not a bad taste, but paying this much hurts.",
+      "rating": 5,
+      "expected": [
+        "taste:POSITIVE",
+        "price:NEGATIVE"
+      ],
+      "language": "en",
+      "category": "negation",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true
+    },
+    {
+      "id": "review-2",
+      "task": "review",
+      "group_id": "review-2",
+      "text": "Packing nalla irundhuchu, delivery romba late.",
+      "rating": 5,
+      "expected": [
+        "packaging:POSITIVE",
+        "delivery:NEGATIVE"
+      ],
+      "language": "tanglish",
+      "category": "tanglish",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true
+    },
+    {
+      "id": "review-3",
+      "task": "review",
+      "group_id": "review-3",
+      "text": "Khana tasty tha, quantity bahut kam thi.",
+      "rating": 5,
+      "expected": [
+        "taste:POSITIVE",
+        "portion:NEGATIVE"
+      ],
+      "language": "hinglish",
+      "category": "hinglish",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true
+    },
+    {
+      "id": "review-4",
+      "task": "review",
+      "group_id": "review-4",
+      "text": "Five stars by mistake: everything tasted stale.",
+      "rating": 5,
+      "expected": [
+        "freshness:NEGATIVE",
+        "taste:NEGATIVE"
+      ],
+      "language": "en",
+      "category": "rating_conflict",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true
+    },
+    {
+      "id": "review-5",
+      "task": "review",
+      "group_id": "review-5",
+      "text": "Enough for both of us and still steaming when opened.",
+      "rating": 5,
+      "expected": [
+        "portion:POSITIVE",
+        "temperature:POSITIVE"
+      ],
+      "language": "en",
+      "category": "indirect",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true
+    },
+    {
+      "id": "audio-0",
+      "task": "audio",
+      "group_id": "tts-0",
+      "path": "audio-0.wav",
+      "mime_type": "audio/wav",
+      "expected": "Please send two masala dosas and one filter coffee.",
+      "required_terms": [
+        "two",
+        "masala",
+        "coffee"
+      ],
+      "language": "en",
+      "category": "clean",
+      "generator": "ffmpeg libflite slt; synthetic voice",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true,
+      "sha256": "d4bba156d7d6f731135db948a9fdbe205a5f1258ec3007733d3c1cd01c7ac6c9"
+    },
+    {
+      "id": "audio-1",
+      "task": "audio",
+      "group_id": "tts-1",
+      "path": "audio-1.wav",
+      "mime_type": "audio/wav",
+      "expected": "Make that one dosa, not two, and no coffee.",
+      "required_terms": [
+        "one",
+        "not two",
+        "no coffee"
+      ],
+      "language": "en",
+      "category": "correction",
+      "generator": "ffmpeg libflite slt; synthetic voice",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true,
+      "sha256": "944b519e650691c3305b87504d64e404fd062cdb1d59377e1a51157fa3ad965f"
+    },
+    {
+      "id": "audio-2",
+      "task": "audio",
+      "group_id": "tts-2",
+      "path": "audio-2.wav",
+      "mime_type": "audio/wav",
+      "expected": "One coffee please. No sugar in the coffee.",
+      "required_terms": [
+        "one",
+        "coffee",
+        "no sugar"
+      ],
+      "language": "en",
+      "category": "noise",
+      "generator": "ffmpeg libflite slt; synthetic voice",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true,
+      "sha256": "b16e0335ff32f76058df4d8a25018bcb84dab4eab8c6c89ae37e7061ebef8838"
+    },
+    {
+      "id": "invoice-0",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "path": "invoice-0.png",
+      "mime_type": "image/png",
+      "expected": {
+        "supplier_name": "Portfolio Demo Supplies",
+        "invoice_number": "DEMO-1",
+        "invoice_date": "2026-10-01",
+        "lines": [
+          {
+            "name": "Idli rice",
+            "qty": "10",
+            "unit": "kg",
+            "unit_price": "60",
+            "amount": "600"
+          },
+          {
+            "name": "Milk",
+            "qty": "4",
+            "unit": "l",
+            "unit_price": "50",
+            "amount": "200"
+          }
+        ],
+        "total": "800"
+      },
+      "language": "en",
+      "category": "clean",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true,
+      "sha256": "d2add0d5fd9fcfa428fac57a18cdc2a906b7a0fc2f4055032415606be28f8a05"
+    },
+    {
+      "id": "invoice-1",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "path": "invoice-1.png",
+      "mime_type": "image/png",
+      "expected": {
+        "supplier_name": "Portfolio Demo Supplies",
+        "invoice_number": "DEMO-2",
+        "invoice_date": "2026-10-01",
+        "lines": [
+          {
+            "name": "Idli rice",
+            "qty": "10",
+            "unit": "kg",
+            "unit_price": "60",
+            "amount": "600"
+          },
+          {
+            "name": "Milk",
+            "qty": "4",
+            "unit": "l",
+            "unit_price": "50",
+            "amount": "200"
+          }
+        ],
+        "total": "800"
+      },
+      "language": "en",
+      "category": "rotated",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true,
+      "sha256": "7f00de3cadddd438ab59f84f8b127814ff9cb806c9af96d60f36e4050536c27f"
+    },
+    {
+      "id": "invoice-2",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "path": "invoice-2.png",
+      "mime_type": "image/png",
+      "expected": {
+        "supplier_name": "Portfolio Demo Supplies",
+        "invoice_number": "DEMO-3",
+        "invoice_date": "2026-10-01",
+        "lines": [
+          {
+            "name": "Idli rice",
+            "qty": "10",
+            "unit": "kg",
+            "unit_price": "60",
+            "amount": "600"
+          },
+          {
+            "name": "Milk",
+            "qty": "4",
+            "unit": "l",
+            "unit_price": "50",
+            "amount": "200"
+          }
+        ],
+        "total": "850"
+      },
+      "language": "en",
+      "category": "arithmetic_error",
+      "origin": "synthetic",
+      "permission_ref": "generated_for_this_repository",
+      "provider_use_allowed": true,
+      "sha256": "e9f852c32d82ede8d646b60f4f608b37daab86e17857d5863269d95fcc7f7c01"
+    }
+  ]
+}

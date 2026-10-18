@@ -3,7 +3,7 @@
 /** Inventory tab (Phase 6): agent-drafted purchase orders (approve/receive),
  *  on-demand agent runs, and the wastage log. */
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Badge,
   Btn,
@@ -56,7 +56,16 @@ type Wastage = {
 
 type Ingredient = { id: number; name: string; unit: string; stock_qty: string };
 
+type Workflow = { key: string; stage: string; attempts: number; po_ids: number[]; error: string | null };
+const workflowLabels: Record<string, string> = {
+  PLANNING: "Drafting", READY: "Saving drafts", AWAITING_APPROVAL: "Waiting for approval",
+  AWAITING_RECEIPT: "Ready to receive", COMPLETED: "Completed", FAILED: "Needs attention",
+};
+
 export function InventoryTab() {
+  const requestKey = useRef<string | null>(null);
+  const loadWorkflows = useCallback(() => adminApi<Workflow[]>("/admin/purchase-orders/workflows"), []);
+  const workflows = useLoad(loadWorkflows);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const loadPos = useCallback(
@@ -71,6 +80,7 @@ export function InventoryTab() {
       .then(() => {
         setOpen({});
         refresh();
+        workflows.refresh();
       })
       .catch((e) => setError(e instanceof AdminApiError ? e.message : "action failed"));
 
@@ -91,13 +101,19 @@ export function InventoryTab() {
     setBusy(true);
     setError("");
     try {
-      const created = await adminApi<PODetail[]>("/admin/purchase-orders/draft-now", { method: "POST" });
+      requestKey.current ??= crypto.randomUUID();
+      const created = await adminApi<PODetail[]>("/admin/purchase-orders/draft-now", {
+        method: "POST", idempotencyKey: requestKey.current,
+      });
+      requestKey.current = null;
+      workflows.refresh();
       if (created.length === 0) setError("Agent found nothing to reorder (or open drafts already cover it).");
       refresh();
     } catch (e) {
       setError(e instanceof AdminApiError ? e.message : "draft failed");
     } finally {
       setBusy(false);
+      workflows.refresh();
     }
   };
 
@@ -116,6 +132,24 @@ export function InventoryTab() {
           {busy ? "🤖 drafting…" : "🤖 Run inventory agent now"}
         </Btn>
       </div>
+
+      <section className="rounded-lg bg-indigo-800 p-3 text-sm" aria-label="Inventory runs">
+        <SectionHeading as="h3" kolam={false} className="text-base text-indigo-100">Inventory runs</SectionHeading>
+        <ErrorBar msg={workflows.error} />
+        <Btn variant="ghost" size="sm" onClick={workflows.refresh}>Refresh runs</Btn>
+        {workflows.data?.length === 0 && <p className="text-indigo-200">No runs recorded yet.</p>}
+        {(workflows.data ?? []).slice(0, 5).map((run) => (
+          <div key={run.key} className="flex flex-wrap items-center gap-3 py-2">
+            <Badge tone={run.stage === "FAILED" ? "danger" : "neutral"}>{workflowLabels[run.stage] ?? run.stage}</Badge>
+            <span>{run.po_ids.length ? `PO ${run.po_ids.map((id) => `#${id}`).join(", ")}` : "No purchase orders yet"}</span>
+            {["PLANNING", "READY"].includes(run.stage) && <Btn size="sm" variant="ghost"
+              onClick={() => act(() => adminApi(`/admin/purchase-orders/workflows/resume?key=${encodeURIComponent(run.key)}`, { method: "POST" }))}>
+              Resume run
+            </Btn>}
+            {run.stage === "FAILED" && <span className="text-indigo-200">Three attempts failed. Review the run before starting again.</span>}
+          </div>
+        ))}
+      </section>
 
       <div className="space-y-2">
         {(pos ?? []).map((po) => (

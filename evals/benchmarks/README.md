@@ -43,7 +43,7 @@ Each JSONL record conforms to `contracts.ReviewRecord`:
   supplies the resolved labels and a reason of at least ten characters.
 
 Label explicit aspect evidence, not the star rating. Cover taste, portion,
-packaging, delivery, temperature, freshness, spice and value using the registry
+packaging, delivery, temperature, freshness, spice and price using the registry
 in `packages/shared/src/dosadash_shared/reviews.py`. Reviewers should annotate
 separately before comparing labels. Record unresolved ambiguity; do not run those
 records until adjudicated. The audit reports initial exact-label disagreement even
