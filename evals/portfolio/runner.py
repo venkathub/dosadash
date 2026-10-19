@@ -137,7 +137,7 @@ def fingerprint(manifest):
         ROOT / "packages/shared/src/dosadash_shared/invoice.py",
         ROOT / "apps/api/src/dosadash_api/services/invoice_service.py",
         *sorted((ROOT / "apps/ai/src/dosadash_ai/agent").glob("*.py")),
-        *sorted((ROOT / "apps/ai/prompts").glob("order_agent*.md")),
+        *sorted((ROOT / "apps/ai/prompts").glob("order_*.md")),
     ]
     settings = get_settings()
     values = [hashlib.sha256(p.read_bytes()).hexdigest() for p in paths]

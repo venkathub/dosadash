@@ -84,3 +84,14 @@ commitment. No row contents are retained in the report or sent to AI/tracing.
 Production stayed read-only, and the local archive/database were removed. The
 backup schedule, off-host destination and failure alerting are still deployment
 work; the successful drill does not imply they exist.
+
+The first full live merge gate on this PR scored 166/175 (94.86%), below the
+unchanged 95% order gate, while the other six suites passed. Its nine misses are
+retained in `order-gate-first-failure.json`. Three paused-kitchen replies used
+ambiguous phrasing; two Set Dosa requests drafted Plain Dosa. Closed/paused
+responses now come from authoritative business state (the cart is retained, but
+checkout is never claimed), and the existing single correction retry receives
+exact DB item IDs through a versioned correction prompt. The 24-case expanded
+report predates these order-response changes and is not a new measurement of them.
+The complete live CI gate validates the revised ordering path; expected labels
+and thresholds remain unchanged.
