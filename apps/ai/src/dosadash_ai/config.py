@@ -4,6 +4,7 @@ import re
 from functools import lru_cache
 from urllib.parse import quote
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +23,19 @@ class Settings(BaseSettings):
 
     # Shared secret for api→ai internal calls (same pattern as bot→api).
     internal_api_token: str = ""
+
+    # Durable daily admission control. Compose enables it; isolated evals default off.
+    provider_budget_enabled: bool = False
+    provider_daily_budget_usd: float = Field(default=5.0, ge=0, allow_inf_nan=False)
+    provider_daily_max_calls: int = Field(default=1000, ge=0)
+    provider_timeout_seconds: float = Field(default=60, gt=0, le=120)
+    provider_reservations_usd: dict[str, float] = {
+        "chat": 0.02,
+        "embedding": 0.005,
+        "audio": 0.02,
+        "image": 0.10,
+        "batch": 0.02,
+    }
 
     # litellm routing chain (docs/02): primary → fast tier → fallback.
     # Provider keys (OPENAI_API_KEY, GROQ_API_KEY, GEMINI_API_KEY) are read by
@@ -65,6 +79,9 @@ class Settings(BaseSettings):
     semcache_threshold: float = 0.95  # cosine — docs/06
     semcache_ttl_seconds: int = 86400
     semcache_max_candidates: int = 128  # bounded in-process scoring
+
+    # Local confidence failed the synthetic challenge audit. Opt in only after validation.
+    review_local_enabled: bool = False
 
     # Champion ML artifacts (Phase 5): exported by packages/ml training and
     # baked into the image; ETA scoring loads {model_dir}/eta/champion.

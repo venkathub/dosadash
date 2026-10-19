@@ -116,3 +116,21 @@ class InvoiceOut(BaseModel):
     reviewed_by: int | None = None
     review_note: str | None = None
     created_at: datetime
+
+
+def invoice_review_status(
+    *, confidence: float, arithmetic_ok: bool, match: InvoiceMatch | None
+) -> InvoiceStatus:
+    """A weighted score may never hide a known accounting or delivery discrepancy."""
+    clear = (
+        arithmetic_ok
+        and match is not None
+        and bool(match.line_matches)
+        and all(line.qty_ok for line in match.line_matches)
+        and not match.extra_invoice_lines
+    )
+    return (
+        InvoiceStatus.MATCHED
+        if clear and confidence >= INVOICE_AUTO_MATCH_THRESHOLD
+        else InvoiceStatus.PENDING_REVIEW
+    )

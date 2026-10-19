@@ -250,14 +250,24 @@ live eval gate, human-approved via Telegram, deployed and verified in prod.
 + 2 GB swapfile. No local LLM/Whisper inference on VPS — generative AI via
 APIs only (Hard Rule 7). Tiny classical/tuned models DO serve locally by
 design: xgboost (forecast/ETA), ALS item factors (recsys), and the INT8
-ONNX DistilBERT sentiment champion (Phase 8 — the whole point is ₹0 CPU
-serving on this box).
+ONNX DistilBERT sentiment artifact (opt-in after the confidence audit; LLM
+review scoring is the default). Local inference avoids a provider fee but uses CPU/RAM.
 MLflow runs locally/CI; artifacts synced to VPS.
 ```
 
-**CI/CD**: push → GitHub Actions (ruff/pytest → **eval gate** → docker build to GHCR) → SSH → `docker compose pull && up -d` (health-checked) → smoke `/healthz` → Telegram "✅ deployed <sha>". Nightly `pg_dump` backup (7-day retention). UptimeRobot on `/healthz`.
+**CI/CD**: protected PR checks → merge to main → SSH fetch/reset →
+`docker compose up -d --build --remove-orphans` on the VPS → Caddy restart →
+health smoke → ten-minute public canary. The workflow builds on the VPS; it does
+not pull application images from GHCR. A breach opens a revert PR through the
+same merge gates. See `.github/workflows/deploy.yml`.
 
-**Security**: Cloudflare-proxied DNS (VPS IP hidden) · UFW 80/443/SSH-key only · JWT+RBAC · Telegram webhook secret · Razorpay signature verification · injection filters · PII redaction pre-LLM · per-user/IP rate limits · litellm daily spend kill-switch · secrets in env only · staff audit log.
+**Recovery**: the 2026-10-19 audit found no DosaDash cron/systemd backup schedule.
+`infra/backup/postgres.sh` and its cron example are ready for explicit installation;
+seven-day local retention alone does not protect against VPS loss. A synthetic
+restore and migration roundtrip passed; production-data restore and off-host
+backup/alert delivery remain unverified. See docs/18.
+
+**Security**: Cloudflare-proxied DNS (VPS IP hidden) · UFW 80/443/SSH-key only · JWT+RBAC · Telegram webhook secret · Razorpay signature verification · injection filters · PII redaction pre-LLM · per-user/IP rate limits · PostgreSQL-backed provider admission allowance (estimated costs, not a billing hard cap) · secrets in env only · staff audit log.
 
 ## 5. Scaling Story (interview answer)
 

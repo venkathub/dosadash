@@ -1,0 +1,5 @@
+# Install as /etc/cron.d/dosadash-backup after checking paths, space and alerting.
+# Uses the server's local timezone. Production installation requires review.
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+15 2 * * * root /opt/dosadash/infra/backup/postgres.sh >> /var/log/dosadash-backup.log 2>&1

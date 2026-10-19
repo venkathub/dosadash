@@ -16,7 +16,7 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dosadash_api.auth.deps import require_role
-from dosadash_api.db.models import ForecastHealth, User
+from dosadash_api.db.models import ForecastHealth, ProviderBudgetDay, User
 from dosadash_api.db.session import get_session
 from dosadash_shared import (
     DishAnomaly,
@@ -299,3 +299,25 @@ async def forecast_health(
         await session.scalars(select(ForecastHealth).order_by(ForecastHealth.day.desc()).limit(30))
     ).all()
     return [{"day": row.day.isoformat(), **row.report} for row in rows]
+
+
+@router.get("/provider-budget")
+async def provider_budget(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    admin: User = AdminUser,
+) -> list[dict]:
+    rows = (
+        await session.scalars(
+            select(ProviderBudgetDay).order_by(ProviderBudgetDay.day.desc()).limit(14)
+        )
+    ).all()
+    return [
+        {
+            "day": row.day.isoformat(),
+            "charged_usd": float(row.charged_usd),
+            "known_usd": float(row.known_usd),
+            "calls": row.calls,
+            "unknown_calls": row.unknown_calls,
+        }
+        for row in rows
+    ]

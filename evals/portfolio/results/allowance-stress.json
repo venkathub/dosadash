@@ -1,0 +1,14 @@
+{
+  "ran_at": "2026-10-19T10:28:08.510781+00:00",
+  "status": "passed",
+  "requests": 40,
+  "concurrency": 8,
+  "admitted": 5,
+  "rejected": 35,
+  "retained_usd": 0.1,
+  "elapsed_seconds": 0.207,
+  "p50_ms": 11.12,
+  "p95_ms": 161.39,
+  "provider_calls": 0,
+  "limitations": "Local PostgreSQL admission stress only; not production chat throughput or provider latency."
+}

@@ -9,7 +9,6 @@ from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from random import Random
-from types import SimpleNamespace
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -43,6 +42,10 @@ class Case(BaseModel):
     rating: int = Field(default=3, ge=1, le=5)
     required_terms: list[str] = Field(default_factory=list)
     generator: str | None = None
+    expected_order: dict | None = None
+    initial_order: list[dict] = Field(default_factory=list)
+    purchase_order: dict | None = None
+    expected_review_status: Literal["MATCHED", "PENDING_REVIEW"] | None = None
 
     @model_validator(mode="after")
     def valid_case(self):
@@ -71,6 +74,27 @@ class Case(BaseModel):
                 InvoiceExtraction.model_validate(self.expected)
                 if self.mime_type not in {"image/png", "image/jpeg", "image/webp"}:
                     raise ValueError("unsupported image MIME")
+        if self.expected_order is not None:
+            if self.task != "audio" or not isinstance(self.expected_order.get("items"), dict):
+                raise ValueError("audio order expectation must contain items")
+            if any(
+                not isinstance(n, str) or type(q) is not int or q < 1
+                for n, q in self.expected_order["items"].items()
+            ):
+                raise ValueError("order items require names and positive integer quantities")
+        if self.initial_order and self.expected_order is None:
+            raise ValueError("initial order requires downstream expectation")
+        if (self.purchase_order is None) != (self.expected_review_status is None):
+            raise ValueError("purchase order and review status must be supplied together")
+        if self.purchase_order is not None:
+            if self.task != "invoice" or not self.purchase_order.get("supplier"):
+                raise ValueError("invoice purchase order supplier required")
+            lines = self.purchase_order.get("lines")
+            if not isinstance(lines, list) or not lines:
+                raise ValueError("purchase order lines required")
+            for line in lines:
+                if not line.get("name") or not 0 < float(line.get("qty", 0)) < float("inf"):
+                    raise ValueError("purchase order quantities must be finite and positive")
         return self
 
 
@@ -111,10 +135,18 @@ def fingerprint(manifest):
         *sorted((ROOT / "packages/ml/src/dosadash_ml/finetune").glob("*.py")),
         ROOT / "packages/shared/src/dosadash_shared/reviews.py",
         ROOT / "packages/shared/src/dosadash_shared/invoice.py",
+        ROOT / "apps/api/src/dosadash_api/services/invoice_service.py",
+        *sorted((ROOT / "apps/ai/src/dosadash_ai/agent").glob("*.py")),
+        *sorted((ROOT / "apps/ai/prompts").glob("order_agent*.md")),
     ]
     settings = get_settings()
     values = [hashlib.sha256(p.read_bytes()).hexdigest() for p in paths]
-    values += [str(settings.llm_models), settings.stt_model, str(VISION_MODELS)]
+    values += [
+        str(settings.llm_models),
+        settings.stt_model,
+        str(VISION_MODELS),
+        str(settings.review_local_enabled),
+    ]
     return hashlib.sha256(json.dumps(values).encode()).hexdigest()
 
 
@@ -130,6 +162,13 @@ async def predict(case, manifest):
                 session_id=f"portfolio:{case.id}",
             )
         )
+        if case.expected_order is not None:
+            from .downstream import order_from_transcript
+
+            return {
+                "transcript": result.transcript,
+                "draft": await order_from_transcript(case, result.transcript),
+            }, result.model
         return result.transcript, result.model
     if case.task == "invoice":
         from dosadash_ai.invoice.extract import extract_invoice
@@ -145,17 +184,29 @@ async def predict(case, manifest):
         if result.error or result.extraction is None:
             raise RuntimeError("invoice provider did not return an extraction")
         return result.extraction.model_dump(mode="json"), result.model
-    from evals.benchmarks.review_runner import llm_prediction
+    from .review_analysis import hybrid_prediction
 
-    result = await llm_prediction(SimpleNamespace(text=case.text, rating=case.rating))
-    return result["labels"], result["model"]
+    return await hybrid_prediction(case)
 
 
 def metrics(case, prediction):
     if case.task == "audio":
+        if case.expected_order is not None:
+            from .downstream import order_metrics
+
+            return {
+                **audio_metrics(case.expected, prediction["transcript"], case.required_terms),
+                **order_metrics(case.expected_order, prediction["draft"]),
+            }
         return audio_metrics(case.expected, prediction, case.required_terms)
     if case.task == "invoice":
-        return invoice_metrics(case.expected, prediction)
+        result = invoice_metrics(case.expected, prediction)
+        if case.purchase_order is not None:
+            from .downstream import invoice_decision
+
+            decision = invoice_decision(prediction, case.purchase_order)
+            result["review_decision_correct"] = decision["status"] == case.expected_review_status
+        return result
     a, b = set(case.expected), set(prediction)
     return {"label_f1": 2 * len(a & b) / (len(a) + len(b)), "exact_match": a == b}
 
@@ -173,7 +224,15 @@ def aggregate(rows):
     if any(r["status"] != "ok" for r in rows):
         result["warning"] = "Incomplete predictions; aggregate quality unavailable."
         return result
-    names = [k for k, v in rows[0]["metrics"].items() if v is not None]
+    names = [
+        k
+        for k in rows[0]["metrics"]
+        if all(isinstance(r["metrics"].get(k), (int, float, bool)) for r in rows)
+    ]
+    result["metric_coverage"] = {
+        k: sum(r["metrics"].get(k) is not None for r in rows)
+        for k in sorted({k for r in rows for k in r["metrics"]})
+    }
     result["metrics"] = {k: sum(r["metrics"][k] for r in rows) / len(rows) for k in names}
     # Descriptive cluster intervals: variants of one invoice do not count as three sources.
     result["ci95"] = None
@@ -192,7 +251,9 @@ def aggregate(rows):
     return result
 
 
-async def run(manifest, mode, tasks=None):
+async def run(manifest, mode, tasks=None, *, ledger=None):
+    from dosadash_ai.config import get_settings
+
     cases = read_cases(manifest)
     if tasks:
         cases = [case for case in cases if case.task in tasks]
@@ -201,10 +262,16 @@ async def run(manifest, mode, tasks=None):
     for case in cases:
         if case.path:
             asset(case, manifest)
+    if mode == "live" and sum(c.task == "audio" for c in cases) > 6:
+        raise ValueError("live demo limited to six audio clips")
+    if mode == "live" and any(c.expected_order is not None for c in cases):
+        from evals.suites._results import require_eval_database
+
+        require_eval_database()
     if mode == "live" and not all(c.provider_use_allowed for c in cases):
         raise ValueError("provider permission missing")
     before = fingerprint(manifest)
-    ledger = EvalTelemetry(max_calls=300, max_tokens=200_000, max_cost_usd=1.0)
+    ledger = ledger or EvalTelemetry(max_calls=300, max_tokens=200_000, max_cost_usd=1.0)
     token = active_telemetry.set(ledger)
     if mode == "live":
         from dosadash_ai.llm import configure_tracing
@@ -226,6 +293,14 @@ async def run(manifest, mode, tasks=None):
             try:
                 if mode == "replay":
                     prediction, model = case.expected, "reference-replay:NO-MODEL-INFERENCE"
+                    if case.expected_order is not None:
+                        prediction = {
+                            "transcript": case.expected,
+                            "draft": {
+                                "items": case.expected_order["items"],
+                                "notes": " ".join(case.expected_order.get("notes_contains", [])),
+                            },
+                        }
                 elif mode == "local":
                     if case.task != "review":
                         row.update(status="not_run", reason="requires remote inference")
@@ -295,6 +370,7 @@ async def run(manifest, mode, tasks=None):
         "inputs_unchanged": unchanged,
         "results": results,
         "cases": rows,
+        "review_policy": "local_first" if get_settings().review_local_enabled else "llm_first",
         "usage": ledger.summary(),
         "audio_attempts": audio_attempts,
         "audio_cost_usd": None,
@@ -302,7 +378,7 @@ async def run(manifest, mode, tasks=None):
             "Replay validates the scorer only; it does not run a model.",
             "Local mode runs the real ONNX classifier; audio/invoices are not run.",
             "Synthetic TTS and rendered invoices are not real-world audio or invoice evidence.",
-            "Command-term recall measures the transcript, not downstream order execution.",
+            "Order-draft metrics require expected_order; no real order is placed.",
             "Audio cost is unmeasured; the $1 known-cost limit applies only to text/vision calls.",
             "Small-group intervals are descriptive; no blocking quality threshold.",
         ],

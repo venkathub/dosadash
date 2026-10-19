@@ -11,6 +11,7 @@ The result is ONLY ever a draft: the api stores it for owner review and
 nothing reaches `menu_items.image_url` without an explicit approval.
 """
 
+import asyncio
 import logging
 import secrets
 from typing import Annotated
@@ -20,6 +21,7 @@ from fastapi import APIRouter, Header, HTTPException
 
 from dosadash_ai.config import get_settings
 from dosadash_ai.llm import LLMError
+from dosadash_ai.llm.budget import reserve, settle
 from dosadash_ai.prompts import load_prompt
 from dosadash_shared import MENU_IMAGE_PROMPT_VERSION, MenuImageRequest, MenuImageResult
 
@@ -53,24 +55,31 @@ async def generate_image(req: MenuImageRequest) -> MenuImageResult:
     """One bounded image generation call, traced to Langfuse (Hard Rule 6)."""
     settings = get_settings()
     prompt = build_prompt(req)
+    reservation = await reserve("image")
     try:
         # NB: no response_format param — the current OpenAI images API
         # rejects it (gpt-image-1 always returns b64_json).
-        response = await litellm.aimage_generation(
-            model=settings.image_model,
-            prompt=prompt,
-            n=1,
-            size=settings.image_size,
-            quality=settings.image_quality,
-            metadata={
-                "generation_name": "imagegen.menu_item",
-                "session_id": f"imagegen:{req.item_name}",
-                "tags": [MENU_IMAGE_PROMPT_VERSION],
-            },
-        )
+        async with asyncio.timeout(get_settings().provider_timeout_seconds):
+            response = await litellm.aimage_generation(
+                model=settings.image_model,
+                timeout=settings.provider_timeout_seconds,
+                num_retries=0,
+                max_retries=0,
+                prompt=prompt,
+                n=1,
+                size=settings.image_size,
+                quality=settings.image_quality,
+                metadata={
+                    "generation_name": "imagegen.menu_item",
+                    "session_id": f"imagegen:{req.item_name}",
+                    "tags": [MENU_IMAGE_PROMPT_VERSION],
+                },
+            )
     except Exception as exc:  # noqa: BLE001 — single provider, normalized for callers
         logger.warning("image generation failed on %s: %s", settings.image_model, exc)
         raise LLMError(f"image generation failed on {settings.image_model}: {exc}") from exc
+
+    await settle(reservation, response, model=settings.image_model)
 
     image_b64 = (response.data[0].b64_json or "") if response.data else ""
     if not image_b64:

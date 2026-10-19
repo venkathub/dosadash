@@ -939,3 +939,23 @@ class McpApiKey(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ProviderBudgetDay(Base):
+    __tablename__ = "provider_budget_days"
+    day: Mapped[date_type] = mapped_column(Date, primary_key=True)
+    charged_usd: Mapped[Decimal] = mapped_column(Numeric(18, 8))
+    known_usd: Mapped[Decimal] = mapped_column(Numeric(18, 8), server_default="0")
+    calls: Mapped[int]
+    unknown_calls: Mapped[int]
+
+
+class ProviderReservation(Base):
+    __tablename__ = "provider_reservations"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    day: Mapped[date_type] = mapped_column(ForeignKey("provider_budget_days.day"), index=True)
+    operation: Mapped[str] = mapped_column(String(30))
+    reserved_usd: Mapped[Decimal] = mapped_column(Numeric(18, 8))
+    actual_usd: Mapped[Decimal | None] = mapped_column(Numeric(18, 8))
+    units: Mapped[int]
+    settled: Mapped[bool]
