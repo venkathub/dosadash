@@ -73,14 +73,20 @@ limit; a single admitted request can overshoot. Audio used an approved Whisper
 
 A local synthetic database with 60 menu items, 40 generated users and 3,075 generated
 orders was dumped, restored and migrated up/down/up. Aggregate counts stayed equal;
-the temporary archive and restored database were removed. That is a reproducible
-mechanism check, not proof of recovery from the live production database.
+the temporary archive and restored database were removed. That established the mechanism before handling production data. A subsequent
+owner-authorized production dump restored successfully in isolation: 61 menu items,
+524 users, 40,642 orders and the other recorded table counts matched the source
+before and after the dump. The candidate migration also passed up/down/up without
+changing those counts. The private archive and restored database were deleted;
+production stayed read-only and no row contents were sent to AI providers/tracing.
+This verifies the archive and migration path, not every business invariant or
+point-in-time recovery.
 
 The operational audit found no installed DosaDash backup cron or systemd timer.
 The earlier nightly-backup claim has been corrected. A permission-restricted backup
 script and schedule example are supplied for deployment review. Off-host storage,
-failure alert delivery and a production-data restore drill remain open operational
-work; the production transfer requires explicit permission.
+failure alert delivery and schedule installation remain open deployment work.
+The production restore evidence is limited to schema and aggregate-count checks.
 
 Inventory recovery uses relational checkpoints and leases, not durable LangGraph
 order sessions. Forecast health needs 28 valid observation days and can correctly
@@ -99,4 +105,4 @@ A defensible résumé claim is: “Built an eval-gated FastAPI/LangGraph applica
 with structured business guardrails, synthetic multimodal downstream benchmarks,
 durable workflow recovery and shared provider admission limits on a 4 GB VPS.”
 Avoid claiming independent real-world accuracy, zero-cost inference, fully autonomous
-operations or production recovery certification from these demonstrations.
+operations or complete disaster-recovery certification from these demonstrations.

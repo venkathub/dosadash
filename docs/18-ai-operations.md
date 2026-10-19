@@ -92,5 +92,12 @@ The committed synthetic restore report covers 60 menu items, 40 generated users,
 3,075 generated orders, matching counts and migration up/down/up in isolation. It
 contains no production rows. It does not cover point-in-time recovery, storage
 loss, roles/grants (the archive excludes ACLs), every business invariant or an RTO.
-The private production dump transfer was blocked by approval review and remains
-pending specific owner authorization; no such copy was made.
+After explicit owner authorization, the production dump was also restored in an
+isolated local container: 61 menu items, 524 users, 40,642 orders, three POs, one
+invoice, 83 eval runs, one inventory workflow and 854 forecast observations matched
+before/after the dump and restore. Migration f1b3d5e7a902 → a2c4e6f80913 → downgrade
+→ upgrade passed with those counts unchanged. The archive and restored database
+were deleted; only aggregate evidence is retained in
+`evals/portfolio/results/restore-drill.json`. Production remained read-only. This
+is not validation of roles/grants, every business read, PITR or recovery after
+loss of the VPS. Schedule installation, off-host storage and alerts remain open.

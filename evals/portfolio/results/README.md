@@ -55,7 +55,8 @@ The original reports above remain historical evidence and were not overwritten.
 | STT → real order graph | 5/6 exact drafts; mean WER 0.323 | `audio-4`: English TTS romanized Tanglish → bad transcript → wrong dosa and quantity |
 | OCR → actual PO matcher/review decision | 6/6 exact extraction; 6/6 review decisions | Four artificial source groups; human approval always required |
 | Concurrent allowance admissions | 5 admitted / 35 rejected at concurrency 8; $0.10 retained | Local DB stress only, zero paid calls; `allowance-stress.json` |
-| Synthetic database restore | Counts equal; migration up/down/up passed | No production data; `synthetic-restore-drill.json` |
+| Synthetic database restore | Counts equal; migration up/down/up passed | Generated data; `synthetic-restore-drill.json` |
+| Owner-authorized production restore | Counts equal, including 40,642 orders; migration up/down/up passed | Local isolation, temporary data deleted; `restore-drill.json` |
 
 Known live cost **$0.0301601**, including 124 knowledge chunks embedded. Six short
 Whisper calls have unknown audio cost. Tracing/hosting are excluded. There were 32
@@ -76,3 +77,10 @@ provider-timeout changes received focused regression checks. The backup shell
 tests verify private file modes and preservation of older backups after dump or
 verification failure; they stub the CLI and are separate from the real synthetic
 PostgreSQL restore drill. PR CI is the authoritative check of the final commit.
+
+The authorized production archive (2,688,530 bytes) restored and completed migration
+checks in 8.86 seconds in the local test environment. This is not a production RTO
+commitment. No row contents are retained in the report or sent to AI/tracing.
+Production stayed read-only, and the local archive/database were removed. The
+backup schedule, off-host destination and failure alerting are still deployment
+work; the successful drill does not imply they exist.

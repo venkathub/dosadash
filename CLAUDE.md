@@ -132,6 +132,7 @@ fail closed on exhaustion/outage; this is not an exact billing hard cap.
 
 The deployment workflow builds with Compose on the VPS. No installed backup
 schedule was found; backup tooling and a synthetic restore drill are included,
-but production-data restoration/off-host backups remain unverified. Current
+and an owner-authorized production dump passed isolated restore/count/migration
+checks. Off-host backups, schedule installation and alerts remain unverified. Current
 evidence and review boundaries: docs/17 and docs/18. Historical phase counts and
 claims above describe their original snapshots and must not be quoted as current.

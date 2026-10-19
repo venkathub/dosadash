@@ -132,7 +132,7 @@ collection and published generalization measurements remain pending.** See
 Reproduce and review these paths using [docs/16](16-portfolio-evidence.md).
 
 The current hardening adds shared provider admission limits, bounded provider calls,
-admin allowance reporting, concurrency/outage tests and synthetic restore evidence.
+admin allowance reporting, concurrency/outage tests and isolated synthetic/production restore evidence.
 See [case study](17-ai-engineering-case-study.md) and [operations runbook](18-ai-operations.md).
 These do not add independent data, calibrated speech confidence, production recovery
 certification or a provider billing guarantee.

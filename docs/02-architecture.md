@@ -263,9 +263,9 @@ same merge gates. See `.github/workflows/deploy.yml`.
 
 **Recovery**: the 2026-10-19 audit found no DosaDash cron/systemd backup schedule.
 `infra/backup/postgres.sh` and its cron example are ready for explicit installation;
-seven-day local retention alone does not protect against VPS loss. A synthetic
-restore and migration roundtrip passed; production-data restore and off-host
-backup/alert delivery remain unverified. See docs/18.
+seven-day local retention alone does not protect against VPS loss. Synthetic and owner-authorized production-data restores passed aggregate-count
+and migration-roundtrip checks in isolation. Off-host backup, schedule installation
+and alert delivery remain unverified. See docs/18.
 
 **Security**: Cloudflare-proxied DNS (VPS IP hidden) · UFW 80/443/SSH-key only · JWT+RBAC · Telegram webhook secret · Razorpay signature verification · injection filters · PII redaction pre-LLM · per-user/IP rate limits · PostgreSQL-backed provider admission allowance (estimated costs, not a billing hard cap) · secrets in env only · staff audit log.
 
