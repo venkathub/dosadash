@@ -682,6 +682,27 @@ export function CostsTab() {
   const loadCache = useCallback(() => adminApi<CacheStats>("/admin/costs/cache"), []);
   const { data: cache, refresh: refreshCache } = useLoad(loadCache);
 
+  const loadBudget = useCallback(() => adminApi<Array<{
+    day: string; charged_usd: number; known_usd: number; calls: number; unknown_calls: number;
+  }>>("/admin/reports/provider-budget"), []);
+  const budget = useLoad(loadBudget);
+  const budgetPanel = (
+    <section className="mb-5 rounded-lg bg-indigo-800 p-3 text-sm">
+      <div className="mb-2 flex items-center gap-2">
+        <Eyebrow>Daily AI allowance activity (UTC)</Eyebrow>
+        <Btn variant="ghost" size="sm" onClick={budget.refresh}>Refresh allowance</Btn>
+      </div>
+      <ErrorBar msg={budget.error} />
+      {budget.data?.length === 0 && <p>No allowance activity recorded yet.</p>}
+      {budget.data?.slice(0, 3).map(day => <p key={day.day}>
+        {day.day}: {usd(day.charged_usd)} counted · {usd(day.known_usd)} measured · {day.calls} attempts
+        {day.unknown_calls > 0 && ` · ${day.unknown_calls} with reserved or unknown cost`}
+      </p>)}
+      <p className="mt-2 text-indigo-300">Unmeasured calls retain an estimated allowance.
+        Actual charges can exceed estimates; provider billing remains authoritative.</p>
+    </section>
+  );
+
   const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
   const cachePanel = cache && (
@@ -719,6 +740,7 @@ export function CostsTab() {
   if (summary && !summary.configured) {
     return (
       <div>
+        {budgetPanel}
         {cachePanel}
         <p className="rounded-lg bg-indigo-800 p-4 text-sm text-indigo-200">
           Langfuse keys are not configured on the AI service — cost tracking is off.
@@ -734,7 +756,8 @@ export function CostsTab() {
   return (
     <div>
       <ErrorBar msg={error} />
-      {cachePanel}
+      {budgetPanel}
+        {cachePanel}
       <div className="mb-4 flex items-center gap-6">
         <div>
           <Eyebrow>Last 7 days</Eyebrow>

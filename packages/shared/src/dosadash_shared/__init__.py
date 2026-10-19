@@ -195,6 +195,7 @@ from dosadash_shared.invoice import (
     InvoiceOut,
     InvoiceStatus,
     InvoiceUploadIn,
+    invoice_review_status,
 )
 from dosadash_shared.mcp import (
     MCP_KEY_DISPLAY_CHARS,
@@ -351,6 +352,7 @@ from dosadash_shared.translations import (
 )
 
 __all__ = [
+    "invoice_review_status",
     "EMBEDDING_DIM",
     "NUTRITION_PROMPT_VERSION",
     "ORDER_AGENT_PROMPT_VERSION",

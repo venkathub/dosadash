@@ -36,3 +36,62 @@ demo. They are not deployed champions. Promotion acceptance and rollback/corrupt
 paths are also tested with a real loadable artifact in
 `packages/ml/tests/test_forecast_lifecycle.py`. No model, artifact or quality gate
 was changed to improve these recorded benchmark scores.
+
+## Expanded serving-path assessment — 2026-10-19
+
+`expanded-live.json` is one bounded run on 24 synthetic fixtures, including the
+original examples. `expanded-local-confidence.json` audits the actual local policy;
+its earlier fingerprint predates the assessment entrypoint, without a model or
+threshold change. The live fingerprint covers the expanded runner and serving code at execution.
+The subsequent stream cleanup puts creation and consumption under one timeout;
+provider SDK retries were also explicitly disabled alongside wrapper retries.
+This successful non-streaming demo was not repeated for those defensive changes.
+The original reports above remain historical evidence and were not overwritten.
+
+| Path | Result | Remaining errors / limits |
+|---|---|---|
+| Local classifier confidence audit | 9/12 accepted under legacy policy; all 9 incomplete/incorrect | No fitting; LLM route is now default |
+| Actual review serving route | Mean case label F1 0.944; 10/12 exact | `review-0`, `review-4` omit proposed positive aspects |
+| STT → real order graph | 5/6 exact drafts; mean WER 0.323 | `audio-4`: English TTS romanized Tanglish → bad transcript → wrong dosa and quantity |
+| OCR → actual PO matcher/review decision | 6/6 exact extraction; 6/6 review decisions | Four artificial source groups; human approval always required |
+| Concurrent allowance admissions | 5 admitted / 35 rejected at concurrency 8; $0.10 retained | Local DB stress only, zero paid calls; `allowance-stress.json` |
+| Synthetic database restore | Counts equal; migration up/down/up passed | Generated data; `synthetic-restore-drill.json` |
+| Owner-authorized production restore | Counts equal, including 40,642 orders; migration up/down/up passed | Local isolation, temporary data deleted; `restore-drill.json` |
+
+Known live cost **$0.0301601**, including 124 knowledge chunks embedded. Six short
+Whisper calls have unknown audio cost. Tracing/hosting are excluded. There were 32
+text/vision/embedding attempts and 218,984 reported tokens; the final vision request
+overshot the 200,000 pre-request token admission limit. The $1 known-cost ceiling
+was never approached. Per-case latency is recorded but is not a concurrency or VPS
+benchmark. Redis cache invalidation logged connection failures on the local machine;
+semantic caching was disabled, and all 24 predictions completed.
+
+References remain proposed synthetic labels. Do not call these independent data or
+relabel the three mismatches to make the demo green. The failed speech is a reason
+to collect permissioned native recordings and test clarification behavior, not proof
+that production Tamil speech works or fails at this rate. See [case study](../../../docs/17-ai-engineering-case-study.md).
+
+Local validation: 961 workspace tests plus three backup-publication tests passed;
+232 deterministic eval tests and the Next.js production build passed. The final
+provider-timeout changes received focused regression checks. The backup shell
+tests verify private file modes and preservation of older backups after dump or
+verification failure; they stub the CLI and are separate from the real synthetic
+PostgreSQL restore drill. PR CI is the authoritative check of the final commit.
+
+The authorized production archive (2,688,530 bytes) restored and completed migration
+checks in 8.86 seconds in the local test environment. This is not a production RTO
+commitment. No row contents are retained in the report or sent to AI/tracing.
+Production stayed read-only, and the local archive/database were removed. The
+backup schedule, off-host destination and failure alerting are still deployment
+work; the successful drill does not imply they exist.
+
+The first full live merge gate on this PR scored 166/175 (94.86%), below the
+unchanged 95% order gate, while the other six suites passed. Its nine misses are
+retained in `order-gate-first-failure.json`. Three paused-kitchen replies used
+ambiguous phrasing; two Set Dosa requests drafted Plain Dosa. Closed/paused
+responses now come from authoritative business state (the cart is retained, but
+checkout is never claimed), and the existing single correction retry receives
+exact DB item IDs through a versioned correction prompt. The 24-case expanded
+report predates these order-response changes and is not a new measurement of them.
+The complete live CI gate validates the revised ordering path; expected labels
+and thresholds remain unchanged.

@@ -96,8 +96,9 @@ is governed by `evals/config.json`, `evals/README.md`, and the evidence audit in
 All seven quality gates now block after owner approval of 22 calibration labels
 and the unchanged judge thresholds. See `evals/baselines/p0-closure.md` for the
 review record, negative controls, baseline evidence and deployment boundary.
-Execution errors and measured policy bypasses fail closed. Durable graph checkpoints, learned CRM/bandits, online experiments,
-and automated drift/retraining remain deferred. Scheduled forecasting is inference.
+Execution errors and measured policy bypasses fail closed. Durable order-graph checkpoints, learned CRM/bandits, online experiments and
+unattended production retraining remain deferred. The later portfolio work adds
+relational inventory recovery, forecast degradation checks and offline lifecycle demos.
 
 ### Independent evaluation tooling
 
@@ -119,3 +120,19 @@ Training remains off the VPS; production model activation remains PR-based. Thes
 updates supersede the older deferred inventory/monitoring statements for this
 scope, but do not claim LangGraph persistence, exactly-once notifications,
 independent real-world accuracy or unattended production retraining. See docs/16.
+
+### Serving and operational evidence update (2026-10-19)
+
+LLM review scoring is the default after the local confidence audit; the original
+ONNX artifact remains available via `AI_REVIEW_LOCAL_ENABLED=true`. The expanded
+synthetic run measures actual STT→draft and extraction→PO review decisions and
+retains failures. Known discrepancies prevent invoice MATCHED status regardless
+of weighted confidence. PostgreSQL provider reservations survive restarts and
+fail closed on exhaustion/outage; this is not an exact billing hard cap.
+
+The deployment workflow builds with Compose on the VPS. No installed backup
+schedule was found; backup tooling and a synthetic restore drill are included,
+and an owner-authorized production dump passed isolated restore/count/migration
+checks. Off-host backups, schedule installation and alerts remain unverified. Current
+evidence and review boundaries: docs/17 and docs/18. Historical phase counts and
+claims above describe their original snapshots and must not be quoted as current.

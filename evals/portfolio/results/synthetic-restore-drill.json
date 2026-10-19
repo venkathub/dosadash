@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "source": "isolated synthetic dosadash_eval database",
+  "source_schema": "a2c4e6f80913",
+  "candidate_schema": "a2c4e6f80913",
+  "counts": {
+    "migration": "a2c4e6f80913",
+    "menu_items": 60,
+    "users": 40,
+    "orders": 3075,
+    "purchase_orders": 0,
+    "invoices": 0,
+    "eval_runs": 0,
+    "inventory_workflows": 0,
+    "forecast_observations": 0
+  },
+  "counts_unchanged_before_after_dump": true,
+  "archive_sha256": "0ecc9552d151a9f746cc4a01e694ce0f9d4f807f761fd9587fafafc19b190bce",
+  "archive_bytes": 1105555,
+  "elapsed_seconds": 4.67,
+  "migration_roundtrip": "upgrade/down/upgrade",
+  "limitations": "Aggregate row-count and migration checks; not point-in-time recovery or every business record. No production data was copied. Production recovery remains unverified.",
+  "private_archive_and_restored_database_deleted": true
+}

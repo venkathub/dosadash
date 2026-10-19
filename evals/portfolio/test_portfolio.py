@@ -82,3 +82,42 @@ def test_escape_hash_mismatch_and_missing_permission(tmp_path):
     with pytest.raises(ValueError, match="changed"):
         asset(case.model_copy(update={"sha256": "0" * 64}), MANIFEST)
     assert aggregate([{"group_id": "x", "status": "error"}])["metrics"] is None
+
+
+async def test_expanded_downstream_replay_and_discrepancy_negative_controls():
+    from .downstream import invoice_decision, order_metrics
+
+    manifest = MANIFEST.parent.parent / "fixtures-expanded/manifest.json"
+    cases = read_cases(manifest)
+    assert len(cases) == 24
+    assert len({c.group_id for c in cases if c.task == "invoice"}) == 4
+    result = await run(manifest, "replay")
+    assert result["status"] == "complete"
+    assert result["results"]["audio"]["overall"]["metrics"]["order_draft_correct"] == 1
+    assert result["results"]["invoice"]["overall"]["metrics"]["review_decision_correct"] == 1
+    for case in cases:
+        if case.task == "invoice":
+            decision = invoice_decision(case.expected, case.purchase_order)
+            assert decision["status"] == case.expected_review_status
+            assert decision["human_approval_required"]
+    assert not order_metrics({"items": {"Masala Dosa": 2}}, {"items": {"Masala Dosa": 1}})[
+        "order_draft_correct"
+    ]
+    assert not order_metrics({"items": {}, "notes_contains": ["no sugar"]}, {"items": {}})[
+        "order_draft_correct"
+    ]
+
+
+def test_mixed_downstream_coverage_never_reports_partial_as_full_accuracy():
+    report = aggregate(
+        [
+            {
+                "group_id": "a",
+                "status": "ok",
+                "metrics": {"word_error_rate": 0, "order_draft_correct": True},
+            },
+            {"group_id": "b", "status": "ok", "metrics": {"word_error_rate": 1}},
+        ]
+    )
+    assert report["metrics"] == {"word_error_rate": 0.5}
+    assert report["metric_coverage"]["order_draft_correct"] == 1

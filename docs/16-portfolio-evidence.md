@@ -148,3 +148,34 @@ uses a user-approved `AI_STT_MODEL=whisper-1` override because the local Groq ke
 a placeholder; production still defaults to Groq. To reproduce that run, configure
 the OpenAI key and set the override only for the CLI invocation. Use `--tasks audio`
 to evaluate only those clips without repeating successful text/vision cases.
+
+## Expanded serving assessment
+
+The original component reports above describe the earlier 12-case run. The expanded
+24-case dataset adds six review challenges, three clips and three invoice templates.
+All six audio cases now measure actual STT → order-draft behavior; all six invoices
+measure extraction → PO match → review status. Invoice arithmetic/quantity/extra-line
+failures explicitly prevent MATCHED, regardless of weighted confidence. Review
+prediction now calls the shared serving function; LLM scoring is the default and
+local-first requires an explicit flag. No models were retrained on exposed examples.
+
+```bash
+# No external calls: audit local confidence and actual legacy acceptance.
+uv run python -m evals.portfolio analyze-reviews \
+  --manifest evals/portfolio/fixtures-expanded/manifest.json --out /tmp/confidence.json
+# No inference: downstream scorer replay.
+uv run python -m evals.portfolio run --mode replay \
+  --manifest evals/portfolio/fixtures-expanded/manifest.json --out /tmp/downstream-replay.json
+# Paid, permissioned run: requires isolated migrated/seeded *_eval DB and matching
+# EVAL_DATABASE_URL / AI_DATABASE_URL / API_DATABASE_URL. Includes knowledge
+# ingestion in the SAME $1 known-cost ledger. Maximum six clips; audio cost unknown.
+AI_STT_MODEL=whisper-1 AI_REVIEW_LOCAL_ENABLED=false AI_PROVIDER_BUDGET_ENABLED=false \
+  uv run python -m evals.portfolio.assessment \
+  --manifest evals/portfolio/fixtures-expanded/manifest.json --out /tmp/expanded-live.json
+```
+
+Use provider keys only after approving fixture/knowledge transmission and configured
+tracing. Romanized Hinglish/Tanglish clips use an English TTS voice; native speaker
+coverage is absent. The case study in docs/17 records the resulting speech failure,
+the two review omissions and the exact cost. docs/18 explains production allowance,
+backup installation and the remaining recovery review.
