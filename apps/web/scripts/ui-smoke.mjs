@@ -57,6 +57,98 @@ for (route of ROUTES) {
   if (!/DosaDash/i.test(title)) problems.push(`${route} unexpected title: "${title}"`);
 }
 
+// ── Tawa Noir gates (docs/17 §6) ─────────────────────────────────────────
+// The home page must be complete WITHOUT the live scene, and popups must
+// open inside the screen. None of this needs an API.
+
+// 1) The static hero art is in the server HTML (it is the LCP element and
+//    the fallback) — not something JavaScript adds later.
+route = "/ (server HTML)";
+const html = await (await fetch(BASE + "/")).text();
+if (!html.includes('src="/scene/tawa.webp"')) problems.push(`${route} static hero image missing from SSR output`);
+
+const sceneState = (p) =>
+  p.evaluate(() => {
+    const c = document.querySelector("canvas");
+    const img = document.querySelector('img[src="/scene/tawa.webp"]');
+    return {
+      canvasShown: !!c && getComputedStyle(c).opacity !== "0",
+      fallbackShown: !!img && getComputedStyle(img).opacity !== "0",
+    };
+  });
+const openHome = async (label, contextOptions, init) => {
+  route = label;
+  const ctx = await browser.newContext(contextOptions);
+  if (init) await ctx.addInitScript(init);
+  const p = await ctx.newPage();
+  p.on("pageerror", (err) => problems.push(`${label} pageerror: ${err.message}`));
+  p.on("console", (msg) => {
+    if (msg.type() === "error" && CONSOLE_FAIL.test(msg.text())) problems.push(`${label} console: ${msg.text().slice(0, 300)}`);
+  });
+  await p.goto(BASE + "/", { waitUntil: "load", timeout: 30000 });
+  await p.waitForTimeout(3500); // past the idle-callback that would start the scene
+  return { ctx, p };
+};
+
+// 2) WebGL unavailable (old GPU, blocked driver): no errors, fallback stays.
+{
+  const { ctx, p } = await openHome("/ (no WebGL)", {}, () => {
+    const real = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+      return /webgl/i.test(type) ? null : real.call(this, type, ...rest);
+    };
+  });
+  const s = await sceneState(p);
+  if (s.canvasShown) problems.push(`${route} canvas became visible without WebGL`);
+  if (!s.fallbackShown) problems.push(`${route} static hero fallback is not visible`);
+  await ctx.close();
+}
+
+// 3) Reduced motion: the scene must never start.
+{
+  const { ctx, p } = await openHome("/ (reduced motion)", { reducedMotion: "reduce" });
+  const s = await sceneState(p);
+  if (s.canvasShown) problems.push(`${route} live scene started despite prefers-reduced-motion`);
+  if (!s.fallbackShown) problems.push(`${route} static hero fallback is not visible`);
+  await ctx.close();
+}
+
+// 4) Ordering comes first, and popups open on screen — desktop and phone.
+for (const [w, h] of [
+  [1440, 900],
+  [390, 844],
+]) {
+  const { ctx, p } = await openHome(`/ (${w}x${h})`, { viewport: { width: w, height: h } });
+  const inView = (sel) =>
+    p.evaluate((sel) => {
+      const el = [...document.querySelectorAll(sel)].find((e) => e.getBoundingClientRect().width > 0);
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth;
+    }, sel);
+  if (!(await inView('input[type="search"]'))) problems.push(`${route} search box is not on the first screen`);
+  if (w >= 1024 && !(await inView("aside[data-tray-anchor] h2"))) problems.push(`${route} cart is not on the first screen`);
+  if (await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth))
+    problems.push(`${route} page scrolls sideways`);
+  // A popup opened from inside the blurred app bar was once positioned against
+  // the bar and cut off. "Visible" is not enough: its box must be on screen.
+  const trigger =
+    w >= 640
+      ? p.locator('header button[aria-label="Report a bug or request a feature"]')
+      : p.locator('section[aria-labelledby="feedback-title"] button').first();
+  await trigger.click();
+  await p.waitForSelector('[role="dialog"]', { timeout: 5000 }).catch(() => null);
+  const box = await p.evaluate(() => {
+    const d = document.querySelector('[role="dialog"]');
+    if (!d) return null;
+    const r = d.getBoundingClientRect();
+    return { ok: r.top >= 0 && r.left >= 0 && r.right <= innerWidth && r.width > 200, inBody: d.closest("header") === null };
+  });
+  if (!box) problems.push(`${route} feedback popup did not open`);
+  else if (!box.ok || !box.inBody) problems.push(`${route} popup is clipped or trapped in the header`);
+  await ctx.close();
+}
+
 await browser.close();
 
 if (problems.length > 0) {
@@ -64,4 +156,4 @@ if (problems.length > 0) {
   for (const p of problems) console.error("  " + p);
   process.exit(1);
 }
-console.log(`✓ UI smoke: ${ROUTES.length} routes, 0 page errors, 0 hydration errors`);
+console.log(`✓ UI smoke: ${ROUTES.length} routes, 0 page errors, 0 hydration errors; home page passes no-WebGL, reduced-motion, first-screen and popup checks`);

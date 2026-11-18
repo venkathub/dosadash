@@ -31,7 +31,7 @@ flowchart LR
     AI --> REDIS
   end
 
-  AI -- "litellm (only path to LLMs)" --> CHAIN["gpt-4o-mini → Groq → Gemini<br/>+ Whisper STT · gpt-image-1"]
+  AI -- "litellm (only path to LLMs)" --> CHAIN["gpt-4o-mini → Groq → Gemini<br/>+ Whisper STT · gpt-image"]
   AI --> LF[Langfuse — every call traced]
   API --> RZP[Razorpay TEST]
   W --- CADDY
@@ -89,9 +89,9 @@ CI runs deterministic asset/guardrail checks and live ordering gates; additional
 - **The self-healing SDLC loop**: 🐞 GUI reports + a production sentinel (healthz fleet probes, 5xx-burst detection, consecutive eval-gate reds) → GitHub issues → LLM triage (`feedback_triage_v2`) → Telegram approval cards (with an AI-drafted spec for features) → a Claude fixer that RCAs and opens PRs through the **full merge-gate stack** (incl. an independent AI reviewer on a different model) → deploy canary with mechanical auto-rollback PRs → a read-only Haiku verifier that probes the fix live and labels `ai:verified` or reopens → `/fixer` portal with pipeline board, honest funnel metrics (MTTR, verification rate, agent spend), and a dispatch watchdog that survives GitHub Actions outages.
 - **Evals as infrastructure**: golden sets are versioned assets with coverage-floor gates; order accuracy / tool correctness / guardrail bypass / RAG faithfulness / tone (LLM-as-judge) + per-language floors; results land in an `eval_runs` table with an admin scoreboard; a weekly janitor computes the flaky-case list from real run history.
 - **Classical ML with honest baselines**: every model must beat its naive baseline to be promoted (and the losses are documented — raw-count ALS *lost* to popularity until log1p confidences fixed it).
-- **Multimodal**: Whisper voice ordering, VLM dish-photo QC (model observes, verdict computed deterministically), VLM invoice OCR, `gpt-image-1` menu photos behind owner approval with a permanent ✨ AI label.
+- **Multimodal**: Whisper voice ordering, VLM dish-photo QC (model observes, verdict computed deterministically), VLM invoice OCR, `gpt-image` menu photos behind owner approval with a permanent ✨ AI label.
 - **Tamil localization served live**: LLM-drafted translations behind owner approval (stale translations auto-reset on menu edits), EN/தமிழ் web toggle, translated names feeding the agent as aliases with a byte-identical-context invariant.
-- **"Madras Pop" design system**: indigo/magenta/turmeric identity across all six surfaces (customer, orders, KDS, admin, `/demo`, `/fixer`), self-hosted fonts, visual-only discipline (zero contract changes across two full redesigns).
+- **"Tawa Noir" design system** (docs/17): one dark system across all six surfaces (customer, orders, KDS, admin, `/demo`, `/fixer`). The customer home is an ordering app first (search, category tabs, menu and an itemised cart on the first screen) with a live WebGL hero scene that loads after first paint, pauses off-screen and falls back to a static image; gated in CI by a bundle budget and no-WebGL / reduced-motion smoke checks. Self-hosted fonts, visual-only discipline (zero contract changes across three full redesigns).
 - **Ops discipline**: rate limiting (fail-open), PII redaction before any LLM call, secrets in env only, Razorpay TEST keys, conventional commits, phase branches → protected `main` = production deploy, postmortem-driven fixes (nice-to-have mounts degrade, never crash checkout).
 
 ## Repository layout
@@ -105,7 +105,7 @@ packages/ml     datagen, forecasting, recsys, LoRA fine-tune (+ committed benchm
 packages/shared Pydantic schemas shared across services
 evals/          golden datasets, live suites, LLM-as-judge rubrics, key-free asset gates
 knowledge/      RAG source markdown (recipes, allergens, FAQs, policies, serving hours)
-design/         Madras Pop design system (tokens, mockups, renders)
+design/         Madras Pop design system (tokens, mockups, renders) — superseded by Tawa Noir, kept as history
 infra/          docker-compose, Caddyfile, deploy scripts, locust load tests
 .github/        CI, live eval gate, UI smoke, deploy + canary, Claude fixer/spec/review/verify workflows
 ```
@@ -143,14 +143,15 @@ uv run pytest evals -q              # key-free eval-asset gates
 | [docs/09-mcp-demo.md](docs/09-mcp-demo.md) | MCP everywhere: ChatGPT / Cursor / Claude Code / Claude Desktop order a dosa (remote Streamable HTTP + admin-issued keys) |
 | [docs/10-demo-video-script.md](docs/10-demo-video-script.md) | 3-minute demo video, shot-by-shot |
 | [docs/11-blog-post.md](docs/11-blog-post.md) | Blog draft: "Evals Are Merge Gates" |
-| [docs/13-ui-madras-pop-design.md](docs/13-ui-madras-pop-design.md) | Madras Pop design system spec |
+| [docs/13-ui-madras-pop-design.md](docs/13-ui-madras-pop-design.md) | Madras Pop design system spec (superseded) |
+| [docs/17-ui-tawa-noir-design.md](docs/17-ui-tawa-noir-design.md) | Tawa Noir design system, scene rules, acceptance + measurements |
 | [docs/14-self-healing-loop.md](docs/14-self-healing-loop.md) | Self-healing loop design + ops runbook |
 | [docs/15-sdlc-loop.md](docs/15-sdlc-loop.md) | SDLC loop v2: sentinel, autonomy ladder, canary, spec lane |
 | [infra/loadtest/results.md](infra/loadtest/results.md) | Load-test method + measured results |
 
 ## Stack
 
-Python 3.12 · FastAPI · Pydantic v2 · SQLAlchemy 2 async · PostgreSQL 16 + pgvector · Redis · Celery · LangGraph · litellm (gpt-4o-mini → Groq `gpt-oss-120b` → Gemini Flash) · OpenAI embeddings · Groq Whisper · gpt-image-1 · XGBoost · implicit ALS · DistilBERT + LoRA → INT8 ONNX · MLflow · Langfuse · Next.js + Tailwind · aiogram · Docker Compose · Caddy · GitHub Actions · claude-code-action (fixer / spec / review / verify).
+Python 3.12 · FastAPI · Pydantic v2 · SQLAlchemy 2 async · PostgreSQL 16 + pgvector · Redis · Celery · LangGraph · litellm (gpt-4o-mini → Groq `gpt-oss-120b` → Gemini Flash) · OpenAI embeddings · Groq Whisper · gpt-image-1.5 · XGBoost · implicit ALS · DistilBERT + LoRA → INT8 ONNX · MLflow · Langfuse · Next.js + Tailwind + three.js · aiogram · Docker Compose · Caddy · GitHub Actions · claude-code-action (fixer / spec / review / verify).
 
 ### Reproduce the AI engineering evidence
 

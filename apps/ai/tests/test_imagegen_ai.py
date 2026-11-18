@@ -66,7 +66,7 @@ async def test_generate_end_to_end_mocked(ai_client, monkeypatch):
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body["image_b64"] == FAKE_PNG_B64
-    assert body["model"] == "gpt-image-1"
+    assert body["model"] == "gpt-image-1.5"
     assert body["prompt_version"] == "menu_image_v1"
     # the model saw the style contract AND the dish facts
     assert "ABSOLUTELY NO text" in seen["prompt"]

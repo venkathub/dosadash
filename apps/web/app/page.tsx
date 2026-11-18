@@ -520,7 +520,6 @@ export default function Home() {
           <button
             className="flex overflow-hidden rounded-full border border-cream/15 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee"
             title={lang === "ta" ? "Switch to English" : "தமிழில் காட்டு"}
-            aria-label={lang === "ta" ? "Switch menu to English" : "Switch menu to Tamil"}
             onClick={() => switchLang(lang === "ta" ? "en" : "ta")}
           >
             <span className={cx("px-2 py-1.5 max-[359px]:px-1.5 sm:px-3", lang === "en" ? "bg-cream font-semibold text-soot-950" : "text-cream-dim")}>
@@ -529,6 +528,8 @@ export default function Home() {
             <span className={cx("px-2 py-1.5 max-[359px]:px-1.5 sm:px-3", lang === "ta" ? "bg-cream font-semibold text-soot-950" : "text-cream-dim")}>
               தமிழ்
             </span>
+            {/* name = the visible text plus this (WCAG 2.5.3: label in name) */}
+            <span className="sr-only">, menu language: switch to {lang === "ta" ? "English" : "Tamil"}</span>
           </button>
           <FeedbackButton variant="icon" />
           <Link href="/orders" className={cx(ghostBtn, "max-sm:px-2.5")} aria-label="Your orders">
@@ -703,6 +704,18 @@ export default function Home() {
                             )}
                             onMouseEnter={cutout ? () => scene.current?.select(cutout) : undefined}
                           >
+                            {!thumb && (
+                              // No kitchen photo yet: a quiet tile keeps every card the same shape.
+                              <div
+                                aria-hidden="true"
+                                className={cx(
+                                  "grid h-[104px] w-[104px] shrink-0 place-items-center rounded-xl border border-cream/10 bg-soot-800 font-display text-4xl font-semibold text-cream-faint",
+                                  off && "opacity-40",
+                                )}
+                              >
+                                {englishName(m).charAt(0)}
+                              </div>
+                            )}
                             {thumb && (
                               <div className="relative h-[104px] w-[104px] shrink-0">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -71,7 +71,6 @@ export default function Recommendations({
           return (
             <button
               key={r.item_id}
-              aria-label={`Add ${r.name}, ₹${parseFloat(r.price).toFixed(0)}`}
               className="group flex w-[224px] shrink-0 items-center gap-3 rounded-2xl border border-cream/10 bg-soot-900 p-2 pr-3 text-left transition-colors duration-150 hover:border-cream/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee"
               onClick={() => onAdd(item)}
             >
@@ -91,6 +90,7 @@ export default function Recommendations({
                 </span>
               )}
               <span className="min-w-0 flex-1">
+                <span className="sr-only">Add </span>
                 <span className="line-clamp-2 font-display text-sm font-semibold leading-tight text-cream">{r.name}</span>
                 <span className="tnum text-sm text-cream-dim">₹{parseFloat(r.price).toFixed(0)}</span>
               </span>
