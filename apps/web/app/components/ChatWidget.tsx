@@ -19,11 +19,15 @@ type FinalData = {
 type Props = {
   onPlaceOrder: (items: { item_id: number; qty: number }[]) => Promise<void>;
   onRequireLogin: () => void;
+  /** Open the chat from outside. A new `n` opens it; non-empty `text` is sent as the first message. */
+  seed?: { text: string; n: number } | null;
+  /** false hides the floating launcher (the page provides its own entry points). */
+  launcher?: boolean;
 };
 
 const EMPTY_DRAFT: Draft = { items: [], subtotal: "0" };
 
-export default function ChatWidget({ onPlaceOrder, onRequireLogin }: Props) {
+export default function ChatWidget({ onPlaceOrder, onRequireLogin, seed = null, launcher = true }: Props) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
@@ -38,8 +42,8 @@ export default function ChatWidget({ onPlaceOrder, onRequireLogin }: Props) {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, open]);
 
-  const send = async () => {
-    const message = input.trim();
+  const send = async (override?: string) => {
+    const message = (override ?? input).trim();
     if (!message || busy) return;
     setInput("");
     setBusy(true);
@@ -114,12 +118,22 @@ export default function ChatWidget({ onPlaceOrder, onRequireLogin }: Props) {
     }
   };
 
+  // External open (hero order bar / header button). Keyed on seed.n so the
+  // same text can be sent twice; `send` is intentionally read fresh.
+  useEffect(() => {
+    if (!seed) return;
+    setOpen(true);
+    if (seed.text.trim()) void send(seed.text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed?.n]);
+
+  if (!open && !launcher) return null;
   if (!open)
     return (
       <button
         aria-label="Chat with DosaDash"
         title="Ask Dosa Genie"
-        className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-indigo-900 bg-turmeric-500 text-2xl shadow-pop transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
+        className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-cream/15 bg-ghee text-2xl transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee"
         onClick={() => setOpen(true)}
       >
         🥞
@@ -127,17 +141,17 @@ export default function ChatWidget({ onPlaceOrder, onRequireLogin }: Props) {
     );
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex h-[70vh] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border-2 border-indigo-900 bg-sand-200 shadow-pop">
-      <header className="flex items-center justify-between border-b-[3px] border-turmeric-500 bg-indigo-900 px-3 py-2">
+    <div className="fixed bottom-4 right-4 z-50 flex h-[70vh] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border-2 border-cream/15 bg-soot-800">
+      <header className="flex items-center justify-between border-b-[3px] border-ghee/50 bg-soot-900 px-3 py-2">
         <span className="flex items-baseline gap-2">
-          <b className="font-display font-bold tracking-tight text-white">🥞 Dosa Genie</b>
-          <span className="text-[10px] font-semibold text-indigo-200">
+          <b className="font-display font-bold tracking-tight text-cream">🥞 Dosa Genie</b>
+          <span className="text-[10px] font-semibold text-cream-dim">
             <span className="animate-pulse-soft text-veg">●</span> online
           </span>
         </span>
         <button
           aria-label="Close chat"
-          className="text-indigo-200 transition-colors duration-150 hover:text-turmeric-400"
+          className="text-cream-dim transition-colors duration-150 hover:text-ghee"
           onClick={() => setOpen(false)}
         >
           ✕
@@ -145,11 +159,11 @@ export default function ChatWidget({ onPlaceOrder, onRequireLogin }: Props) {
       </header>
 
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto p-3 text-sm">
-        <p className="mx-auto w-fit rounded-full border-[1.5px] border-sand-300 bg-paper px-3 py-0.5 text-[11px] text-muted">
+        <p className="mx-auto w-fit rounded-full border-[1.5px] border-cream/10 bg-soot-900 px-3 py-0.5 text-[11px] text-cream-dim">
           🔒 phone numbers are redacted before the model sees them
         </p>
         {messages.length === 0 && (
-          <p className="text-faint">
+          <p className="text-cream-faint">
             Ask me anything — &ldquo;2 masala dosas and a filter coffee&rdquo;, &ldquo;which dosas are
             vegan?&rdquo;, &ldquo;is rava dosa gluten free?&rdquo;
           </p>
@@ -159,8 +173,8 @@ export default function ChatWidget({ onPlaceOrder, onRequireLogin }: Props) {
             key={i}
             className={
               m.role === "user"
-                ? "animate-fade-up ml-10 rounded-xl rounded-br-[4px] border-2 border-indigo-900 bg-indigo-900 px-3 py-2 text-right text-indigo-100 shadow-[3px_3px_0_#C21F58]"
-                : "animate-fade-up mr-10 whitespace-pre-wrap rounded-xl rounded-bl-[4px] border-2 border-indigo-900 bg-offwhite px-3 py-2 text-ink shadow-pop-sm"
+                ? "animate-fade-up ml-10 rounded-xl rounded-br-[4px] border-2 border-cream/15 bg-soot-900 px-3 py-2 text-right text-cream"
+                : "animate-fade-up mr-10 whitespace-pre-wrap rounded-xl rounded-bl-[4px] border-2 border-cream/15 bg-soot-950 px-3 py-2 text-cream"
             }
           >
             {m.content || "…"}
@@ -169,16 +183,16 @@ export default function ChatWidget({ onPlaceOrder, onRequireLogin }: Props) {
       </div>
 
       {(draft.items.length > 0 || warnings.length > 0) && (
-        <div className="mx-2 mb-2 overflow-hidden rounded-lg border-2 border-indigo-900 bg-paper text-sm">
-          <div className="border-b-2 border-indigo-900 bg-turmeric-500 px-3 py-1 font-display text-[11.5px] font-bold uppercase tracking-[0.1em] text-indigo-900">
+        <div className="mx-2 mb-2 overflow-hidden rounded-lg border-2 border-cream/15 bg-soot-900 text-sm">
+          <div className="border-b-2 border-cream/15 bg-ghee px-3 py-1 font-display text-[11.5px] font-bold uppercase tracking-[0.1em] text-soot-950">
             Order draft
           </div>
           <div className="px-3 py-2">
             {draft.items.map((i) => (
-              <p key={i.item_id} className="flex justify-between py-0.5 text-ink">
+              <p key={i.item_id} className="flex justify-between py-0.5 text-cream">
                 <span>
                   {i.qty}× {i.name}
-                  {i.notes ? <span className="text-xs text-muted"> ({i.notes})</span> : null}
+                  {i.notes ? <span className="text-xs text-cream-dim"> ({i.notes})</span> : null}
                 </span>
                 <span className="tnum font-display font-bold">
                   ₹{(parseFloat(i.unit_price) * i.qty).toFixed(0)}
@@ -186,18 +200,18 @@ export default function ChatWidget({ onPlaceOrder, onRequireLogin }: Props) {
               </p>
             ))}
             {draft.items.length > 0 && (
-              <p className="mt-1 flex items-baseline justify-between border-t-2 border-dashed border-sand-300 pt-1.5 text-ink">
-                <span className="text-xs text-muted">Subtotal</span>
+              <p className="mt-1 flex items-baseline justify-between border-t-2 border-dashed border-cream/10 pt-1.5 text-cream">
+                <span className="text-xs text-cream-dim">Subtotal</span>
                 <span className="tnum font-display text-lg font-bold">
                   ₹{parseFloat(draft.subtotal).toFixed(2)}{" "}
-                  <span className="font-sans text-xs font-normal text-faint">+ GST</span>
+                  <span className="font-sans text-xs font-normal text-cream-faint">+ GST</span>
                 </span>
               </p>
             )}
             {warnings.map((w, i) => (
               <p
                 key={i}
-                className="mt-1 rounded-lg border-[1.5px] border-turmeric-600 bg-warn-100 px-2 py-1 text-xs font-semibold text-[#8A6A03]"
+                className="mt-1 rounded-lg border-[1.5px] border-ghee/50 bg-warn-100 px-2 py-1 text-xs font-semibold text-ghee"
               >
                 ⏰ {w}
               </p>
@@ -217,7 +231,7 @@ export default function ChatWidget({ onPlaceOrder, onRequireLogin }: Props) {
       )}
 
       <form
-        className="flex gap-2 border-t-[3px] border-turmeric-500 bg-indigo-900 p-2"
+        className="flex gap-2 border-t-[3px] border-ghee/50 bg-soot-900 p-2"
         onSubmit={(e) => {
           e.preventDefault();
           void send();

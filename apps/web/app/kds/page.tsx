@@ -1,5 +1,6 @@
 "use client";
 
+import { rupee } from "../../lib/format";
 import { useCallback, useEffect, useState } from "react";
 import { loadValidToken, openLiveSocket } from "../../lib/liveSocket";
 import {
@@ -35,8 +36,8 @@ const NEXT: Record<string, string> = {
  *  (Madras Pop: PLACED sky / CONFIRMED magenta / COOKING turmeric / READY veg) */
 const STATUS_ACCENT: Record<(typeof COLUMNS)[number], string> = {
   PLACED: "bg-sky",
-  CONFIRMED: "bg-magenta-500",
-  COOKING: "bg-turmeric-500",
+  CONFIRMED: "bg-ember",
+  COOKING: "bg-ghee",
   READY: "bg-veg",
 };
 
@@ -195,9 +196,9 @@ export default function Kds() {
 
   if (!token) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-indigo-950 text-indigo-100">
+      <main className="flex min-h-screen items-center justify-center bg-soot-950 text-cream">
         <Card tone="dark" className="w-80 space-y-3 p-6">
-          <SectionHeading as="h1" className="text-xl text-white">
+          <SectionHeading as="h1" className="text-xl text-cream">
             🥞 Kitchen sign-in
           </SectionHeading>
           <Input
@@ -213,7 +214,7 @@ export default function Kds() {
             </Btn>
           ) : (
             <>
-              <p className="rounded-lg border-[1.5px] border-turmeric-600 bg-turmeric-500/15 px-2 py-1 text-xs text-turmeric-400">
+              <p className="rounded-lg border-[1.5px] border-ghee/50 bg-ghee/15 px-2 py-1 text-xs text-ghee">
                 Demo OTP: <b className="font-display">{demoOtp}</b>
               </p>
               <Input
@@ -240,9 +241,9 @@ export default function Kds() {
       .sort((a, b) => (a.placed_at ?? "").localeCompare(b.placed_at ?? ""));
 
   return (
-    <main className="min-h-screen bg-indigo-950 text-indigo-100">
-      <header className="mb-4 flex items-center gap-4 border-b-[3px] border-turmeric-500 bg-indigo-900 px-5 py-3">
-        <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-white">
+    <main className="min-h-screen bg-soot-950 text-cream">
+      <header className="mb-4 flex items-center gap-4 border-b-[3px] border-ghee/50 bg-soot-900 px-5 py-3">
+        <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-cream">
           🔥 Kitchen
         </h1>
         {connected ? (
@@ -250,7 +251,7 @@ export default function Kds() {
             <span className="animate-pulse-soft">●</span> live
           </span>
         ) : (
-          <span className="font-display text-[13px] font-bold uppercase tracking-[0.1em] text-turmeric-400">
+          <span className="font-display text-[13px] font-bold uppercase tracking-[0.1em] text-ghee">
             ○ reconnecting…
           </span>
         )}
@@ -264,13 +265,13 @@ export default function Kds() {
         {COLUMNS.map((col) => (
           <section
             key={col}
-            className="rounded-xl border-2 border-indigo-700 bg-indigo-900 p-3"
+            className="rounded-xl border-2 border-cream/10 bg-soot-900 p-3"
           >
             <div className="mb-3 flex items-center justify-between px-1">
-              <span className="font-display text-[11px] font-bold uppercase tracking-[0.16em] text-turmeric-400">
+              <span className="font-display text-[11px] font-bold uppercase tracking-[0.16em] text-ghee">
                 {col}
               </span>
-              <span className="tnum min-w-[34px] rounded-full bg-turmeric-500 px-3 text-center font-display text-[15px] font-bold text-indigo-900">
+              <span className="tnum min-w-[34px] rounded-full bg-ghee px-3 text-center font-display text-[15px] font-bold text-soot-950">
                 {byStatus(col).length}
               </span>
             </div>
@@ -281,7 +282,7 @@ export default function Kds() {
                 return (
                 <article
                   key={o.order_id}
-                  className="animate-fade-up relative overflow-hidden rounded-lg border-2 border-indigo-600 bg-indigo-800 p-3 pl-4 text-sm"
+                  className="animate-fade-up relative overflow-hidden rounded-lg border-2 border-cream/20 bg-soot-800 p-3 pl-4 text-sm"
                 >
                   <span
                     aria-hidden
@@ -289,7 +290,7 @@ export default function Kds() {
                   />
                   <div className="flex items-center justify-between gap-1.5">
                     <span className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-display text-lg font-bold text-white">
+                      <span className="font-display text-lg font-bold text-cream">
                         #{o.order_id}
                       </span>
                       {o.channel === "MOCK_AGGREGATOR" && (
@@ -305,7 +306,7 @@ export default function Kds() {
                           "tnum rounded-full border-[1.5px] px-2.5 py-0.5 font-display text-[13px] font-bold",
                           late
                             ? "border-chili bg-chili/20 text-[#FF8B8B]"
-                            : "border-indigo-600 bg-indigo-950 text-indigo-100",
+                            : "border-cream/20 bg-soot-950 text-cream",
                         )}
                         title={late ? `running late (≥${LATE_MINUTES} min)` : "minutes since placed"}
                       >
@@ -313,15 +314,15 @@ export default function Kds() {
                       </span>
                     )}
                   </div>
-                  <ul className="my-1.5 text-[15px] font-bold leading-snug text-white">
+                  <ul className="my-1.5 text-[15px] font-bold leading-snug text-cream">
                     {o.items.map((i) => (
                       <li key={i.name}>
                         {i.qty}× {i.name}
                       </li>
                     ))}
                   </ul>
-                  <p className="tnum mb-2 font-display text-base font-bold text-turmeric-400">
-                    ₹{o.total}
+                  <p className="tnum mb-2 font-display text-base font-bold text-ghee">
+                    {rupee(o.total)}
                   </p>
                   {qc[o.order_id] && qc[o.order_id] !== "pending" && (
                     <div className="mb-1.5 space-y-0.5">
@@ -334,7 +335,7 @@ export default function Kds() {
                         </p>
                       )}
                       {(qc[o.order_id] as QCResult).issues.map((issue) => (
-                        <p key={issue} className="text-xs text-turmeric-400">
+                        <p key={issue} className="text-xs text-ghee">
                           {issue}
                         </p>
                       ))}
@@ -343,7 +344,7 @@ export default function Kds() {
                   <div className="flex flex-col gap-1.5">
                     {(col === "COOKING" || col === "READY") && (
                       <label
-                        className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg border-2 border-indigo-600 bg-transparent px-2.5 py-1 font-display text-sm font-bold text-indigo-100 transition-colors duration-150 hover:border-turmeric-400 hover:text-turmeric-400 ${
+                        className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-lg border-2 border-cream/20 bg-transparent px-2.5 py-1 font-display text-sm font-bold text-cream transition-colors duration-150 hover:border-ghee/50 hover:text-ghee ${
                           qc[o.order_id] === "pending" ? "cursor-not-allowed opacity-40" : ""
                         }`}
                       >
@@ -363,7 +364,7 @@ export default function Kds() {
                       </label>
                     )}
                     <button
-                      className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border-2 border-indigo-950 bg-turmeric-500 font-display text-base font-bold text-indigo-900 shadow-pop-dark-sm transition-colors duration-100 hover:bg-turmeric-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
+                      className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border-2 border-cream/10 bg-ghee font-display text-base font-bold text-soot-950 transition-colors duration-100 hover:bg-ghee/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee"
                       onClick={() => advance(o)}
                     >
                       → {NEXT[o.status].replace(/_/g, " ")}

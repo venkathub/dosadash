@@ -103,7 +103,7 @@ export function CopilotTab() {
 
       {answer && !answer.error && (
         <div className="space-y-4">
-          <p className="text-sm text-indigo-200">
+          <p className="text-sm text-cream-dim">
             {answer.explanation}{" "}
             <span className="ai-meta">
               🤖 {answer.model} · attempt {answer.attempts} · {answer.row_count} row{answer.row_count === 1 ? "" : "s"}
@@ -117,14 +117,14 @@ export function CopilotTab() {
 
           <div className="max-h-96 overflow-auto rounded-lg border border-white/5">
             <table className={tableCls}>
-              <thead className={`${theadCls} sticky top-0 bg-indigo-800`}>
+              <thead className={`${theadCls} sticky top-0 bg-soot-800`}>
                 <tr>{answer.columns.map((c) => <th key={c} className={thCls}>{c}</th>)}</tr>
               </thead>
               <tbody>
                 {answer.rows.map((row, i) => (
                   <tr key={i} className={trCls}>
                     {row.map((cell, j) => (
-                      <td key={j} className={`${tdCls} text-indigo-200 ${typeof cell === "number" ? "text-right" : ""}`}>{cell === null ? "—" : String(cell)}</td>
+                      <td key={j} className={`${tdCls} text-cream-dim ${typeof cell === "number" ? "text-right" : ""}`}>{cell === null ? "—" : String(cell)}</td>
                     ))}
                   </tr>
                 ))}
@@ -132,9 +132,9 @@ export function CopilotTab() {
             </table>
           </div>
 
-          <details className="text-xs text-indigo-200/70">
-            <summary className="cursor-pointer transition-colors duration-150 hover:text-turmeric-400">Show SQL</summary>
-            <pre className="mt-2 overflow-auto rounded-lg bg-indigo-950/60 p-3 font-mono text-indigo-200">{answer.sql}</pre>
+          <details className="text-xs text-cream-dim/70">
+            <summary className="cursor-pointer transition-colors duration-150 hover:text-ghee">Show SQL</summary>
+            <pre className="mt-2 overflow-auto rounded-lg bg-soot-950/60 p-3 font-mono text-cream-dim">{answer.sql}</pre>
           </details>
         </div>
       )}
@@ -160,13 +160,13 @@ function CopilotChart({ answer }: { answer: Answer }) {
   const barW = Math.max(3, (W - 2 * pad) / points.length - 4);
 
   /* Token hex literals for SVG paint (Tailwind arbitrary fills are unreliable
-     with CSS-var tokens): #F2B705 = turmeric-500, #B9B6D9 = indigo-200. */
+     with CSS-var tokens): #F5C451 = ghee, #C9BDA9 = cream-dim. */
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-lg bg-indigo-950/60">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-lg bg-soot-950/60">
       <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="rgba(255,255,255,0.05)" />
       {answer.chart.type === "bar" ? (
         points.map((p, i) => (
-          <rect key={i} x={x(i) - barW / 2} y={y(p.y)} width={barW} height={H - pad - y(p.y)} fill="#F2B705" fillOpacity={0.8}>
+          <rect key={i} x={x(i) - barW / 2} y={y(p.y)} width={barW} height={H - pad - y(p.y)} fill="#F5C451" fillOpacity={0.8}>
             <title>{`${p.x}: ${p.y}`}</title>
           </rect>
         ))
@@ -175,14 +175,14 @@ function CopilotChart({ answer }: { answer: Answer }) {
           points={points.map((p, i) => `${x(i)},${y(p.y)}`).join(" ")}
           fill="none"
           strokeWidth={2}
-          stroke="#B9B6D9"
+          stroke="#C9BDA9"
         />
       )}
-      <text x={pad} y={14} fill="#B9B6D9" className="text-[10px]">
+      <text x={pad} y={14} fill="#C9BDA9" className="text-[10px]">
         {answer.chart.y} by {answer.chart.x || "row"} (max {max.toLocaleString()})
       </text>
-      <text x={pad} y={H - 8} fill="#B9B6D9" fillOpacity={0.6} className="text-[9px]">{points[0]?.x}</text>
-      <text x={W - pad} y={H - 8} textAnchor="end" fill="#B9B6D9" fillOpacity={0.6} className="text-[9px]">
+      <text x={pad} y={H - 8} fill="#C9BDA9" fillOpacity={0.6} className="text-[9px]">{points[0]?.x}</text>
+      <text x={W - pad} y={H - 8} textAnchor="end" fill="#C9BDA9" fillOpacity={0.6} className="text-[9px]">
         {points[points.length - 1]?.x}
       </text>
     </svg>

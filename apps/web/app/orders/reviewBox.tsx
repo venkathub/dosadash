@@ -54,12 +54,12 @@ export function ReviewBox({ orderId }: { orderId: number }) {
 
   if (review) {
     return (
-      <div className="mt-2 rounded-lg border-[1.5px] border-sand-300 bg-offwhite p-2 text-xs">
-        <span className="text-turmeric-600">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
-        {review.text && <span className="ml-2 text-muted">“{review.text}”</span>}
+      <div className="mt-2 rounded-lg border-[1.5px] border-cream/10 bg-soot-950 p-2 text-xs">
+        <span className="text-ghee">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+        {review.text && <span className="ml-2 text-cream-dim">“{review.text}”</span>}
         {review.owner_reply && (
-          <p className="mt-1 text-muted">
-            <b className="text-ink">DosaDash:</b> {review.owner_reply}
+          <p className="mt-1 text-cream-dim">
+            <b className="text-cream">DosaDash:</b> {review.owner_reply}
           </p>
         )}
       </div>
@@ -69,7 +69,7 @@ export function ReviewBox({ orderId }: { orderId: number }) {
   if (!open) {
     return (
       <button
-        className="mt-2 font-display text-xs font-bold text-magenta-600 underline underline-offset-4 transition-colors duration-150 hover:text-magenta-500"
+        className="mt-2 font-display text-xs font-bold text-ember underline underline-offset-4 transition-colors duration-150 hover:text-ember"
         onClick={() => setOpen(true)}
       >
         ★ Rate this order
@@ -78,7 +78,7 @@ export function ReviewBox({ orderId }: { orderId: number }) {
   }
 
   return (
-    <div className="mt-2 rounded-lg border-[1.5px] border-sand-300 bg-offwhite p-2">
+    <div className="mt-2 rounded-lg border-[1.5px] border-cream/10 bg-soot-950 p-2">
       <div className="flex items-center gap-1 text-2xl">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
@@ -86,7 +86,7 @@ export function ReviewBox({ orderId }: { orderId: number }) {
             aria-label={`${n} star`}
             className={cx(
               "transition-colors duration-150",
-              n <= rating ? "text-turmeric-500" : "text-sand-300 hover:text-turmeric-400",
+              n <= rating ? "text-ghee" : "text-cream-faint hover:text-ghee",
             )}
             onClick={() => setRating(n)}
           >
@@ -108,7 +108,7 @@ export function ReviewBox({ orderId }: { orderId: number }) {
           Submit
         </Btn>
         <button
-          className="text-xs text-faint underline underline-offset-4 transition-colors duration-150 hover:text-muted"
+          className="text-xs text-cream-faint underline underline-offset-4 transition-colors duration-150 hover:text-cream-dim"
           onClick={() => setOpen(false)}
         >
           Cancel

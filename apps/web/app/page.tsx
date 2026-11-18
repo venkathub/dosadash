@@ -1,7 +1,13 @@
 "use client";
 
+// Customer home — "Tawa Noir" (docs/17-ui-tawa-noir-design.md).
+// Ordering comes first: search, category tabs and the menu are on the first
+// screen and the cart is always in view. The 3D scene is a compact hero banner.
+// Presentation only: cart, coupon, checkout, serving-window guard, language
+// and filter logic are carried over unchanged from the Madras Pop page.
+
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ApiError,
   api,
@@ -12,13 +18,17 @@ import {
   type Order,
   type User,
 } from "../lib/api";
+import { rupee } from "../lib/format";
+import { isSearching, searchMenu } from "../lib/menuSearch";
+import { cutoutKeyFor } from "../lib/scene";
 import LoginModal from "./components/LoginModal";
 import OrderTracker from "./components/OrderTracker";
 import ChatWidget from "./components/ChatWidget";
 import FeedbackButton from "./components/FeedbackButton";
 import Recommendations from "./components/Recommendations";
 import CheckoutSuggestions from "./components/CheckoutSuggestions";
-import { Btn, Card, FssaiMark, Input, PosterBlock, Ticker, Zari, cx } from "./components/ui";
+import Scene3D, { type Scene3DHandle } from "./components/Scene3D";
+import { cx } from "./components/ui";
 
 type CartLine = { item: MenuItem; qty: number };
 
@@ -33,14 +43,12 @@ const HIGH_PROTEIN_G = 12;
 
 type MealPeriod = "breakfast" | "lunch" | "snacks" | "dinner";
 
-const HERO: Record<MealPeriod, { eyebrow: string; heading: string; art: string }> = {
-  breakfast: { eyebrow: "Good morning · Chennai", heading: "Dosas are on the tawa ☀", art: "🥞" },
-  lunch: { eyebrow: "Lunch hour · Chennai", heading: "Meals are steaming 🍛", art: "🍛" },
-  snacks: { eyebrow: "Evening tiffin · Chennai", heading: "Bajjis & filter coffee 🫖", art: "☕" },
-  dinner: { eyebrow: "Good evening · Chennai", heading: "Dinner is on the tawa 🔥", art: "🥞" },
+const GREETING: Record<MealPeriod, string> = {
+  breakfast: "Good morning · Chennai",
+  lunch: "Lunch hour · Chennai",
+  snacks: "Evening tiffin · Chennai",
+  dinner: "Good evening · Chennai",
 };
-
-const MEAL_PERIODS: MealPeriod[] = ["breakfast", "lunch", "snacks", "dinner"];
 
 function currentMealPeriod(date = new Date()): MealPeriod {
   const h = date.getHours();
@@ -49,6 +57,136 @@ function currentMealPeriod(date = new Date()): MealPeriod {
   if (h < 18) return "snacks";
   return "dinner";
 }
+
+const englishName = (m: MenuItem) => m.canonical_name ?? m.name;
+
+/* ------------------------------ small pieces ------------------------------ */
+
+const emberBtn =
+  "inline-flex items-center justify-center rounded-full bg-ember font-display font-bold text-ember-ink transition duration-150 hover:bg-ember-hot active:translate-y-px disabled:cursor-not-allowed disabled:bg-soot-700 disabled:text-cream-faint disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee focus-visible:ring-offset-2 focus-visible:ring-offset-soot-950";
+const ghostBtn =
+  "rounded-full border border-cream/15 px-3.5 py-1.5 text-[13px] text-cream-dim transition-colors duration-150 hover:border-ghee hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee";
+const eyebrow = "font-display text-xs font-semibold uppercase tracking-[0.2em] text-ghee";
+const chip = "rounded-full border border-cream/15 px-2.5 py-0.5 text-xs text-cream-dim";
+
+function VegMark({ veg }: { veg: boolean }) {
+  return (
+    <span
+      role="img"
+      aria-label={veg ? "Vegetarian" : "Non-vegetarian"}
+      className={cx(
+        "mt-[3px] grid h-4 w-4 shrink-0 place-items-center rounded-[3px] border-2",
+        veg ? "border-basil" : "border-[#FF5D5D]",
+      )}
+    >
+      <span className={cx("h-[7px] w-[7px] rounded-full", veg ? "bg-basil" : "bg-[#FF5D5D]")} />
+    </span>
+  );
+}
+
+/** ADD button that becomes a − qty + stepper once the dish is in the cart. */
+function AddControl({
+  item,
+  qty,
+  onChange,
+  large = false,
+  compact = false,
+}: {
+  item: MenuItem;
+  qty: number;
+  onChange: (delta: number) => void;
+  large?: boolean;
+  compact?: boolean;
+}) {
+  const off = item.available_now === false;
+  const size = large ? "h-12" : compact ? "h-9" : "h-11";
+  const cell = compact ? "w-9" : "w-11";
+  if (qty > 0) {
+    return (
+      <div
+        className={cx(
+          "flex items-center overflow-hidden rounded-full border border-cream/20 bg-soot-900 font-display font-bold",
+          size,
+        )}
+      >
+        <button
+          aria-label={`Remove one ${item.name}`}
+          className={cx(cell, "h-full text-lg text-cream transition-colors hover:bg-soot-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ghee")}
+          onClick={() => onChange(-1)}
+        >
+          −
+        </button>
+        <span className="tnum w-7 text-center text-cream" aria-live="polite">
+          {qty}
+        </span>
+        <button
+          aria-label={`Add one more ${item.name}`}
+          disabled={off}
+          className={cx(cell, "h-full bg-ember text-lg text-ember-ink transition-colors hover:bg-ember-hot disabled:cursor-not-allowed disabled:bg-soot-700 disabled:text-cream-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ghee")}
+          onClick={() => onChange(1)}
+        >
+          +
+        </button>
+      </div>
+    );
+  }
+  return (
+    <button
+      disabled={off}
+      title={off ? "Not available right now" : undefined}
+      className={cx(emberBtn, size, large ? "px-7 text-base" : "px-5 text-sm")}
+      onClick={() => onChange(1)}
+    >
+      {large ? "Add to tray" : "Add"}
+    </button>
+  );
+}
+
+/** Spice, allergens, protein and the serving-window line for one dish. */
+function DishFacts({ m }: { m: MenuItem }) {
+  const off = m.available_now === false;
+  return (
+    <>
+      {(m.spice_level > 0 || m.allergens.length > 0 || m.protein_g != null) && (
+        <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-cream-dim">
+          {m.spice_level > 0 && (
+            <span className="tracking-widest" aria-label={`Spice level ${m.spice_level} of 3`}>
+              {SPICE[m.spice_level]}
+            </span>
+          )}
+          {m.allergens.length > 0 && <span className={chip}>⚠ {m.allergens.join(", ")}</span>}
+          {m.protein_g != null && (
+            <span
+              className={cx(
+                chip,
+                "tnum",
+                m.protein_g >= HIGH_PROTEIN_G && "border-ghee/50 text-ghee",
+              )}
+              title="Protein per serving — AI-estimated, approved by the kitchen"
+            >
+              💪 {m.protein_g.toFixed(0)} g protein
+            </span>
+          )}
+        </p>
+      )}
+      {/* Serving-window text is server-built and stays English by design. */}
+      {off ? (
+        <p className="mt-2">
+          <span className="inline-flex items-center gap-1 rounded-full border border-ghee/40 bg-ghee/10 px-2.5 py-0.5 text-xs font-semibold text-ghee">
+            ⏰ Not available now{m.serving_windows && <> · Serves {m.serving_windows}</>}
+          </span>
+        </p>
+      ) : (
+        <p className="mt-2 text-xs text-cream-dim">
+          <span className="font-semibold text-basil">● Serving now</span>
+          {m.serving_windows && <> · {m.serving_windows}</>}
+        </p>
+      )}
+    </>
+  );
+}
+
+/* ---------------------------------- page ---------------------------------- */
 
 export default function Home() {
   const [menu, setMenu] = useState<MenuItem[]>([]);
@@ -65,6 +203,14 @@ export default function Home() {
   const [coupon, setCoupon] = useState<{ code: string; discount: string; total: string } | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [lang, setLang] = useState<"en" | "ta">("en");
+  // The clock is read after mount: the server renders in its own timezone, so a
+  // render-time read would mismatch on hydration (issue #120).
+  const [period, setPeriod] = useState<MealPeriod | null>(null);
+  const [say, setSay] = useState("");
+  const [seed, setSeed] = useState<{ text: string; n: number } | null>(null);
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const scene = useRef<Scene3DHandle>(null);
 
   useEffect(() => {
     const onExpired = () => setUser(null);
@@ -74,6 +220,7 @@ export default function Home() {
 
   useEffect(() => {
     setUser(getUser());
+    setPeriod(currentMealPeriod());
     setLang(localStorage.getItem("menu_lang") === "ta" ? "ta" : "en");
     const params = new URLSearchParams(location.search);
     const track = params.get("track");
@@ -96,39 +243,64 @@ export default function Home() {
     setLang(next);
   };
 
-  const period = useMemo(() => currentMealPeriod(), []);
   const inPeriod = (m: MenuItem) =>
-    m.meal_periods.length === 0 || m.meal_periods.includes(period);
+    period === null || m.meal_periods.length === 0 || m.meal_periods.includes(period);
 
   // Show the chip only when at least one dish in the menu is actually scored at
   // or above the threshold — the filter must always return results when offered.
   const hasProteinData = useMemo(
     () => menu.some((m) => (m.protein_g ?? 0) >= HIGH_PROTEIN_G),
-    [menu]
+    [menu],
   );
 
   const visible = useMemo(
     () =>
-      menu.filter(
+      searchMenu(menu, search).filter(
         (m) =>
           (dietFilter === "all" || (dietFilter === "veg" ? m.is_veg : !m.is_veg)) &&
-          (!highProtein || (m.protein_g ?? 0) >= HIGH_PROTEIN_G) &&
-          (search.length < 2 ||
-            m.name.toLowerCase().includes(search.toLowerCase()) ||
-            (m.canonical_name ?? "").toLowerCase().includes(search.toLowerCase()))
+          (!highProtein || (m.protein_g ?? 0) >= HIGH_PROTEIN_G),
       ),
-    [menu, dietFilter, highProtein, search]
+    [menu, dietFilter, highProtein, search],
   );
+  // While searching, the hero and recommendations step aside and the page
+  // returns to the top, so the results are the first thing under the search
+  // box instead of ~700px below it (where a filter looks like it did nothing).
+  const searching = isSearching(search);
+  useEffect(() => {
+    if (searching) window.scrollTo({ top: 0, behavior: "auto" });
+  }, [searching, search]);
+
   // Current meal period's categories first; within a category, matching items first.
   const categories = useMemo(() => {
     const matches = (cat: string) =>
-      visible.some((m) => m.category === cat && m.meal_periods.includes(period));
+      period !== null && visible.some((m) => m.category === cat && m.meal_periods.includes(period));
     return [...new Set(visible.map((m) => m.category))].sort(
-      (a, b) => Number(matches(b)) - Number(matches(a))
+      (a, b) => Number(matches(b)) - Number(matches(a)),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, period]);
+  const catLabel = (cat: string) =>
+    visible.find((m) => m.category === cat && m.category_label)?.category_label ?? cat;
+  const catId = (cat: string) => `cat-${categories.indexOf(cat)}`;
+
+  // Category tabs follow the scroll position.
+  const catKey = categories.join("|");
+  useEffect(() => {
+    if (categories.length === 0) return;
+    const seen = new Map<string, boolean>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) seen.set((e.target as HTMLElement).dataset.cat ?? "", e.isIntersecting);
+        const first = categories.find((c) => seen.get(c));
+        if (first) setActiveCat(first);
+      },
+      { rootMargin: "-25% 0px -60% 0px" },
+    );
+    document.querySelectorAll<HTMLElement>("[data-cat]").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [catKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const cartLines = Object.values(cart);
+  const cartCount = cartLines.reduce((s, l) => s + l.qty, 0);
   const cartTotal = cartLines.reduce((s, l) => s + parseFloat(l.item.price) * l.qty, 0);
   // Cart lines hold a snapshot of the item from when it was added — resolve
   // against the freshly fetched menu so a dish that slipped out of its serving
@@ -136,14 +308,15 @@ export default function Home() {
   const offWindowLines = cartLines
     .map((l) => menu.find((m) => m.id === l.item.id) ?? l.item)
     .filter((m) => m.available_now === false);
-
-  // Decorative ticker built from the live menu (never hardcode prices — drift).
-  const tickerText = useMemo(() => {
-    if (menu.length === 0) return "";
-    const picks = menu.filter((m) => m.available_now !== false).slice(0, 5);
-    const parts = picks.map((m) => `${m.name} ₹${parseFloat(m.price).toFixed(0)}`);
-    return `  HOT OFF THE TAWA ✦ ${parts.join(" ✦ ")} ✦ HOT OFF THE TAWA ✦`;
-  }, [menu]);
+  useEffect(() => {
+    if (cartLines.length === 0) setSheetOpen(false);
+  }, [cartLines.length]);
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSheetOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sheetOpen]);
 
   const add = (item: MenuItem, delta: number) => {
     // Off-window dishes can never be ADDED (recs/suggestions funnel through
@@ -158,6 +331,10 @@ export default function Home() {
       else next[item.id] = { item, qty };
       return next;
     });
+    if (delta > 0) {
+      const key = cutoutKeyFor(englishName(item));
+      if (key) scene.current?.hop(key);
+    }
   };
 
   const applyCoupon = async () => {
@@ -173,7 +350,7 @@ export default function Home() {
             code: couponCode,
             items: cartLines.map((l) => ({ item_id: l.item.id, qty: l.qty })),
           },
-        }
+        },
       );
       setCoupon(preview);
     } catch (e) {
@@ -214,338 +391,62 @@ export default function Home() {
     }
   };
 
-  return (
-    <main className="min-h-screen pb-32">
-      <header className="sticky top-0 z-40 border-b-[3px] border-turmeric-500 bg-indigo-900 px-4 py-3">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
-          <h1 className="flex items-center gap-1.5 font-display text-lg font-bold tracking-wide text-white">
-            🥞 DOSA<span className="-ml-1.5 text-turmeric-400">DASH</span>
-          </h1>
-          <Input
-            tone="dark"
-            className="w-40 rounded-full sm:w-64"
-            placeholder="Search dishes…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
-            <button
-              className="flex overflow-hidden rounded-full border-2 border-indigo-600 font-display text-[11.5px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
-              title={lang === "ta" ? "Switch to English" : "தமிழில் காட்டு"}
-              onClick={() => switchLang(lang === "ta" ? "en" : "ta")}
-            >
-              <span
-                className={cx(
-                  "px-2 py-0.5",
-                  lang === "en" ? "bg-turmeric-500 text-indigo-900" : "text-indigo-200",
-                )}
-              >
-                EN
-              </span>
-              <span
-                className={cx(
-                  "px-2 py-0.5",
-                  lang === "ta" ? "bg-turmeric-500 text-indigo-900" : "text-indigo-200",
-                )}
-              >
-                தமிழ்
-              </span>
-            </button>
-            <div
-              role="group"
-              aria-label="Diet filter"
-              className="flex overflow-hidden rounded-full border-2 border-indigo-600 font-display text-[11.5px] font-bold"
-            >
-              {(["all", "veg", "nonveg"] as const).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  aria-pressed={dietFilter === f}
-                  className={cx(
-                    "px-2.5 py-0.5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-magenta-500",
-                    dietFilter === f
-                      ? f === "veg"
-                        ? "bg-veg text-white"
-                        : "bg-turmeric-500 text-indigo-900"
-                      : "text-indigo-200 hover:bg-indigo-700",
-                  )}
-                  onClick={() => setDietFilter(f)}
-                >
-                  {f === "all" ? "All" : f === "veg" ? "🌿 Veg" : "🍖 Non-veg"}
-                </button>
-              ))}
-            </div>
-            {hasProteinData && (
-              <button
-                type="button"
-                aria-pressed={highProtein}
-                title={`Show only dishes with ${HIGH_PROTEIN_G} g protein or more per serving`}
-                className={cx(
-                  "flex items-center gap-1.5 rounded-full border-2 px-2.5 py-0.5 text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500",
-                  highProtein
-                    ? "border-indigo-900 bg-turmeric-500 text-indigo-900"
-                    : "border-indigo-600 text-indigo-100 hover:border-turmeric-400",
-                )}
-                onClick={() => setHighProtein((on) => !on)}
-              >
-                <span aria-hidden="true">💪</span>
-                <span>High protein</span>
-              </button>
-            )}
-            <Link
-              href="/orders"
-              className="text-indigo-100 underline decoration-turmeric-500/60 underline-offset-4 transition-colors duration-150 hover:text-turmeric-400"
-            >
-              Orders
-            </Link>
-            <Link
-              href="/demo"
-              className="text-indigo-100 underline decoration-turmeric-500/60 underline-offset-4 transition-colors duration-150 hover:text-turmeric-400"
-              title="Demo guide: credentials + test cards"
-            >
-              Demo
-            </Link>
-            {user ? (
-              <button
-                className="text-indigo-200 underline underline-offset-4 transition-colors duration-150 hover:text-turmeric-400"
-                onClick={() => {
-                  clearSession();
-                  setUser(null);
-                }}
-              >
-                Logout
-              </button>
-            ) : (
-              <Btn variant="turmeric" size="sm" onClick={() => setShowLogin(true)}>
-                Login
-              </Btn>
-            )}
-          </div>
-        </div>
-      </header>
-      {tickerText && <Ticker>{tickerText}</Ticker>}
+  const openGenie = (text: string) => setSeed((s) => ({ text, n: (s?.n ?? 0) + 1 }));
+  const jumpTo = (cat: string) => {
+    setActiveCat(cat);
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(catId(cat))?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+  };
 
-      {error && (
-        <p className="mx-auto mt-3 max-w-4xl px-4 text-sm font-semibold text-chili">{error}</p>
-      )}
-
-      <div className="mx-auto max-w-4xl px-4">
-        {menu.length > 0 && (
-          <section className="relative mt-5 overflow-hidden rounded-2xl border-2 border-indigo-900 bg-magenta-500 px-5 py-5 text-white shadow-[5px_5px_0_#1B1B3A]">
-            <div
-              className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-magenta-400 opacity-50"
-              aria-hidden="true"
-            />
-            <div
-              className="absolute bottom-2 right-3 text-5xl [filter:drop-shadow(3px_3px_0_#1B1B3A)]"
-              aria-hidden="true"
-            >
-              {HERO[period].art}
-            </div>
-            <div className="relative z-[1]">
-              <p className="font-display text-[11px] font-bold uppercase tracking-[0.16em] text-turmeric-400">
-                {HERO[period].eyebrow}
-              </p>
-              <p className="mt-1.5 font-display text-[27px] font-bold uppercase leading-[1.1] tracking-[0.01em]">
-                {HERO[period].heading}
-              </p>
-              <div className="mt-3.5 flex flex-wrap gap-2">
-                {MEAL_PERIODS.map((p) => (
-                  <span
-                    key={p}
-                    className={cx(
-                      "rounded-full border-2 px-2.5 py-0.5 text-[11.5px] font-semibold",
-                      p === period
-                        ? "border-indigo-900 bg-turmeric-500 text-indigo-900 shadow-pop-xs"
-                        : "border-white bg-transparent text-white",
-                    )}
-                  >
-                    {p === period ? `● ${p} — now serving` : p}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-        <Recommendations
-          cartIds={Object.keys(cart).map(Number)}
-          menu={menu}
-          onAdd={(item) => add(item, 1)}
-        />
-        {categories.map((cat, ci) => {
-          const inCat = visible.filter((m) => m.category === cat);
-          const label = inCat.find((m) => m.category_label)?.category_label ?? cat;
-          return (
-          <section key={cat} className="mt-8">
-            <div className="mb-1 flex flex-wrap items-baseline gap-2.5">
-              <PosterBlock tone={ci % 2 === 0 ? "magenta" : "indigo"} tamil={lang === "ta"}>
-                {label}
-              </PosterBlock>
-              <span className="text-[11.5px] text-muted">{inCat.length} dishes</span>
-            </div>
-            <Zari className="mb-4" />
-            <div className="grid gap-4 md:grid-cols-2">
-              {inCat
-                .sort((a, b) =>
-                  highProtein
-                    ? (b.protein_g ?? 0) - (a.protein_g ?? 0)
-                    : Number(inPeriod(b)) - Number(inPeriod(a)),
-                )
-                .map((m) => {
-                  const off = m.available_now === false;
-                  return (
-                  <div
-                    key={m.id}
-                    className={cx(
-                      "flex justify-between gap-3 rounded-xl border-2 border-indigo-900 p-3",
-                      off
-                        ? "bg-sand-200"
-                        : "bg-paper shadow-pop transition-transform duration-150 hover:-translate-y-0.5",
-                    )}
-                  >
-                    {m.image_url && (
-                      <div className="relative h-24 w-24 shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={m.image_url}
-                          alt={m.name}
-                          className={cx(
-                            "h-24 w-24 rounded-lg border-2 border-indigo-900 object-cover",
-                            off && "opacity-40 saturate-50",
-                          )}
-                        />
-                        {m.image_ai && (
-                          <span
-                            className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-indigo-900 px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.06em] text-turmeric-400"
-                            title="This photo was generated by AI and approved by the kitchen"
-                          >
-                            ✨ AI
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <h3 className="flex items-start gap-1.5">
-                        <FssaiMark veg={m.is_veg} className="mt-[2px] shrink-0" />
-                        <span
-                          className={cx(
-                            "break-words font-display text-[15px] font-bold leading-snug",
-                            off ? "text-faint" : "text-ink",
-                          )}
-                        >
-                          {m.name}
-                        </span>
-                      </h3>
-                      <p
-                        className={cx(
-                          "mt-0.5 text-sm text-muted line-clamp-2",
-                          off && "opacity-60",
-                        )}
-                      >
-                        {m.description}
-                      </p>
-                      {(m.spice_level > 0 || m.allergens.length > 0 || m.protein_g != null) && (
-                        <p className={cx("mt-1 flex flex-wrap items-center gap-1.5 text-[11.5px] text-muted", off && "opacity-60")}>
-                          {m.spice_level > 0 && (
-                            <span className="tracking-widest text-chili">{SPICE[m.spice_level]}</span>
-                          )}
-                          {m.allergens.length > 0 && <span>· ⚠ {m.allergens.join(", ")}</span>}
-                          {m.protein_g != null && (
-                            <span
-                              className={cx(
-                                "tnum rounded-full border-[1.5px] border-indigo-900 px-1.5 py-0.5 text-[10.5px] font-semibold",
-                                m.protein_g >= HIGH_PROTEIN_G
-                                  ? "bg-turmeric-500 text-indigo-900"
-                                  : "bg-sand-200 text-ink",
-                              )}
-                              title="Protein per serving — AI-estimated, approved by the kitchen"
-                            >
-                              💪 {m.protein_g.toFixed(0)} g protein
-                            </span>
-                          )}
-                        </p>
-                      )}
-                      {/* Serving-window chip (server-built text, stays English by design) */}
-                      {off ? (
-                        <p className="mt-1.5">
-                          <span className="inline-flex items-center gap-1 rounded-full border-[1.5px] border-turmeric-600 bg-warn-100 px-2 py-0.5 text-[11px] font-semibold text-[#8A6A03]">
-                            ⏰ Not available now
-                            {m.serving_windows && <> · Serves {m.serving_windows}</>}
-                          </span>
-                        </p>
-                      ) : (
-                        m.serving_windows && (
-                          <p className="mt-1 text-[10px] text-faint">⏰ {m.serving_windows}</p>
-                        )
-                      )}
-                      <p
-                        className={cx(
-                          "tnum mt-1 font-display text-base font-bold text-ink",
-                          off && "opacity-50",
-                        )}
-                      >
-                        ₹{m.price}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end justify-end">
-                      {cart[m.id] ? (
-                        <div className="flex items-center overflow-hidden rounded-lg border-2 border-indigo-900 bg-paper font-display font-bold shadow-pop-sm">
-                          <button
-                            className="h-8 w-8 bg-turmeric-500 text-indigo-900 transition-colors duration-150 hover:bg-turmeric-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
-                            onClick={() => add(m, -1)}
-                          >
-                            −
-                          </button>
-                          <span className="tnum w-8 text-center text-sm text-ink">
-                            {cart[m.id].qty}
-                          </span>
-                          <button
-                            className="h-8 w-8 bg-turmeric-500 text-indigo-900 transition-colors duration-150 hover:bg-turmeric-400 disabled:cursor-not-allowed disabled:bg-sand-300 disabled:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
-                            disabled={off}
-                            onClick={() => add(m, 1)}
-                          >
-                            +
-                          </button>
-                        </div>
-                      ) : (
-                        <Btn
-                          variant="turmeric"
-                          size="sm"
-                          disabled={off}
-                          title={off ? "Not available right now" : undefined}
-                          onClick={() => add(m, 1)}
-                        >
-                          ADD +
-                        </Btn>
-                      )}
-                    </div>
-                  </div>
-                  );
-                })}
-            </div>
-          </section>
-          );
-        })}
-        {visible.length === 0 && (highProtein || dietFilter !== "all") && (
-          <p className="mt-8 rounded-xl border-2 border-indigo-900 bg-sand-200 p-4 text-sm text-muted">
-            {highProtein
-              ? <>No dish on today&apos;s menu is scored at {HIGH_PROTEIN_G} g protein or more{dietFilter !== "all" && ` among the ${dietFilter} dishes`}. Switch the 💪 filter off to see everything.</>
-              : <>No {dietFilter === "veg" ? "veg" : "non-veg"} dishes match your search. Switch the diet filter to <strong>All</strong> to see everything.</>}
-          </p>
-        )}
+  /** The whole cart: lines you can edit, extras, coupon, total, checkout.
+      Rendered in the desktop side panel and in the mobile sheet. */
+  const cartPanel = (
+    <>
+      <div className="flex items-baseline justify-between">
+        <h2 className="font-display text-xl font-semibold">Your tray</h2>
+        <span className="text-xs text-cream-faint">
+          {cartCount} {cartCount === 1 ? "item" : "items"}
+        </span>
       </div>
-
-      {cartLines.length > 0 && (
-        <footer className="fixed bottom-0 left-0 right-0 z-40 border-t-[3px] border-turmeric-500 bg-indigo-900 p-3 text-indigo-100">
-          <CheckoutSuggestions
-            cartIds={Object.keys(cart).map(Number)}
-            menu={menu}
-            onAdd={(item) => add(item, 1)}
-          />
-          <div className="mx-auto mb-2 flex max-w-4xl flex-wrap items-center gap-2 text-sm">
-            <Input
-              tone="dark"
-              className="w-32 px-2 py-1 text-xs uppercase"
+      {cartLines.length === 0 ? (
+        <div className="mt-4 rounded-2xl border border-dashed border-cream/15 p-5 text-center">
+          <p className="text-sm text-cream-dim">
+            Nothing here yet. Add a dish from the menu, or tell Genie what you feel like eating.
+          </p>
+          <button className={cx(ghostBtn, "mt-3")} onClick={() => openGenie("")}>
+            Ask Genie
+          </button>
+        </div>
+      ) : (
+        <>
+          <ul className="mt-3 divide-y divide-cream/10">
+            {cartLines.map((l) => {
+              const live = menu.find((m) => m.id === l.item.id) ?? l.item;
+              const off = live.available_now === false;
+              return (
+                <li key={l.item.id} className="flex items-center gap-3 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className={cx("truncate font-display text-[15px] font-semibold", off && "text-cream-faint")}>
+                      {l.item.name}
+                    </p>
+                    <p className="tnum text-xs text-cream-faint">
+                      {rupee(l.item.price)} each
+                      {off && <span className="text-ghee"> · not available now</span>}
+                    </p>
+                  </div>
+                  <AddControl compact item={live} qty={l.qty} onChange={(d) => add(live, d)} />
+                  <span className="tnum w-14 text-right font-display font-semibold">
+                    {rupee(parseFloat(l.item.price) * l.qty)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <CheckoutSuggestions cartIds={Object.keys(cart).map(Number)} menu={menu} onAdd={(item) => add(item, 1)} />
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <input
+              aria-label="Coupon code"
+              className="h-10 min-w-0 flex-1 rounded-full border border-cream/15 bg-soot-950 px-3.5 text-xs uppercase text-cream outline-none placeholder:text-cream-faint focus:border-ghee"
               placeholder="Coupon code"
               value={couponCode}
               onChange={(e) => {
@@ -554,68 +455,387 @@ export default function Home() {
                 setCouponError(null);
               }}
             />
-            <Btn
-              variant="subtle"
-              size="sm"
-              disabled={couponCode.length < 2 || !!coupon}
-              onClick={applyCoupon}
-            >
+            <button className={cx(ghostBtn, "h-10 disabled:opacity-50")} disabled={couponCode.length < 2 || !!coupon} onClick={applyCoupon}>
               {coupon ? "✓ Applied" : "Apply"}
-            </Btn>
+            </button>
+          </div>
+          {couponError && <p className="mt-2 text-xs font-semibold text-[#FF8B8B]">{couponError}</p>}
+          <dl className="mt-4 space-y-1.5 border-t border-cream/10 pt-3 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-cream-dim">Subtotal</dt>
+              <dd className="tnum">{rupee(cartTotal)}</dd>
+            </div>
             {coupon && (
-              <span className="text-xs font-semibold text-[#5BD69B]">
-                {coupon.code}: −₹{parseFloat(coupon.discount).toFixed(2)}
-              </span>
+              <div className="flex justify-between text-basil">
+                <dt>Coupon {coupon.code}</dt>
+                <dd className="tnum">−{rupee(coupon.discount)}</dd>
+              </div>
             )}
-            {couponError && (
-              <span className="text-xs font-semibold text-[#FF8B8B]">{couponError}</span>
-            )}
-          </div>
-          <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
-            <p className="text-sm">
-              <span className="text-[11.5px] text-indigo-200">
-                {cartLines.reduce((s, l) => s + l.qty, 0)} items{coupon && " · coupon applied"}
-              </span>
-              <br />
-              <span className="tnum font-display text-[21px] font-bold text-white">
-                ₹{cartTotal.toFixed(2)}
-              </span>{" "}
-              {coupon && (
-                <span className="text-sm font-semibold text-[#5BD69B]">
-                  −₹{parseFloat(coupon.discount).toFixed(2)}
-                </span>
-              )}{" "}
-              <span className="text-xs text-indigo-300">+ GST</span>
-            </p>
-            <Btn
-              variant="magenta"
-              size="lg"
-              disabled={placing || offWindowLines.length > 0}
-              title={
-                offWindowLines.length > 0
-                  ? "Remove the unavailable dishes to checkout"
-                  : undefined
-              }
-              onClick={checkout}
-            >
-              {placing ? "Placing…" : "Checkout →"}
-            </Btn>
-          </div>
+            <div className="flex justify-between text-xs text-cream-faint">
+              <dt>GST</dt>
+              <dd>added at checkout</dd>
+            </div>
+          </dl>
           {offWindowLines.length > 0 && (
-            <div className="mx-auto mt-2 max-w-4xl space-y-1 text-xs">
+            <div className="mt-3 space-y-1 text-xs">
               {offWindowLines.map((m) => (
-                <p
-                  key={m.id}
-                  className="inline-block rounded-lg border-[1.5px] border-turmeric-600 bg-warn-100 px-2.5 py-1 font-semibold text-[#8A6A03]"
-                >
+                <p key={m.id} className="rounded-xl border border-ghee/40 bg-ghee/10 px-3 py-1.5 font-semibold text-ghee">
                   ⏰ {m.name} is not available right now
-                  {m.serving_windows && <> (serves {m.serving_windows})</>} — remove it to
-                  checkout.
+                  {m.serving_windows && <> (serves {m.serving_windows})</>} — remove it to checkout.
                 </p>
               ))}
             </div>
           )}
-        </footer>
+          <button
+            className={cx(emberBtn, "mt-4 h-12 w-full text-base shadow-ember")}
+            disabled={placing || offWindowLines.length > 0}
+            title={offWindowLines.length > 0 ? "Remove the unavailable dishes to checkout" : undefined}
+            onClick={checkout}
+          >
+            {placing ? "Placing…" : user ? "Checkout" : "Log in to checkout"}
+          </button>
+        </>
+      )}
+    </>
+  );
+
+  return (
+    <main className="min-h-screen bg-soot-950 pb-28 text-cream lg:pb-10">
+      {/* ── app bar: search is always one tap away ── */}
+      <header className="sticky top-0 z-40 border-b border-cream/10 bg-soot-950/95 backdrop-blur">
+        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-1.5 px-3 sm:gap-x-3 lg:px-6">
+          <p className="flex h-14 items-center font-display text-lg font-bold tracking-wide max-[359px]:text-base sm:text-xl">
+            Dosa<span className="text-ember">Dash</span>
+          </p>
+          <input
+            type="search"
+            aria-label="Search dishes"
+            className="order-last mb-2.5 h-10 w-full basis-full rounded-full border border-cream/15 bg-soot-900 px-4 text-cream placeholder:text-cream-faint text-[15px] outline-none focus:border-ghee lg:order-none lg:mb-0 lg:ml-4 lg:w-auto lg:max-w-md lg:flex-1 lg:basis-auto"
+            placeholder="Search dosa, idli, biryani…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && setSearch("")}
+          />
+          <span className="flex-1" />
+          <button
+            className="flex overflow-hidden rounded-full border border-cream/15 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee"
+            title={lang === "ta" ? "Switch to English" : "தமிழில் காட்டு"}
+            aria-label={lang === "ta" ? "Switch menu to English" : "Switch menu to Tamil"}
+            onClick={() => switchLang(lang === "ta" ? "en" : "ta")}
+          >
+            <span className={cx("px-2 py-1.5 max-[359px]:px-1.5 sm:px-3", lang === "en" ? "bg-cream font-semibold text-soot-950" : "text-cream-dim")}>
+              EN
+            </span>
+            <span className={cx("px-2 py-1.5 max-[359px]:px-1.5 sm:px-3", lang === "ta" ? "bg-cream font-semibold text-soot-950" : "text-cream-dim")}>
+              தமிழ்
+            </span>
+          </button>
+          <FeedbackButton variant="icon" />
+          <Link href="/orders" className={cx(ghostBtn, "max-sm:px-2.5")} aria-label="Your orders">
+            <span aria-hidden="true" className="sm:hidden">📦</span>
+            <span className="max-sm:hidden">Orders</span>
+          </Link>
+          <Link href="/demo" className={cx(ghostBtn, "max-md:hidden")} title="Demo guide: credentials + test cards">
+            Demo
+          </Link>
+          {user ? (
+            <button
+              className={cx(ghostBtn, "max-sm:px-2.5")}
+              onClick={() => {
+                clearSession();
+                setUser(null);
+              }}
+            >
+              Logout
+            </button>
+          ) : (
+            <button className={cx(ghostBtn, "max-sm:px-2.5")} onClick={() => setShowLogin(true)}>
+              Login
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-[1280px] px-3 lg:px-6">
+        {/* ── hero: a compact banner. The scene is here and nowhere else. ── */}
+        <section className={cx("relative mt-3", searching && "hidden")} aria-labelledby="hero-title">
+          <div className="relative h-[180px] overflow-hidden rounded-3xl border border-cream/10 lg:h-[290px]">
+            <Scene3D ref={scene} />
+            <div className="absolute inset-y-0 left-0 hidden w-[64%] bg-gradient-to-r from-soot-950 via-soot-950/85 to-transparent lg:block" />
+          </div>
+          <div className="mt-4 lg:absolute lg:inset-y-0 lg:left-0 lg:mt-0 lg:flex lg:w-[50%] lg:flex-col lg:justify-center lg:pl-9">
+            <p className={eyebrow}>{period ? GREETING[period] : "Chennai"}</p>
+            <h1 id="hero-title" className="mt-2 font-display text-[30px] font-semibold leading-[1.05] tracking-[-0.025em] lg:text-[44px]">
+              Say it. We’ll <span className="text-ember">make</span> it.
+            </h1>
+            <form
+              className="mt-4 flex items-center gap-2 rounded-full border border-cream/15 bg-soot-900 p-1.5 pl-4 focus-within:border-ember"
+              onSubmit={(e) => {
+                e.preventDefault();
+                openGenie(say);
+                setSay("");
+              }}
+            >
+              <input
+                aria-label="Tell Dosa Genie what you want to eat"
+                className="h-10 min-w-0 flex-1 border-0 bg-transparent text-base text-cream outline-none placeholder:text-cream-faint"
+                placeholder="2 masala dosa, 1 filter coffee…"
+                autoComplete="off"
+                value={say}
+                onChange={(e) => setSay(e.target.value)}
+              />
+              <button type="submit" className={cx(emberBtn, "h-10 shrink-0 px-4 text-sm shadow-ember")}>
+                Ask Genie
+              </button>
+            </form>
+            <p className="mt-2 text-[13px] text-cream-faint">
+              Opens a chat that drafts your order in English, Tanglish, Hinglish or <span lang="ta">தமிழ்</span>, and
+              checks every dish against today’s menu.
+            </p>
+          </div>
+        </section>
+
+        <div className="mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-6">
+          {/* ── menu ── */}
+          <div className="min-w-0">
+            <div className="sticky top-[106px] z-30 -mx-3 border-b border-cream/10 bg-soot-950/95 px-3 py-2.5 backdrop-blur lg:top-14 lg:mx-0 lg:rounded-b-2xl lg:px-0">
+              <nav aria-label="Menu categories" className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    aria-current={activeCat === cat}
+                    className={cx(
+                      "h-10 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee",
+                      activeCat === cat
+                        ? "border-cream bg-cream text-soot-950"
+                        : "border-cream/15 text-cream-dim hover:border-cream/40 hover:text-cream",
+                    )}
+                    onClick={() => jumpTo(cat)}
+                  >
+                    {catLabel(cat)}
+                  </button>
+                ))}
+              </nav>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <div role="group" aria-label="Diet filter" className="flex overflow-hidden rounded-full border border-cream/15 text-[13px]">
+                  {(["all", "veg", "nonveg"] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      aria-pressed={dietFilter === f}
+                      className={cx(
+                        "h-9 px-3.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ghee",
+                        dietFilter === f ? "bg-basil font-semibold text-soot-950" : "text-cream-dim hover:bg-soot-700",
+                      )}
+                      onClick={() => setDietFilter(f)}
+                    >
+                      {f === "all" ? "All" : f === "veg" ? "Veg" : "Non-veg"}
+                    </button>
+                  ))}
+                </div>
+                {hasProteinData && (
+                  <button
+                    type="button"
+                    aria-pressed={highProtein}
+                    title={`Show only dishes with ${HIGH_PROTEIN_G} g protein or more per serving`}
+                    className={cx(
+                      "h-9 rounded-full border px-3.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee",
+                      highProtein ? "border-ghee bg-ghee/15 text-ghee" : "border-cream/15 text-cream-dim hover:border-ghee",
+                    )}
+                    onClick={() => setHighProtein((on) => !on)}
+                  >
+                    💪 High protein
+                  </button>
+                )}
+                {menu.length > 0 && (
+                  <span className="ml-auto text-xs text-cream-faint">
+                    {visible.length} of {menu.length} dishes
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {error && <p className="mt-4 text-sm font-semibold text-[#FF5D5D]">{error}</p>}
+            {menu.length === 0 && !error && <p className="mt-6 text-sm text-cream-dim">Loading the menu…</p>}
+
+            {searching ? (
+              <p className="mt-5 flex flex-wrap items-center gap-3 text-sm text-cream-dim" role="status">
+                <span>
+                  <strong className="text-cream">
+                    {visible.length} {visible.length === 1 ? "dish" : "dishes"}
+                  </strong>{" "}
+                  for “{search.trim()}”
+                </span>
+                <button className={ghostBtn} onClick={() => setSearch("")}>
+                  Clear search
+                </button>
+              </p>
+            ) : (
+              <Recommendations cartIds={Object.keys(cart).map(Number)} menu={menu} onAdd={(item) => add(item, 1)} />
+            )}
+
+            {categories.map((cat) => {
+              const inCat = visible.filter((m) => m.category === cat);
+              return (
+                <section key={cat} id={catId(cat)} data-cat={cat} className="scroll-mt-[215px] pt-8 lg:scroll-mt-[170px]">
+                  <div className="mb-3 flex items-baseline gap-3">
+                    <h2 className="font-display text-[22px] font-semibold">{catLabel(cat)}</h2>
+                    <span className="text-xs text-cream-faint">{inCat.length} dishes</span>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {inCat
+                      .sort((a, b) =>
+                        highProtein
+                          ? (b.protein_g ?? 0) - (a.protein_g ?? 0)
+                          : Number(inPeriod(b)) - Number(inPeriod(a)),
+                      )
+                      .map((m) => {
+                        const off = m.available_now === false;
+                        const cutout = cutoutKeyFor(englishName(m));
+                        // A dish with no kitchen photo borrows its scene cutout (also AI-made, so also labelled).
+                        const thumb = m.image_url ?? (cutout ? `/scene/${cutout}.webp` : null);
+                        return (
+                          <article
+                            key={m.id}
+                            className={cx(
+                              "flex gap-3.5 rounded-2xl border p-3 transition-colors",
+                              off ? "border-cream/10 bg-soot-900/60" : "border-cream/10 bg-soot-900 hover:border-cream/30",
+                            )}
+                            onMouseEnter={cutout ? () => scene.current?.select(cutout) : undefined}
+                          >
+                            {thumb && (
+                              <div className="relative h-[104px] w-[104px] shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={thumb}
+                                  alt=""
+                                  width={104}
+                                  height={104}
+                                  loading="lazy"
+                                  className={cx(
+                                    "h-[104px] w-[104px] rounded-xl bg-soot-950",
+                                    m.image_url ? "object-cover" : "object-contain p-1",
+                                    off && "opacity-40 saturate-50",
+                                  )}
+                                />
+                                {(m.image_ai || !m.image_url) && (
+                                  <span
+                                    className="absolute bottom-1 left-1 rounded-full bg-soot-950/85 px-1.5 py-0.5 text-[11px] font-semibold text-ghee"
+                                    title="This picture was generated by AI"
+                                  >
+                                    ✨ AI
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            <div className="flex min-w-0 flex-1 flex-col">
+                              <h3 className="flex items-start gap-2">
+                                <VegMark veg={m.is_veg} />
+                                <span className={cx("break-words font-display text-base font-semibold leading-snug", off && "text-cream-faint")}>
+                                  {m.name}
+                                </span>
+                              </h3>
+                              <p className={cx("mt-1 line-clamp-2 text-sm text-cream-dim", off && "opacity-70")}>{m.description}</p>
+                              <DishFacts m={m} />
+                              <div className="mt-auto flex items-center pt-3">
+                                <span className={cx("tnum font-display text-lg font-semibold", off && "text-cream-faint")}>
+                                  {rupee(m.price)}
+                                </span>
+                                <span className="flex-1" />
+                                <AddControl item={m} qty={cart[m.id]?.qty ?? 0} onChange={(d) => add(m, d)} />
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                  </div>
+                </section>
+              );
+            })}
+            {menu.length > 0 && visible.length === 0 && (
+              <p className="mt-8 rounded-2xl border border-cream/15 bg-soot-900 p-4 text-sm text-cream-dim">
+                {highProtein ? (
+                  <>
+                    No dish on today&apos;s menu is scored at {HIGH_PROTEIN_G} g protein or more
+                    {dietFilter !== "all" && ` among the ${dietFilter === "veg" ? "veg" : "non-veg"} dishes`}. Switch
+                    the 💪 filter off to see everything.
+                  </>
+                ) : (
+                  <>
+                    Nothing on the menu matches{searching && <> “{search.trim()}”</>}. Try a shorter word, clear the
+                    search, or set the diet filter back to <strong>All</strong>.
+                  </>
+                )}
+              </p>
+            )}
+
+            {/* ── how the AI keeps the order right (was a full-screen chapter) ── */}
+            <section className="mt-14 border-t border-cream/10 pt-8" aria-labelledby="trust-title">
+              <h2 id="trust-title" className={eyebrow}>
+                A kitchen that checks its own work
+              </h2>
+              <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                {[
+                  ["It never invents a dish", "Every item the assistant drafts is looked up in the live menu before your order is placed."],
+                  ["It knows what is on the tawa now", "Ask for something outside its serving hours and it tells you when it is served."],
+                  ["An honest arrival time", "The delivery estimate is predicted from kitchen and delivery timings, not a fixed guess."],
+                  ["A photo check before it leaves", "The kitchen can photograph your plate and a vision model checks the right dishes are on it."],
+                ].map(([title, body]) => (
+                  <li key={title} className="rounded-2xl border border-cream/10 bg-soot-900 p-4">
+                    <h3 className="font-display text-[15px] font-semibold">{title}</h3>
+                    <p className="mt-1 text-sm text-cream-dim">{body}</p>
+                  </li>
+                ))}
+              </ul>
+              <FeedbackButton variant="card" />
+              <p className="mt-6 text-xs text-cream-faint">
+                The kitchen scene at the top of this page and pictures marked ✨ AI are AI-generated. Phone numbers are
+                removed before any message reaches the assistant.
+              </p>
+            </section>
+          </div>
+
+          {/* ── cart: always in view on desktop ── */}
+          <aside
+            data-tray-anchor
+            aria-label="Your tray"
+            className="sticky top-[72px] hidden max-h-[calc(100vh-88px)] overflow-y-auto rounded-3xl border border-cream/10 bg-soot-900 p-5 lg:block"
+          >
+            {cartPanel}
+          </aside>
+        </div>
+      </div>
+
+      {/* ── cart on phones: a bar that opens the same panel as a sheet ── */}
+      {cartLines.length > 0 && !sheetOpen && (
+        <button
+          data-tray-anchor
+          className={cx(emberBtn, "fixed inset-x-3 bottom-3 z-40 h-14 justify-between px-5 lg:hidden")}
+          onClick={() => setSheetOpen(true)}
+        >
+          <span>
+            View tray · {cartCount} {cartCount === 1 ? "item" : "items"}
+          </span>
+          <span className="tnum">{rupee(cartTotal)}</span>
+        </button>
+      )}
+      {sheetOpen && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/65 lg:hidden" onClick={() => setSheetOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Your tray"
+            className="max-h-[88vh] w-full overflow-y-auto rounded-t-3xl border-t border-cream/15 bg-soot-900 p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex justify-end">
+              <button className={ghostBtn} onClick={() => setSheetOpen(false)}>
+                Close
+              </button>
+            </div>
+            {cartPanel}
+          </div>
+        </div>
       )}
 
       {showLogin && (
@@ -629,13 +849,14 @@ export default function Home() {
       )}
       {tracking && <OrderTracker order={tracking} onClose={() => setTracking(null)} />}
       <ChatWidget
+        seed={seed}
+        launcher={false}
         onRequireLogin={() => setShowLogin(true)}
         onPlaceOrder={async (items) => {
           const order = await api<Order>("/orders", { method: "POST", auth: true, body: { items } });
           setTracking(order);
         }}
       />
-      <FeedbackButton />
     </main>
   );
 }

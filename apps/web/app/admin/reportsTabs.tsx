@@ -30,7 +30,7 @@ const inr = (v: number) => `₹${v.toLocaleString("en-IN", { maximumFractionDigi
 
 function ReportHeading({ children }: { children: React.ReactNode }) {
   return (
-    <SectionHeading as="h3" kolam={false} className="text-base text-indigo-100">
+    <SectionHeading as="h3" kolam={false} className="text-base text-cream">
       {children}
     </SectionHeading>
   );
@@ -97,8 +97,8 @@ export function ReportsTab() {
         <ErrorBar msg={sales.error} />
         {sales.data && (
           <>
-            <p className="tnum mb-2 text-sm text-indigo-200">
-              <span className="font-display text-turmeric-400">{inr(sales.data.total_revenue)}</span> revenue ·{" "}
+            <p className="tnum mb-2 text-sm text-cream-dim">
+              <span className="font-display text-ghee">{inr(sales.data.total_revenue)}</span> revenue ·{" "}
               {sales.data.total_orders} orders · {inr(sales.data.total_gst)} GST (last{" "}
               {sales.data.days}d)
             </p>
@@ -109,9 +109,9 @@ export function ReportsTab() {
               <tbody>
                 {sales.data.buckets.slice(-12).reverse().map((b) => (
                   <tr key={b.period} className={trCls}>
-                    <td className={`${tdCls} text-indigo-200/70`}>{b.period}</td>
+                    <td className={`${tdCls} text-cream-dim/70`}>{b.period}</td>
                     <td className={`${tdCls} text-right`}>{b.orders}</td>
-                    <td className={`${tdCls} text-right text-turmeric-400`}>{inr(b.revenue)}</td>
+                    <td className={`${tdCls} text-right text-ghee`}>{inr(b.revenue)}</td>
                     <td className={`${tdCls} text-right`}>{inr(b.gst)}</td>
                     <td className={`${tdCls} text-right`}>{inr(b.aov)}</td>
                   </tr>
@@ -131,13 +131,13 @@ export function ReportsTab() {
         </div>
         <ErrorBar msg={forecast.error} />
         <ErrorBar msg={health.error} />
-        <div className="my-3 rounded-lg bg-indigo-800 p-3 text-sm">
+        <div className="my-3 rounded-lg bg-soot-800 p-3 text-sm">
           <strong>Forecast health</strong>
-          <p className="mt-1 text-indigo-200">{!latestHealth ? "Waiting for the first nightly health check." :
+          <p className="mt-1 text-cream-dim">{!latestHealth ? "Waiting for the first nightly health check." :
             latestHealth.status === "degraded" ? "Accuracy has declined. Prepare and backtest a candidate before replacing the model." :
             latestHealth.status === "healthy" ? "No degradation detected across the two recent windows." :
             `Not enough comparable forecasts yet (${latestHealth.complete_days}/28 complete days).`}</p>
-          {latestHealth?.recent_wape != null && <p className="mt-1 text-indigo-200">
+          {latestHealth?.recent_wape != null && <p className="mt-1 text-cream-dim">
             Recent weighted error: {(latestHealth.recent_wape * 100).toFixed(1)}% · checked {latestHealth.day}
           </p>}
         </div>
@@ -151,7 +151,7 @@ export function ReportsTab() {
           <div className="mt-3">
             <Eyebrow className="mb-1 text-[#FF8B8B]">Anomalies</Eyebrow>
             {forecast.data.dish_anomalies.map((a) => (
-              <p key={`${a.item_id}-${a.date}`} className="tnum text-xs text-indigo-200">
+              <p key={`${a.item_id}-${a.date}`} className="tnum text-xs text-cream-dim">
                 <span className="text-[#FF8B8B]">⚑</span> {a.date} — {a.name}: forecast{" "}
                 {a.forecast_qty}, actual {a.actual_qty} ({a.deviation_pct}% off)
               </p>
@@ -177,14 +177,14 @@ export function ReportsTab() {
               {pnl.data.rows.slice(0, 20).map((r) => (
                 <tr key={r.item_id} className={trCls}>
                   <td className={tdCls}>
-                    {r.name} <span className="text-indigo-200/60">{r.category}</span>
+                    {r.name} <span className="text-cream-dim/60">{r.category}</span>
                   </td>
                   <td className={`${tdCls} text-right`}>{r.qty}</td>
-                  <td className={`${tdCls} text-right text-turmeric-400`}>{inr(r.revenue)}</td>
+                  <td className={`${tdCls} text-right text-ghee`}>{inr(r.revenue)}</td>
                   <td className={`${tdCls} text-right`}>
                     {inr(r.ingredient_cost)}{" "}
                     {r.cost_source === "estimated" && (
-                      <span title="No priced recipe — 35% food-cost estimate" className="text-indigo-200/60">
+                      <span title="No priced recipe — 35% food-cost estimate" className="text-cream-dim/60">
                         est.
                       </span>
                     )}
@@ -231,9 +231,9 @@ function ForecastChart({ report }: { report: ForecastReport }) {
     .join(" ");
   const barW = Math.max(3, (W - 2 * pad) / points.length - 6);
   /* Token hex literals for SVG paint (Tailwind arbitrary fills are unreliable
-     with CSS-var tokens): #F2B705 = turmeric-500, #B9B6D9 = indigo-200, #D64545 = chili. */
+     with CSS-var tokens): #F5C451 = ghee, #C9BDA9 = cream-dim, #FF5D5D = chili. */
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-3xl rounded-lg bg-indigo-950/60">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-3xl rounded-lg bg-soot-950/60">
       <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="rgba(255,255,255,0.05)" />
       {points.map((p, i) =>
         p.actual_qty === null ? null : (
@@ -243,20 +243,20 @@ function ForecastChart({ report }: { report: ForecastReport }) {
             y={y(p.actual_qty)}
             width={barW}
             height={H - pad - y(p.actual_qty)}
-            fill="#F2B705"
+            fill="#F5C451"
             fillOpacity={0.8}
           />
         ),
       )}
-      <polyline points={line} fill="none" strokeWidth={2} stroke="#B9B6D9" />
+      <polyline points={line} fill="none" strokeWidth={2} stroke="#C9BDA9" />
       {points.map((p, i) =>
         p.anomaly && p.actual_qty !== null ? (
-          <circle key={`a-${p.date}`} cx={x(i)} cy={y(p.actual_qty)} r={4} fill="#D64545">
+          <circle key={`a-${p.date}`} cx={x(i)} cy={y(p.actual_qty)} r={4} fill="#FF5D5D">
             <title>{`${p.date}: forecast ${p.forecast_qty}, actual ${p.actual_qty}`}</title>
           </circle>
         ) : null,
       )}
-      <text x={pad} y={12} fill="#B9B6D9" className="text-[10px]">
+      <text x={pad} y={12} fill="#C9BDA9" className="text-[10px]">
         ▬ actual · ─ forecast · ● anomaly (max {Math.round(max)}/day)
       </text>
     </svg>
@@ -285,7 +285,7 @@ export function CrmTab() {
       <div className="mb-2 flex items-center gap-3">
         <ReportHeading>Segments</ReportHeading>
         {data?.computed_at && (
-          <span className="text-xs text-indigo-200/60">
+          <span className="text-xs text-cream-dim/60">
             scored {new Date(data.computed_at).toLocaleString()}
           </span>
         )}
@@ -293,10 +293,10 @@ export function CrmTab() {
       </div>
       <div className="mb-6 flex flex-wrap gap-3">
         {tiers.map((t) => (
-          <div key={t.tier} className="rounded-lg bg-indigo-800 px-4 py-3">
+          <div key={t.tier} className="rounded-lg bg-soot-800 px-4 py-3">
             <Eyebrow>{t.tier}</Eyebrow>
-            <p className="tnum font-display text-lg font-semibold text-turmeric-400">{t.users}</p>
-            <p className="tnum text-xs text-indigo-200/70">
+            <p className="tnum font-display text-lg font-semibold text-ghee">{t.users}</p>
+            <p className="tnum text-xs text-cream-dim/70">
               LTV {inr(t.total_ltv)} · churn {(t.avg_churn_risk * 100).toFixed(0)}%
             </p>
           </div>
@@ -304,7 +304,7 @@ export function CrmTab() {
       </div>
       <div className="mb-2">
         <ReportHeading>
-          Win-back targets <span className="font-sans text-xs font-normal text-indigo-200/60">(high LTV × churn risk)</span>
+          Win-back targets <span className="font-sans text-xs font-normal text-cream-dim/60">(high LTV × churn risk)</span>
         </ReportHeading>
       </div>
       <table className={tableCls}>
@@ -315,10 +315,10 @@ export function CrmTab() {
           {(data?.at_risk ?? []).map((u) => (
             <tr key={u.user_id} className={trCls}>
               <td className={tdCls}>
-                {u.name ?? "—"} <span className="font-mono text-indigo-200/60">{u.phone}</span>
+                {u.name ?? "—"} <span className="font-mono text-cream-dim/60">{u.phone}</span>
               </td>
               <td className={tdCls}>{u.rfm_tier}</td>
-              <td className={`${tdCls} text-right ${u.churn_risk >= 0.8 ? "text-[#FF8B8B]" : "text-turmeric-400"}`}>
+              <td className={`${tdCls} text-right ${u.churn_risk >= 0.8 ? "text-[#FF8B8B]" : "text-ghee"}`}>
                 {(u.churn_risk * 100).toFixed(0)}%
               </td>
               <td className={`${tdCls} text-right`}>{inr(u.ltv)}</td>

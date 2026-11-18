@@ -126,9 +126,9 @@ async function api<T>(
 
 const LANES: { label: string; statuses: string[]; accent: string }[] = [
   { label: "📥 Intake", statuses: ["RECEIVED", "TRACKED"], accent: "bg-sky" },
-  { label: "🟡 Approval", statuses: ["NEEDS_APPROVAL"], accent: "bg-turmeric-500" },
-  { label: "🤖 Fixing", statuses: ["AUTO_FIX", "APPROVED", "FIXING"], accent: "bg-magenta-500" },
-  { label: "🔀 PR open", statuses: ["PR_OPEN"], accent: "bg-indigo-200" },
+  { label: "🟡 Approval", statuses: ["NEEDS_APPROVAL"], accent: "bg-ghee" },
+  { label: "🤖 Fixing", statuses: ["AUTO_FIX", "APPROVED", "FIXING"], accent: "bg-ember" },
+  { label: "🔀 PR open", statuses: ["PR_OPEN"], accent: "bg-cream-dim" },
   { label: "🚀 Shipped", statuses: ["FIXED", "VERIFIED"], accent: "bg-veg" },
   { label: "⚠️ Attention", statuses: ["REOPENED"], accent: "bg-chili" },
 ];
@@ -306,12 +306,12 @@ export default function FixerPortal() {
 
   if (!token) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-indigo-950 text-indigo-100">
+      <main className="flex min-h-screen items-center justify-center bg-soot-950 text-cream">
         <Card tone="dark" className="w-80 space-y-3 p-6">
-          <div className="font-display text-lg font-bold tracking-wide text-white">
-            🛠 DOSADASH <span className="text-magenta-400">FIXER OPS</span>
+          <div className="font-display text-lg font-bold tracking-wide text-cream">
+            🛠 DOSADASH <span className="text-ember">FIXER OPS</span>
           </div>
-          <p className="text-sm text-indigo-200">
+          <p className="text-sm text-cream-dim">
             The self-healing loop, live. Admin or owner sign-in.
           </p>
           <Input
@@ -328,7 +328,7 @@ export default function FixerPortal() {
             </Btn>
           ) : (
             <>
-              <p className="rounded-lg border-[1.5px] border-turmeric-600 bg-turmeric-500/15 px-2 py-1 text-xs text-turmeric-400">
+              <p className="rounded-lg border-[1.5px] border-ghee/50 bg-ghee/15 px-2 py-1 text-xs text-ghee">
                 Demo OTP: <b className="font-display">{demoOtp}</b>
               </p>
               <Input
@@ -461,28 +461,28 @@ function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) =>
   const stalledIds = new Set((ops?.stalls ?? []).map((s) => s.report_id));
 
   return (
-    <main className="min-h-screen bg-indigo-950 pb-16 text-indigo-100">
+    <main className="min-h-screen bg-soot-950 pb-16 text-cream">
       {/* Backoffice-family shell: indigo-900 header + 3px magenta accent
           (magenta = admin surfaces; turmeric stays customer/KDS — docs/13 §3). */}
-      <header className="sticky top-0 z-20 border-b-[3px] border-magenta-500 bg-indigo-900 px-4 py-3">
+      <header className="sticky top-0 z-20 border-b-[3px] border-ember bg-soot-900 px-4 py-3">
         <div className="mx-auto flex max-w-[1380px] items-center justify-between gap-3">
           <div className="flex items-baseline gap-3">
-            <span className="font-display text-lg font-bold tracking-wide text-white">
-              🛠 DOSADASH <span className="text-magenta-400">FIXER OPS</span>
+            <span className="font-display text-lg font-bold tracking-wide text-cream">
+              🛠 DOSADASH <span className="text-ember">FIXER OPS</span>
             </span>
             {connected ? (
               <span className="font-display text-[12px] font-bold uppercase tracking-[0.1em] text-[#5BD69B]">
                 <span className="animate-pulse-soft">●</span> live
               </span>
             ) : (
-              <span className="font-display text-[12px] font-bold uppercase tracking-[0.1em] text-turmeric-400">
+              <span className="font-display text-[12px] font-bold uppercase tracking-[0.1em] text-ghee">
                 ○ reconnecting…
               </span>
             )}
           </div>
           <div className="flex items-center gap-2.5">
             {role && <Badge tone="brass">{role}</Badge>}
-            <a href="/admin" className="text-xs text-indigo-200 underline-offset-2 hover:underline">
+            <a href="/admin" className="text-xs text-cream-dim underline-offset-2 hover:underline">
               Backoffice ↗
             </a>
             <Btn variant="ghost" size="sm" onClick={() => onLogout()}>
@@ -505,19 +505,19 @@ function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) =>
             return (
               <section
                 key={lane.label}
-                className="min-w-0 rounded-xl border-2 border-indigo-700 bg-indigo-900 p-3"
+                className="min-w-0 rounded-xl border-2 border-cream/10 bg-soot-900 p-3"
               >
                 <div className="mb-3 flex items-center justify-between gap-2 px-1">
-                  <h2 className="font-display text-[11px] font-bold uppercase tracking-[0.14em] text-turmeric-400">
+                  <h2 className="font-display text-[11px] font-bold uppercase tracking-[0.14em] text-ghee">
                     {lane.label}
                   </h2>
-                  <span className="tnum min-w-[30px] rounded-full bg-turmeric-500 px-2.5 text-center font-display text-[13px] font-bold text-indigo-900">
+                  <span className="tnum min-w-[30px] rounded-full bg-ghee px-2.5 text-center font-display text-[13px] font-bold text-soot-950">
                     {laneReports.length}
                   </span>
                 </div>
                 <div className="grid gap-2">
                   {laneReports.length === 0 && (
-                    <div className="rounded-lg border-2 border-dashed border-indigo-600 p-3 text-center text-xs text-indigo-300">
+                    <div className="rounded-lg border-2 border-dashed border-cream/20 p-3 text-center text-xs text-cream-faint">
                       —
                     </div>
                   )}
@@ -530,7 +530,7 @@ function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) =>
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") setSelected(report);
                       }}
-                      className="relative cursor-pointer overflow-hidden rounded-lg border-2 border-ink bg-offwhite p-3 pl-4 text-left text-ink shadow-pop-dark transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta-500"
+                      className="relative cursor-pointer overflow-hidden rounded-lg border-2 border-cream/15 bg-soot-950 p-3 pl-4 text-left text-cream transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ghee"
                     >
                       <span className={cx("absolute inset-y-0 left-0 w-[6px]", lane.accent)} />
                       <div className="flex items-center justify-between gap-2">
@@ -553,7 +553,7 @@ function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) =>
                         </span>
                       </div>
                       <p className="mt-1 line-clamp-2 text-[13px] font-semibold">{report.title}</p>
-                      <p className="mt-1 text-[11px] text-muted">
+                      <p className="mt-1 text-[11px] text-cream-dim">
                         {TIER_ICON[report.reporter_tier]} {ago(report.created_at, now)}
                         {report.github_issue_number !== null && ` · issue #${report.github_issue_number}`}
                         {report.fix_pr_number !== null && ` · PR #${report.fix_pr_number}`}
@@ -592,13 +592,13 @@ function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) =>
 
         {feed.length > 0 && (
           <section className="mt-8">
-            <h2 className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-turmeric-400">
+            <h2 className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-ghee">
               📡 Live feed
             </h2>
             <div className="grid gap-1">
               {feed.map((entry) => (
-                <p key={`${entry.at}-${entry.text}`} className="text-xs text-indigo-100">
-                  <span className="tnum text-indigo-300">
+                <p key={`${entry.at}-${entry.text}`} className="text-xs text-cream">
+                  <span className="tnum text-cream-faint">
                     {new Date(entry.at).toLocaleTimeString("en-IN", {
                       timeZone: "Asia/Kolkata",
                       hour: "2-digit",
@@ -614,7 +614,7 @@ function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) =>
 
         {closedReports.length > 0 && (
           <section className="mt-8">
-            <h2 className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-300">
+            <h2 className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.16em] text-cream-faint">
               🗂 Closed ({closedReports.length})
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -623,7 +623,7 @@ function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) =>
                   key={report.id}
                   type="button"
                   onClick={() => setSelected(report)}
-                  className="rounded-md border border-indigo-600 px-2 py-1 text-xs text-indigo-200 hover:border-indigo-300"
+                  className="rounded-md border border-cream/20 px-2 py-1 text-xs text-cream-dim hover:border-cream/20"
                 >
                   #{report.id} {report.title.slice(0, 40)} · {report.status}
                 </button>
@@ -677,8 +677,8 @@ function LoopHealthBanner({ ops }: { ops: Ops }) {
           <span className="font-display font-bold">
             🛑 GitHub Actions: {gh.status.replace(/_/g, " ")}
           </span>
-          {gh.incident && <span className="text-indigo-100"> — “{gh.incident}”</span>}
-          <span className="block text-xs text-indigo-200">
+          {gh.incident && <span className="text-cream"> — “{gh.incident}”</span>}
+          <span className="block text-xs text-cream-dim">
             Fix runs can’t execute right now. The watchdog is tracking this and will
             re-dispatch stalled fixes automatically once GitHub recovers.
           </span>
@@ -687,12 +687,12 @@ function LoopHealthBanner({ ops }: { ops: Ops }) {
       {ops.stalls.map((stall) => (
         <div
           key={stall.report_id}
-          className="rounded-lg border-2 border-turmeric-600 bg-turmeric-500/10 px-3 py-2 text-sm text-turmeric-400"
+          className="rounded-lg border-2 border-ghee/50 bg-ghee/10 px-3 py-2 text-sm text-ghee"
         >
           <span className="font-display font-bold">
             ⏳ Report #{stall.report_id} — fixer dispatch stalled
           </span>
-          <span className="block text-xs text-indigo-200">
+          <span className="block text-xs text-cream-dim">
             {STALL_REASON[stall.reason] ?? stall.reason}
             {stall.run_id !== null && ` (run ${stall.run_id})`} · retries {stall.retries}/3
             {stall.since && ` · since ${stamp(stall.since)}`}
@@ -770,13 +770,13 @@ function MetricsStrip({ metrics }: { metrics: Metrics }) {
       {cards.map((card) => (
         <div
           key={card.label}
-          className="rounded-xl border-2 border-indigo-700 bg-indigo-900 p-3"
+          className="rounded-xl border-2 border-cream/10 bg-soot-900 p-3"
         >
-          <p className="font-display text-[10.5px] font-bold uppercase tracking-[0.12em] text-turmeric-400">
+          <p className="font-display text-[10.5px] font-bold uppercase tracking-[0.12em] text-ghee">
             {card.label}
           </p>
-          <p className="tnum font-display text-xl font-bold text-white">{card.value}</p>
-          {card.sub && <p className="tnum text-[11px] text-indigo-300">{card.sub}</p>}
+          <p className="tnum font-display text-xl font-bold text-cream">{card.value}</p>
+          {card.sub && <p className="tnum text-[11px] text-cream-faint">{card.sub}</p>}
         </div>
       ))}
     </section>
@@ -816,12 +816,12 @@ function ReportDrawer({
     <Modal onClose={onClose} className="w-full max-w-xl">
       <div className="grid max-h-[80vh] gap-4 overflow-y-auto p-5">
         <div>
-          <p className="tnum text-xs font-bold text-muted">
+          <p className="tnum text-xs font-bold text-cream-dim">
             {report.type === "BUG" ? "🐞 Bug" : "✨ Feature"} report #{report.id} ·{" "}
             {TIER_ICON[report.reporter_tier]} {report.reporter_tier.toLowerCase()}
           </p>
           <h3 className="font-display text-lg font-bold">{report.title}</h3>
-          <p className="mt-1 whitespace-pre-wrap text-sm text-muted">{report.description}</p>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-cream-dim">{report.description}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -830,7 +830,7 @@ function ReportDrawer({
           </Badge>
           {report.github_issue_number !== null && repo && (
             <a
-              className="text-xs text-magenta-600 underline-offset-2 hover:underline"
+              className="text-xs text-ember underline-offset-2 hover:underline"
               href={`https://github.com/${repo}/issues/${report.github_issue_number}`}
               target="_blank"
               rel="noreferrer"
@@ -840,7 +840,7 @@ function ReportDrawer({
           )}
           {report.fix_pr_number !== null && repo && (
             <a
-              className="text-xs text-magenta-600 underline-offset-2 hover:underline"
+              className="text-xs text-ember underline-offset-2 hover:underline"
               href={`https://github.com/${repo}/pull/${report.fix_pr_number}`}
               target="_blank"
               rel="noreferrer"
@@ -856,7 +856,7 @@ function ReportDrawer({
         {assessment && (
           <p className="ai-meta text-xs">
             🤖 {assessment.summary}{" "}
-            <span className="text-muted">
+            <span className="text-cream-dim">
               (effort {assessment.effort ?? "?"} · risk {assessment.risk ?? "?"} ·{" "}
               {report.triage?.model ?? "policy"}
               {report.triage?.fallback ? " · fallback" : ""})
@@ -880,36 +880,36 @@ function ReportDrawer({
             Timeline
           </h4>
           <ErrorBar msg={error} />
-          {events === null && !error && <p className="text-xs text-muted">Loading…</p>}
+          {events === null && !error && <p className="text-xs text-cream-dim">Loading…</p>}
           {events !== null && events.length === 0 && (
-            <p className="text-xs text-muted">No lifecycle events recorded yet.</p>
+            <p className="text-xs text-cream-dim">No lifecycle events recorded yet.</p>
           )}
           {events !== null && (
             <ol className="grid gap-1.5">
               {events.map((event) => (
                 <li key={event.id} className="flex items-baseline gap-2 text-[13px]">
-                  <span className="tnum shrink-0 text-[11px] text-muted">
+                  <span className="tnum shrink-0 text-[11px] text-cream-dim">
                     {stamp(event.created_at)}
                   </span>
                   <span>{STAGE_LABEL[event.stage] ?? event.stage}</span>
                   {event.payload?.verdict !== undefined && (
-                    <span className="text-[11px] text-muted">({String(event.payload.verdict)})</span>
+                    <span className="text-[11px] text-cream-dim">({String(event.payload.verdict)})</span>
                   )}
                   {event.payload?.reason !== undefined && (
-                    <span className="text-[11px] text-muted">({String(event.payload.reason)})</span>
+                    <span className="text-[11px] text-cream-dim">({String(event.payload.reason)})</span>
                   )}
                   {event.payload?.attempt !== undefined && (
-                    <span className="text-[11px] text-muted">
+                    <span className="text-[11px] text-cream-dim">
                       (attempt {String(event.payload.attempt)})
                     </span>
                   )}
                   {event.payload?.pr_number !== undefined && event.payload?.pr_number !== null && (
-                    <span className="text-[11px] text-muted">
+                    <span className="text-[11px] text-cream-dim">
                       (PR #{String(event.payload.pr_number)})
                     </span>
                   )}
                   {event.actor && (
-                    <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wide text-muted">
+                    <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wide text-cream-dim">
                       {event.actor}
                     </span>
                   )}

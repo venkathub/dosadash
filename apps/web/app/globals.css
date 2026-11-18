@@ -1,5 +1,6 @@
-/* DosaDash "Madras Pop" design system — see docs/13-ui-madras-pop-design.md
-   Normative token source: design/madras-pop/tokens.css */
+/* DosaDash "Tawa Noir" design system — see docs/17-ui-tawa-noir-design.md
+   Colours and shadows live in tailwind.config.js (literal hex). This file
+   holds fonts and the few things utilities cannot express. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -49,147 +50,44 @@
   unicode-range: U+0964-0965, U+0B82-0BFA, U+200C-200D, U+20B9, U+25CC;
 }
 
-/* ---------- Design tokens (kept in sync with tailwind.config.js — literal hex
-   there so opacity modifiers work; CSS vars here feed the component layer) ---------- */
-:root {
-  /* ink / indigo */
-  --indigo-950: #12122b;
-  --indigo-900: #1b1b3a;
-  --indigo-800: #232347;
-  --indigo-700: #2e2e5c;
-  --indigo-600: #3d3d73;
-  --indigo-300: #8b8bc0;
-  --indigo-200: #b9b6d9;
-  --indigo-100: #edeaf6;
-  /* kanchipuram magenta */
-  --magenta-700: #a81848;
-  --magenta-600: #c21f58;
-  --magenta-500: #d6336c;
-  --magenta-400: #e85d8a;
-  --magenta-100: #fbe3ed;
-  /* turmeric */
-  --turmeric-600: #d9a404;
-  --turmeric-500: #f2b705;
-  --turmeric-400: #ffcb2e;
-  --turmeric-100: #fceec5;
-  /* paper / sand */
-  --offwhite: #faf7f0;
-  --paper: #ffffff;
-  --sand-200: #f1ead8;
-  --sand-300: #e5dcc8;
-  /* text on light */
-  --ink: #1b1b3a;
-  --muted: #5a5a78;
-  --faint: #8e8ea8;
-  /* semantic */
-  --veg: #1e8a5a;
-  --veg-100: #d7f0e3;
-  --chili: #d64545;
-  --chili-100: #fadede;
-  --sky: #3e7cb1;
-  --sky-100: #dceaf5;
-  --warn: #d9a404;
-  --warn-100: #fceec5;
+@layer base {
+  /* Reserve the scrollbar's width so opening a modal (which locks page
+     scroll) does not nudge the layout sideways. */
+  html {
+    scrollbar-gutter: stable;
+  }
+  /* one focus language everywhere: a ghee ring */
+  :focus-visible {
+    outline: 2px solid #f5c451;
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: rgba(255, 106, 26, 0.35);
+  }
+  /* Scrollbars: thin, cream thumb, no track — the browser default is a white
+     bar that does not belong on a dark surface. Standard properties first
+     (Firefox, Chromium 121+), then the WebKit pseudo-elements (Safari). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(246, 239, 226, 0.22) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(246, 239, 226, 0.22);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(246, 239, 226, 0.4);
+  }
 }
 
 @layer components {
-  /* ---------- Madras Pop signatures ---------- */
-
-  /* Kanchipuram zari stripe (temple-border triangles over a magenta rail).
-     Use <Zari/> from ui.tsx, or .kolam on a heading for the ::after variant. */
-  .zari {
-    height: 8px;
-    background:
-      linear-gradient(135deg, var(--turmeric-500) 25%, transparent 25%) 0 0 / 8px 8px,
-      linear-gradient(225deg, var(--turmeric-500) 25%, transparent 25%) 0 0 / 8px 8px,
-      linear-gradient(0deg, var(--magenta-500) 0 3px, transparent 3px);
-    background-repeat: repeat-x;
-    width: 120px;
-  }
-  .zari-wide {
-    width: 100%;
-    opacity: 0.9;
-  }
-  .zari-on-dark {
-    background:
-      linear-gradient(135deg, var(--turmeric-400) 25%, transparent 25%) 0 0 / 8px 8px,
-      linear-gradient(225deg, var(--turmeric-400) 25%, transparent 25%) 0 0 / 8px 8px,
-      linear-gradient(0deg, var(--magenta-500) 0 3px, transparent 3px);
-    background-repeat: repeat-x;
-  }
-  /* heading variant: zari rendered as an ::after underline (replaces the old kolam dots) */
-  .kolam::after {
-    content: "";
-    display: block;
-    height: 8px;
-    width: 120px;
-    margin-top: 6px;
-    background:
-      linear-gradient(135deg, var(--turmeric-500) 25%, transparent 25%) 0 0 / 8px 8px,
-      linear-gradient(225deg, var(--turmeric-500) 25%, transparent 25%) 0 0 / 8px 8px,
-      linear-gradient(0deg, var(--magenta-500) 0 3px, transparent 3px);
-    background-repeat: repeat-x;
-  }
-
-  /* Ticker strip — scrolling marquee; animation gated on prefers-reduced-motion */
-  .ticker {
-    background: var(--indigo-900);
-    color: var(--turmeric-400);
-    font-family: "Space Grotesk", "Noto Sans Tamil", system-ui, sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    padding: 6px 0;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-  /* Inner span contains text duplicated for a seamless loop; translateX(-50%)
-     scrolls exactly one copy width, then restarts invisibly. */
-  .ticker__inner {
-    display: inline-block;
-    white-space: nowrap;
-    animation: ticker-scroll 30s linear infinite;
-  }
-  @keyframes ticker-scroll {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-50%); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .ticker__inner {
-      animation: none;
-    }
-  }
-
-  /* Poster block (color-blocked section header) */
-  .poster-block {
-    display: inline-block;
-    font-family: "Space Grotesk", "Noto Sans Tamil", system-ui, sans-serif;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    background: var(--magenta-500);
-    color: #fff;
-    border: 2px solid var(--indigo-900);
-    box-shadow: 3px 3px 0 var(--indigo-900);
-    padding: 5px 14px;
-    border-radius: 6px;
-    font-size: 15px;
-  }
-  .poster-block-turmeric {
-    background: var(--turmeric-500);
-    color: var(--indigo-900);
-  }
-  .poster-block-indigo {
-    background: var(--indigo-900);
-    color: var(--turmeric-400);
-  }
-  /* Tamil script: uppercase/tracking are Latin affordances — drop them */
-  .poster-block-tamil {
-    text-transform: none;
-    letter-spacing: 0;
-  }
-
   /* FSSAI-style veg / non-veg mark */
   .fssai {
     width: 15px;
@@ -208,38 +106,32 @@
     border-radius: 50%;
   }
   .fssai-veg {
-    border-color: var(--veg);
+    border-color: #37c27e;
   }
   .fssai-veg::after {
-    background: var(--veg);
+    background: #37c27e;
   }
   .fssai-nonveg {
-    border-color: var(--chili);
+    border-color: #ff5d5d;
   }
   .fssai-nonveg::after {
-    background: var(--chili);
+    background: #ff5d5d;
   }
 
   /* AI provenance chip — the portfolio story, deliberate everywhere.
-     NOTE: no ::before 🤖 here (unlike the mockup css) — call sites already
-     render the emoji inline; a pseudo-element would double it. */
-  .ai-meta {
+     Call sites render the 🤖 inline; do not add it here. */
+  .ai-meta,
+  .ai-meta-light {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-family: "Space Grotesk", "Noto Sans Tamil", system-ui, sans-serif;
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 11.5px;
+    font-weight: 500;
     border-radius: 999px;
-    padding: 3px 10px;
-    background: var(--indigo-800);
-    color: var(--turmeric-400);
-    border: 1.5px solid var(--indigo-600);
-  }
-  .ai-meta-light {
-    background: var(--indigo-100);
-    color: var(--indigo-700);
-    border-color: var(--indigo-300);
+    padding: 2px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #c9bda9;
+    border: 1px solid rgba(255, 236, 210, 0.16);
   }
 
   /* tabular numerals for prices/tables */
@@ -247,9 +139,34 @@
     font-feature-settings: "tnum";
     font-variant-numeric: tabular-nums;
   }
+
+  /* Hero stage (customer home) */
+  .tawa-backdrop {
+    background: #0b0907 url("/scene/backdrop.webp") center 38% / cover no-repeat;
+    filter: brightness(0.62) saturate(0.9);
+    will-change: transform;
+    transform: scale(1.1);
+  }
+  /* DOM copy of a dish arcing into the cart (created by the scene module) */
+  .tawa-fly {
+    position: fixed;
+    width: 230px;
+    height: 230px;
+    z-index: 60;
+    pointer-events: none;
+    filter: drop-shadow(0 22px 30px rgba(0, 0, 0, 0.6));
+  }
 }
 
 @layer utilities {
+  /* A horizontal strip that scrolls by swipe/trackpad/keyboard with no bar.
+     Use only where a clipped item at the edge already shows there is more. */
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
   .animate-fade-up {
     animation: fade-up 0.2s ease-out both;
   }
@@ -282,6 +199,9 @@
   .animate-fade-up,
   .animate-pulse-soft {
     animation: none;
+  }
+  .tawa-fly {
+    display: none;
   }
   * {
     transition-duration: 0.01ms !important;

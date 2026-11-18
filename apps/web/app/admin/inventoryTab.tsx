@@ -133,11 +133,11 @@ export function InventoryTab() {
         </Btn>
       </div>
 
-      <section className="rounded-lg bg-indigo-800 p-3 text-sm" aria-label="Inventory runs">
-        <SectionHeading as="h3" kolam={false} className="text-base text-indigo-100">Inventory runs</SectionHeading>
+      <section className="rounded-lg bg-soot-800 p-3 text-sm" aria-label="Inventory runs">
+        <SectionHeading as="h3" kolam={false} className="text-base text-cream">Inventory runs</SectionHeading>
         <ErrorBar msg={workflows.error} />
         <Btn variant="ghost" size="sm" onClick={workflows.refresh}>Refresh runs</Btn>
-        {workflows.data?.length === 0 && <p className="text-indigo-200">No runs recorded yet.</p>}
+        {workflows.data?.length === 0 && <p className="text-cream-dim">No runs recorded yet.</p>}
         {(workflows.data ?? []).slice(0, 5).map((run) => (
           <div key={run.key} className="flex flex-wrap items-center gap-3 py-2">
             <Badge tone={run.stage === "FAILED" ? "danger" : "neutral"}>{workflowLabels[run.stage] ?? run.stage}</Badge>
@@ -147,7 +147,7 @@ export function InventoryTab() {
               Resume run
             </Btn>}
             {run.stage === "FAILED" && <>
-              <span className="text-indigo-200">Three attempts failed. Review the run before starting again.</span>
+              <span className="text-cream-dim">Three attempts failed. Review the run before starting again.</span>
               <Btn size="sm" variant="ghost" disabled={busy} onClick={() => {
                 requestKey.current = null;
                 void draftNow();
@@ -159,17 +159,17 @@ export function InventoryTab() {
 
       <div className="space-y-2">
         {(pos ?? []).map((po) => (
-          <div key={po.id} className="rounded-lg bg-indigo-800 p-3 text-sm">
+          <div key={po.id} className="rounded-lg bg-soot-800 p-3 text-sm">
             <div className="flex flex-wrap items-center gap-3">
-              <button className="font-mono text-turmeric-400 transition-colors duration-150 hover:text-turmeric-400" onClick={() => toggle(po.id)}>
+              <button className="font-mono text-ghee transition-colors duration-150 hover:text-ghee" onClick={() => toggle(po.id)}>
                 {open[po.id] ? "▾" : "▸"} PO #{po.id}
               </button>
               <Badge tone={statusBadgeTone(po.status)}>{po.status}</Badge>
-              <span className="text-indigo-200">{po.supplier_name ?? "Unassigned supplier"}</span>
+              <span className="text-cream-dim">{po.supplier_name ?? "Unassigned supplier"}</span>
               {po.source === "AGENT" ? (
                 <span className="ai-meta">🤖 {po.model ?? "agent"} · {po.prompt_version ?? ""} · {po.coverage_days}d cover</span>
               ) : (
-                <span className="text-xs text-indigo-200/70">manual · {po.coverage_days}d cover</span>
+                <span className="text-xs text-cream-dim/70">manual · {po.coverage_days}d cover</span>
               )}
               {po.expected_cost && <span className="tnum ml-auto font-display font-semibold">≈ ₹{Number(po.expected_cost).toFixed(0)}</span>}
               {po.status === "PENDING_APPROVAL" && (
@@ -201,7 +201,7 @@ export function InventoryTab() {
               <div className="mt-3 border-t border-white/5 pt-3">
                 {po.rationale && <p className="mb-2"><span className="ai-meta">🤖 {open[po.id].rationale}</span></p>}
                 <table className="tnum w-full text-left text-xs">
-                  <thead className="text-[11px] font-semibold uppercase tracking-[0.14em] text-turmeric-400/70">
+                  <thead className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ghee/70">
                     <tr>
                       <th className="py-1">ingredient</th>
                       <th className="text-right">qty</th>
@@ -232,7 +232,7 @@ export function InventoryTab() {
                           )}
                         </td>
                         <td className="text-right">{item.unit_cost ? `₹${item.unit_cost}` : "—"}</td>
-                        <td className="text-indigo-200/70">{item.reason}</td>
+                        <td className="text-cream-dim/70">{item.reason}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -310,12 +310,12 @@ function InvoiceSection({ onStockChanged }: { onStockChanged: () => void }) {
     <div>
       <div className="mb-2">
         <Eyebrow>Inventory</Eyebrow>
-        <SectionHeading as="h3" kolam={false} className="text-base text-indigo-100">
+        <SectionHeading as="h3" kolam={false} className="text-base text-cream">
           🧾 Supplier invoices (OCR)
         </SectionHeading>
       </div>
       <ErrorBar msg={error} />
-      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-600 px-2.5 py-1 text-xs font-semibold text-indigo-200 transition-colors duration-150 hover:border-turmeric-400 hover:text-turmeric-400">
+      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cream/20 px-2.5 py-1 text-xs font-semibold text-cream-dim transition-colors duration-150 hover:border-ghee/50 hover:text-ghee">
         {busy ? "🔍 reading invoice…" : "📷 Upload invoice photo"}
         <input
           type="file"
@@ -327,16 +327,16 @@ function InvoiceSection({ onStockChanged }: { onStockChanged: () => void }) {
       </label>
       <div className="mt-3 space-y-2">
         {(invoices ?? []).map((inv) => (
-          <div key={inv.id} className="rounded-lg bg-indigo-800 p-3 text-sm">
+          <div key={inv.id} className="rounded-lg bg-soot-800 p-3 text-sm">
             <div className="flex flex-wrap items-center gap-3">
-              <span className="font-mono text-turmeric-400">INV #{inv.id}</span>
+              <span className="font-mono text-ghee">INV #{inv.id}</span>
               <Badge tone={statusBadgeTone(inv.status)}>{inv.status}</Badge>
-              <span className="text-indigo-200">{inv.extraction?.supplier_name ?? "unknown supplier"}</span>
+              <span className="text-cream-dim">{inv.extraction?.supplier_name ?? "unknown supplier"}</span>
               <span className="ai-meta">🤖 {inv.model ?? "vision"}</span>
               <Badge tone={inv.confidence >= 0.8 ? "success" : "danger"}>
                 confidence {(inv.confidence * 100).toFixed(0)}%
               </Badge>
-              {inv.po_id && <span className="text-xs text-indigo-200/70">→ PO #{inv.po_id}</span>}
+              {inv.po_id && <span className="text-xs text-cream-dim/70">→ PO #{inv.po_id}</span>}
               {(inv.status === "MATCHED" || inv.status === "PENDING_REVIEW") && (
                 <span className="ml-auto flex gap-2">
                   <Btn variant="turmeric" size="sm" disabled={!inv.po_id} onClick={() => decide(inv.id, "approve")}>
@@ -349,7 +349,7 @@ function InvoiceSection({ onStockChanged }: { onStockChanged: () => void }) {
               )}
             </div>
             {inv.match && (
-              <div className="mt-2 text-xs text-indigo-200/70">
+              <div className="mt-2 text-xs text-cream-dim/70">
                 {inv.match.line_matches.map((m, i) => (
                   <div key={i}>
                     {m.invoice_name
@@ -375,7 +375,7 @@ function QtyEditor({ value, unit, onSave }: { value: string; unit: string; onSav
   return (
     <span className="inline-flex items-center gap-1">
       <Input tone="dark" className="w-20 px-2 py-1 text-right" value={qty} onChange={(e) => setQty(e.target.value)} />
-      <span className="text-indigo-200/70">{unit}</span>
+      <span className="text-cream-dim/70">{unit}</span>
       {qty !== value && (
         <Btn variant="turmeric" size="sm" onClick={() => onSave(qty)}>
           save
@@ -419,7 +419,7 @@ function WastageSection() {
     <div>
       <div className="mb-2">
         <Eyebrow>Inventory</Eyebrow>
-        <SectionHeading as="h3" kolam={false} className="text-base text-indigo-100">
+        <SectionHeading as="h3" kolam={false} className="text-base text-cream">
           🗑 Wastage log
         </SectionHeading>
       </div>
@@ -450,14 +450,14 @@ function WastageSection() {
       </form>
       <div className="space-y-1">
         {(data?.entries ?? []).map((w) => (
-          <div key={w.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-indigo-800 px-3 py-2 text-xs">
-            <span className="text-indigo-200/70">{new Date(w.at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</span>
-            <span className="tnum font-semibold text-indigo-100">
+          <div key={w.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-soot-800 px-3 py-2 text-xs">
+            <span className="text-cream-dim/70">{new Date(w.at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</span>
+            <span className="tnum font-semibold text-cream">
               {w.qty} {w.unit} {w.ingredient_name}
             </span>
             <Badge tone="neutral">{w.reason}</Badge>
-            {w.note && <span className="text-indigo-200/70">{w.note}</span>}
-            <span className="tnum ml-auto text-indigo-200/70">stock → {w.stock_after}</span>
+            {w.note && <span className="text-cream-dim/70">{w.note}</span>}
+            <span className="tnum ml-auto text-cream-dim/70">stock → {w.stock_after}</span>
           </div>
         ))}
       </div>

@@ -13,12 +13,14 @@
   "dependencies": {
     "next": "^15.5.23",
     "react": "19.0.0",
-    "react-dom": "19.0.0"
+    "react-dom": "19.0.0",
+    "three": "0.187.0"
   },
   "devDependencies": {
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "0.187.0",
     "autoprefixer": "^10.4.20",
     "playwright": "^1.49.1",
     "postcss": "^8.4.49",
