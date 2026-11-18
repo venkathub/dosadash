@@ -101,7 +101,7 @@ export function FeedbackTab() {
           href="/fixer"
           target="_blank"
           rel="noreferrer"
-          className="text-xs text-magenta-400 underline-offset-2 hover:underline"
+          className="text-xs text-ember underline-offset-2 hover:underline"
         >
           🛠 Fixer Ops portal ↗
         </a>
@@ -165,7 +165,7 @@ export function FeedbackTab() {
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="font-semibold text-turmeric-400 underline decoration-dotted hover:text-turmeric-500"
+                        className="font-semibold text-ghee underline decoration-dotted hover:text-ghee"
                       >
                         #{r.github_issue_number} ↗
                       </a>
@@ -188,9 +188,9 @@ export function FeedbackTab() {
                 {expanded === r.id && (
                   <tr className={trCls}>
                     <td className={tdCls} colSpan={7}>
-                      <div className="space-y-2 rounded-lg bg-indigo-800 p-3 text-xs">
+                      <div className="space-y-2 rounded-lg bg-soot-800 p-3 text-xs">
                         <p className="whitespace-pre-wrap">{r.description}</p>
-                        <p className="text-indigo-300">
+                        <p className="text-cream-faint">
                           {r.context?.route && <>route {r.context.route} · </>}
                           raised {new Date(r.created_at).toLocaleString("en-IN")}
                           {r.github_error && <> · GitHub: {r.github_error}</>}
@@ -228,7 +228,7 @@ export function FeedbackTab() {
         </table>
       )}
       {data && (
-        <p className="text-xs text-indigo-300">
+        <p className="text-xs text-cream-faint">
           {data.total} report{data.total === 1 ? "" : "s"}
           {data.github_repo
             ? ` · mirrored to ${data.github_repo}`

@@ -50,18 +50,23 @@ export default function CheckoutSuggestions({
   if (visible.length === 0) return null;
 
   return (
-    <div className="mx-auto mb-2 flex max-w-4xl flex-wrap gap-2">
+    <div className="mb-3 grid gap-1.5">
       {visible.map((s) => (
         <button
           key={s.item_id}
-          className="flex shrink-0 items-center gap-1.5 rounded-full border-2 border-indigo-600 bg-indigo-800 px-3 py-1 text-[11.5px] font-semibold text-[#FFE9A8] transition-colors duration-150 hover:border-turmeric-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
+          className="group flex w-full items-center gap-2.5 rounded-2xl border border-cream/10 bg-soot-800 px-3 py-2 text-left text-[13px] transition-colors duration-150 hover:border-cream/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee"
           onClick={() => onAdd(byId.get(s.item_id)!)}
         >
-          <span>{s.kind === "combo" ? "🧩" : "✨"}</span>
-          <span>
-            + {s.name} <span className="tnum font-display">₹{parseFloat(s.price).toFixed(0)}</span>
+          <span aria-hidden="true">{s.kind === "combo" ? "🧩" : "✨"}</span>
+          <span className="min-w-0 flex-1">
+            <span className="font-semibold text-cream">
+              {s.name} <span className="tnum font-display">₹{parseFloat(s.price).toFixed(0)}</span>
+            </span>
+            <span className="block text-xs text-cream-dim">{s.reason}</span>
           </span>
-          <span className="font-normal text-indigo-200">· {s.reason}</span>
+          <span aria-hidden="true" className="font-display text-base text-cream-dim group-hover:text-ember">
+            +
+          </span>
         </button>
       ))}
     </div>

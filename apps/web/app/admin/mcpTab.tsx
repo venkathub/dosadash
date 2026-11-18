@@ -39,13 +39,13 @@ function CopyBtn({ text, label }: { text: string; label?: string }) {
 
 function Snippet({ title, note, text }: { title: string; note: string; text: string }) {
   return (
-    <div className="rounded-lg bg-indigo-900 p-3">
+    <div className="rounded-lg bg-soot-900 p-3">
       <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="font-display text-[13px] font-bold text-turmeric-400">{title}</span>
+        <span className="font-display text-[13px] font-bold text-ghee">{title}</span>
         <CopyBtn text={text} />
       </div>
-      <p className="mb-2 text-xs text-indigo-300">{note}</p>
-      <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded bg-indigo-950 p-2 text-[11px] text-indigo-100">
+      <p className="mb-2 text-xs text-cream-faint">{note}</p>
+      <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded bg-soot-950 p-2 text-[11px] text-cream">
         {text}
       </pre>
     </div>
@@ -62,9 +62,9 @@ function ClientSetup({ created, onDismiss }: { created: McpKeyCreated; onDismiss
     JSON.stringify(cursorConfig),
   )}`;
   return (
-    <div className="mb-4 rounded-lg border-2 border-turmeric-500 bg-indigo-800 p-4">
+    <div className="mb-4 rounded-lg border-2 border-ghee/50 bg-soot-800 p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="font-display text-sm font-bold text-white">
+        <span className="font-display text-sm font-bold text-cream">
           🔑 Key “{created.name}” created — shown ONCE, copy it now
         </span>
         <Btn variant="ghost" size="sm" onClick={onDismiss}>
@@ -72,7 +72,7 @@ function ClientSetup({ created, onDismiss }: { created: McpKeyCreated; onDismiss
         </Btn>
       </div>
       <div className="mb-3 flex items-center gap-2">
-        <code className="break-all rounded bg-indigo-950 px-2 py-1 text-[12px] text-turmeric-300">
+        <code className="break-all rounded bg-soot-950 px-2 py-1 text-[12px] text-ghee">
           {created.key}
         </code>
         <CopyBtn text={created.key} label="Copy key" />
@@ -99,7 +99,7 @@ function ClientSetup({ created, onDismiss }: { created: McpKeyCreated; onDismiss
           text={JSON.stringify({ mcpServers: { dosadash: cursorConfig } }, null, 2)}
         />
       </div>
-      <p className="mt-2 text-xs text-indigo-300">
+      <p className="mt-2 text-xs text-cream-faint">
         Revoking the key below disconnects every client using it within ~60s.
       </p>
     </div>
@@ -138,8 +138,8 @@ export function McpTab() {
   return (
     <div>
       <ErrorBar msg={error} />
-      <p className="mb-3 text-sm text-indigo-200">
-        API keys for the hosted MCP endpoint (<code className="text-turmeric-300">/mcp</code>) — connect
+      <p className="mb-3 text-sm text-cream-dim">
+        API keys for the hosted MCP endpoint (<code className="text-ghee">/mcp</code>) — connect
         ChatGPT, Cursor, Claude Code (web &amp; CLI) or Claude Desktop to the live menu, kitchen
         inventory and REAL ordering. Full walkthrough: <code>docs/09-mcp-demo.md</code>.
       </p>
@@ -148,7 +148,7 @@ export function McpTab() {
 
       <div className="mb-4 flex flex-wrap items-end gap-2">
         <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-indigo-300">
+          <span className="mb-1 block text-xs font-semibold text-cream-faint">
             New key label (which client / whose machine)
           </span>
           <Input
@@ -169,12 +169,12 @@ export function McpTab() {
         {(keys ?? []).map((k) => (
           <div
             key={k.id}
-            className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-indigo-800 p-3"
+            className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-soot-800 p-3"
           >
-            <span className="font-display text-sm font-bold text-white">{k.name}</span>
-            <code className="text-xs text-indigo-300">{k.key_prefix}…</code>
-            <span className="text-xs text-indigo-300">created {fmt(k.created_at)}</span>
-            <span className="text-xs text-indigo-300">last used {fmt(k.last_used_at)}</span>
+            <span className="font-display text-sm font-bold text-cream">{k.name}</span>
+            <code className="text-xs text-cream-faint">{k.key_prefix}…</code>
+            <span className="text-xs text-cream-faint">created {fmt(k.created_at)}</span>
+            <span className="text-xs text-cream-faint">last used {fmt(k.last_used_at)}</span>
             <span className="ml-auto flex items-center gap-2">
               {k.revoked_at ? (
                 <Badge tone="danger">revoked</Badge>
@@ -191,7 +191,7 @@ export function McpTab() {
         ))}
       </div>
 
-      <div className="mt-4 rounded-lg bg-indigo-900 p-3 text-xs text-indigo-300">
+      <div className="mt-4 rounded-lg bg-soot-900 p-3 text-xs text-cream-faint">
         <Eyebrow>How it works</Eyebrow>
         <p className="mt-1">
           The server exposes three tools — <code>get_menu</code>, <code>check_inventory</code>,{" "}
