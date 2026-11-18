@@ -10,7 +10,8 @@ import {
   SectionHeading,
   cx,
 } from "../components/ui";
-import { clearAdminToken, getAdminToken, saveAdminToken } from "./adminApi";
+import { ADMIN_AUTH_EXPIRED, clearAdminToken, getAdminToken, saveAdminToken } from "./adminApi";
+import { tokenExpired } from "../../lib/liveSocket";
 import { CopilotTab } from "./copilotTab";
 import { CouponsTab } from "./couponsTab";
 import { FeedbackTab } from "./feedbackTab";
@@ -108,8 +109,18 @@ export default function Admin() {
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
-    setToken(getAdminToken());
+    const saved = getAdminToken();
+    if (saved && tokenExpired(saved)) clearAdminToken();
+    else setToken(saved);
     setReady(true);
+  }, []);
+
+  // Any admin call that 401s (expired token) returns the shell to sign-in
+  // instead of leaving every tab showing "HTTP 401".
+  useEffect(() => {
+    const onExpired = () => setToken(null);
+    window.addEventListener(ADMIN_AUTH_EXPIRED, onExpired);
+    return () => window.removeEventListener(ADMIN_AUTH_EXPIRED, onExpired);
   }, []);
 
   if (!ready) return null;

@@ -13,6 +13,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { openLiveSocket, tokenExpired } from "../../lib/liveSocket";
 import {
   Badge,
   Btn,
@@ -92,6 +93,12 @@ type Ops = {
 
 const TOKEN_KEY = "fixer_token";
 
+class SessionExpiredError extends Error {
+  constructor() {
+    super("Session expired — log in again");
+  }
+}
+
 async function api<T>(
   token: string,
   path: string,
@@ -103,6 +110,7 @@ async function api<T>(
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
   });
   const data = await resp.json().catch(() => null);
+  if (resp.status === 401) throw new SessionExpiredError();
   if (!resp.ok)
     throw new Error((data as { detail?: string } | null)?.detail ?? `HTTP ${resp.status}`);
   return data as T;
@@ -235,7 +243,19 @@ export default function FixerPortal() {
 
   // Mount-gate ALL localStorage reads (issue-#120 hydration lesson).
   useEffect(() => {
-    setToken(localStorage.getItem(TOKEN_KEY));
+    const saved = localStorage.getItem(TOKEN_KEY);
+    if (saved && tokenExpired(saved)) {
+      localStorage.removeItem(TOKEN_KEY);
+      setError("Session expired — log in again");
+      return;
+    }
+    setToken(saved);
+  }, []);
+
+  const logout = useCallback((msg?: string) => {
+    localStorage.removeItem(TOKEN_KEY);
+    setToken(null);
+    if (msg) setError(msg);
   }, []);
 
   const requestOtp = async () => {
@@ -327,15 +347,12 @@ export default function FixerPortal() {
     );
   }
 
-  return <Board token={token} onLogout={() => {
-    localStorage.removeItem(TOKEN_KEY);
-    setToken(null);
-  }} />;
+  return <Board token={token} onLogout={logout} />;
 }
 
 /* ------------------------------------------------------------ board */
 
-function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
+function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) => void }) {
   const [reports, setReports] = useState<Report[]>([]);
   const [repo, setRepo] = useState("");
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -345,7 +362,6 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [selected, setSelected] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const wsRef = useRef<WebSocket | null>(null);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refresh = useCallback(async () => {
@@ -359,6 +375,7 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
       setMetrics(m);
       setError(null);
     } catch (e) {
+      if (e instanceof SessionExpiredError) return onLogout(e.message);
       setError(e instanceof Error ? e.message : "load failed");
     }
     // Loop health is additive transparency — its failure must never blank
@@ -368,7 +385,7 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
     } catch {
       setOps(null);
     }
-  }, [token]);
+  }, [token, onLogout]);
 
   useEffect(() => {
     refresh();
@@ -381,17 +398,16 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
   }, [refresh]);
 
   // Live socket: every lifecycle stage lands here → debounce a refetch.
+  // Expired/forbidden token → back to sign-in (never an endless reconnect).
   useEffect(() => {
-    let closed = false;
-    let retry: ReturnType<typeof setTimeout> | null = null;
-    const connect = () => {
-      const proto = location.protocol === "https:" ? "wss" : "ws";
-      const ws = new WebSocket(`${proto}://${location.host}/ws/fixer?token=${token}`);
-      wsRef.current = ws;
-      ws.onopen = () => setConnected(true);
-      ws.onmessage = (msg) => {
+    return openLiveSocket({
+      path: "/ws/fixer",
+      token,
+      onConnectedChange: setConnected,
+      onAuthFailure: () => onLogout("Session expired — log in again"),
+      onMessage: (raw) => {
         try {
-          const event = JSON.parse(msg.data) as { type: string; report_id?: number };
+          const event = JSON.parse(raw) as { type: string; report_id?: number };
           if (event.type === "feedback.hello") return;
           setFeed((prev) =>
             [
@@ -409,19 +425,9 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
         } catch {
           /* non-JSON frame — ignore */
         }
-      };
-      ws.onclose = () => {
-        setConnected(false);
-        if (!closed) retry = setTimeout(connect, 3000);
-      };
-    };
-    connect();
-    return () => {
-      closed = true;
-      if (retry) clearTimeout(retry);
-      wsRef.current?.close();
-    };
-  }, [token, refresh]);
+      },
+    });
+  }, [token, refresh, onLogout]);
 
   const decide = async (report: Report, action: "approve" | "reject") => {
     try {
@@ -432,6 +438,7 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
       setSelected(null);
       refresh();
     } catch (e) {
+      if (e instanceof SessionExpiredError) return onLogout(e.message);
       setError(e instanceof Error ? e.message : "decision failed");
     }
   };
@@ -465,7 +472,7 @@ function Board({ token, onLogout }: { token: string; onLogout: () => void }) {
             <a href="/admin" className="text-xs text-indigo-200 underline-offset-2 hover:underline">
               Backoffice ↗
             </a>
-            <Btn variant="ghost" size="sm" onClick={onLogout}>
+            <Btn variant="ghost" size="sm" onClick={() => onLogout()}>
               Logout
             </Btn>
           </div>

@@ -79,11 +79,11 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
   });
   const data = resp.status === 204 ? null : await resp.json();
+  // Expired/revoked token on an authed call: drop the dead session so the UI
+  // falls back to logged-out instead of failing every request with 401.
+  if (resp.status === 401 && opts.auth) clearSession();
   if (!resp.ok) throw new ApiError(resp.status, data?.detail ?? `HTTP ${resp.status}`);
   return data as T;
 }
 
-export const wsUrl = (path: string, token: string) => {
-  const proto = location.protocol === "https:" ? "wss" : "ws";
-  return `${proto}://${location.host}${path}?token=${token}`;
-};
+

@@ -5,7 +5,11 @@
 /ws/fixer        — self-healing-loop live feed for the /fixer portal (admin/owner JWT)
 
 Browsers can't set headers on WebSocket upgrade → JWT arrives as ?token=.
-Close codes: 4401 bad/missing token, 4403 insufficient role/ownership.
+Close codes: 4401 bad/missing/expired token, 4403 insufficient role/ownership.
+Rejections ACCEPT the upgrade first and then close: closing before accept makes
+the server answer the handshake with HTTP 403, which browsers surface as a bare
+1006 — the KDS never sees 4401, so an expired token (30-min TTL) left the board
+stuck on "Reconnecting…" forever instead of returning to the login form.
 """
 
 import asyncio
@@ -37,13 +41,20 @@ ACTIVE_STATES = (
 )
 
 
+async def _reject(websocket: WebSocket, code: int) -> None:
+    """Close with an application code the browser can actually read."""
+    await websocket.accept()
+    await websocket.close(code=code)
+
+
 async def _authenticate(token: str) -> User | None:
     try:
         payload = decode_access_token(token, get_settings().jwt_secret)
-    except pyjwt.PyJWTError:
+        user_id = int(payload["sub"])
+    except (pyjwt.PyJWTError, KeyError, ValueError, TypeError):
         return None
     async with get_sessionmaker()() as session:
-        return await session.get(User, int(payload["sub"]))
+        return await session.get(User, user_id)
 
 
 async def _forward_events(
@@ -84,10 +95,10 @@ async def _run_until_disconnect(websocket: WebSocket, forward: asyncio.Task) -> 
 async def kds_socket(websocket: WebSocket, token: str = Query(default="")) -> None:
     user = await _authenticate(token)
     if user is None:
-        await websocket.close(code=4401)
+        await _reject(websocket, 4401)
         return
     if user.role not in STAFF_ROLES:
-        await websocket.close(code=4403)
+        await _reject(websocket, 4403)
         return
     await websocket.accept()
 
@@ -121,10 +132,10 @@ async def fixer_socket(websocket: WebSocket, token: str = Query(default="")) -> 
     different stories."""
     user = await _authenticate(token)
     if user is None:
-        await websocket.close(code=4401)
+        await _reject(websocket, 4401)
         return
     if user.role not in (Role.ADMIN, Role.OWNER):
-        await websocket.close(code=4403)
+        await _reject(websocket, 4403)
         return
     await websocket.accept()
     await websocket.send_text(json.dumps({"type": "feedback.hello"}))
@@ -138,7 +149,7 @@ async def order_tracking_socket(
 ) -> None:
     user = await _authenticate(token)
     if user is None:
-        await websocket.close(code=4401)
+        await _reject(websocket, 4401)
         return
     async with get_sessionmaker()() as session:
         order = await session.scalar(
@@ -147,7 +158,7 @@ async def order_tracking_socket(
             .options(selectinload(Order.items).selectinload(OrderItem.item))
         )
     if order is None or (order.user_id != user.id and user.role not in STAFF_ROLES):
-        await websocket.close(code=4403)
+        await _reject(websocket, 4403)
         return
     await websocket.accept()
     await websocket.send_text(json.dumps(order_event_payload("order.snapshot", order)))
