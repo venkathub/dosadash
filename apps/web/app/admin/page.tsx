@@ -10,7 +10,8 @@ import {
   SectionHeading,
   cx,
 } from "../components/ui";
-import { clearAdminToken, getAdminToken, saveAdminToken } from "./adminApi";
+import { ADMIN_AUTH_EXPIRED, clearAdminToken, getAdminToken, saveAdminToken } from "./adminApi";
+import { loadValidToken } from "../../lib/liveSocket";
 import { CopilotTab } from "./copilotTab";
 import { CouponsTab } from "./couponsTab";
 import { FeedbackTab } from "./feedbackTab";
@@ -106,14 +107,28 @@ export default function Admin() {
   const [ready, setReady] = useState(false);
   const [tab, setTab] = useState<Tab>("Menu");
   const [navOpen, setNavOpen] = useState(false);
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    setToken(getAdminToken());
+    const { token: saved, expired } = loadValidToken("admin_token");
+    if (expired) setNotice("Session expired — log in again");
+    setToken(saved);
     setReady(true);
   }, []);
 
+  // Any admin call that 401s (expired token) returns the shell to sign-in
+  // instead of leaving every tab showing "HTTP 401".
+  useEffect(() => {
+    const onExpired = () => {
+      setNotice("Session expired — log in again");
+      setToken(null);
+    };
+    window.addEventListener(ADMIN_AUTH_EXPIRED, onExpired);
+    return () => window.removeEventListener(ADMIN_AUTH_EXPIRED, onExpired);
+  }, []);
+
   if (!ready) return null;
-  if (!token) return <AdminLogin onLogin={setToken} />;
+  if (!token) return <AdminLogin onLogin={setToken} notice={notice} />;
 
   const role = roleFromToken(token);
   const activeGroup = TAB_GROUPS.find((g) => (g.tabs as readonly string[]).includes(tab));
@@ -219,7 +234,7 @@ export default function Admin() {
   );
 }
 
-function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
+function AdminLogin({ onLogin, notice = "" }: { onLogin: (token: string) => void; notice?: string }) {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [demoOtp, setDemoOtp] = useState<string | null>(null);
@@ -302,7 +317,9 @@ function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
             </Btn>
           </>
         )}
-        {error && <p className="mt-3 text-sm font-semibold text-[#FF8B8B]">⚠ {error}</p>}
+        {(error || notice) && (
+          <p className="mt-3 text-sm font-semibold text-[#FF8B8B]">⚠ {error || notice}</p>
+        )}
       </Card>
     </main>
   );

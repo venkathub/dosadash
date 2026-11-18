@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { loadValidToken, openLiveSocket } from "../../lib/liveSocket";
 import {
   Badge,
   Btn,
@@ -73,10 +74,11 @@ export default function Kds() {
   const [qc, setQc] = useState<Record<number, QCResult | "pending">>({});
   const [connected, setConnected] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    setToken(localStorage.getItem("kds_token"));
+    const { token: saved, expired } = loadValidToken("kds_token");
+    if (expired) setError("Session expired — log in again");
+    setToken(saved);
   }, []);
 
   // Tick the elapsed timers twice a minute (cheap-tablet friendly — no rAF).
@@ -113,38 +115,35 @@ export default function Kds() {
     setToken(body.access_token);
   };
 
-  const connect = useCallback(() => {
-    if (!token) return;
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${location.host}/ws/kds?token=${token}`);
-    wsRef.current = ws;
-    ws.onopen = () => setConnected(true);
-    ws.onclose = (e) => {
-      setConnected(false);
-      if (e.code === 4401 || e.code === 4403) {
-        localStorage.removeItem("kds_token");
-        setToken(null);
-        setError(e.code === 4403 ? "Staff access required" : "Session expired — log in again");
-      } else {
-        setTimeout(connect, 2000); // auto-reconnect
-      }
-    };
-    ws.onmessage = (msg) => {
-      const data = JSON.parse(msg.data);
-      if (data.type === "snapshot") {
-        const map: Record<number, OrderEvent> = {};
-        for (const o of data.orders) map[o.order_id] = o;
-        setOrders(map);
-      } else {
-        setOrders((prev) => ({ ...prev, [data.order_id]: data }));
-      }
-    };
-  }, [token]);
+  const logout = useCallback((msg: string) => {
+    localStorage.removeItem("kds_token");
+    setToken(null);
+    setConnected(false);
+    setError(msg);
+  }, []);
 
+  // Self-reconnecting socket; an expired/forbidden token returns to the login
+  // form instead of "Reconnecting…" forever (see lib/liveSocket.ts).
   useEffect(() => {
-    if (token) connect();
-    return () => wsRef.current?.close(1000);
-  }, [token, connect]);
+    if (!token) return;
+    return openLiveSocket({
+      path: "/ws/kds",
+      token,
+      onConnectedChange: setConnected,
+      onAuthFailure: (reason) =>
+        logout(reason === "forbidden" ? "Staff access required" : "Session expired — log in again"),
+      onMessage: (raw) => {
+        const data = JSON.parse(raw);
+        if (data.type === "snapshot") {
+          const map: Record<number, OrderEvent> = {};
+          for (const o of data.orders) map[o.order_id] = o;
+          setOrders(map);
+        } else {
+          setOrders((prev) => ({ ...prev, [data.order_id]: data }));
+        }
+      },
+    });
+  }, [token, logout]);
 
   const advance = async (o: OrderEvent) => {
     const r = await fetch(`/api/v1/orders/${o.order_id}/status`, {
@@ -152,8 +151,16 @@ export default function Kds() {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status: NEXT[o.status] }),
     });
+    if (r.status === 401) return logout("Session expired — log in again");
     if (!r.ok) setError((await r.json()).detail ?? "transition failed");
   };
+
+  const clearPendingQc = (orderId: number) =>
+    setQc((prev) => {
+      const next = { ...prev };
+      delete next[orderId];
+      return next;
+    });
 
   const qcPhoto = async (orderId: number, file: File) => {
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
@@ -173,16 +180,16 @@ export default function Kds() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ image_base64: b64, mime_type: file.type }),
       });
+      if (r.status === 401) {
+        clearPendingQc(orderId);
+        return logout("Session expired — log in again");
+      }
       if (!r.ok) throw new Error((await r.json()).detail ?? "QC failed");
       const result: QCResult = await r.json();
       setQc((prev) => ({ ...prev, [orderId]: result }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "QC failed");
-      setQc((prev) => {
-        const next = { ...prev };
-        delete next[orderId];
-        return next;
-      });
+      clearPendingQc(orderId);
     }
   };
 

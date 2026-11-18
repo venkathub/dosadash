@@ -70,6 +70,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Unit tests (live-socket / session helpers)
+        run: npm test
+
   # Key-free asset gates (golden datasets, prompt/schema coherence, scoring
   # logic). The live LLM merge gate (order_accuracy >= 0.95, Hard Rule 5)
   # lives in live-evals.yml and runs on PRs touching agents/prompts/evals.

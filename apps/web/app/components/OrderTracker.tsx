@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { api, getToken, wsUrl, type Order } from "../../lib/api";
+import { useEffect, useState } from "react";
+import { api, expireSession, getToken, type Order } from "../../lib/api";
+import { openLiveSocket } from "../../lib/liveSocket";
 import { Btn, Modal, SectionHeading, cx } from "./ui";
 
 const STEPS = ["PLACED", "CONFIRMED", "COOKING", "READY", "OUT_FOR_DELIVERY", "DELIVERED"];
@@ -10,18 +11,25 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
   const [status, setStatus] = useState(order.status);
   const [paid, setPaid] = useState(order.payment?.status === "CAPTURED");
   const [error, setError] = useState<string | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
 
+  // Auto-reconnecting: a deploy/proxy blip used to freeze the tracker silently.
+  // The server sends a fresh snapshot on every (re)connect, so no event is lost.
   useEffect(() => {
     const token = getToken();
     if (!token) return;
-    const ws = new WebSocket(wsUrl(`/ws/orders/${order.id}`, token));
-    wsRef.current = ws;
-    ws.onmessage = (msg) => {
-      const data = JSON.parse(msg.data);
-      if (data.order_id === order.id) setStatus(data.status);
-    };
-    return () => ws.close(1000);
+    return openLiveSocket({
+      path: `/ws/orders/${order.id}`,
+      token,
+      onAuthFailure: (reason) => {
+        if (reason === "forbidden") return setError("Live updates unavailable for this order");
+        expireSession();
+        setError("Session expired — log in again to see live updates");
+      },
+      onMessage: (raw) => {
+        const data = JSON.parse(raw);
+        if (data.order_id === order.id) setStatus(data.status);
+      },
+    });
   }, [order.id]);
 
   const payDemo = async () => {

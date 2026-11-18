@@ -17,6 +17,9 @@ export const getAdminToken = () =>
 export const saveAdminToken = (t: string) => localStorage.setItem(TOKEN_KEY, t);
 export const clearAdminToken = () => localStorage.removeItem(TOKEN_KEY);
 
+/** Fired when any admin call returns 401 so the shell can return to sign-in. */
+export const ADMIN_AUTH_EXPIRED = "dosadash:admin-auth-expired";
+
 export async function adminApi<T>(
   path: string,
   opts: { method?: string; body?: unknown; idempotencyKey?: string } = {},
@@ -31,6 +34,10 @@ export async function adminApi<T>(
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
   });
   const data = resp.status === 204 ? null : await resp.json().catch(() => null);
+  if (resp.status === 401 && token) {
+    clearAdminToken();
+    window.dispatchEvent(new Event(ADMIN_AUTH_EXPIRED));
+  }
   if (!resp.ok) {
     const detail = (data as { detail?: string } | null)?.detail ?? `HTTP ${resp.status}`;
     throw new AdminApiError(resp.status, detail);
