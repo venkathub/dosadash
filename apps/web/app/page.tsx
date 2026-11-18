@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ApiError,
   api,
+  SESSION_EXPIRED_EVENT,
   clearSession,
   getUser,
   type MenuItem,
@@ -64,6 +65,12 @@ export default function Home() {
   const [coupon, setCoupon] = useState<{ code: string; discount: string; total: string } | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [lang, setLang] = useState<"en" | "ta">("en");
+
+  useEffect(() => {
+    const onExpired = () => setUser(null);
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, []);
 
   useEffect(() => {
     setUser(getUser());

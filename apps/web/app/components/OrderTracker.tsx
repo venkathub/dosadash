@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, getToken, type Order } from "../../lib/api";
+import { api, expireSession, getToken, type Order } from "../../lib/api";
 import { openLiveSocket } from "../../lib/liveSocket";
 import { Btn, Modal, SectionHeading, cx } from "./ui";
 
@@ -20,7 +20,11 @@ export default function OrderTracker({ order, onClose }: { order: Order; onClose
     return openLiveSocket({
       path: `/ws/orders/${order.id}`,
       token,
-      onAuthFailure: () => setError("Session expired — log in again to see live updates"),
+      onAuthFailure: (reason) => {
+        if (reason === "forbidden") return setError("Live updates unavailable for this order");
+        expireSession();
+        setError("Session expired — log in again to see live updates");
+      },
       onMessage: (raw) => {
         const data = JSON.parse(raw);
         if (data.order_id === order.id) setStatus(data.status);

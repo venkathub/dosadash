@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { openLiveSocket, tokenExpired } from "../../lib/liveSocket";
+import { loadValidToken, openLiveSocket } from "../../lib/liveSocket";
 import {
   Badge,
   Btn,
@@ -93,6 +93,9 @@ type Ops = {
 
 const TOKEN_KEY = "fixer_token";
 
+/** Fired by api() on any 401 so every caller (timeline, triage…) returns to sign-in. */
+const FIXER_AUTH_EXPIRED = "dosadash:fixer-auth-expired";
+
 class SessionExpiredError extends Error {
   constructor() {
     super("Session expired — log in again");
@@ -110,7 +113,10 @@ async function api<T>(
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
   });
   const data = await resp.json().catch(() => null);
-  if (resp.status === 401) throw new SessionExpiredError();
+  if (resp.status === 401) {
+    window.dispatchEvent(new Event(FIXER_AUTH_EXPIRED));
+    throw new SessionExpiredError();
+  }
   if (!resp.ok)
     throw new Error((data as { detail?: string } | null)?.detail ?? `HTTP ${resp.status}`);
   return data as T;
@@ -243,12 +249,8 @@ export default function FixerPortal() {
 
   // Mount-gate ALL localStorage reads (issue-#120 hydration lesson).
   useEffect(() => {
-    const saved = localStorage.getItem(TOKEN_KEY);
-    if (saved && tokenExpired(saved)) {
-      localStorage.removeItem(TOKEN_KEY);
-      setError("Session expired — log in again");
-      return;
-    }
+    const { token: saved, expired } = loadValidToken(TOKEN_KEY);
+    if (expired) setError("Session expired — log in again");
     setToken(saved);
   }, []);
 
@@ -257,6 +259,12 @@ export default function FixerPortal() {
     setToken(null);
     if (msg) setError(msg);
   }, []);
+
+  useEffect(() => {
+    const onExpired = () => logout("Session expired — log in again");
+    window.addEventListener(FIXER_AUTH_EXPIRED, onExpired);
+    return () => window.removeEventListener(FIXER_AUTH_EXPIRED, onExpired);
+  }, [logout]);
 
   const requestOtp = async () => {
     setError(null);
@@ -375,7 +383,7 @@ function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) =>
       setMetrics(m);
       setError(null);
     } catch (e) {
-      if (e instanceof SessionExpiredError) return onLogout(e.message);
+      if (e instanceof SessionExpiredError) return; // portal handles the sign-out event
       setError(e instanceof Error ? e.message : "load failed");
     }
     // Loop health is additive transparency — its failure must never blank
@@ -404,7 +412,12 @@ function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) =>
       path: "/ws/fixer",
       token,
       onConnectedChange: setConnected,
-      onAuthFailure: () => onLogout("Session expired — log in again"),
+      onAuthFailure: (reason) =>
+        onLogout(
+          reason === "forbidden"
+            ? "This account needs admin or owner access"
+            : "Session expired — log in again",
+        ),
       onMessage: (raw) => {
         try {
           const event = JSON.parse(raw) as { type: string; report_id?: number };
@@ -438,7 +451,7 @@ function Board({ token, onLogout }: { token: string; onLogout: (msg?: string) =>
       setSelected(null);
       refresh();
     } catch (e) {
-      if (e instanceof SessionExpiredError) return onLogout(e.message);
+      if (e instanceof SessionExpiredError) return;
       setError(e instanceof Error ? e.message : "decision failed");
     }
   };
@@ -791,7 +804,10 @@ function ReportDrawer({
   useEffect(() => {
     api<{ events: LifecycleEvent[] }>(token, `/admin/feedback/${report.id}/events`)
       .then((body) => setEvents(body.events))
-      .catch((e) => setError(e instanceof Error ? e.message : "timeline load failed"));
+      .catch((e) => {
+        if (e instanceof SessionExpiredError) return; // portal returns to sign-in
+        setError(e instanceof Error ? e.message : "timeline load failed");
+      });
   }, [token, report.id]);
 
   const assessment = report.triage?.assessment ?? null;

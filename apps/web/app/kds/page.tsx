@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { openLiveSocket, tokenExpired } from "../../lib/liveSocket";
+import { loadValidToken, openLiveSocket } from "../../lib/liveSocket";
 import {
   Badge,
   Btn,
@@ -76,12 +76,8 @@ export default function Kds() {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const saved = localStorage.getItem("kds_token");
-    if (saved && tokenExpired(saved)) {
-      localStorage.removeItem("kds_token");
-      setError("Session expired — log in again");
-      return;
-    }
+    const { token: saved, expired } = loadValidToken("kds_token");
+    if (expired) setError("Session expired — log in again");
     setToken(saved);
   }, []);
 
@@ -159,6 +155,13 @@ export default function Kds() {
     if (!r.ok) setError((await r.json()).detail ?? "transition failed");
   };
 
+  const clearPendingQc = (orderId: number) =>
+    setQc((prev) => {
+      const next = { ...prev };
+      delete next[orderId];
+      return next;
+    });
+
   const qcPhoto = async (orderId: number, file: File) => {
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       setError("QC photo must be JPEG/PNG/WebP");
@@ -177,17 +180,16 @@ export default function Kds() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ image_base64: b64, mime_type: file.type }),
       });
-      if (r.status === 401) return logout("Session expired — log in again");
+      if (r.status === 401) {
+        clearPendingQc(orderId);
+        return logout("Session expired — log in again");
+      }
       if (!r.ok) throw new Error((await r.json()).detail ?? "QC failed");
       const result: QCResult = await r.json();
       setQc((prev) => ({ ...prev, [orderId]: result }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "QC failed");
-      setQc((prev) => {
-        const next = { ...prev };
-        delete next[orderId];
-        return next;
-      });
+      clearPendingQc(orderId);
     }
   };
 

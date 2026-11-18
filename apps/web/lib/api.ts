@@ -59,6 +59,15 @@ export const clearSession = () => {
   localStorage.removeItem(USER_KEY);
 };
 
+/** Fired when an authed call 401s, so pages holding `user` state can sign out. */
+export const SESSION_EXPIRED_EVENT = "dosadash:session-expired";
+
+/** Drop the dead session and tell mounted pages (they keep `user` in state). */
+export const expireSession = () => {
+  clearSession();
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+};
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, detail: string) {
@@ -78,12 +87,11 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
     headers,
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
   });
-  const data = resp.status === 204 ? null : await resp.json();
-  // Expired/revoked token on an authed call: drop the dead session so the UI
+  // Non-JSON bodies (a mid-deploy 502 page) must not mask the status code.
+  const data = resp.status === 204 ? null : await resp.json().catch(() => null);
+  // Expired/revoked token on an authed call: sign out everywhere so the UI
   // falls back to logged-out instead of failing every request with 401.
-  if (resp.status === 401 && opts.auth) clearSession();
+  if (resp.status === 401 && opts.auth) expireSession();
   if (!resp.ok) throw new ApiError(resp.status, data?.detail ?? `HTTP ${resp.status}`);
   return data as T;
 }
-
-

@@ -26,14 +26,27 @@ export function tokenExpiry(token: string): number | null {
   }
 }
 
+/**
+ * Load a token from localStorage, dropping it if already expired. Call from a
+ * mount effect only (never during render — hydration, issue #120).
+ */
+export function loadValidToken(key: string): { token: string | null; expired: boolean } {
+  const saved = localStorage.getItem(key);
+  if (saved && tokenExpired(saved)) {
+    localStorage.removeItem(key);
+    return { token: null, expired: true };
+  }
+  return { token: saved, expired: false };
+}
+
 /** True when the token is malformed or already past `exp` (small clock-skew grace). */
 export function tokenExpired(token: string, nowMs: number = Date.now(), skewSec = 5): boolean {
   const exp = tokenExpiry(token);
   return exp === null || exp - skewSec <= nowMs / 1000;
 }
 
-/** Exponential backoff: base·2^attempt, capped. */
-export function backoffDelay(attempt: number, baseMs = 2000, maxMs = 30_000): number {
+/** Exponential backoff: base·2^attempt, capped low — a kitchen board must recover fast after a deploy. */
+export function backoffDelay(attempt: number, baseMs = 1000, maxMs = 8000): number {
   return Math.min(maxMs, baseMs * 2 ** Math.min(attempt, 10));
 }
 
@@ -59,6 +72,7 @@ export function openLiveSocket(opts: LiveSocketOptions): () => void {
   };
 
   const connect = () => {
+    timer = null;
     if (disposed) return;
     if (tokenExpired(opts.token)) return fail("expired");
     const proto = location.protocol === "https:" ? "wss" : "ws";
@@ -80,9 +94,24 @@ export function openLiveSocket(opts: LiveSocketOptions): () => void {
     };
   };
 
+  // Don't sit out a backoff once the network/tab is back: retry immediately.
+  const retryNow = () => {
+    if (disposed || !timer) return;
+    clearTimeout(timer);
+    timer = null;
+    connect();
+  };
+  const onVisible = () => {
+    if (document.visibilityState === "visible") retryNow();
+  };
+  window.addEventListener("online", retryNow);
+  document.addEventListener("visibilitychange", onVisible);
+
   connect();
   return () => {
     disposed = true;
+    window.removeEventListener("online", retryNow);
+    document.removeEventListener("visibilitychange", onVisible);
     if (timer) clearTimeout(timer);
     if (ws) {
       ws.onclose = null;

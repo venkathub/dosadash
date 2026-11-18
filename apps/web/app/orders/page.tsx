@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ApiError, api, getUser, type Order } from "../../lib/api";
+import { ApiError, SESSION_EXPIRED_EVENT, api, getUser, type Order } from "../../lib/api";
 import FeedbackButton from "../components/FeedbackButton";
 import { ReviewBox } from "./reviewBox";
 import { SupportBox } from "./supportBox";
@@ -26,6 +26,15 @@ export default function Orders() {
     api<{ tg_linked: boolean }>("/auth/me", { auth: true })
       .then((me) => setTgLinked(me.tg_linked))
       .catch(() => setTgLinked(null));
+
+  useEffect(() => {
+    const onExpired = () => {
+      setSignedIn(false);
+      setError("Session expired — log in again from the home page.");
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, []);
 
   useEffect(() => {
     const user = getUser();
