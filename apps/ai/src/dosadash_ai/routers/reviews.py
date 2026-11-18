@@ -1,9 +1,9 @@
 """Internal review endpoints (api → ai) — Phase 8.
 
-POST /internal/reviews/score — batch aspect-sentiment tagging. Local-first
-since slice 4: the INT8 ONNX LoRA champion (CPU, ₹0/review) scores text
-reviews and only its UNCONFIDENT predictions escalate to the LLM chain —
-the tiny model handles the bulk, the LLM handles the doubt. Everything
+POST /internal/reviews/score — batch aspect-sentiment tagging
+uses the LLM by default. The INT8 ONNX champion is an opt-in local-first
+policy: a synthetic challenge audit found confident errors. Local inference
+has no external inference fee, but still consumes compute. Everything
 around the models stays deterministic:
 
 - rating-only reviews (no text) never reach any model — scored from stars
@@ -198,6 +198,11 @@ async def score_reviews(
 ) -> ReviewScoreResponse:
     _check_internal_token(x_internal_token)
 
+    return await score_review_batch(req)
+
+
+async def score_review_batch(req: ReviewScoreRequest) -> ReviewScoreResponse:
+    """Serving policy shared with the diagnostic benchmark; no persistence here."""
     # rating-only reviews: deterministic, no model of any kind, no cost
     rating_only = [r for r in req.reviews if not r.text.strip()]
     with_text = [r for r in req.reviews if r.text.strip()]
@@ -215,7 +220,9 @@ async def score_reviews(
     local_ids: list[int] = []
     local_model: str | None = None
     llm_queue: list[ReviewScoreSourceItem] = with_text
-    champion = None if req.force_llm else local_champion()
+    champion = (
+        local_champion() if get_settings().review_local_enabled and not req.force_llm else None
+    )
     if champion is not None and with_text:
         predictions = await asyncio.to_thread(
             predict_sentiment, champion, [r.text for r in with_text]

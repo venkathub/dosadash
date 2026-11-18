@@ -221,3 +221,21 @@ async def test_invoice_rbac(client, db_session):
     assert (await client.get(INVOICES)).status_code == 401
     kitchen = await _login_as(db_session, "+919555561002", Role.KITCHEN_STAFF)
     assert (await client.get(INVOICES, headers=kitchen)).status_code == 403
+
+
+async def test_arithmetic_failure_cannot_hide_behind_high_combined_confidence(
+    client, admin, db_session
+):
+    _, rice, _ = await _approved_po(db_session)
+    before = rice.stock_qty
+    result = InvoiceExtractResult(extraction=_extraction(), confidence=0.7, arithmetic_ok=False)
+    app.dependency_overrides[get_ai_client] = lambda: FakeAI(result)
+    try:
+        response = await client.post(INVOICES, headers=admin, json=UPLOAD)
+        assert response.status_code == 201
+        assert response.json()["confidence"] >= 0.8
+        assert response.json()["status"] == "PENDING_REVIEW"
+        await db_session.refresh(rice)
+        assert rice.stock_qty == before
+    finally:
+        app.dependency_overrides.pop(get_ai_client, None)

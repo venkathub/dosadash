@@ -1,0 +1,209 @@
+{
+  "model": "dosadash-sentiment/v2-int8",
+  "cases": [
+    {
+      "id": "review-0",
+      "labels": [
+        "temperature:NEGATIVE"
+      ],
+      "confidence_flag": true,
+      "legacy_local_accepted": true,
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "missing": [
+        "packaging:POSITIVE"
+      ],
+      "extra": []
+    },
+    {
+      "id": "review-1",
+      "labels": [
+        "taste:NEGATIVE"
+      ],
+      "confidence_flag": true,
+      "legacy_local_accepted": true,
+      "metrics": {
+        "label_f1": 0.0,
+        "exact_match": false
+      },
+      "missing": [
+        "price:NEGATIVE",
+        "taste:POSITIVE"
+      ],
+      "extra": [
+        "taste:NEGATIVE"
+      ]
+    },
+    {
+      "id": "review-2",
+      "labels": [
+        "delivery:NEGATIVE"
+      ],
+      "confidence_flag": true,
+      "legacy_local_accepted": true,
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "missing": [
+        "packaging:POSITIVE"
+      ],
+      "extra": []
+    },
+    {
+      "id": "review-3",
+      "labels": [
+        "taste:POSITIVE"
+      ],
+      "confidence_flag": true,
+      "legacy_local_accepted": true,
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "missing": [
+        "portion:NEGATIVE"
+      ],
+      "extra": []
+    },
+    {
+      "id": "review-4",
+      "labels": [
+        "freshness:NEGATIVE"
+      ],
+      "confidence_flag": true,
+      "legacy_local_accepted": true,
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "missing": [
+        "taste:NEGATIVE"
+      ],
+      "extra": []
+    },
+    {
+      "id": "review-5",
+      "labels": [],
+      "confidence_flag": false,
+      "legacy_local_accepted": false,
+      "metrics": {
+        "label_f1": 0.0,
+        "exact_match": false
+      },
+      "missing": [
+        "portion:POSITIVE",
+        "temperature:POSITIVE"
+      ],
+      "extra": []
+    },
+    {
+      "id": "review-6",
+      "labels": [
+        "taste:POSITIVE"
+      ],
+      "confidence_flag": true,
+      "legacy_local_accepted": true,
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "missing": [
+        "packaging:NEGATIVE"
+      ],
+      "extra": []
+    },
+    {
+      "id": "review-7",
+      "labels": [
+        "delivery:POSITIVE",
+        "temperature:POSITIVE"
+      ],
+      "confidence_flag": true,
+      "legacy_local_accepted": true,
+      "metrics": {
+        "label_f1": 0.5,
+        "exact_match": false
+      },
+      "missing": [
+        "temperature:NEGATIVE"
+      ],
+      "extra": [
+        "temperature:POSITIVE"
+      ]
+    },
+    {
+      "id": "review-8",
+      "labels": [
+        "temperature:NEGATIVE"
+      ],
+      "confidence_flag": true,
+      "legacy_local_accepted": true,
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "missing": [
+        "price:POSITIVE"
+      ],
+      "extra": []
+    },
+    {
+      "id": "review-9",
+      "labels": [
+        "taste:POSITIVE",
+        "temperature:POSITIVE"
+      ],
+      "confidence_flag": false,
+      "legacy_local_accepted": false,
+      "metrics": {
+        "label_f1": 0.5,
+        "exact_match": false
+      },
+      "missing": [
+        "portion:NEGATIVE"
+      ],
+      "extra": [
+        "temperature:POSITIVE"
+      ]
+    },
+    {
+      "id": "review-10",
+      "labels": [
+        "taste:POSITIVE"
+      ],
+      "confidence_flag": true,
+      "legacy_local_accepted": true,
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "missing": [
+        "packaging:POSITIVE"
+      ],
+      "extra": []
+    },
+    {
+      "id": "review-11",
+      "labels": [],
+      "confidence_flag": false,
+      "legacy_local_accepted": false,
+      "metrics": {
+        "label_f1": 0.0,
+        "exact_match": false
+      },
+      "missing": [
+        "portion:NEGATIVE",
+        "price:NEGATIVE"
+      ],
+      "extra": []
+    }
+  ],
+  "legacy_confident_errors": 9,
+  "legacy_accepted": 9,
+  "note": "Synthetic diagnostic cases; confidence is not calibrated correctness. No fitting.",
+  "status": "complete",
+  "fingerprint": "5b5b95671efdba85ed6380e5eec5f836a7f2cb5572d10cc6a9f199949c0dd255"
+}

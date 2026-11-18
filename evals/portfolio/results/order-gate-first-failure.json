@@ -1,0 +1,208 @@
+{
+  "source_run": "https://github.com/venkathub/dosadash/actions/runs/39238952095",
+  "source_sha": "a1c835150b1e76cadf85fa87f8ee50715ce333f0",
+  "ran_at": "2026-10-19T10:44:26.932422+00:00",
+  "metrics": {
+    "order_accuracy": 0.9485714285714286,
+    "tool_correctness": 1.0,
+    "guardrail_bypasses": 0,
+    "guardrail_cases": 45,
+    "lang_accuracy_en": 0.9702970297029703,
+    "lang_accuracy_hinglish": 0.9354838709677419,
+    "lang_accuracy_ta": 1.0,
+    "lang_accuracy_tanglish": 0.875,
+    "tone": 0.819047619047619
+  },
+  "gates_passed": false,
+  "suite_outcomes": {
+    "order": "fail",
+    "retrieval": "pass",
+    "rag": "pass",
+    "support": "pass",
+    "inventory": "pass",
+    "copilot": "pass",
+    "tone": "pass"
+  },
+  "failed_order_cases": [
+    {
+      "id": "order:ord-042",
+      "language": "tanglish",
+      "tags": [
+        "kitchen_paused"
+      ],
+      "problems": [
+        "reply missing all of ['closed', 'paused', 'not taking', 'moodiruku']"
+      ],
+      "accuracy_problems": [
+        "reply missing all of ['closed', 'paused', 'not taking', 'moodiruku']"
+      ],
+      "tool_violations": [],
+      "bypasses": [],
+      "safety": true,
+      "model": "gpt-4o-mini",
+      "reply": "Kadhaiyil irukkum kitchen ippod pausing-la irukku, aana naan ungalukku help pannalaam. Rendu masala dosa irukkum, aana ippod order panna mudiyadhu. Edhavadhu vera venuma? ",
+      "status": "fail"
+    },
+    {
+      "id": "order:ord-084",
+      "language": "en",
+      "tags": [
+        "basic",
+        "multi_item"
+      ],
+      "problems": [
+        "draft missing Set Dosa",
+        "unexpected draft item Plain Dosa"
+      ],
+      "accuracy_problems": [
+        "draft missing Set Dosa",
+        "unexpected draft item Plain Dosa"
+      ],
+      "tool_violations": [],
+      "bypasses": [],
+      "safety": false,
+      "model": "gpt-4o-mini",
+      "reply": "I've added 1 Set Dosa and 1 Kal Dosa to your order. Let me know if you need anything else!",
+      "status": "fail"
+    },
+    {
+      "id": "order:ord-096",
+      "language": "en",
+      "tags": [
+        "typo"
+      ],
+      "problems": [
+        "draft missing Kothu Parotta"
+      ],
+      "accuracy_problems": [
+        "draft missing Kothu Parotta"
+      ],
+      "tool_violations": [],
+      "bypasses": [],
+      "safety": false,
+      "model": "gpt-4o-mini",
+      "reply": "Kothu Parotta is currently not available on the menu. Would you like to try something else, like Parotta or any of our curries?",
+      "status": "fail"
+    },
+    {
+      "id": "order:ord-099",
+      "language": "hinglish",
+      "tags": [
+        "basic",
+        "multi_item"
+      ],
+      "problems": [
+        "Onion Dosa qty 1 != 2"
+      ],
+      "accuracy_problems": [
+        "Onion Dosa qty 1 != 2"
+      ],
+      "tool_violations": [],
+      "bypasses": [],
+      "safety": false,
+      "model": "gpt-4o-mini",
+      "reply": "Maine 1 Onion Dosa aur 1 Masala Chai add kiya hai. Chai mein milk hai, agar aapko koi allergy hai toh please batayein.",
+      "status": "fail"
+    },
+    {
+      "id": "order:ord-104",
+      "language": "hinglish",
+      "tags": [
+        "factual"
+      ],
+      "problems": [
+        "unexpected draft item Curd Vada"
+      ],
+      "accuracy_problems": [
+        "unexpected draft item Curd Vada"
+      ],
+      "tool_violations": [],
+      "bypasses": [],
+      "safety": false,
+      "model": "gpt-4o-mini",
+      "reply": "Haan, Curd Vada mein dahi hota hai. Yeh dahi se bana hota hai aur mustard seeds bhi hote hain. Main ab Curd Vada ko aapke order mein add kar raha hoon. Agar aapko dairy se allergy hai, toh yeh dish aapke liye suitable nahi hai.",
+      "status": "fail"
+    },
+    {
+      "id": "order:ord-109",
+      "language": "tanglish",
+      "tags": [
+        "basic"
+      ],
+      "problems": [
+        "draft missing Set Dosa",
+        "unexpected draft item Plain Dosa"
+      ],
+      "accuracy_problems": [
+        "draft missing Set Dosa",
+        "unexpected draft item Plain Dosa"
+      ],
+      "tool_violations": [],
+      "bypasses": [],
+      "safety": false,
+      "model": "gpt-4o-mini",
+      "reply": "Rendu Set Dosa add pannirukken. Ithu parcel-aaga irukkum. Edhavadhu vera venuma?",
+      "status": "fail"
+    },
+    {
+      "id": "order:ord-117",
+      "language": "tanglish",
+      "tags": [
+        "kitchen_paused"
+      ],
+      "problems": [
+        "reply missing all of ['closed', 'paused', 'not taking', 'moodiruku']"
+      ],
+      "accuracy_problems": [
+        "reply missing all of ['closed', 'paused', 'not taking', 'moodiruku']"
+      ],
+      "tool_violations": [],
+      "bypasses": [],
+      "safety": true,
+      "model": "gpt-4o-mini",
+      "reply": "Kaaranam, kitchen ippod pausing la irukku. Veg meals order panna mudiyadhu. Enna venum nu sollunga, naan help pannuren.",
+      "status": "fail"
+    },
+    {
+      "id": "order:ord-135",
+      "language": "tanglish",
+      "tags": [
+        "kitchen_paused"
+      ],
+      "problems": [
+        "reply missing all of ['closed', 'paused', 'not taking', 'moodiruku']"
+      ],
+      "accuracy_problems": [
+        "reply missing all of ['closed', 'paused', 'not taking', 'moodiruku']"
+      ],
+      "tool_violations": [],
+      "bypasses": [],
+      "safety": true,
+      "model": "gpt-4o-mini",
+      "reply": "Kazhaga paathukonga, kitchen ippodhu pausing irukku. Delivery panna mudiyadhu. Chai venumna, Masala Chai irukku, aana ippodhu order panna mudiyadhu. Enna venum nu sollunga, naan help pannuren.",
+      "status": "fail"
+    },
+    {
+      "id": "order:tim-002",
+      "language": "en",
+      "tags": [
+        "serving_window",
+        "meal_period",
+        "multi_item"
+      ],
+      "problems": [
+        "draft missing Filter Coffee"
+      ],
+      "accuracy_problems": [
+        "draft missing Filter Coffee"
+      ],
+      "tool_violations": [],
+      "bypasses": [],
+      "safety": false,
+      "model": "gpt-4o-mini",
+      "reply": "The Mini Tiffin is only available during breakfast hours (6–11:30 AM). Would you like to order the Filter Coffee for now, or wait until breakfast time? Mini Tiffin is served 6–11:30 AM — not right now.",
+      "status": "fail"
+    }
+  ],
+  "note": "Original failure evidence. Thresholds and expected labels were not changed. Full report is in the linked workflow artifact."
+}

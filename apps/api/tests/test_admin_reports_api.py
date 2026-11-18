@@ -175,3 +175,24 @@ async def test_forecast_health_admin_only(client, admin, customer, db_session):
     ).status_code == 403
     response = await client.get("/api/v1/admin/reports/forecast-health", headers=admin)
     assert response.status_code == 200 and response.json()[0]["status"] == "insufficient_data"
+
+
+async def test_provider_allowance_report_is_admin_only(client, admin, customer, db_session):
+    from dosadash_api.db.models import ProviderBudgetDay
+
+    db_session.add(
+        ProviderBudgetDay(
+            day=datetime.now(UTC).date(),
+            charged_usd=Decimal(".04"),
+            known_usd=Decimal(".01"),
+            calls=3,
+            unknown_calls=2,
+        )
+    )
+    await db_session.commit()
+    path = "/api/v1/admin/reports/provider-budget"
+    assert (await client.get(path, headers=customer)).status_code == 403
+    response = await client.get(path, headers=admin)
+    assert response.status_code == 200
+    assert response.json()[0]["charged_usd"] == 0.04
+    assert response.json()[0]["unknown_calls"] == 2

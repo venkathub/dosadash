@@ -11,7 +11,12 @@ therefore kept durably in the api's `review_batch_jobs` table instead —
 the 50%-of-live pricing is the whole point of this path.
 """
 
+import asyncio
+
 import litellm
+
+from dosadash_ai.config import get_settings
+from dosadash_ai.llm.budget import reserve, settle
 
 
 class BatchError(Exception):
@@ -28,19 +33,26 @@ async def create_chat_batch(jsonl: bytes, *, completion_window: str) -> str:
     """Upload a /v1/chat/completions JSONL and start a batch. Returns the
     provider batch id."""
     try:
-        batch_file = await litellm.acreate_file(
-            file=("reviews.jsonl", jsonl),
-            purpose="batch",
-            custom_llm_provider="openai",
-        )
-        batch = await litellm.acreate_batch(
-            completion_window=completion_window,
-            endpoint="/v1/chat/completions",
-            input_file_id=batch_file.id,
-            custom_llm_provider="openai",
-        )
+        reservation = await reserve("batch", units=len(jsonl.splitlines()))
+        async with asyncio.timeout(get_settings().provider_timeout_seconds):
+            batch_file = await litellm.acreate_file(
+                file=("reviews.jsonl", jsonl),
+                purpose="batch",
+                custom_llm_provider="openai",
+                timeout=get_settings().provider_timeout_seconds,
+                max_retries=0,
+            )
+            batch = await litellm.acreate_batch(
+                completion_window=completion_window,
+                endpoint="/v1/chat/completions",
+                input_file_id=batch_file.id,
+                custom_llm_provider="openai",
+                timeout=get_settings().provider_timeout_seconds,
+                max_retries=0,
+            )
     except Exception as exc:  # noqa: BLE001 — normalized for callers
         raise BatchError(f"batch submit failed: {exc}") from exc
+    await settle(reservation)  # batch billing arrives later; retain estimate
     return batch.id
 
 

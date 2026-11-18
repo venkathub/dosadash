@@ -10,6 +10,7 @@ No fallback chain here: Groq is the only STT-capable provider in the stack.
 Failure surfaces as LLMError; adapters degrade to "please type instead".
 """
 
+import asyncio
 import base64
 import binascii
 import io
@@ -18,6 +19,7 @@ import logging
 import litellm
 
 from dosadash_ai.config import get_settings
+from dosadash_ai.llm.budget import reserve, settle
 from dosadash_ai.llm.client import LLMError
 from dosadash_ai.redaction import redact_phones
 from dosadash_shared import SttIn, SttResult
@@ -58,21 +60,28 @@ async def transcribe(request: SttIn) -> SttResult:
     kwargs: dict = {}
     if request.language_hint:  # omit entirely → Whisper auto-detect (EN/Tamil/…)
         kwargs["language"] = request.language_hint
+    reservation = await reserve("audio")
     try:
-        response = await litellm.atranscription(
-            model=settings.stt_model,
-            file=buffer,
-            metadata={
-                "generation_name": "stt.transcribe",
-                "session_id": request.session_id,
-                "trace_user_id": str(request.user_id) if request.user_id else None,
-                "tags": [settings.stt_model],
-            },
-            **kwargs,
-        )
+        async with asyncio.timeout(get_settings().provider_timeout_seconds):
+            response = await litellm.atranscription(
+                model=settings.stt_model,
+                timeout=settings.provider_timeout_seconds,
+                num_retries=0,
+                max_retries=0,
+                file=buffer,
+                metadata={
+                    "generation_name": "stt.transcribe",
+                    "session_id": request.session_id,
+                    "trace_user_id": str(request.user_id) if request.user_id else None,
+                    "tags": [settings.stt_model],
+                },
+                **kwargs,
+            )
     except Exception as exc:  # noqa: BLE001 — single provider, normalized for callers
         logger.warning("stt failed on %s: %s", settings.stt_model, exc)
         raise LLMError(f"stt failed on {settings.stt_model}: {exc}") from exc
+
+    await settle(reservation, response, model=settings.stt_model)
 
     transcript = redact_phones((response.text or "").strip())[:4000]  # Hard Rule 8
     language = getattr(response, "language", None) or request.language_hint

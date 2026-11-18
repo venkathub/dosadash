@@ -64,7 +64,7 @@ Every product feature maps to a named AI concept you can defend in interviews.
 - [x] Structured outputs / function calling
 - [x] RAG (hybrid retrieval, source selection, citations; owner-reviewed faithfulness calibration complete)
 - [x] Embeddings & vector search
-- [x] Agents (LangGraph ordering, guarded actions, HITL; durable checkpointing deferred)
+- [x] Agents (LangGraph ordering, guarded actions, HITL; relational inventory recovery; order graph checkpointing deferred)
 - [x] Multi-stage SDLC coordination (fixer/reviewer/verifier; no general business-agent delegation)
 - [x] MCP
 - [x] Guardrails & AI security (injection, PII, policy)
@@ -104,11 +104,11 @@ Historical phase plans describe intent; this table and evals/README.md describe 
 | SQL copilot | `apps/ai/src/dosadash_ai/copilot/agent.py` | `evals/suites/copilot_eval.py` | Implemented; two frozen live baselines passed; SQL result-oracle gate enabled |
 | CRM | `apps/api/src/dosadash_api/worker/crm.py` | `apps/api/tests/test_crm.py` | RFM rules and decay heuristic, not clustering or a trained churn model |
 | Promotions | `apps/ai/src/dosadash_ai/promo/mining.py` | `evals/suites/test_promo_assets.py` | Mining + constrained generation, not a bandit |
-| LoRA / ONNX | `packages/ml/src/dosadash_ml/finetune/` | `packages/ml/artifacts/sentiment/benchmark.json` | Implemented; synthetic labels, external generalization unproven |
+| LoRA / ONNX | `packages/ml/src/dosadash_ml/finetune/` | `packages/ml/artifacts/sentiment/benchmark.json` | Artifact implemented; synthetic challenge audit exposes confident errors; local-first serving now opt-in |
 | Forecasting / ETA / ALS | `packages/ml/src/dosadash_ml/` | committed champion metadata | Implemented; synthetic benchmarks; online uplift unproven |
-| Model lifecycle | training scripts + `apps/api/src/dosadash_api/worker/tasks.py` | ML tests / artifacts | Partial: manual training/export, scheduled inference; no automated drift/retraining loop |
+| Model lifecycle | training scripts + `apps/api/src/dosadash_api/worker/tasks.py` | ML tests / artifacts | Forecast observations and degradation checks; offline backtest/promotion/rollback demo; no unattended production retraining |
 | Order memory | `apps/api/src/dosadash_api/services/memory_service.py` | agent memory tests | Implemented episodic memory, distinct from checkpoint/resume |
-| MCP / multimodal / batch | `apps/ai/src/dosadash_ai/mcp_server.py`, `llm/`, `routers/` | existing unit/asset tests | Integrations implemented; comprehensive live multimodal evaluation deferred |
+| MCP / multimodal / batch | `apps/ai/src/dosadash_ai/mcp_server.py`, `llm/`, `routers/` | existing unit/asset tests | Synthetic STT→draft and OCR→PO review measured; native speech and independent real documents remain unmeasured |
 | SDLC coordination | `.github/workflows/claude-*.yml` | fixer workflow asset tests | Workflow coordination; independent deployment validation required |
 | Online experiments / distributed training | No implementation claimed | No measurement claimed | Deferred |
 
@@ -119,15 +119,20 @@ audits, frozen validation/test fingerprints, component comparisons and source-gr
 bootstrap intervals. Sentiment training now selects on comparable validation F1;
 legacy test-based champion scores cannot authorize a promotion. **Independent data
 collection and published generalization measurements remain pending.** See
-`evals/benchmarks/README.md` for collection and execution instructions. This does
-not add live audio/invoice benchmarks, durable checkpoints or model retraining.
+`evals/benchmarks/README.md` for collection and execution instructions. This independent-data tooling is distinct from the synthetic multimodal and recovery demonstrations below.
 
 ### Portfolio completion evidence (2026-10-19)
 
 | Capability | Implemented demonstration | Evidence boundary |
 |---|---|---|
-| Evaluation across modalities | Review challenges, synthetic audio WER/term recall, rendered invoice extraction/arithmetic; real inference and scorer replay distinguished | Synthetic/regression evidence; no independent real-world accuracy claim |
+| Evaluation across modalities | Review confidence audit, six synthetic audio→draft cases, six rendered invoice→PO review cases; live inference and replay distinguished | Synthetic/regression evidence; no independent real-world accuracy claim |
 | Durable agent execution | PostgreSQL checkpoints, lease fencing, restart recovery, bounded retries, human approval, idempotent PO effects | Relational workflow, not a LangGraph checkpointer; notifications remain best-effort |
 | ML lifecycle | Immutable observations, degradation policy, recursive time-window backtests, guarded local promotion, hash-verified rollback | Training/release demonstration off VPS; production activation via artifact PR |
 
 Reproduce and review these paths using [docs/16](16-portfolio-evidence.md).
+
+The current hardening adds shared provider admission limits, bounded provider calls,
+admin allowance reporting, concurrency/outage tests and isolated synthetic/production restore evidence.
+See [case study](17-ai-engineering-case-study.md) and [operations runbook](18-ai-operations.md).
+These do not add independent data, calibrated speech confidence, production recovery
+certification or a provider billing guarantee.

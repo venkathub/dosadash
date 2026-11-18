@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "source_revision": "534ba5a9a116dae4e0973df7567a0afe8598e78c",
+  "source_schema": "f1b3d5e7a902",
+  "candidate_schema": "a2c4e6f80913",
+  "counts": {
+    "migration": "f1b3d5e7a902",
+    "menu_items": 61,
+    "users": 524,
+    "orders": 40642,
+    "purchase_orders": 3,
+    "invoices": 1,
+    "eval_runs": 83,
+    "inventory_workflows": 1,
+    "forecast_observations": 854
+  },
+  "counts_unchanged_before_after_dump": true,
+  "archive_sha256": "eac0075ba85762ff484f15b07130ff010e10eac87e23e08b7c167cad610a46fc",
+  "archive_bytes": 2688530,
+  "elapsed_seconds": 8.86,
+  "migration_roundtrip": "upgrade/down/upgrade",
+  "limitations": "Aggregate row-count and migration checks; not point-in-time recovery or every business record. Production was read only.",
+  "private_archive_and_restored_database_deleted": true,
+  "ran_at": "2026-10-19T10:37:50.462443+00:00",
+  "data_handling": "Owner-authorized SSH transfer to isolated local PostgreSQL; no provider/tracing disclosure; temporary archive and restored database removed."
+}

@@ -1,0 +1,1780 @@
+{
+  "schema_version": 1,
+  "ran_at": "2026-10-19T10:26:22.910324+00:00",
+  "status": "complete",
+  "evidence": "synthetic_portfolio_demo",
+  "mode": "live",
+  "tasks": [
+    "audio",
+    "invoice",
+    "review"
+  ],
+  "fingerprint": "3be6f41d12e9c3b95eb1c56f8ec7c874c6118b2e7ca8fb9cbe75ba6d573691ac",
+  "inputs_unchanged": true,
+  "results": {
+    "audio": {
+      "overall": {
+        "n": 6,
+        "groups": 6,
+        "metrics": {
+          "word_error_rate": 0.32341269841269843,
+          "reference_words": 8.166666666666666,
+          "edit_distance": 2.5,
+          "command_term_recall": 0.8611111111111112,
+          "order_items_exact": 0.8333333333333334,
+          "order_notes_correct": 1.0,
+          "order_draft_correct": 0.8333333333333334
+        },
+        "warning": "Small artificial/regression sample; no generalization claim.",
+        "metric_coverage": {
+          "command_term_recall": 6,
+          "edit_distance": 6,
+          "order_draft_correct": 6,
+          "order_items_exact": 6,
+          "order_notes_correct": 6,
+          "reference_words": 6,
+          "word_error_rate": 6
+        },
+        "ci95": {
+          "word_error_rate": [
+            0.1111111111111111,
+            0.5952380952380952
+          ],
+          "reference_words": [
+            7.666666666666667,
+            8.666666666666666
+          ],
+          "edit_distance": [
+            1.0,
+            4.333333333333333
+          ],
+          "command_term_recall": [
+            0.6666666666666666,
+            1.0
+          ],
+          "order_items_exact": [
+            0.5,
+            1.0
+          ],
+          "order_notes_correct": [
+            1.0,
+            1.0
+          ],
+          "order_draft_correct": [
+            0.5,
+            1.0
+          ]
+        }
+      },
+      "language": {
+        "en": {
+          "n": 4,
+          "groups": 4,
+          "metrics": {
+            "word_error_rate": 0.14583333333333331,
+            "reference_words": 8.5,
+            "edit_distance": 1.25,
+            "command_term_recall": 0.9166666666666666,
+            "order_items_exact": 1.0,
+            "order_notes_correct": 1.0,
+            "order_draft_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "command_term_recall": 4,
+            "edit_distance": 4,
+            "order_draft_correct": 4,
+            "order_items_exact": 4,
+            "order_notes_correct": 4,
+            "reference_words": 4,
+            "word_error_rate": 4
+          },
+          "ci95": {
+            "word_error_rate": [
+              0.0,
+              0.29166666666666663
+            ],
+            "reference_words": [
+              8.0,
+              9.0
+            ],
+            "edit_distance": [
+              0.0,
+              2.5
+            ],
+            "command_term_recall": [
+              0.75,
+              1.0
+            ],
+            "order_items_exact": [
+              1.0,
+              1.0
+            ],
+            "order_notes_correct": [
+              1.0,
+              1.0
+            ],
+            "order_draft_correct": [
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "hinglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "word_error_rate": 0.5,
+            "reference_words": 8.0,
+            "edit_distance": 4.0,
+            "command_term_recall": 1.0,
+            "order_items_exact": 1.0,
+            "order_notes_correct": 1.0,
+            "order_draft_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "command_term_recall": 1,
+            "edit_distance": 1,
+            "order_draft_correct": 1,
+            "order_items_exact": 1,
+            "order_notes_correct": 1,
+            "reference_words": 1,
+            "word_error_rate": 1
+          },
+          "ci95": null
+        },
+        "tanglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "word_error_rate": 0.8571428571428571,
+            "reference_words": 7.0,
+            "edit_distance": 6.0,
+            "command_term_recall": 0.5,
+            "order_items_exact": 0.0,
+            "order_notes_correct": 1.0,
+            "order_draft_correct": 0.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "command_term_recall": 1,
+            "edit_distance": 1,
+            "order_draft_correct": 1,
+            "order_items_exact": 1,
+            "order_notes_correct": 1,
+            "reference_words": 1,
+            "word_error_rate": 1
+          },
+          "ci95": null
+        }
+      },
+      "category": {
+        "clean": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "word_error_rate": 0.3333333333333333,
+            "reference_words": 9.0,
+            "edit_distance": 3.0,
+            "command_term_recall": 0.6666666666666666,
+            "order_items_exact": 1.0,
+            "order_notes_correct": 1.0,
+            "order_draft_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "command_term_recall": 1,
+            "edit_distance": 1,
+            "order_draft_correct": 1,
+            "order_items_exact": 1,
+            "order_notes_correct": 1,
+            "reference_words": 1,
+            "word_error_rate": 1
+          },
+          "ci95": null
+        },
+        "code_switch": {
+          "n": 2,
+          "groups": 2,
+          "metrics": {
+            "word_error_rate": 0.6785714285714286,
+            "reference_words": 7.5,
+            "edit_distance": 5.0,
+            "command_term_recall": 0.75,
+            "order_items_exact": 0.5,
+            "order_notes_correct": 1.0,
+            "order_draft_correct": 0.5
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "command_term_recall": 2,
+            "edit_distance": 2,
+            "order_draft_correct": 2,
+            "order_items_exact": 2,
+            "order_notes_correct": 2,
+            "reference_words": 2,
+            "word_error_rate": 2
+          },
+          "ci95": {
+            "word_error_rate": [
+              0.5,
+              0.8571428571428571
+            ],
+            "reference_words": [
+              7.0,
+              8.0
+            ],
+            "edit_distance": [
+              4.0,
+              6.0
+            ],
+            "command_term_recall": [
+              0.5,
+              1.0
+            ],
+            "order_items_exact": [
+              0.0,
+              1.0
+            ],
+            "order_notes_correct": [
+              1.0,
+              1.0
+            ],
+            "order_draft_correct": [
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "correction": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "word_error_rate": 0.0,
+            "reference_words": 9.0,
+            "edit_distance": 0.0,
+            "command_term_recall": 1.0,
+            "order_items_exact": 1.0,
+            "order_notes_correct": 1.0,
+            "order_draft_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "command_term_recall": 1,
+            "edit_distance": 1,
+            "order_draft_correct": 1,
+            "order_items_exact": 1,
+            "order_notes_correct": 1,
+            "reference_words": 1,
+            "word_error_rate": 1
+          },
+          "ci95": null
+        },
+        "echo": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "word_error_rate": 0.25,
+            "reference_words": 8.0,
+            "edit_distance": 2.0,
+            "command_term_recall": 1.0,
+            "order_items_exact": 1.0,
+            "order_notes_correct": 1.0,
+            "order_draft_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "command_term_recall": 1,
+            "edit_distance": 1,
+            "order_draft_correct": 1,
+            "order_items_exact": 1,
+            "order_notes_correct": 1,
+            "reference_words": 1,
+            "word_error_rate": 1
+          },
+          "ci95": null
+        },
+        "noise": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "word_error_rate": 0.0,
+            "reference_words": 8.0,
+            "edit_distance": 0.0,
+            "command_term_recall": 1.0,
+            "order_items_exact": 1.0,
+            "order_notes_correct": 1.0,
+            "order_draft_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "command_term_recall": 1,
+            "edit_distance": 1,
+            "order_draft_correct": 1,
+            "order_items_exact": 1,
+            "order_notes_correct": 1,
+            "reference_words": 1,
+            "word_error_rate": 1
+          },
+          "ci95": null
+        }
+      }
+    },
+    "invoice": {
+      "overall": {
+        "n": 6,
+        "groups": 4,
+        "metrics": {
+          "line_precision": 1.0,
+          "line_recall": 1.0,
+          "line_f1": 1.0,
+          "header_accuracy": 1.0,
+          "arithmetic_ok": 0.8333333333333334,
+          "exact_match": 1.0,
+          "review_decision_correct": 1.0
+        },
+        "warning": "Small artificial/regression sample; no generalization claim.",
+        "metric_coverage": {
+          "arithmetic_ok": 6,
+          "exact_match": 6,
+          "header_accuracy": 6,
+          "line_f1": 6,
+          "line_precision": 6,
+          "line_recall": 6,
+          "review_decision_correct": 6
+        },
+        "ci95": {
+          "line_precision": [
+            1.0,
+            1.0
+          ],
+          "line_recall": [
+            1.0,
+            1.0
+          ],
+          "line_f1": [
+            1.0,
+            1.0
+          ],
+          "header_accuracy": [
+            1.0,
+            1.0
+          ],
+          "arithmetic_ok": [
+            0.7,
+            1.0
+          ],
+          "exact_match": [
+            1.0,
+            1.0
+          ],
+          "review_decision_correct": [
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "language": {
+        "en": {
+          "n": 6,
+          "groups": 4,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 0.8333333333333334,
+            "exact_match": 1.0,
+            "review_decision_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "arithmetic_ok": 6,
+            "exact_match": 6,
+            "header_accuracy": 6,
+            "line_f1": 6,
+            "line_precision": 6,
+            "line_recall": 6,
+            "review_decision_correct": 6
+          },
+          "ci95": {
+            "line_precision": [
+              1.0,
+              1.0
+            ],
+            "line_recall": [
+              1.0,
+              1.0
+            ],
+            "line_f1": [
+              1.0,
+              1.0
+            ],
+            "header_accuracy": [
+              1.0,
+              1.0
+            ],
+            "arithmetic_ok": [
+              0.7,
+              1.0
+            ],
+            "exact_match": [
+              1.0,
+              1.0
+            ],
+            "review_decision_correct": [
+              1.0,
+              1.0
+            ]
+          }
+        }
+      },
+      "category": {
+        "arithmetic_error": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 0.0,
+            "exact_match": 1.0,
+            "review_decision_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "arithmetic_ok": 1,
+            "exact_match": 1,
+            "header_accuracy": 1,
+            "line_f1": 1,
+            "line_precision": 1,
+            "line_recall": 1,
+            "review_decision_correct": 1
+          },
+          "ci95": null
+        },
+        "card": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 1.0,
+            "exact_match": 1.0,
+            "review_decision_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "arithmetic_ok": 1,
+            "exact_match": 1,
+            "header_accuracy": 1,
+            "line_f1": 1,
+            "line_precision": 1,
+            "line_recall": 1,
+            "review_decision_correct": 1
+          },
+          "ci95": null
+        },
+        "clean": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 1.0,
+            "exact_match": 1.0,
+            "review_decision_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "arithmetic_ok": 1,
+            "exact_match": 1,
+            "header_accuracy": 1,
+            "line_f1": 1,
+            "line_precision": 1,
+            "line_recall": 1,
+            "review_decision_correct": 1
+          },
+          "ci95": null
+        },
+        "landscape": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 1.0,
+            "exact_match": 1.0,
+            "review_decision_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "arithmetic_ok": 1,
+            "exact_match": 1,
+            "header_accuracy": 1,
+            "line_f1": 1,
+            "line_precision": 1,
+            "line_recall": 1,
+            "review_decision_correct": 1
+          },
+          "ci95": null
+        },
+        "ledger": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 1.0,
+            "exact_match": 1.0,
+            "review_decision_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "arithmetic_ok": 1,
+            "exact_match": 1,
+            "header_accuracy": 1,
+            "line_f1": 1,
+            "line_precision": 1,
+            "line_recall": 1,
+            "review_decision_correct": 1
+          },
+          "ci95": null
+        },
+        "rotated": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "line_precision": 1.0,
+            "line_recall": 1.0,
+            "line_f1": 1.0,
+            "header_accuracy": 1.0,
+            "arithmetic_ok": 1.0,
+            "exact_match": 1.0,
+            "review_decision_correct": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "arithmetic_ok": 1,
+            "exact_match": 1,
+            "header_accuracy": 1,
+            "line_f1": 1,
+            "line_precision": 1,
+            "line_recall": 1,
+            "review_decision_correct": 1
+          },
+          "ci95": null
+        }
+      }
+    },
+    "review": {
+      "overall": {
+        "n": 12,
+        "groups": 12,
+        "metrics": {
+          "label_f1": 0.9444444444444445,
+          "exact_match": 0.8333333333333334
+        },
+        "warning": "Small artificial/regression sample; no generalization claim.",
+        "metric_coverage": {
+          "exact_match": 12,
+          "label_f1": 12
+        },
+        "ci95": {
+          "label_f1": [
+            0.8888888888888888,
+            1.0
+          ],
+          "exact_match": [
+            0.6666666666666666,
+            1.0
+          ]
+        }
+      },
+      "language": {
+        "en": {
+          "n": 8,
+          "groups": 8,
+          "metrics": {
+            "label_f1": 0.9166666666666666,
+            "exact_match": 0.75
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "exact_match": 8,
+            "label_f1": 8
+          },
+          "ci95": {
+            "label_f1": [
+              0.8333333333333333,
+              1.0
+            ],
+            "exact_match": [
+              0.5,
+              1.0
+            ]
+          }
+        },
+        "hinglish": {
+          "n": 2,
+          "groups": 2,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "exact_match": 2,
+            "label_f1": 2
+          },
+          "ci95": {
+            "label_f1": [
+              1.0,
+              1.0
+            ],
+            "exact_match": [
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "tanglish": {
+          "n": 2,
+          "groups": 2,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "exact_match": 2,
+            "label_f1": 2
+          },
+          "ci95": {
+            "label_f1": [
+              1.0,
+              1.0
+            ],
+            "exact_match": [
+              1.0,
+              1.0
+            ]
+          }
+        }
+      },
+      "category": {
+        "code_switch": {
+          "n": 2,
+          "groups": 2,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "exact_match": 2,
+            "label_f1": 2
+          },
+          "ci95": {
+            "label_f1": [
+              1.0,
+              1.0
+            ],
+            "exact_match": [
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "hinglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "exact_match": 1,
+            "label_f1": 1
+          },
+          "ci95": null
+        },
+        "indirect": {
+          "n": 2,
+          "groups": 2,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "exact_match": 2,
+            "label_f1": 2
+          },
+          "ci95": {
+            "label_f1": [
+              1.0,
+              1.0
+            ],
+            "exact_match": [
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "mixed": {
+          "n": 2,
+          "groups": 2,
+          "metrics": {
+            "label_f1": 0.8333333333333333,
+            "exact_match": 0.5
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "exact_match": 2,
+            "label_f1": 2
+          },
+          "ci95": {
+            "label_f1": [
+              0.6666666666666666,
+              1.0
+            ],
+            "exact_match": [
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "negation": {
+          "n": 2,
+          "groups": 2,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "exact_match": 2,
+            "label_f1": 2
+          },
+          "ci95": {
+            "label_f1": [
+              1.0,
+              1.0
+            ],
+            "exact_match": [
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "rating_conflict": {
+          "n": 2,
+          "groups": 2,
+          "metrics": {
+            "label_f1": 0.8333333333333333,
+            "exact_match": 0.5
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "exact_match": 2,
+            "label_f1": 2
+          },
+          "ci95": {
+            "label_f1": [
+              0.6666666666666666,
+              1.0
+            ],
+            "exact_match": [
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "tanglish": {
+          "n": 1,
+          "groups": 1,
+          "metrics": {
+            "label_f1": 1.0,
+            "exact_match": 1.0
+          },
+          "warning": "Small artificial/regression sample; no generalization claim.",
+          "metric_coverage": {
+            "exact_match": 1,
+            "label_f1": 1
+          },
+          "ci95": null
+        }
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "review-0",
+      "task": "review",
+      "group_id": "review-0",
+      "language": "en",
+      "category": "mixed",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "prediction": [
+        "temperature:NEGATIVE"
+      ],
+      "latency_ms": 2569.34
+    },
+    {
+      "id": "review-1",
+      "task": "review",
+      "group_id": "review-1",
+      "language": "en",
+      "category": "negation",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "taste:POSITIVE",
+        "price:NEGATIVE"
+      ],
+      "latency_ms": 1837.28
+    },
+    {
+      "id": "review-2",
+      "task": "review",
+      "group_id": "review-2",
+      "language": "tanglish",
+      "category": "tanglish",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "packaging:POSITIVE",
+        "delivery:NEGATIVE"
+      ],
+      "latency_ms": 1333.97
+    },
+    {
+      "id": "review-3",
+      "task": "review",
+      "group_id": "review-3",
+      "language": "hinglish",
+      "category": "hinglish",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "taste:POSITIVE",
+        "portion:NEGATIVE"
+      ],
+      "latency_ms": 1348.24
+    },
+    {
+      "id": "review-4",
+      "task": "review",
+      "group_id": "review-4",
+      "language": "en",
+      "category": "rating_conflict",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 0.6666666666666666,
+        "exact_match": false
+      },
+      "prediction": [
+        "freshness:NEGATIVE"
+      ],
+      "latency_ms": 1806.32
+    },
+    {
+      "id": "review-5",
+      "task": "review",
+      "group_id": "review-5",
+      "language": "en",
+      "category": "indirect",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "portion:POSITIVE",
+        "temperature:POSITIVE"
+      ],
+      "latency_ms": 1631.08
+    },
+    {
+      "id": "audio-0",
+      "task": "audio",
+      "group_id": "tts-0",
+      "language": "en",
+      "category": "clean",
+      "status": "ok",
+      "model": "whisper-1",
+      "metrics": {
+        "word_error_rate": 0.3333333333333333,
+        "reference_words": 9,
+        "edit_distance": 3,
+        "command_term_recall": 0.6666666666666666,
+        "order_items_exact": true,
+        "order_notes_correct": true,
+        "order_draft_correct": true
+      },
+      "prediction": {
+        "transcript": "Please send 2 Masala Doses and 1 Filter Coffee.",
+        "draft": {
+          "items": {
+            "Masala Dosa": 2,
+            "Filter Coffee": 1
+          },
+          "notes": " ",
+          "model": "gpt-4o-mini"
+        }
+      },
+      "latency_ms": 5032.8
+    },
+    {
+      "id": "audio-1",
+      "task": "audio",
+      "group_id": "tts-1",
+      "language": "en",
+      "category": "correction",
+      "status": "ok",
+      "model": "whisper-1",
+      "metrics": {
+        "word_error_rate": 0.0,
+        "reference_words": 9,
+        "edit_distance": 0,
+        "command_term_recall": 1.0,
+        "order_items_exact": true,
+        "order_notes_correct": true,
+        "order_draft_correct": true
+      },
+      "prediction": {
+        "transcript": "Make that one dosa, not two, and no coffee.",
+        "draft": {
+          "items": {
+            "Masala Dosa": 1
+          },
+          "notes": "",
+          "model": "gpt-4o-mini"
+        }
+      },
+      "latency_ms": 5432.23
+    },
+    {
+      "id": "audio-2",
+      "task": "audio",
+      "group_id": "tts-2",
+      "language": "en",
+      "category": "noise",
+      "status": "ok",
+      "model": "whisper-1",
+      "metrics": {
+        "word_error_rate": 0.0,
+        "reference_words": 8,
+        "edit_distance": 0,
+        "command_term_recall": 1.0,
+        "order_items_exact": true,
+        "order_notes_correct": true,
+        "order_draft_correct": true
+      },
+      "prediction": {
+        "transcript": "One coffee please, no sugar in the coffee.",
+        "draft": {
+          "items": {
+            "Filter Coffee": 1
+          },
+          "notes": "no sugar",
+          "model": "gpt-4o-mini"
+        }
+      },
+      "latency_ms": 3099.41
+    },
+    {
+      "id": "invoice-0",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "language": "en",
+      "category": "clean",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "line_precision": 1.0,
+        "line_recall": 1.0,
+        "line_f1": 1.0,
+        "header_accuracy": 1.0,
+        "arithmetic_ok": true,
+        "exact_match": true,
+        "review_decision_correct": true
+      },
+      "prediction": {
+        "supplier_name": "Portfolio Demo Supplies",
+        "invoice_number": "DEMO-1",
+        "invoice_date": "2026-10-01",
+        "lines": [
+          {
+            "name": "Idli rice",
+            "qty": "10",
+            "unit": "kg",
+            "unit_price": "60",
+            "amount": "600"
+          },
+          {
+            "name": "Milk",
+            "qty": "4",
+            "unit": "l",
+            "unit_price": "50",
+            "amount": "200"
+          }
+        ],
+        "total": "800",
+        "notes": null
+      },
+      "latency_ms": 2138.25
+    },
+    {
+      "id": "invoice-1",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "language": "en",
+      "category": "rotated",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "line_precision": 1.0,
+        "line_recall": 1.0,
+        "line_f1": 1.0,
+        "header_accuracy": 1.0,
+        "arithmetic_ok": true,
+        "exact_match": true,
+        "review_decision_correct": true
+      },
+      "prediction": {
+        "supplier_name": "Portfolio Demo Supplies",
+        "invoice_number": "DEMO-2",
+        "invoice_date": "2026-10-01",
+        "lines": [
+          {
+            "name": "Idli rice",
+            "qty": "10",
+            "unit": "kg",
+            "unit_price": "60",
+            "amount": "600"
+          },
+          {
+            "name": "Milk",
+            "qty": "4",
+            "unit": "l",
+            "unit_price": "50",
+            "amount": "200"
+          }
+        ],
+        "total": "800",
+        "notes": null
+      },
+      "latency_ms": 1842.53
+    },
+    {
+      "id": "invoice-2",
+      "task": "invoice",
+      "group_id": "invoice-template-1",
+      "language": "en",
+      "category": "arithmetic_error",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "line_precision": 1.0,
+        "line_recall": 1.0,
+        "line_f1": 1.0,
+        "header_accuracy": 1.0,
+        "arithmetic_ok": false,
+        "exact_match": true,
+        "review_decision_correct": true
+      },
+      "prediction": {
+        "supplier_name": "Portfolio Demo Supplies",
+        "invoice_number": "DEMO-3",
+        "invoice_date": "2026-10-01",
+        "lines": [
+          {
+            "name": "Idli rice",
+            "qty": "10",
+            "unit": "kg",
+            "unit_price": "60",
+            "amount": "600"
+          },
+          {
+            "name": "Milk",
+            "qty": "4",
+            "unit": "l",
+            "unit_price": "50",
+            "amount": "200"
+          }
+        ],
+        "total": "850",
+        "notes": null
+      },
+      "latency_ms": 1843.18
+    },
+    {
+      "id": "review-6",
+      "task": "review",
+      "group_id": "review-6",
+      "language": "en",
+      "category": "mixed",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "taste:POSITIVE",
+        "packaging:NEGATIVE"
+      ],
+      "latency_ms": 1338.22
+    },
+    {
+      "id": "review-7",
+      "task": "review",
+      "group_id": "review-7",
+      "language": "en",
+      "category": "negation",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "temperature:NEGATIVE",
+        "delivery:POSITIVE"
+      ],
+      "latency_ms": 1362.2
+    },
+    {
+      "id": "review-8",
+      "task": "review",
+      "group_id": "review-8",
+      "language": "hinglish",
+      "category": "code_switch",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "price:POSITIVE",
+        "temperature:NEGATIVE"
+      ],
+      "latency_ms": 1332.72
+    },
+    {
+      "id": "review-9",
+      "task": "review",
+      "group_id": "review-9",
+      "language": "tanglish",
+      "category": "code_switch",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "taste:POSITIVE",
+        "portion:NEGATIVE"
+      ],
+      "latency_ms": 1237.04
+    },
+    {
+      "id": "review-10",
+      "task": "review",
+      "group_id": "review-10",
+      "language": "en",
+      "category": "rating_conflict",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "packaging:POSITIVE",
+        "taste:POSITIVE"
+      ],
+      "latency_ms": 1195.29
+    },
+    {
+      "id": "review-11",
+      "task": "review",
+      "group_id": "review-11",
+      "language": "en",
+      "category": "indirect",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "label_f1": 1.0,
+        "exact_match": true
+      },
+      "prediction": [
+        "portion:NEGATIVE",
+        "price:NEGATIVE"
+      ],
+      "latency_ms": 1381.5
+    },
+    {
+      "id": "audio-3",
+      "task": "audio",
+      "group_id": "tts-3",
+      "language": "hinglish",
+      "category": "code_switch",
+      "status": "ok",
+      "model": "whisper-1",
+      "metrics": {
+        "word_error_rate": 0.5,
+        "reference_words": 8,
+        "edit_distance": 4,
+        "command_term_recall": 1.0,
+        "order_items_exact": true,
+        "order_notes_correct": true,
+        "order_draft_correct": true
+      },
+      "prediction": {
+        "transcript": "2 Masala dosirak filter coffee please.",
+        "draft": {
+          "items": {
+            "Masala Dosa": 2,
+            "Filter Coffee": 1
+          },
+          "notes": " ",
+          "model": "gpt-4o-mini"
+        }
+      },
+      "latency_ms": 3383.42
+    },
+    {
+      "id": "audio-4",
+      "task": "audio",
+      "group_id": "tts-4",
+      "language": "tanglish",
+      "category": "code_switch",
+      "status": "ok",
+      "model": "whisper-1",
+      "metrics": {
+        "word_error_rate": 0.8571428571428571,
+        "reference_words": 7,
+        "edit_distance": 6,
+        "command_term_recall": 0.5,
+        "order_items_exact": false,
+        "order_notes_correct": true,
+        "order_draft_correct": false
+      },
+      "prediction": {
+        "transcript": "Randum asolidosa, or U-filtered coffee venom.",
+        "draft": {
+          "items": {
+            "Rava Dosa": 1,
+            "Filter Coffee": 1
+          },
+          "notes": " ",
+          "model": "gpt-4o-mini"
+        }
+      },
+      "latency_ms": 2739.64
+    },
+    {
+      "id": "audio-5",
+      "task": "audio",
+      "group_id": "tts-5",
+      "language": "en",
+      "category": "echo",
+      "status": "ok",
+      "model": "whisper-1",
+      "metrics": {
+        "word_error_rate": 0.25,
+        "reference_words": 8,
+        "edit_distance": 2,
+        "command_term_recall": 1.0,
+        "order_items_exact": true,
+        "order_notes_correct": true,
+        "order_draft_correct": true
+      },
+      "prediction": {
+        "transcript": "One cheese dosu and two filtered coffees, please.",
+        "draft": {
+          "items": {
+            "Cheese Dosa": 1,
+            "Filter Coffee": 2
+          },
+          "notes": " ",
+          "model": "gpt-4o-mini"
+        }
+      },
+      "latency_ms": 3661.24
+    },
+    {
+      "id": "invoice-3",
+      "task": "invoice",
+      "group_id": "invoice-template-2",
+      "language": "en",
+      "category": "card",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "line_precision": 1.0,
+        "line_recall": 1.0,
+        "line_f1": 1.0,
+        "header_accuracy": 1.0,
+        "arithmetic_ok": true,
+        "exact_match": true,
+        "review_decision_correct": true
+      },
+      "prediction": {
+        "supplier_name": "Garden Demo Wholesale",
+        "invoice_number": "EXP-3",
+        "invoice_date": "2026-10-19",
+        "lines": [
+          {
+            "name": "Tomato",
+            "qty": "5",
+            "unit": "kg",
+            "unit_price": "30",
+            "amount": "150"
+          },
+          {
+            "name": "Onion",
+            "qty": "3",
+            "unit": "kg",
+            "unit_price": "40",
+            "amount": "120"
+          }
+        ],
+        "total": "270",
+        "notes": null
+      },
+      "latency_ms": 1713.53
+    },
+    {
+      "id": "invoice-4",
+      "task": "invoice",
+      "group_id": "invoice-template-3",
+      "language": "en",
+      "category": "landscape",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "line_precision": 1.0,
+        "line_recall": 1.0,
+        "line_f1": 1.0,
+        "header_accuracy": 1.0,
+        "arithmetic_ok": true,
+        "exact_match": true,
+        "review_decision_correct": true
+      },
+      "prediction": {
+        "supplier_name": "Dairy Demo Depot",
+        "invoice_number": "EXP-4",
+        "invoice_date": "2026-10-19",
+        "lines": [
+          {
+            "name": "Milk",
+            "qty": "2",
+            "unit": "l",
+            "unit_price": "50",
+            "amount": "100"
+          }
+        ],
+        "total": "100",
+        "notes": null
+      },
+      "latency_ms": 1458.93
+    },
+    {
+      "id": "invoice-5",
+      "task": "invoice",
+      "group_id": "invoice-template-4",
+      "language": "en",
+      "category": "ledger",
+      "status": "ok",
+      "model": "gpt-4o-mini",
+      "metrics": {
+        "line_precision": 1.0,
+        "line_recall": 1.0,
+        "line_f1": 1.0,
+        "header_accuracy": 1.0,
+        "arithmetic_ok": true,
+        "exact_match": true,
+        "review_decision_correct": true
+      },
+      "prediction": {
+        "supplier_name": "Grain Demo Traders",
+        "invoice_number": "EXP-5",
+        "invoice_date": "2026-10-19",
+        "lines": [
+          {
+            "name": "Idli rice",
+            "qty": "10",
+            "unit": "kg",
+            "unit_price": "60",
+            "amount": "600"
+          },
+          {
+            "name": "Packaging fee",
+            "qty": "1",
+            "unit": "pc",
+            "unit_price": "40",
+            "amount": "40"
+          }
+        ],
+        "total": "640",
+        "notes": null
+      },
+      "latency_ms": 1727.77
+    }
+  ],
+  "review_policy": "llm_first",
+  "usage": {
+    "attempted_calls": 32,
+    "completed_calls": 32,
+    "known_tokens": 218984,
+    "known_cost_usd": 0.0301601,
+    "tokens": 218984,
+    "estimated_cost_usd": 0.0301601,
+    "models": [
+      "gpt-4o-mini",
+      "text-embedding-3-small"
+    ],
+    "calls": [
+      {
+        "case_id": "knowledge-ingestion",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.embed",
+        "latency_ms": 5193.91,
+        "tokens": 5116,
+        "estimated_cost_usd": 0.00010232,
+        "error": null
+      },
+      {
+        "case_id": "knowledge-ingestion",
+        "model": "text-embedding-3-small",
+        "prompt_version": "rag.embed",
+        "latency_ms": 3114.46,
+        "tokens": 5097,
+        "estimated_cost_usd": 0.00010194,
+        "error": null
+      },
+      {
+        "case_id": "review-0",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 2559.64,
+        "tokens": 695,
+        "estimated_cost_usd": 0.0001281,
+        "error": null
+      },
+      {
+        "case_id": "review-1",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1837.05,
+        "tokens": 711,
+        "estimated_cost_usd": 0.00013769999999999999,
+        "error": null
+      },
+      {
+        "case_id": "review-2",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1333.68,
+        "tokens": 715,
+        "estimated_cost_usd": 0.00013874999999999998,
+        "error": null
+      },
+      {
+        "case_id": "review-3",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1347.98,
+        "tokens": 711,
+        "estimated_cost_usd": 0.00013769999999999999,
+        "error": null
+      },
+      {
+        "case_id": "review-4",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1806.09,
+        "tokens": 694,
+        "estimated_cost_usd": 0.0001284,
+        "error": null
+      },
+      {
+        "case_id": "review-5",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1630.87,
+        "tokens": 710,
+        "estimated_cost_usd": 0.0001371,
+        "error": null
+      },
+      {
+        "case_id": "audio-0",
+        "model": "text-embedding-3-small",
+        "prompt_version": "agent.retrieve.embed",
+        "latency_ms": 258.92,
+        "tokens": 14,
+        "estimated_cost_usd": 2.8e-07,
+        "error": null
+      },
+      {
+        "case_id": "audio-0",
+        "model": "gpt-4o-mini",
+        "prompt_version": "order_agent_v7",
+        "latency_ms": 1759.08,
+        "tokens": 6433,
+        "estimated_cost_usd": 0.0010095,
+        "error": null
+      },
+      {
+        "case_id": "audio-1",
+        "model": "text-embedding-3-small",
+        "prompt_version": "agent.retrieve.embed",
+        "latency_ms": 486.44,
+        "tokens": 13,
+        "estimated_cost_usd": 2.6e-07,
+        "error": null
+      },
+      {
+        "case_id": "audio-1",
+        "model": "gpt-4o-mini",
+        "prompt_version": "order_agent_v7",
+        "latency_ms": 1499.42,
+        "tokens": 6564,
+        "estimated_cost_usd": 0.00057135,
+        "error": null
+      },
+      {
+        "case_id": "audio-2",
+        "model": "text-embedding-3-small",
+        "prompt_version": "agent.retrieve.embed",
+        "latency_ms": 630.31,
+        "tokens": 10,
+        "estimated_cost_usd": 2e-07,
+        "error": null
+      },
+      {
+        "case_id": "audio-2",
+        "model": "gpt-4o-mini",
+        "prompt_version": "order_agent_v7",
+        "latency_ms": 1219.52,
+        "tokens": 6470,
+        "estimated_cost_usd": 0.0005516999999999999,
+        "error": null
+      },
+      {
+        "case_id": "invoice-0",
+        "model": "gpt-4o-mini",
+        "prompt_version": "invoice_extract_v1",
+        "latency_ms": 2025.43,
+        "tokens": 25967,
+        "estimated_cost_usd": 0.00394995,
+        "error": null
+      },
+      {
+        "case_id": "invoice-1",
+        "model": "gpt-4o-mini",
+        "prompt_version": "invoice_extract_v1",
+        "latency_ms": 1841.6,
+        "tokens": 37301,
+        "estimated_cost_usd": 0.005650049999999999,
+        "error": null
+      },
+      {
+        "case_id": "invoice-2",
+        "model": "gpt-4o-mini",
+        "prompt_version": "invoice_extract_v1",
+        "latency_ms": 1842.34,
+        "tokens": 25967,
+        "estimated_cost_usd": 0.00394995,
+        "error": null
+      },
+      {
+        "case_id": "review-6",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1338.04,
+        "tokens": 715,
+        "estimated_cost_usd": 0.00013874999999999998,
+        "error": null
+      },
+      {
+        "case_id": "review-7",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1361.98,
+        "tokens": 715,
+        "estimated_cost_usd": 0.0001383,
+        "error": null
+      },
+      {
+        "case_id": "review-8",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1332.39,
+        "tokens": 715,
+        "estimated_cost_usd": 0.0001383,
+        "error": null
+      },
+      {
+        "case_id": "review-9",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1236.68,
+        "tokens": 712,
+        "estimated_cost_usd": 0.00013785,
+        "error": null
+      },
+      {
+        "case_id": "review-10",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1195.05,
+        "tokens": 716,
+        "estimated_cost_usd": 0.00013845,
+        "error": null
+      },
+      {
+        "case_id": "review-11",
+        "model": "gpt-4o-mini",
+        "prompt_version": "review_sentiment_v1",
+        "latency_ms": 1381.27,
+        "tokens": 715,
+        "estimated_cost_usd": 0.0001383,
+        "error": null
+      },
+      {
+        "case_id": "audio-3",
+        "model": "text-embedding-3-small",
+        "prompt_version": "agent.retrieve.embed",
+        "latency_ms": 338.55,
+        "tokens": 10,
+        "estimated_cost_usd": 2e-07,
+        "error": null
+      },
+      {
+        "case_id": "audio-3",
+        "model": "gpt-4o-mini",
+        "prompt_version": "order_agent_v7",
+        "latency_ms": 1371.92,
+        "tokens": 6406,
+        "estimated_cost_usd": 0.0005457,
+        "error": null
+      },
+      {
+        "case_id": "audio-4",
+        "model": "text-embedding-3-small",
+        "prompt_version": "agent.retrieve.embed",
+        "latency_ms": 334.86,
+        "tokens": 13,
+        "estimated_cost_usd": 2.6e-07,
+        "error": null
+      },
+      {
+        "case_id": "audio-4",
+        "model": "gpt-4o-mini",
+        "prompt_version": "order_agent_v7",
+        "latency_ms": 1432.01,
+        "tokens": 6487,
+        "estimated_cost_usd": 0.0005601,
+        "error": null
+      },
+      {
+        "case_id": "audio-5",
+        "model": "text-embedding-3-small",
+        "prompt_version": "agent.retrieve.embed",
+        "latency_ms": 410.36,
+        "tokens": 12,
+        "estimated_cost_usd": 2.4000000000000003e-07,
+        "error": null
+      },
+      {
+        "case_id": "audio-5",
+        "model": "gpt-4o-mini",
+        "prompt_version": "order_agent_v7",
+        "latency_ms": 1481.33,
+        "tokens": 6380,
+        "estimated_cost_usd": 0.0005489999999999999,
+        "error": null
+      },
+      {
+        "case_id": "invoice-3",
+        "model": "gpt-4o-mini",
+        "prompt_version": "invoice_extract_v1",
+        "latency_ms": 1712.36,
+        "tokens": 25966,
+        "estimated_cost_usd": 0.00394935,
+        "error": null
+      },
+      {
+        "case_id": "invoice-4",
+        "model": "gpt-4o-mini",
+        "prompt_version": "invoice_extract_v1",
+        "latency_ms": 1457.86,
+        "tokens": 20266,
+        "estimated_cost_usd": 0.0030794999999999998,
+        "error": null
+      },
+      {
+        "case_id": "invoice-5",
+        "model": "gpt-4o-mini",
+        "prompt_version": "invoice_extract_v1",
+        "latency_ms": 1726.59,
+        "tokens": 25968,
+        "estimated_cost_usd": 0.00395055,
+        "error": null
+      }
+    ]
+  },
+  "audio_attempts": 6,
+  "audio_cost_usd": null,
+  "limitations": [
+    "Replay validates the scorer only; it does not run a model.",
+    "Local mode runs the real ONNX classifier; audio/invoices are not run.",
+    "Synthetic TTS and rendered invoices are not real-world audio or invoice evidence.",
+    "Order-draft metrics require expected_order; no real order is placed.",
+    "Audio cost is unmeasured; the $1 known-cost limit applies only to text/vision calls.",
+    "Small-group intervals are descriptive; no blocking quality threshold."
+  ],
+  "knowledge_ingestion": {
+    "total_chunks": 124,
+    "embedded": 124,
+    "unchanged": 0,
+    "deleted": 0
+  }
+}

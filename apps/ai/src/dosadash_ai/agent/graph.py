@@ -13,7 +13,7 @@
   ready_to_place, surfaces warnings.
 
 The graph is stateless across turns (adapters own history + last draft);
-LangGraph checkpointing/memory arrives in Phase 6.
+Order history is adapter-owned; inventory recovery uses a separate relational workflow.
 """
 
 import json
@@ -142,7 +142,11 @@ async def _llm_turn(state: AgentState) -> dict[str, Any]:
     contradicted = reply_draft_contradictions(state["ctx"], request.message, turn)
     if contradicted:
         logger.info("agent: self-correcting wrongly-refused dishes %s", contradicted)
-        names = ", ".join(contradicted)
+        correction_items = [
+            {"item_id": item.id, "name": item.name}
+            for item in state["ctx"].items.values()
+            if item.name in contradicted and item.orderable
+        ]
         try:
             retry_turn, retry_model = await structured_completion(
                 messages=[
@@ -151,17 +155,15 @@ async def _llm_turn(state: AgentState) -> dict[str, Any]:
                     {
                         "role": "system",
                         "content": (
-                            f"CORRECTION: {names} IS on the menu and being served "
-                            "right now — your reply wrongly treated it as "
-                            "unavailable or left it out of draft_items. Redo this "
-                            "turn: add the customer's requested menu dishes to "
-                            "draft_items and answer accordingly."
+                            load_prompt("order_correction_v1")
+                            + "\nCORRECTION_ITEMS: "
+                            + json.dumps(correction_items, ensure_ascii=False)
                         ),
                     },
                 ],
                 response_model=AgentTurn,
                 trace_name="agent.turn.self_correct",
-                prompt_version=ORDER_AGENT_PROMPT_VERSION,
+                prompt_version="order_correction_v1",
                 session_id=request.session_id,
                 user_id=str(request.user_id) if request.user_id is not None else None,
                 max_tokens=900,
@@ -220,6 +222,28 @@ def build_response(
         # true, and never the model's to hallucinate
         reply = (reply.rstrip() + " " if reply.strip() else "") + " ".join(notes)
     if not ctx.kitchen_open:
+        # Availability and acceptance are business facts. Do not leave a model's
+        # "order placed" promise in the reply when the server refuses checkout.
+        status = "paused" if ctx.kitchen_paused else "closed"
+        closed_replies = {
+            "en": (
+                f"Sorry, the kitchen is currently {status}, so orders cannot be placed. "
+                "You can browse the menu and order when the kitchen reopens."
+            ),
+            "hinglish": (
+                "Maaf kijiye, kitchen abhi band hai, isliye abhi order place nahi ho sakta. "
+                "Menu dekh sakte hain; kitchen khulne par order kijiye."
+            ),
+            "tanglish": (
+                "Sorry, kitchen ippo moodiruku; ippo order panna mudiyadhu. "
+                "Menu paarkalaam; kitchen thirandha piragu order pannunga."
+            ),
+            "ta": (
+                "மன்னிக்கவும், சமையலறை இப்போது மூடப்பட்டுள்ளது; ஆர்டர் செய்ய முடியாது. "
+                "மெனுவைப் பார்க்கலாம்; சமையலறை திறந்த பிறகு ஆர்டர் செய்யுங்கள்."
+            ),
+        }
+        reply = closed_replies[turn.reply_language]
         warnings.append("The kitchen is currently closed — orders cannot be placed.")
     return AgentChatResponse(
         reply=reply,

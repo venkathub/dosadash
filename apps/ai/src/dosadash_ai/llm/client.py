@@ -19,6 +19,8 @@ import litellm
 from pydantic import BaseModel, ValidationError
 
 from dosadash_ai.config import get_settings
+from dosadash_ai.llm.budget import reserve, settle
+from dosadash_ai.llm.errors import LLMError
 from dosadash_ai.llm.eval_telemetry import active_telemetry
 from dosadash_ai.llm.usage_stats import get_usage_stats
 
@@ -27,10 +29,6 @@ logger = logging.getLogger(__name__)
 _REPAIR_ATTEMPTS_PER_MODEL = 2  # initial try + one validation-repair retry
 _RATE_LIMIT_RETRIES_PER_MODEL = 2  # brief same-model retries on 429 before falling through
 _RATE_LIMIT_BACKOFF_SECONDS = 2.0
-
-
-class LLMError(Exception):
-    """All models in the routing chain failed."""
 
 
 def configure_tracing() -> None:
@@ -71,15 +69,20 @@ async def structured_completion[T: BaseModel](
         while attempt < _REPAIR_ATTEMPTS_PER_MODEL:
             telemetry = active_telemetry.get()
             started = telemetry.before_call() if telemetry else 0.0
+            reservation = await reserve("chat")
             try:
-                response = await litellm.acompletion(
-                    model=model,
-                    messages=convo,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    response_format={"type": "json_object"},
-                    metadata=metadata,
-                )
+                async with asyncio.timeout(get_settings().provider_timeout_seconds):
+                    response = await litellm.acompletion(
+                        model=model,
+                        messages=convo,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        response_format={"type": "json_object"},
+                        metadata=metadata,
+                        timeout=get_settings().provider_timeout_seconds,
+                        num_retries=0,
+                        max_retries=0,
+                    )
             except litellm.RateLimitError as exc:
                 if telemetry:
                     telemetry.record(started, model, prompt_version, error="rate_limit")
@@ -100,6 +103,7 @@ async def structured_completion[T: BaseModel](
                 logger.warning("llm call failed on %s: %s", model, exc)
                 last_error = exc
                 break
+            await settle(reservation, response, model=model)
             if telemetry:
                 telemetry.record(started, model, prompt_version, response)
             # Phase 9 observability: accumulate prompt-cache token counters
@@ -156,22 +160,36 @@ async def stream_text_completion(
         "trace_user_id": user_id,
         "tags": [prompt_version],
     }
+    reservation = await reserve("chat")
+    response = None
     try:
-        response = await litellm.acompletion(
-            model=chosen,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            response_format={"type": "json_object"},
-            stream=True,
-            metadata=metadata,
-        )
-        async for chunk in response:
-            piece = chunk.choices[0].delta.content
-            if piece:
-                yield piece
+        async with asyncio.timeout(get_settings().provider_timeout_seconds):
+            response = await litellm.acompletion(
+                model=chosen,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                response_format={"type": "json_object"},
+                stream=True,
+                timeout=get_settings().provider_timeout_seconds,
+                num_retries=0,
+                max_retries=0,
+                metadata=metadata,
+            )
+            async for chunk in response:
+                piece = chunk.choices[0].delta.content
+                if piece:
+                    yield piece
     except Exception as exc:  # noqa: BLE001 — normalized for callers
-        raise LLMError(f"stream failed on {chosen}: {exc}") from exc
+        raise LLMError(f"stream failed on {chosen}: {type(exc).__name__}") from exc
+    finally:
+        if response is not None and hasattr(response, "aclose"):
+            try:
+                async with asyncio.timeout(5):
+                    await response.aclose()
+            except Exception:
+                logger.warning("provider stream cleanup failed")
+        await settle(reservation)  # streamed usage is unavailable; retain estimate
 
 
 async def embed_texts(
@@ -188,18 +206,24 @@ async def embed_texts(
         return []
     telemetry = active_telemetry.get()
     started = telemetry.before_call() if telemetry else 0.0
+    reservation = await reserve("embedding")
     try:
-        response = await litellm.aembedding(
-            model=get_settings().embedding_model,
-            input=texts,
-            metadata={"generation_name": trace_name},
-        )
+        async with asyncio.timeout(get_settings().provider_timeout_seconds):
+            response = await litellm.aembedding(
+                model=get_settings().embedding_model,
+                input=texts,
+                timeout=get_settings().provider_timeout_seconds,
+                num_retries=0,
+                max_retries=0,
+                metadata={"generation_name": trace_name},
+            )
     except Exception as exc:
         if telemetry:
             telemetry.record(
                 started, get_settings().embedding_model, trace_name, error=type(exc).__name__
             )
         raise
+    await settle(reservation, response, model=get_settings().embedding_model)
     if telemetry:
         telemetry.record(started, get_settings().embedding_model, trace_name, response)
     data = sorted(response.data, key=lambda d: d["index"])

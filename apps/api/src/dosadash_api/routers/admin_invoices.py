@@ -22,7 +22,6 @@ from dosadash_api.db.session import get_session
 from dosadash_api.services import audit, invoice_service, po_service
 from dosadash_api.services.ai_client import AIClient, AIServiceError, get_ai_client
 from dosadash_shared import (
-    INVOICE_AUTO_MATCH_THRESHOLD,
     InvoiceDecisionIn,
     InvoiceExtractIn,
     InvoiceMatch,
@@ -31,6 +30,7 @@ from dosadash_shared import (
     InvoiceUploadIn,
     POState,
     Role,
+    invoice_review_status,
 )
 
 router = APIRouter(prefix="/api/v1/admin/invoices", tags=["admin:invoices"])
@@ -78,10 +78,8 @@ async def upload_invoice(
 
     match = await invoice_service.find_best_match(session, result.extraction)
     confidence = _combined_confidence(result.confidence, match)
-    status = (
-        InvoiceStatus.MATCHED
-        if confidence >= INVOICE_AUTO_MATCH_THRESHOLD
-        else InvoiceStatus.PENDING_REVIEW
+    status = invoice_review_status(
+        confidence=confidence, arithmetic_ok=result.arithmetic_ok, match=match
     )
 
     invoice = Invoice(

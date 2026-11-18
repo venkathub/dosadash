@@ -207,6 +207,8 @@ async def test_all_rating_only_needs_no_llm_at_all(ai_client, monkeypatch):
 
 
 def _use_fake_champion(monkeypatch, by_text) -> FakeChampion:
+    monkeypatch.setenv("AI_REVIEW_LOCAL_ENABLED", "true")
+    config.get_settings.cache_clear()
     champ = FakeChampion(by_text)
     monkeypatch.setattr(reviews_router, "local_champion", lambda: champ)
     monkeypatch.setattr(reviews_router, "predict_sentiment", _fake_predict)
@@ -610,3 +612,22 @@ async def test_reply_fallback_matches_sentiment(ai_client, monkeypatch):
         headers=TOKEN,
     )
     assert "Thank you" in resp.json()["reply"]
+
+
+async def test_default_policy_does_not_trust_confident_local_model(ai_client, monkeypatch):
+    monkeypatch.delenv("AI_REVIEW_LOCAL_ENABLED", raising=False)
+    config.get_settings.cache_clear()
+
+    def forbidden():
+        raise AssertionError("default path must not load local classifier")
+
+    monkeypatch.setattr(reviews_router, "local_champion", forbidden)
+
+    async def completion(**kw):
+        return _echo_scores(kw)
+
+    monkeypatch.setattr(llm_client.litellm, "acompletion", completion)
+    response = await ai_client.post(SCORE, json=_score_req().model_dump(mode="json"), headers=TOKEN)
+    assert response.status_code == 200
+    assert response.json()["local_ids"] == []
+    assert response.json()["model"] == "gpt-4o-mini"

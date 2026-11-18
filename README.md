@@ -1,10 +1,10 @@
 # DosaDash — AI-Native South Indian Cloud Kitchen 🥞
 
-> A full cloud-kitchen business — customer app, Telegram bot, kitchen display, owner backoffice — where **every subsystem is AI-driven**. Built solo in 12 weeks (plus post-schedule phases) as an AI-engineering portfolio project, production-deployed on a **4 GB VPS**. It now **maintains itself**: production bug reports flow through an LLM triage → human approval → a cloud coding agent that root-causes, fixes, and ships PRs through the same eval-gated CI as a human.
+> An AI-engineering portfolio built around a cloud kitchen: customer app, Telegram bot, kitchen display and owner backoffice, deployed on a **4 GB VPS**. Models draft and interpret; deterministic code validates business actions and humans approve sensitive changes. The maintenance workflow can turn approved reports into tested PRs. Demonstrations use synthetic data and make no independent real-world accuracy claim.
 
 **Live demo:** [dosadash.venkateshs.dev](https://dosadash.venkateshs.dev) · **[Demo guide + credentials](https://dosadash.venkateshs.dev/demo)** · Telegram: `@dosadash_bot`
 
-One cohesive product covering: LLM apps · structured outputs · production RAG · agentic AI (LangGraph) · MCP · fine-tuning (LoRA) · embeddings/vector search · classical ML (XGBoost) · recommenders · speech (Whisper) · vision (VLM) · image generation · **LLM evals as CI merge gates** · guardrails · LLMOps (Langfuse) · **an autonomous self-healing SDLC loop** (sentinel → triage → fixer → AI review → canary deploy → prod verification).
+One cohesive product covering: LLM apps · structured outputs · production RAG · agentic AI (LangGraph) · MCP · fine-tuning (LoRA) · embeddings/vector search · classical ML (XGBoost) · recommenders · speech (Whisper) · vision (VLM) · image generation · **LLM evals as CI merge gates** · guardrails · LLMOps (Langfuse) · **a policy-controlled maintenance workflow** (sentinel → triage → fixer → AI review → canary deploy → prod verification).
 
 ## Architecture
 
@@ -21,7 +21,7 @@ flowchart LR
   subgraph vps ["4 GB VPS — Docker Compose (≈2.6 GB budgeted)"]
     CADDY[Caddy] --> API["api — FastAPI<br/>auth · orders · payments · admin<br/>rate limiting · RBAC · audit"]
     CADDY --> WEB[web]
-    API <--> AI["ai — LangGraph agents · hybrid RAG<br/>guardrails · ML serving (ONNX INT8)"]
+    API <--> AI["ai — LangGraph agents · hybrid RAG<br/>guardrails · ML serving · provider allowance"]
     API <--> BOT["bot — aiogram (thin adapter)"]
     WORKER["worker — Celery beat<br/>forecast · PO agent · CRM · reviews<br/>sentinel · triage · watchdog · janitor"] --> API
     API --> PG[("Postgres 16 + pgvector<br/>vectors + FTS, one DB")]
@@ -32,7 +32,7 @@ flowchart LR
   end
 
   AI -- "litellm (only path to LLMs)" --> CHAIN["gpt-4o-mini → Groq → Gemini<br/>+ Whisper STT · gpt-image-1"]
-  AI --> LF[Langfuse — every call traced]
+  AI --> LF[Langfuse — configured inference callbacks]
   API --> RZP[Razorpay TEST]
   W --- CADDY
   TG --- BOT
@@ -64,21 +64,24 @@ Everything is deterministic where it matters: the LLM *observes* (triage assessm
 
 ## Measured results
 
+Read the [portfolio case study](docs/17-ai-engineering-case-study.md) for decisions, failures and evidence limits. The metrics below mix dated historical artifacts and the explicitly dated expanded demo; they are not a single current production benchmark.
+
 CI runs deterministic asset/guardrail checks and live ordering gates; additional live suites and their calibration status are documented in `evals/README.md`. Other LLM paths are not universally live-gated; classical-ML numbers are measured against committed benchmark artifacts. Data is synthetic with planted signal (personas, festival multipliers) — noted where it matters.
 
 | System | Result | Measured how |
 |---|---|---|
-| **Order agent** | **97.1% order accuracy · 100% tool correctness · 0 guardrail bypasses** | 175-conversation live golden set (EN / Hinglish / Tanglish / Tamil script, 45 safety-tagged cases, voice, sold-out, allergens, serving windows) — **CI merge gate at ≥ 95%**, caught two real regressions pre-merge (85%, 92.7%) |
+| **Order agent (historical golden run)** | **97.1% order accuracy · 100% tool correctness · 0 guardrail bypasses** | 175-conversation live golden set (EN / Hinglish / Tanglish / Tamil script, 45 safety-tagged cases, voice, sold-out, allergens, serving windows) — **CI merge gate at ≥ 95%**, caught two real regressions pre-merge (85%, 92.7%) |
 | Tamil ordering | lang_accuracy **1.00** (per-language gate ≥ 0.80) | 11 Tamil-script cases riding the translation-alias mechanism — the agent prompt needed zero Tamil-specific changes |
 | Demand forecast (XGBoost) | **WAPE 0.421 vs 0.555 naive lag-7** (−24%) | per-dish 14-day recursive backtest; MLflow champion promoted only on improvement |
 | Delivery ETA | **MAE 3.35 min** (synthetic noise floor: oracle 3.32) · P90 6.84 vs 7.00 | held-out delivered orders |
 | Recommender (implicit ALS) | **Recall@10 0.387 vs 0.352 popularity** · tail-Recall@10 **0.304 vs 0.000** | v4, retrained on the 60-dish highway catalog; the tail number is the story: popularity can't recommend the long tail at all |
 | Checkout combo suggester | attach 15.7% vs 13.3% random · **AOV +4.5% vs control** | 3-arm simulated A/B on 3,133 holdout checkout sessions (validates taste recovery, not real-world uplift — caveat in the artifact) |
-| Review sentiment (LoRA DistilBERT) | **macro-F1 0.9944 vs 0.9926 gpt-4o-mini zero-shot** on the same 250-review holdout · **₹0 vs ₹3.20 per 1k reviews** | INT8 ONNX serves on-VPS CPU: ~57 ms/review, 97.2% confident coverage @ 0.9968 macro-F1; unconfident residue falls back to the LLM (nightly via Batch API at 50% price) |
-| Invoice OCR (VLM) | structured extraction + deterministic arithmetic verifier + PO matching | confidence ≥ 0.8 pre-checks the review queue; a human always approves before stock moves |
-| Prompt caching | **48.9% cached-token share** measured in prod | provider `cached_tokens` counters over live agent calls (stable-prefix strategy) |
+| Review scoring | **10/12 exact; mean case label F1 0.944** through the LLM serving route | Expanded synthetic challenges, 2026-10-19. Local classifier accepted 9/12, all 9 incomplete/incorrect; LLM is now the default. Historical generated-data macro-F1 0.9944 is retained as training evidence, not generalization. Local inference has zero provider fee, but still consumes hosting resources. |
+| Invoice OCR → PO review | **6/6 exact extraction and review decisions** across four synthetic source groups | Arithmetic errors, missing/short deliveries and extra lines prevent MATCHED even if combined confidence exceeds 0.8. Human approval always precedes stock changes. |
+| Voice → order draft | **5/6 correct drafts**, mean WER 0.323 | Six synthetic clips with Whisper demo override. Romanized Tanglish spoken by English TTS failed; this is not native-speaker evidence. No real orders placed. |
+| Prompt caching (historical production sample) | **48.9% cached-token share** measured in prod | provider `cached_tokens` counters over live agent calls (stable-prefix strategy) |
 | Load (single-process api) | **100 concurrent users · 0 failures · P50 24 ms / P95 210 ms** · checkout P95 370 ms · **prod (4 GB VPS, TLS, limiter on): 0 failures, P50 41 ms / P95 140 ms** | locust, 91 real end-to-end orders locally + off-peak run against production; rate limiter shed abusive traffic while served P50 held ([details](infra/loadtest/results.md)) |
-| Test suite | **889 tests + 159 key-free eval-asset gates** | plus the live eval gate on every PR touching AI paths |
+| Verification | Workspace tests, deterministic eval assets, web build and live merge gates | See the current PR checks and [execution evidence](evals/portfolio/results/README.md); earlier phase test totals are historical. |
 
 ## What's inside
 
@@ -124,7 +127,7 @@ uv run uvicorn dosadash_api.main:app --port 8000           # api
 # apps/ai + apps/bot analogous (LLM keys via env; see .env.example files)
 cd apps/web && npm install && npm run dev                  # web on :3000
 
-uv run pytest apps packages -q      # 889 tests
+uv run pytest apps packages -q      # workspace tests
 uv run pytest evals -q              # key-free eval-asset gates
 ```
 

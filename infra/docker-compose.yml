@@ -162,6 +162,11 @@ services:
     restart: unless-stopped
     environment:
       AI_ENV: ${ENV:-prod}
+      AI_REVIEW_LOCAL_ENABLED: ${AI_REVIEW_LOCAL_ENABLED:-false}
+      AI_PROVIDER_BUDGET_ENABLED: ${AI_PROVIDER_BUDGET_ENABLED:-true}
+      AI_PROVIDER_DAILY_BUDGET_USD: ${AI_PROVIDER_DAILY_BUDGET_USD:-5}
+      AI_PROVIDER_DAILY_MAX_CALLS: ${AI_PROVIDER_DAILY_MAX_CALLS:-1000}
+      AI_PROVIDER_TIMEOUT_SECONDS: ${AI_PROVIDER_TIMEOUT_SECONDS:-60}
       AI_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-dosadash}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dosadash}
       # Same logical DB as the api: Redis pub/sub is per-DB, and the ai
       # service subscribes to the api's event cascade (Hard Rule 4).
