@@ -518,7 +518,7 @@ export default function Home() {
           />
           <span className="flex-1" />
           <button
-            className="flex overflow-hidden rounded-full border border-cream/15 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee"
+            className="relative flex overflow-hidden rounded-full border border-cream/15 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee"
             title={lang === "ta" ? "Switch to English" : "தமிழில் காட்டு"}
             onClick={() => switchLang(lang === "ta" ? "en" : "ta")}
           >
