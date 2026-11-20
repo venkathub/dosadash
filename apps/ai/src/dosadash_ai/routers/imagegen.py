@@ -55,7 +55,7 @@ async def generate_image(req: MenuImageRequest) -> MenuImageResult:
     prompt = build_prompt(req)
     try:
         # NB: no response_format param — the current OpenAI images API
-        # rejects it (gpt-image-1 always returns b64_json).
+        # rejects it (the gpt-image family always returns b64_json).
         response = await litellm.aimage_generation(
             model=settings.image_model,
             prompt=prompt,

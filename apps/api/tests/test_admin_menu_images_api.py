@@ -30,7 +30,7 @@ class FakeAIClient:
             raise AIServiceError("AI service call failed: boom")
         return MenuImageResult(
             image_b64=self.image_b64,
-            model="gpt-image-1",
+            model="gpt-image-1.5",
             prompt="style + Dish: " + request.item_name,
         )
 
