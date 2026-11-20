@@ -1,7 +1,7 @@
 """Provider Batch API access (Phase 8 slice 5) — litellm only (Hard Rule 1).
 
 OpenAI is the only batch-capable provider in the stack, so there is no
-fallback chain — the STT (Groq Whisper) and image-gen (gpt-image family)
+fallback chain — the STT (Groq Whisper) and image-gen (gpt-image-1)
 precedent: a batch failure leaves work undone for the next nightly run,
 it never blocks or degrades anything else.
 

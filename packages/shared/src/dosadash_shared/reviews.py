@@ -167,7 +167,7 @@ class ReviewScoreResponse(BaseModel):
 # ------------------------------------------------------------- batch scoring
 
 # Provider Batch API (slice 5): OpenAI only — single-provider precedent set
-# by STT (Groq) and image gen (gpt-image family). Failure leaves reviews unscored;
+# by STT (Groq) and image gen (gpt-image-1). Failure leaves reviews unscored;
 # the on-demand admin path and the next nightly run cover them.
 BATCH_MODEL_PREFIX = "batch:"  # scored_model provenance, e.g. "batch:gpt-4o-mini"
 

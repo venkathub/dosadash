@@ -151,7 +151,7 @@ uv run pytest evals -q              # key-free eval-asset gates
 
 ## Stack
 
-Python 3.12 · FastAPI · Pydantic v2 · SQLAlchemy 2 async · PostgreSQL 16 + pgvector · Redis · Celery · LangGraph · litellm (gpt-4o-mini → Groq `gpt-oss-120b` → Gemini Flash) · OpenAI embeddings · Groq Whisper · gpt-image-1.5 · XGBoost · implicit ALS · DistilBERT + LoRA → INT8 ONNX · MLflow · Langfuse · Next.js + Tailwind + three.js · aiogram · Docker Compose · Caddy · GitHub Actions · claude-code-action (fixer / spec / review / verify).
+Python 3.12 · FastAPI · Pydantic v2 · SQLAlchemy 2 async · PostgreSQL 16 + pgvector · Redis · Celery · LangGraph · litellm (gpt-4o-mini → Groq `gpt-oss-120b` → Gemini Flash) · OpenAI embeddings · Groq Whisper · gpt-image · XGBoost · implicit ALS · DistilBERT + LoRA → INT8 ONNX · MLflow · Langfuse · Next.js + Tailwind + three.js · aiogram · Docker Compose · Caddy · GitHub Actions · claude-code-action (fixer / spec / review / verify).
 
 ### Reproduce the AI engineering evidence
 
