@@ -1,7 +1,8 @@
 # 17 — UI Redesign: "Tawa Noir" (cinematic live 3D)
 
-Status: **CODE COMPLETE** — direction approved by the owner 2026-11-18 from a working prototype;
-all slices built and verified (§5, §6). Production measurements are recorded in §7.
+Status: **DEPLOYED 2026-11-20** — direction approved by the owner 2026-11-18 from a working
+prototype; all slices built (§5). Production results, including what the first deploy got
+wrong, are in §7.
 Target: **Phase 17** (`phase/17-ui-3d`). Scope: `apps/web`, visual layer. The prototype and the
 rejected mockups were design scratch and are not in the repository.
 
@@ -147,28 +148,57 @@ is defined. Renaming them is optional cleanup.
 |---|---|---|---|
 | A0 | Search and the cart are on the first screen at 1440×900; search on the first screen at 390×844 | **met** | ui-smoke |
 | A1 | `/` first-load JS within budget; `three` only in an async chunk | **met** — 123.2 kB gzip sum (budget 128); Next reports 126 kB vs 120 kB before; three.js is ~135 kB gzip across two async chunks | `lib/bundle.test.mts` in CI |
-| A2 | LCP and CLS on `/` no worse than baseline | measured on prod after deploy, see §7 | throttled mobile trace |
-| A3 | Lighthouse accessibility 94 → 100 on `/` | **met locally** (accessibility, best practices and SEO all 100 on a local build with live menu data); re-measured on prod, see §7 | Lighthouse |
+| A2 | LCP and CLS on `/` no worse than baseline | **missed on the first deploy** (3.63 s / 0.26 vs 3.27 s / 0.086); fixed to 2.95 s / 0.01 on a local build, to be confirmed on prod — §7 | throttled mobile trace |
+| A3 | Lighthouse accessibility 94 → 100 on `/` | **met on production** (accessibility, best practices and SEO all 100) | Lighthouse |
 | A4 | Reduced motion ⇒ the live scene never starts | **met** | ui-smoke |
 | A5 | WebGL unavailable ⇒ page fully usable, no errors, static hero shown | **met** | ui-smoke |
 | A6 | ui-smoke green on all 6 routes | **met** | CI |
 | A7 | No contract drift | **met** — this phase changes `apps/web` and docs only | diff review |
 | A8 | Scored design audit improves on the 6.8 / 10 baseline | not re-scored by a second reviewer; the five baseline findings (FAB over ADD, 10px grey text, heading order, three-row mobile header, no hero focal object) are each resolved | — |
 
-## 7. Baselines (prod, 2026-11-18, before this phase)
+## 7. Measurements (customer `/`, production)
 
-| Metric | Value | Source |
-|---|---|---|
-| `/` first-load JS / shared | 120 kB / 103 kB | `next build` |
-| LCP (lab) | 3.27 s (TTFB 0.56 s + render delay 2.71 s) | 390×844, 4× CPU, Slow 4G, cold, single run |
-| CLS (lab) | 0.086 | same trace |
-| Lighthouse a11y / best practices / SEO | 94 / 96 / 100 | mobile |
-| Contrast failures on `/` | 72 nodes | Lighthouse |
-| Design audit, customer `/` | 6.8 / 10 | `/design-review` rubric; one reviewer's judgment |
+Lab numbers: 390×844, 4× CPU throttle, Slow 4G, cold cache, single run each. They show
+direction, not field performance.
 
-Baseline audit findings that this redesign removes by construction: floating chat button
-covering ADD on mobile; 10px grey text failing contrast; heading order; three-row mobile header;
-a hero with no focal object.
+| Metric | Before (2026-11-18) | After deploy (2026-11-20) | After the load-speed fix |
+|---|---|---|---|
+| First-load JS for `/` (Next's column) | 120 kB | 126 kB | 126 kB |
+| LCP | 3.27 s | **3.63 s — worse** | 2.95 s (local build, same throttling) |
+| CLS | 0.086 | **0.26 — worse** | 0.01 (local build, same throttling) |
+| Lighthouse accessibility / best practices / SEO | 94 / 96 / 100 | 100 / 100 / 100 | unchanged |
+| Contrast failures | 72 nodes | 0 | 0 |
+| Public smoke | — | 36 / 36 after hotfix #191 | — |
+
+**The first deploy made loading worse**, and criterion A2 was missed. The trace named two
+causes, neither of them the 3D scene:
+
+- *LCP*: the largest element was the kitchen backdrop, set as a CSS background. The browser
+  found it only after the stylesheet loaded, at low priority, ~1.5 s in (load delay 911 ms).
+  Fix: the backdrop is a high-priority `<img>` in the server HTML (load delay 65 ms), and the
+  static hero uses a 640px image (102 kB instead of 281 kB).
+- *CLS*: 0.25 of the 0.26 came from the menu arriving. The category tabs and every dish
+  section appeared at once and pushed the content below them down the screen. Fix: the tab
+  row has a fixed minimum height, the menu area shows placeholder cards while loading, and
+  the recommendation strip reserves its height until it resolves.
+
+The last column is a local build against live menu data; it is to be re-measured on
+production after that fix deploys.
+
+Baseline design audit (customer `/`, 2026-11-18): 6.8 / 10 by the `/design-review` rubric,
+one reviewer's judgment. Its findings — floating chat button covering ADD on mobile, 10px grey
+text failing contrast, heading order, three-row mobile header, a hero with no focal object —
+are each resolved. It has not been re-scored by a second reviewer.
+
+### Production record (2026-11-20)
+
+| Step | Result |
+|---|---|
+| Phase PR #190 → `main` `f66f04e` | deploy success, 10-min canary success |
+| Public smoke, first run | 31 / 32 — **home page scrolled sideways** (1259px wide on a 390px phone) |
+| Hotfix #191 `bf6e96f` | a screen-reader label in the recommendation tiles was absolutely positioned with no anchor, escaped the scrolling strip and widened the page; tile made `relative`. ui-smoke now mocks a sample menu + recommendations so layout is checked with content (negative control: fails at 1440 / 390 / 320 without the fix) |
+| Public smoke, after hotfix | 36 / 36: six routes, seven scene images, fonts, icon, script chunks, menu API, live 3D scene drawing, search, Tamil menu, add to tray, login and feedback popups on screen, **one anonymous Dosa Genie turn from the hero order bar drafting Filter Coffee**, no console errors, no failed requests, no sideways scroll at 1440 / 390 / 320 |
+| Photo-generator fix #189 `950cbfa` | own live eval gate passed (the 94.86% on #188 was wobble); deploy + canary success. Not verified in the admin UI — needs an owner sign-in |
 
 ## 8. Risks
 
