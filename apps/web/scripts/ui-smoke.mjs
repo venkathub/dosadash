@@ -65,12 +65,15 @@ for (route of ROUTES) {
 //    the fallback) — not something JavaScript adds later.
 route = "/ (server HTML)";
 const html = await (await fetch(BASE + "/")).text();
-if (!html.includes('src="/scene/tawa.webp"')) problems.push(`${route} static hero image missing from SSR output`);
+if (!html.includes('src="/scene/tawa-640.webp"')) problems.push(`${route} static hero image missing from SSR output`);
+// The backdrop is the largest paint: it must be an <img> in the HTML, high priority.
+if (!/<img[^>]+src="\/scene\/backdrop\.webp"[^>]*fetchPriority="high"|<img[^>]+fetchPriority="high"[^>]+src="\/scene\/backdrop\.webp"/i.test(html))
+  problems.push(`${route} backdrop is not a high-priority <img> in the SSR output (LCP regression)`);
 
 const sceneState = (p) =>
   p.evaluate(() => {
     const c = document.querySelector("canvas");
-    const img = document.querySelector('img[src="/scene/tawa.webp"]');
+    const img = document.querySelector('img[src="/scene/tawa-640.webp"]');
     return {
       canvasShown: !!c && getComputedStyle(c).opacity !== "0",
       fallbackShown: !!img && getComputedStyle(img).opacity !== "0",

@@ -600,7 +600,7 @@ export default function Home() {
           {/* ── menu ── */}
           <div className="min-w-0">
             <div className="sticky top-[106px] z-30 -mx-3 border-b border-cream/10 bg-soot-950/95 px-3 py-2.5 backdrop-blur lg:top-14 lg:mx-0 lg:rounded-b-2xl lg:px-0">
-              <nav aria-label="Menu categories" className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+              <nav aria-label="Menu categories" className="scrollbar-none flex min-h-[44px] gap-2 overflow-x-auto pb-1">
                 {categories.map((cat) => (
                   <button
                     key={cat}
@@ -657,7 +657,18 @@ export default function Home() {
             </div>
 
             {error && <p className="mt-4 text-sm font-semibold text-[#FF5D5D]">{error}</p>}
-            {menu.length === 0 && !error && <p className="mt-6 text-sm text-cream-dim">Loading the menu…</p>}
+            {/* While the menu loads, hold its place. Without this the sections arrive
+                and shove everything below them down the screen (layout shift 0.26). */}
+            {menu.length === 0 && !error && (
+              <div className="pt-8" role="status" aria-label="Loading the menu">
+                <div className="mb-3 h-7 w-40 rounded-lg bg-soot-800" />
+                <div className="grid gap-3 md:grid-cols-2">
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <div key={i} className="h-[154px] rounded-2xl border border-cream/10 bg-soot-900" />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {searching ? (
               <p className="mt-5 flex flex-wrap items-center gap-3 text-sm text-cream-dim" role="status">

@@ -27,6 +27,7 @@ export default function Recommendations({
   onAdd: (item: MenuItem) => void;
 }) {
   const [recs, setRecs] = useState<RecsResponse | null>(null);
+  const [failed, setFailed] = useState(false); // unavailable recommender: release the reserved space
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -37,13 +38,20 @@ export default function Recommendations({
       const cart = cartIds.join(",");
       api<RecsResponse>(`/recs?cart=${cart}&k=6`, { auth: true })
         .then(setRecs)
-        .catch(() => setRecs(null));
+        .catch(() => {
+          setRecs(null);
+          setFailed(true);
+        });
     }, 400);
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
   }, [cartIds.join(","), menu.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Hold the strip's place while it loads, so its arrival does not push the menu down.
+  if (!recs && menu.length > 0 && !failed) {
+    return <div className="mt-6 h-[130px]" aria-hidden="true" />;
+  }
   if (!recs || recs.items.length === 0) return null;
   const byId = new Map(menu.map((m) => [m.id, m]));
   const items = recs.items.filter((r) => byId.has(r.item_id));

@@ -62,16 +62,30 @@ const Scene3D = forwardRef<Scene3DHandle>(function Scene3D(_props, ref) {
 
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden bg-soot-950">
-      <div ref={backdropRef} className="tawa-backdrop absolute -inset-[5%]" />
-      {/* Static art: the LCP element and the no-WebGL fallback. Sized by the
-          banner, so it cannot shift layout. Fades out once the scene draws. */}
+      {/* The backdrop is the page's largest paint. As a CSS background it was only
+          discovered after the stylesheet loaded, at low priority (LCP 3.6 s on a
+          throttled phone). As an <img> it is in the server HTML and fetched first. */}
+      <div ref={backdropRef} className="tawa-backdrop absolute -inset-[5%]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/scene/backdrop.webp"
+          alt=""
+          width={1536}
+          height={1024}
+          fetchPriority="high"
+          decoding="async"
+          className="h-full w-full object-cover object-[center_38%]"
+        />
+      </div>
+      {/* Static art: the no-WebGL fallback. 640px is enough for the banner at
+          3x density; the live scene loads the full-size cutout later, lazily.
+          Sized by the banner, so it cannot shift layout. Fades out once the scene draws. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/scene/tawa.webp"
+        src="/scene/tawa-640.webp"
         alt=""
-        width={1024}
-        height={1024}
-        fetchPriority="high"
+        width={640}
+        height={640}
         className={cx(
           "absolute bottom-[-8%] left-1/2 h-[112%] w-auto max-w-none -translate-x-1/2 transition-opacity duration-700 lg:left-[72%]",
           live ? "opacity-0" : "opacity-100",
