@@ -40,9 +40,13 @@ class Settings(BaseSettings):
     # type" in the bot.
     stt_model: str = "groq/whisper-large-v3"
     # Menu image generation (Phase 7) — single provider, STT precedent.
-    # gpt-image-1 returns b64 PNG natively (dall-e-3 was retired upstream —
-    # caught by the pre-merge live smoke, not the mocked tests).
-    image_model: str = "gpt-image-1"
+    # The gpt-image family returns b64 PNG natively. Upstream retires image
+    # models without warning: dall-e-3 (caught by the Phase 7 pre-merge live
+    # smoke) and then gpt-image-1 (found in Phase 17: "The model 'gpt-image-1'
+    # does not exist"). Mocked tests cannot see this — after changing the
+    # model, run a live generation before merging. Override without a deploy
+    # via AI_IMAGE_MODEL.
+    image_model: str = "gpt-image-1.5"
     image_size: str = "1024x1024"
     image_quality: str = "low"  # menu thumbnails — low keeps cost ~₹1/image
 
