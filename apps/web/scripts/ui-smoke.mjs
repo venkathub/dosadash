@@ -76,10 +76,42 @@ const sceneState = (p) =>
       fallbackShown: !!img && getComputedStyle(img).opacity !== "0",
     };
   });
-const openHome = async (label, contextOptions, init) => {
+// Sample menu + recommendations, so layout is checked WITH content. The smoke has
+// no API; an empty page hid a real bug once (a screen-reader label inside the
+// recommendation tiles widened the phone page to 1259px — found only in prod).
+const SAMPLE_MENU = Array.from({ length: 12 }, (_, i) => ({
+  id: i + 1,
+  name: ["Masala Dosa", "Idli (2 pcs)", "Filter Coffee", "Kuzhi Paniyaram (7 pcs)"][i % 4] + (i > 3 ? ` ${i}` : ""),
+  category: ["Dosa", "Idli & Vada", "Beverages"][i % 3],
+  description: "Sample dish for the layout smoke check, long enough to wrap onto a second line.",
+  price: "120.00",
+  is_veg: true,
+  spice_level: 1,
+  meal_periods: [],
+  allergens: ["milk"],
+  image_url: null,
+  image_ai: false,
+  canonical_name: null,
+  category_label: null,
+  available_now: i !== 5,
+  serving_windows: "6–11:30 AM & 5–10 PM",
+  protein_g: null,
+}));
+const SAMPLE_RECS = {
+  source: "popular",
+  model_version: null,
+  items: SAMPLE_MENU.slice(0, 8).map((m) => ({ item_id: m.id, name: m.name, price: m.price, is_veg: true, score: 1 })),
+};
+const withSampleData = async (ctx) => {
+  await ctx.route("**/api/v1/menu*", (r) => r.fulfill({ json: SAMPLE_MENU }));
+  await ctx.route("**/api/v1/recs*", (r) => r.fulfill({ json: SAMPLE_RECS }));
+};
+
+const openHome = async (label, contextOptions, init, setup) => {
   route = label;
   const ctx = await browser.newContext(contextOptions);
   if (init) await ctx.addInitScript(init);
+  if (setup) await setup(ctx);
   const p = await ctx.newPage();
   p.on("pageerror", (err) => problems.push(`${label} pageerror: ${err.message}`));
   p.on("console", (msg) => {
@@ -113,12 +145,16 @@ const openHome = async (label, contextOptions, init) => {
   await ctx.close();
 }
 
-// 4) Ordering comes first, and popups open on screen — desktop and phone.
+// 4) Ordering comes first, and popups open on screen — desktop and phones,
+//    with sample dishes and recommendation tiles on the page.
 for (const [w, h] of [
   [1440, 900],
   [390, 844],
+  [320, 568],
 ]) {
-  const { ctx, p } = await openHome(`/ (${w}x${h})`, { viewport: { width: w, height: h } });
+  const { ctx, p } = await openHome(`/ (${w}x${h})`, { viewport: { width: w, height: h } }, null, withSampleData);
+  const tiles = await p.locator("section[aria-labelledby='recs-title'] button").count();
+  if (tiles < 6) problems.push(`${route} sample recommendation tiles did not render (${tiles}) — the sideways-scroll check would be empty`);
   const inView = (sel) =>
     p.evaluate((sel) => {
       const el = [...document.querySelectorAll(sel)].find((e) => e.getBoundingClientRect().width > 0);
@@ -128,8 +164,8 @@ for (const [w, h] of [
     }, sel);
   if (!(await inView('input[type="search"]'))) problems.push(`${route} search box is not on the first screen`);
   if (w >= 1024 && !(await inView("aside[data-tray-anchor] h2"))) problems.push(`${route} cart is not on the first screen`);
-  if (await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth))
-    problems.push(`${route} page scrolls sideways`);
+  const over = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  if (over > 0) problems.push(`${route} page scrolls sideways by ${over}px`);
   // A popup opened from inside the blurred app bar was once positioned against
   // the bar and cut off. "Visible" is not enough: its box must be on screen.
   const trigger =
