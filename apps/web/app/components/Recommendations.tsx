@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api, type MenuItem } from "../../lib/api";
-import { FssaiMark, PosterBlock, Zari } from "./ui";
+import { cutoutKeyFor } from "../../lib/scene";
+import { FssaiMark } from "./ui";
 
 type Rec = { item_id: number; name: string; price: string; is_veg: boolean; score: number };
 type RecsResponse = { items: Rec[]; source: string; model_version: string | null };
@@ -49,33 +50,59 @@ export default function Recommendations({
   if (items.length === 0) return null;
 
   return (
-    <section className="mt-6">
-      <div className="mb-1 flex flex-wrap items-center gap-2.5">
-        <PosterBlock tone="turmeric">✨ You might like</PosterBlock>
-        <span className="ai-meta ai-meta-light">
-          🤖 recsys · {recs.model_version ?? recs.source}
-        </span>
-        <span className="text-[11.5px] text-muted">
-          {SOURCE_LABEL[recs.source] ?? "Suggestions"}
-        </span>
+    <section className="mt-6" aria-labelledby="recs-title">
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 id="recs-title" className="font-display text-lg font-semibold text-cream">
+          You might like
+        </h2>
+        <span className="text-[13px] text-cream-dim">{SOURCE_LABEL[recs.source] ?? "Suggestions"}</span>
+        <span className="ai-meta ml-auto">🤖 recsys · {recs.model_version ?? recs.source}</span>
       </div>
-      <Zari className="mb-3" />
-      <div className="flex gap-2 overflow-x-auto pb-1.5">
-        {items.map((r) => (
-          <button
-            key={r.item_id}
-            className="flex shrink-0 items-center gap-2 rounded-xl border-2 border-indigo-900 bg-paper px-3 py-1.5 text-sm shadow-pop-sm transition-colors duration-150 hover:bg-turmeric-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
-            onClick={() => onAdd(byId.get(r.item_id)!)}
-            title="Add to cart"
-          >
-            <FssaiMark veg={r.is_veg} />
-            <span className="font-semibold text-ink">{r.name}</span>
-            <span className="tnum font-display font-bold text-ink">
-              ₹{parseFloat(r.price).toFixed(0)}
-            </span>
-            <span className="font-display font-bold text-magenta-600">+</span>
-          </button>
-        ))}
+      <div
+        tabIndex={0}
+        role="group"
+        aria-label="Recommended dishes, scroll sideways for more"
+        className="scrollbar-none -mx-1 flex gap-2.5 overflow-x-auto px-1 pb-1 [mask-image:linear-gradient(to_right,black_calc(100%-48px),transparent)]"
+      >
+        {items.map((r) => {
+          const item = byId.get(r.item_id)!;
+          const cutout = cutoutKeyFor(item.canonical_name ?? item.name);
+          const thumb = item.image_url ?? (cutout ? `/scene/${cutout}.webp` : null);
+          return (
+            <button
+              key={r.item_id}
+              className="group flex w-[224px] shrink-0 items-center gap-3 rounded-2xl border border-cream/10 bg-soot-900 p-2 pr-3 text-left transition-colors duration-150 hover:border-cream/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee"
+              onClick={() => onAdd(item)}
+            >
+              {thumb ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={thumb}
+                  alt=""
+                  width={56}
+                  height={56}
+                  loading="lazy"
+                  className={`h-14 w-14 shrink-0 rounded-xl bg-soot-950 ${item.image_url ? "object-cover" : "object-contain p-0.5"}`}
+                />
+              ) : (
+                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-soot-800">
+                  <FssaiMark veg={r.is_veg} />
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="sr-only">Add </span>
+                <span className="line-clamp-2 font-display text-sm font-semibold leading-tight text-cream">{r.name}</span>
+                <span className="tnum text-sm text-cream-dim">₹{parseFloat(r.price).toFixed(0)}</span>
+              </span>
+              <span
+                aria-hidden="true"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-cream/20 font-display text-lg text-cream transition-colors group-hover:border-transparent group-hover:bg-ember group-hover:text-ember-ink"
+              >
+                +
+              </span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

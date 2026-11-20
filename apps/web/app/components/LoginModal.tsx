@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ApiError, api, saveSession, type User } from "../../lib/api";
-import { Btn, Input, Modal, SectionHeading } from "./ui";
+import { Field, Modal, ModalHeader, popupField, popupPrimary } from "./ui";
 
 type TokenResponse = { access_token: string; user: User };
 
@@ -55,55 +55,59 @@ export default function LoginModal({
   };
 
   return (
-    <Modal tone="light" onClose={onClose} className="w-80 space-y-3 p-6">
-      <SectionHeading as="h2" className="text-lg text-ink">
-        🥞 Login to order
-      </SectionHeading>
-      <Input
-        tone="light"
-        className="w-full py-2"
-        placeholder="Phone (e.g. 98765 43210)"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-      />
+    <Modal onClose={onClose} className="w-full max-w-sm space-y-5 p-6 sm:p-7">
+      <ModalHeader eyebrow="Welcome" title="Log in to order" onClose={onClose}>
+        {requested ? "Enter the 6-digit code to continue." : "We send a one-time code. No password to remember."}
+      </ModalHeader>
+      <Field label="Phone number" htmlFor="login-phone">
+        <input
+          id="login-phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          className={`${popupField} h-12`}
+          placeholder="98765 43210"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
+      </Field>
       {!requested ? (
-        <Btn
-          variant="magenta"
-          className="w-full"
-          disabled={busy || phone.length < 10}
-          onClick={requestOtp}
-        >
-          Send OTP
-        </Btn>
+        <button className={popupPrimary} disabled={busy || phone.length < 10} onClick={requestOtp}>
+          {busy ? "Sending…" : "Send code"}
+        </button>
       ) : (
         <>
           {demoOtp !== null ? (
-            <p className="rounded-lg border-2 border-indigo-900 bg-turmeric-100 px-3 py-2 text-sm text-ink">
-              📟 Demo mode — your OTP is <b className="font-display">{demoOtp}</b>
+            <p className="rounded-2xl border border-ghee/40 bg-ghee/10 px-3.5 py-2.5 text-sm text-cream" role="status">
+              Demo mode: your code is <b className="tnum font-display text-base text-ghee">{demoOtp}</b>
             </p>
           ) : (
-            <p className="rounded-lg border-[1.5px] border-sky bg-sky-100 px-3 py-2 text-sm text-ink">
-              ✈️ OTP sent to your linked <b>Telegram</b> — check your DMs
+            <p className="rounded-2xl border border-sky/40 bg-sky/10 px-3.5 py-2.5 text-sm text-cream" role="status">
+              Code sent to your linked <b>Telegram</b>. Check your messages.
             </p>
           )}
-          <Input
-            tone="light"
-            className="w-full py-2"
-            placeholder="Enter OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-          />
-          <Btn
-            variant="magenta"
-            className="w-full"
-            disabled={busy || otp.length !== 6}
-            onClick={verify}
-          >
-            Verify & continue
-          </Btn>
+          <Field label="One-time code" htmlFor="login-otp">
+            <input
+              id="login-otp"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              className={`${popupField} tnum h-12 text-center font-display text-xl tracking-[0.4em]`}
+              placeholder="••••••"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+            />
+          </Field>
+          <button className={popupPrimary} disabled={busy || otp.length !== 6} onClick={verify}>
+            {busy ? "Checking…" : "Verify and continue"}
+          </button>
         </>
       )}
-      {error && <p className="text-sm font-semibold text-chili">{error}</p>}
+      {error && (
+        <p className="rounded-2xl border border-chili/50 bg-chili/10 px-3.5 py-2.5 text-sm font-semibold text-[#FF8B8B]" role="alert">
+          {error}
+        </p>
+      )}
     </Modal>
   );
 }

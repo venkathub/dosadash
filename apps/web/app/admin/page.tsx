@@ -73,7 +73,7 @@ function GroupedNav({ tab, onSelect }: { tab: Tab; onSelect: (t: Tab) => void })
     <nav aria-label="Backoffice sections">
       {TAB_GROUPS.map((group) => (
         <div key={group.label} className="mb-4">
-          <div className="mb-1.5 px-2.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-300">
+          <div className="mb-1.5 px-2.5 font-display text-[10px] font-bold uppercase tracking-[0.16em] text-cream-faint">
             {group.label}
           </div>
           <div className="space-y-1">
@@ -83,10 +83,10 @@ function GroupedNav({ tab, onSelect }: { tab: Tab; onSelect: (t: Tab) => void })
                 onClick={() => onSelect(t)}
                 aria-current={tab === t ? "page" : undefined}
                 className={cx(
-                  "flex w-full items-center gap-2 rounded-lg border-[1.5px] px-2.5 py-1.5 text-left font-display text-[13px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500",
+                  "flex w-full items-center gap-2 rounded-lg border-[1.5px] px-2.5 py-1.5 text-left font-display text-[13px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee",
                   tab === t
-                    ? "border-turmeric-500 bg-turmeric-500 font-bold text-indigo-950"
-                    : "border-transparent font-semibold text-indigo-200 hover:bg-indigo-800 hover:text-turmeric-400",
+                    ? "border-cream bg-cream font-bold text-soot-950"
+                    : "border-transparent font-semibold text-cream-dim hover:bg-soot-800 hover:text-ghee",
                 )}
               >
                 <span aria-hidden className="w-5 text-center">
@@ -134,17 +134,17 @@ export default function Admin() {
   const activeGroup = TAB_GROUPS.find((g) => (g.tabs as readonly string[]).includes(tab));
 
   return (
-    <main className="min-h-screen bg-indigo-950 text-indigo-100">
-      <header className="flex items-center gap-3 border-b-[3px] border-magenta-500 bg-indigo-900 px-4 py-3">
+    <main className="min-h-screen bg-soot-950 text-cream">
+      <header className="flex items-center gap-3 border-b-[3px] border-ember bg-soot-900 px-4 py-3">
         <button
           aria-label="Open sections"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border-[1.5px] border-indigo-600 bg-indigo-950 text-lg text-indigo-100 lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border-[1.5px] border-cream/20 bg-soot-950 text-lg text-cream lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee"
           onClick={() => setNavOpen(true)}
         >
           ☰
         </button>
-        <h1 className="font-display text-lg font-bold tracking-wide text-white">
-          🥞 DOSADASH <span className="text-magenta-400">BACKOFFICE</span>
+        <h1 className="font-display text-lg font-bold tracking-wide text-cream">
+          🥞 DOSADASH <span className="text-ember">BACKOFFICE</span>
         </h1>
         <span className="ml-auto flex items-center gap-2.5">
           {role && <Badge tone="brass">{role}</Badge>}
@@ -164,18 +164,18 @@ export default function Admin() {
       {/* Small screens: the same grouped nav as a left drawer */}
       {navOpen && (
         <div
-          className="fixed inset-0 z-50 bg-indigo-950/70 lg:hidden"
+          className="fixed inset-0 z-50 bg-soot-950/70 lg:hidden"
           onClick={() => setNavOpen(false)}
         >
           <div
-            className="animate-fade-up h-full w-64 overflow-y-auto border-r-2 border-indigo-700 bg-indigo-950 px-3 py-4"
+            className="animate-fade-up h-full w-64 overflow-y-auto border-r-2 border-cream/10 bg-soot-950 px-3 py-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between px-2.5">
-              <span className="font-display text-sm font-bold text-white">Sections</span>
+              <span className="font-display text-sm font-bold text-cream">Sections</span>
               <button
                 aria-label="Close sections"
-                className="text-indigo-200 transition-colors duration-150 hover:text-turmeric-400"
+                className="text-cream-dim transition-colors duration-150 hover:text-ghee"
                 onClick={() => setNavOpen(false)}
               >
                 ✕
@@ -194,7 +194,7 @@ export default function Admin() {
 
       <div className="mx-auto flex max-w-[1380px] items-start">
         {/* Desktop: vertical grouped sidebar */}
-        <aside className="sticky top-0 hidden max-h-screen w-56 shrink-0 overflow-y-auto border-r border-indigo-800 px-3 py-4 lg:block">
+        <aside className="sticky top-0 hidden max-h-screen w-56 shrink-0 overflow-y-auto border-r border-cream/10 px-3 py-4 lg:block">
           <GroupedNav tab={tab} onSelect={setTab} />
         </aside>
 
@@ -202,7 +202,7 @@ export default function Admin() {
           <section className="p-4 sm:px-6" key={tab}>
             <div className="mb-3">
               {activeGroup && <Eyebrow>{activeGroup.label}</Eyebrow>}
-              <SectionHeading as="h2" className="inline-block text-xl text-white">
+              <SectionHeading as="h2" className="inline-block text-xl text-cream">
                 {tab}
               </SectionHeading>
             </div>
@@ -278,10 +278,10 @@ function AdminLogin({ onLogin, notice = "" }: { onLogin: (token: string) => void
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-indigo-950">
+    <main className="flex min-h-screen items-center justify-center bg-soot-950">
       <Card tone="dark" className="w-80 p-6">
-        <div className="mb-4 font-display text-lg font-bold tracking-wide text-white">
-          🥞 DOSADASH <span className="text-magenta-400">BACKOFFICE</span>
+        <div className="mb-4 font-display text-lg font-bold tracking-wide text-cream">
+          🥞 DOSADASH <span className="text-ember">BACKOFFICE</span>
         </div>
         {stage === "phone" ? (
           <>
@@ -300,9 +300,9 @@ function AdminLogin({ onLogin, notice = "" }: { onLogin: (token: string) => void
         ) : (
           <>
             {demoOtp ? (
-              <p className="mb-2 text-sm text-indigo-200">📟 Demo mode — your OTP is <b className="font-display text-turmeric-400">{demoOtp}</b></p>
+              <p className="mb-2 text-sm text-cream-dim">📟 Demo mode — your OTP is <b className="font-display text-ghee">{demoOtp}</b></p>
             ) : (
-              <p className="mb-2 text-sm text-indigo-200">✈️ OTP sent to your linked Telegram</p>
+              <p className="mb-2 text-sm text-cream-dim">✈️ OTP sent to your linked Telegram</p>
             )}
             <Input
               tone="dark"

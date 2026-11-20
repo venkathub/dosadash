@@ -1,12 +1,13 @@
 /**
- * DosaDash "Madras Pop" UI primitives — docs/13-ui-madras-pop-design.md
- * (normative token source: design/madras-pop/tokens.css)
+ * DosaDash "Tawa Noir" UI primitives — docs/17-ui-tawa-noir-design.md
  * The single source of truth for buttons, inputs, cards, badges, modals,
  * tables and status colors across customer, KDS and admin surfaces.
  * No dependencies — plain Tailwind class composition.
  *
- * Signature construction: 2px ink borders + hard offset shadows (shadow-pop*),
- * Space Grotesk display on buttons/headings/badges. Never soften the shadows.
+ * One dark surface system: soot panels, cream text, 1px cream hairlines.
+ * Ember is reserved for the primary action; ghee marks what is active or
+ * needs attention. Variant NAMES are historical (Madras Pop call sites) —
+ * read the comment beside each for what it means now.
  */
 import React from "react";
 
@@ -17,8 +18,8 @@ export function cx(...parts: Array<string | false | null | undefined>) {
 /* ---------------------------------- Button --------------------------------- */
 
 export type BtnVariant =
-  | "magenta" // primary CTA
-  | "turmeric" // ADD / secondary-primary (default)
+  | "magenta" // primary CTA (ember)
+  | "turmeric" // secondary-primary (cream), the default
   | "indigo"
   | "paper" // default light-surface button
   | "veg"
@@ -29,23 +30,20 @@ export type BtnVariant =
 export type BtnSize = "sm" | "md" | "lg";
 
 const BTN_BASE =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg border-2 font-display font-bold " +
+  "inline-flex items-center justify-center gap-1.5 rounded-full border font-display font-bold " +
   "transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 " +
-  "focus-visible:ring-magenta-500 disabled:cursor-not-allowed disabled:border-faint " +
-  "disabled:bg-sand-300 disabled:text-faint disabled:shadow-none";
+  "focus-visible:ring-ghee disabled:cursor-not-allowed disabled:border-cream/10 " +
+  "disabled:bg-soot-700 disabled:text-cream-faint";
 
 const BTN_VARIANT: Record<BtnVariant, string> = {
-  magenta: "border-indigo-900 bg-magenta-500 text-white shadow-pop-sm hover:bg-magenta-400",
-  turmeric:
-    "border-indigo-900 bg-turmeric-500 text-indigo-900 shadow-pop-sm hover:bg-turmeric-400",
-  indigo: "border-indigo-900 bg-indigo-900 text-white shadow-pop-sm hover:bg-indigo-700",
-  paper: "border-indigo-900 bg-paper text-indigo-900 shadow-pop-sm hover:bg-indigo-100",
-  veg: "border-indigo-900 bg-veg text-white shadow-pop-sm hover:opacity-90",
-  danger: "border-indigo-900 bg-chili text-white shadow-pop-sm hover:opacity-90",
-  ghost:
-    "border-indigo-600 bg-transparent text-indigo-100 shadow-none hover:border-turmeric-400 hover:text-turmeric-400",
-  subtle:
-    "border-indigo-600 bg-white/5 text-indigo-100 shadow-none hover:bg-white/10",
+  magenta: "border-transparent bg-ember text-ember-ink hover:bg-ember-hot", // primary
+  turmeric: "border-transparent bg-cream text-soot-950 hover:bg-cream/85", // default / secondary
+  indigo: "border-cream/20 bg-soot-800 text-cream hover:bg-soot-700",
+  paper: "border-cream/20 bg-soot-800 text-cream hover:bg-soot-700",
+  veg: "border-transparent bg-basil text-soot-950 hover:bg-basil/85", // confirm
+  danger: "border-transparent bg-chili text-soot-950 hover:bg-chili/85",
+  ghost: "border-cream/20 bg-transparent text-cream hover:border-ghee/60 hover:text-ghee",
+  subtle: "border-cream/15 bg-white/5 text-cream hover:bg-white/10",
 };
 
 const BTN_SIZE: Record<BtnSize, string> = {
@@ -76,12 +74,12 @@ export function Btn({
 export type Tone = "light" | "dark";
 
 const FIELD_BASE =
-  "rounded-lg border-2 px-3 py-1.5 text-sm outline-none transition-shadow duration-100 disabled:opacity-40";
+  "rounded-xl border px-3 py-1.5 text-sm outline-none transition-colors duration-100 disabled:opacity-40";
 
+// Two tone names survive from the light/dark split; both are dark now.
 const FIELD_TONE: Record<Tone, string> = {
-  light:
-    "border-indigo-900 bg-paper text-ink placeholder-faint focus:shadow-pop-magenta-sm",
-  dark: "border-indigo-600 bg-indigo-950 text-indigo-100 placeholder-indigo-300 focus:border-turmeric-400",
+  light: "border-cream/20 bg-soot-950 text-cream placeholder-cream-faint focus:border-ghee",
+  dark: "border-cream/20 bg-soot-950 text-cream placeholder-cream-faint focus:border-ghee",
 };
 
 export function fieldCls(tone: Tone = "dark", className?: string) {
@@ -115,10 +113,8 @@ export function Textarea({
 /* ----------------------------------- Card ---------------------------------- */
 
 const CARD_TONE: Record<Tone, string> = {
-  // light poster card: paper + ink border + hard shadow
-  light: "rounded-xl border-2 border-indigo-900 bg-paper shadow-pop",
-  // calmer dark panel (admin): no shadow — tokens.css .card-panel-dark
-  dark: "rounded-xl border-2 border-indigo-700 bg-indigo-900 text-indigo-100",
+  light: "rounded-2xl border border-cream/10 bg-soot-900 text-cream",
+  dark: "rounded-2xl border border-cream/10 bg-soot-900 text-cream",
 };
 
 export function Card({
@@ -131,7 +127,7 @@ export function Card({
     <div
       className={cx(
         CARD_TONE[tone],
-        hover && "transition-transform duration-150 hover:-translate-y-0.5",
+        hover && "transition-colors duration-150 hover:border-cream/30",
         className,
       )}
       {...props}
@@ -146,27 +142,16 @@ export type BadgeTone =
   | "danger"
   | "warning"
   | "info"
-  | "brass" // AI provenance — renders magenta in Madras Pop
+  | "brass" // AI provenance — ember
   | "neutral";
 
-/** Dark-surface palette (tokens.css .badge-dk-*). */
 const BADGE_TONE: Record<BadgeTone, string> = {
-  success: "border-[#2FA36B] bg-veg/20 text-[#5BD69B]",
-  danger: "border-chili bg-chili/20 text-[#FF8B8B]",
-  warning: "border-turmeric-600 bg-turmeric-500/15 text-turmeric-400",
-  info: "border-sky bg-sky/20 text-[#8FC1E9]",
-  brass: "border-magenta-500 bg-magenta-500/20 text-magenta-400",
-  neutral: "border-indigo-600 bg-indigo-200/10 text-indigo-200",
-};
-
-/** Same tones re-mixed for light (paper/offwhite) surfaces (tokens.css .badge-*). */
-const BADGE_TONE_LIGHT: Record<BadgeTone, string> = {
-  success: "border-veg bg-veg-100 text-veg",
-  danger: "border-chili bg-chili-100 text-chili",
-  warning: "border-[#8A6A03] bg-warn-100 text-[#8A6A03]",
-  info: "border-sky bg-sky-100 text-sky",
-  brass: "border-magenta-600 bg-magenta-100 text-magenta-600",
-  neutral: "border-muted bg-sand-200 text-muted",
+  success: "border-basil/50 bg-basil/15 text-[#5BD69B]",
+  danger: "border-chili/50 bg-chili/15 text-[#FF8B8B]",
+  warning: "border-ghee/50 bg-ghee/15 text-ghee",
+  info: "border-sky/50 bg-sky/15 text-[#8FC1E9]",
+  brass: "border-ember/50 bg-ember/15 text-ember-hot",
+  neutral: "border-cream/20 bg-cream/5 text-cream-dim",
 };
 
 export function Badge({
@@ -178,12 +163,11 @@ export function Badge({
   tone?: BadgeTone;
   surface?: Tone;
 }) {
-  const map = surface === "light" ? BADGE_TONE_LIGHT : BADGE_TONE;
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1 rounded-md border-[1.5px] px-2 py-0.5 font-display text-[11px] font-bold uppercase tracking-[0.08em]",
-        map[tone],
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-display text-[11px] font-bold uppercase tracking-[0.08em]",
+        BADGE_TONE[tone],
         className,
       )}
       {...props}
@@ -246,44 +230,14 @@ export function statusBadgeTone(status: string): BadgeTone {
 
 /* ---------------------------------- Modal ----------------------------------- */
 
-export function Modal({
-  onClose,
-  tone = "light",
-  className,
-  children,
-}: {
-  onClose?: () => void;
-  tone?: Tone;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-indigo-950/70 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className={cx(
-          "animate-fade-up max-h-[90vh] overflow-y-auto rounded-2xl border-2",
-          tone === "light"
-            ? "border-indigo-900 bg-paper text-ink shadow-pop"
-            : "border-indigo-700 bg-indigo-900 text-indigo-100 shadow-pop-dark",
-          className,
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
+// Lives in its own client file: it needs state, effects and a portal.
+export { Field, Modal, ModalHeader, popupField, popupPrimary } from "./Modal";
 
 /* ------------------------------ Headings & chips ---------------------------- */
 
-/** Space Grotesk heading; kolam=true renders the zari-stripe underline. */
+/** Space Grotesk heading. `kolam` is accepted for old call sites and ignored. */
 export function SectionHeading({
   as: Tag = "h2",
-  kolam = true,
   className,
   children,
 }: {
@@ -295,8 +249,7 @@ export function SectionHeading({
   return (
     <Tag
       className={cx(
-        "font-display font-bold tracking-tight",
-        kolam && "kolam",
+        "font-display font-semibold tracking-tight",
         className,
       )}
     >
@@ -314,7 +267,7 @@ export function Eyebrow({
     <div
       className={cx(
         "font-display text-[11px] font-bold uppercase tracking-[0.16em]",
-        className ?? "text-turmeric-400",
+        className ?? "text-ghee",
       )}
       {...props}
     />
@@ -322,7 +275,6 @@ export function Eyebrow({
 }
 
 export function Chip({
-  surface = "light",
   active = false,
   className,
   ...props
@@ -333,12 +285,10 @@ export function Chip({
   return (
     <button
       className={cx(
-        "rounded-full border-2 px-3 py-1 text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta-500 disabled:opacity-40",
+        "rounded-full border px-3 py-1 text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ghee disabled:opacity-40",
         active
-          ? "border-indigo-900 bg-indigo-900 text-turmeric-400"
-          : surface === "light"
-            ? "border-indigo-900 bg-paper text-ink hover:bg-turmeric-100"
-            : "border-indigo-600 bg-indigo-900 text-indigo-100 hover:border-turmeric-400 hover:text-turmeric-400",
+          ? "border-cream bg-cream text-soot-950"
+          : "border-cream/15 text-cream-dim hover:border-cream/40 hover:text-cream",
         className,
       )}
       {...props}
@@ -346,60 +296,43 @@ export function Chip({
   );
 }
 
-/* --------------------------- Madras Pop signatures --------------------------- */
+/* ----------------------------- Section furniture ----------------------------- */
 
-/** Indigo ticker strip under the customer header — scrolling marquee. */
-export function Ticker({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={cx("ticker", className)} aria-hidden="true" {...props}>
-      {/* Text duplicated so translateX(-50%) creates a seamless scroll loop. */}
-      <span className="ticker__inner">
-        <span>{children}</span>
-        <span aria-hidden="true">{children}</span>
-      </span>
-    </div>
-  );
-}
-
-/** Kanchipuram zari stripe section divider. */
+/** Divider. Was the Kanchipuram zari stripe; now a hairline (wide) or a short ember rule. */
 export function Zari({
   wide = false,
-  onDark = false,
   className,
 }: {
   wide?: boolean;
+  /** Accepted for old call sites; there is only one surface now. */
   onDark?: boolean;
   className?: string;
 }) {
   return (
     <div
-      className={cx("zari", wide && "zari-wide", onDark && "zari-on-dark", className)}
+      className={cx(wide ? "h-px w-full bg-cream/10" : "h-0.5 w-10 rounded-full bg-ember", className)}
       aria-hidden="true"
     />
   );
 }
 
-/** Color-blocked uppercase section header. tamil=true drops uppercase/tracking. */
+/** Section label. Was a colour-blocked poster chip; now a quiet eyebrow.
+ *  tamil=true drops uppercase/tracking (Latin affordances). */
 export function PosterBlock({
-  tone = "magenta",
   tamil = false,
+  tone: _tone,
   className,
   ...props
 }: React.HTMLAttributes<HTMLSpanElement> & {
+  /** Accepted for old call sites; tone no longer changes the look. */
   tone?: "magenta" | "turmeric" | "indigo";
   tamil?: boolean;
 }) {
   return (
     <span
       className={cx(
-        "poster-block",
-        tone === "turmeric" && "poster-block-turmeric",
-        tone === "indigo" && "poster-block-indigo",
-        tamil && "poster-block-tamil",
+        "font-display text-xs font-semibold text-ghee",
+        !tamil && "uppercase tracking-[0.2em]",
         className,
       )}
       {...props}
@@ -423,9 +356,9 @@ export function FssaiMark({ veg, className }: { veg: boolean; className?: string
 
 export const tableCls = "tnum w-full text-left text-[13px]";
 export const theadCls =
-  "font-display text-[10.5px] font-bold uppercase tracking-[0.12em] text-turmeric-400";
+  "font-display text-[11px] font-semibold uppercase tracking-[0.12em] text-cream-faint";
 export const trCls =
-  "border-t border-indigo-800 odd:bg-white/[.02] hover:bg-white/[.05]";
+  "border-t border-cream/10 odd:bg-white/[.02] hover:bg-white/[.05]";
 export const thCls = "px-2 py-2";
 export const tdCls = "px-2 py-1.5";
 
@@ -434,7 +367,7 @@ export const tdCls = "px-2 py-1.5";
 export function ErrorBar({ msg }: { msg: string | null }) {
   if (!msg) return null;
   return (
-    <div className="animate-fade-up rounded-lg border-2 border-chili bg-chili-100 px-3 py-2 text-sm font-semibold text-chili">
+    <div className="animate-fade-up rounded-xl border border-chili/50 bg-chili/10 px-3 py-2 text-sm font-semibold text-[#FF8B8B]">
       {msg}
     </div>
   );
@@ -451,10 +384,9 @@ export function EmptyState({
     <div
       className={cx(
         "py-8 text-center text-sm",
-        surface === "dark" ? "text-indigo-200/80" : "text-faint",
+        surface === "dark" ? "text-cream-dim/80" : "text-cream-faint",
       )}
     >
-      <div className="mx-auto mb-2 zari" aria-hidden="true" />
       {children}
     </div>
   );
@@ -464,7 +396,7 @@ export function Spinner({ className }: { className?: string }) {
   return (
     <span
       className={cx(
-        "inline-block h-4 w-4 animate-spin rounded-full border-2 border-turmeric-500 border-t-transparent align-middle",
+        "inline-block h-4 w-4 animate-spin rounded-full border-2 border-ghee/50 border-t-transparent align-middle",
         className,
       )}
       aria-label="loading"
